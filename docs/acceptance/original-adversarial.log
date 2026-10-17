@@ -1,0 +1,49 @@
+F.F.....................                                                 [100%]
+=================================== FAILURES ===================================
+_____________ test_fractional_completion_without_explicit_horizon ______________
+
+tmp_path = PosixPath('/private/var/folders/63/q6glc8w91w3d_3j6d7gzyyrc0000gn/T/pytest-of-sadius/pytest-23/test_fractional_completion_wit0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10cdbc9d0>
+
+    def test_fractional_completion_without_explicit_horizon(tmp_path,monkeypatch):
+        monkeypatch.setattr(p,'STORE',tmp_path)
+        body=cases()['fractional_default_horizon']
+        response=TestClient(app).post('/api/portfolio-command/compare',json=body)
+        assert response.status_code==200
+        for scenario in response.json()['scenarios']:
+>           assert scenario['trials'][0]['expected_months']==3.5
+E           assert 3.0 == 3.5
+
+backend/tests/test_acceptance_independent.py:17: AssertionError
+___________ test_independent_exact_cases[fractional_default_horizon] ___________
+
+name = 'fractional_default_horizon'
+
+    @pytest.mark.parametrize('name',list(cases()))
+    def test_independent_exact_cases(name):
+        request=p.PortfolioRequest.model_validate(cases()[name])
+        result=p.run(request)
+        exact=enumerate_optimum(request.model_dump(mode='json'),[c['totals'] for c in result['coverage']])
+        for scenario in result['scenarios']:
+            if scenario['policy']['operations_investment'] or scenario['policy']['additional_support']:continue
+            reference=schedule(request.model_dump(mode='json'),set(scenario['selected_edges']))
+>           assert [t['expected_months'] for t in scenario['trials']]==pytest.approx([reference['times'][t.id] for t in request.trials],abs=.0051)
+E           assert [3.0] == approx([3.5 ± 0.0051])
+E
+E             comparison failed. Mismatched elements: 1 / 1:
+E             Max absolute difference: 0.5
+E             Max relative difference: 0.16666666666666666
+E             Index | Obtained | Expected
+E             0     | 3.0      | 3.5 ± 0.0051
+
+backend/tests/test_acceptance_independent.py:28: AssertionError
+=============================== warnings summary ===============================
+backend/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /Users/sadius/concord-independent-acceptance/backend/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED backend/tests/test_acceptance_independent.py::test_fractional_completion_without_explicit_horizon
+FAILED backend/tests/test_acceptance_independent.py::test_independent_exact_cases[fractional_default_horizon]
+2 failed, 22 passed, 1 warning in 1.50s

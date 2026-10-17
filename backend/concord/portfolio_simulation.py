@@ -68,7 +68,8 @@ def simulate(req, selected, shocks, boost=0.):
     raw = np.array([e.rate or 0 for e in edges]) * (1+boost)
     caps = np.array([s.capacity or 0 for s in req.sites])
     targets = np.array([t.target-t.enrolled for t in req.trials], dtype=float)
-    times = np.full((len(shocks), len(pids)), req.horizon)
+    # Pydantic's omitted default can be an int; completion events are continuous.
+    times = np.full((len(shocks), len(pids)), req.horizon, dtype=float)
     complete = np.zeros_like(times, dtype=bool)
     enrollments = np.zeros((len(shocks), len(edges)))
     months = np.zeros_like(enrollments)

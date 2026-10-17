@@ -1,0 +1,38 @@
+{
+  "reported_financial_commit": "89e75752db40f482856c66b019df543e6802bdcc",
+  "reported_portfolio_commit": "59f0c33d52d7928fd136b3c58c4db87b87c0836c",
+  "original_source_hashes": {
+    "backend/concord/portfolio.py": "01f2f5301863c1b7772bf0a6d4c42e0f3237746a8ffd1c166b20770fb532491d",
+    "backend/concord/portfolio_simulation.py": "4ee877d5867752711ec412fdded0d882c36c77637ac1a28ea64f6a3076656bbb",
+    "backend/concord/financial.py": "3b9202bfa4e13373f46365918488b946357f1e4b8a240f50ff1f6e164832754f",
+    "backend/concord/financial_allocation.py": "213c0a2691b6e590227ff3ec10b8fbc9eea7e3edaf3a00cd872cb72d1263a286"
+  },
+  "pr_1": {
+    "baseRefName": "main",
+    "headRefName": "codex/concord-financial-coordination",
+    "headRefOid": "89e75752db40f482856c66b019df543e6802bdcc",
+    "isDraft": false,
+    "mergeCommit": {
+      "oid": "f51b13fa7c84dbd9f06b331b906500c28403e40b"
+    },
+    "state": "MERGED",
+    "statusCheckRollup": [],
+    "url": "https://github.com/CosmicOdyssey/concord/pull/1"
+  },
+  "pr_2": {
+    "baseRefName": "main",
+    "headRefName": "codex/concord-portfolio-command",
+    "headRefOid": "59f0c33d52d7928fd136b3c58c4db87b87c0836c",
+    "isDraft": true,
+    "mergeCommit": null,
+    "state": "OPEN",
+    "statusCheckRollup": [],
+    "url": "https://github.com/CosmicOdyssey/concord/pull/2"
+  },
+  "ancestry": {
+    "89e75752db40f482856c66b019df543e6802bdcc -> f51b13fa7c84dbd9f06b331b906500c28403e40b": true,
+    "f51b13fa7c84dbd9f06b331b906500c28403e40b -> 59f0c33d52d7928fd136b3c58c4db87b87c0836c": true
+  },
+  "audit_tree_contains_new_evidence_files": true,
+  "original_pr_worktree_clean": true
+}
