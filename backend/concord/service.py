@@ -334,11 +334,19 @@ def _gamma_ci(shape: float, rate: float) -> list[float]:
     return [float(gamma_dist.ppf(q, shape, scale=1.0 / rate)) for q in (0.1, 0.9)]
 
 
+# A trial counts as materially faster/slower only if it moves by at least this much. Fixed before
+# the holdout results; the any-difference shares are kept alongside (they count near-ties).
+MATERIAL_MONTHS = 1.0
+
+
 def compare(base: np.ndarray, new: np.ndarray, mask: np.ndarray) -> dict:
     """Movable trials only: dividend, PoA-style ratio, per-trial distribution."""
     b, n = base[mask], new[mask]
     ratio = b / n
     return {
+        "share_faster_material": float(np.mean(n <= b - MATERIAL_MONTHS)) if len(b) else None,
+        "share_slower_material": float(np.mean(n >= b + MATERIAL_MONTHS)) if len(b) else None,
+        "material_threshold_months": MATERIAL_MONTHS,
         "trials": int(mask.sum()),
         "dividend_trial_months": float((b - n).sum()),
         "ratio": float(b.sum() / n.sum()) if n.sum() > 0 else None,

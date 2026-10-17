@@ -63,24 +63,42 @@ Interactive docs at `http://localhost:8000/docs`.
 
 ## Results (17 Oct 2026, after trying to break them)
 
-### 1. Does congestion slow enrollment? Not measurably within a site.
+> **Status, 17 Oct (checks in progress).** The numbers in sections 3-4 are in-sample: allocations are
+> chosen and scored with the same site rates. Treat them as upper bounds until the pre-registered holdout
+> (task A) is merged. Sections 3-4 also predate the beta correction in section 1 (they used 0.026).
+> See "Checks in progress" at the end.
+
+### 1. Does congestion slow enrollment? A little, mainly at experienced sites.
 
 `analysis/congestion.py`: 3,442 completed lung trials, 68k trial-site rows. Outcome: log per-site-month
 enrollment rate. Exposure: competitors recruiting at the same site when the trial started (fixed in
 advance; counting over the whole window would mechanically penalize slow trials), weighted by
 eligibility overlap. Controls: phase, site count, sponsor type, start year.
 
-| | coef on log(1 + sum of overlaps) | 95% CI | p |
-|---|---|---|---|
-| model assumption (master doc eq. 2) | -1 | | |
-| pooled across sites | -0.110 | [-0.160, -0.060] | <0.001 |
-| **within site** (same site, busy vs quiet periods) | **-0.027** | **[-0.121, +0.068]** | 0.58 |
+| coef on log(1 + sum of overlaps) | 95% CI | p |
+|---|---|---|
+| model assumption (master doc eq. 2): -1 | | |
+| pooled across sites: -0.106 | [-0.158, -0.055] | <0.001 |
+| **within site, all sites (primary): -0.087** | **[-0.208, +0.034]** | 0.16 |
+| within site, sites with >= 10 lung trials: -0.129 | [-0.239, -0.019] | 0.02 |
+| within site, trials with <= 20 sites: -0.039 | [-0.172, +0.093] | 0.56 |
+| within site, competitor pairs with overlap >= 0.8: -0.077 | [-0.175, +0.021] | 0.12 |
 
-Unweighted competitor counts are null within site too. Across sites, busier sites are slower per trial,
-but that is confounded with site type (experienced academic centers enroll ~0.04 patients/month per
-trial vs 0.11-0.34 elsewhere). The allocator now uses the within-site estimate as beta, with its CI as
-the sensitivity range. An earlier run showed -0.136 (p = 0.03). That came from a parser bug: "Key
-Exclusion Criteria" headers weren't recognized, so exclusions were read as requirements. It is fixed.
+- **What it says.** Within the same site, at the resolution of public registry data, overlapping
+  competitors slow enrollment slightly. At experienced sites a doubling of overlapping load is about
+  8.5% slower (95% CI 1-15%). That is roughly 8x smaller than the master doc's assumption, which every
+  interval rejects. Unweighted competitor counts are null within site.
+- **Default beta = 0.087**, the full-sample estimate. The subset checks (`analysis/congestion_subsets.py`,
+  task F) used a rule fixed in advance: change beta only if a well-powered subset's CI excludes the
+  full estimate. None does.
+- **Corrections, in order.** An early run showed -0.136 because "Key Exclusion Criteria" headers weren't
+  recognized. After that fix the estimate was -0.027. Task F's audit then found that 646 of 7,206 trials
+  had contradictory compiled criteria (EGFR required and EGFR excluded; resectable and stage III-IV),
+  which gave them no eligible patients and zero exposure, biasing the estimate toward zero. With the
+  parser fixed (3 such trials remain), the same pre-registered regressions give the table above.
+  Before-fix outputs: `data/robustness/congestion_subsets.json`. After: `..._maskfix.json`.
+- **Caveats.** Standard errors are clustered by trial only. The ">= 10 lung trials" count includes
+  trials that started later.
 
 ### 2. Site-rate model and backtest
 
@@ -193,3 +211,24 @@ sponsor's trials held fixed. Eligibility is hand-encoded (`compiler/overrides.py
 - [ ] LLM-assisted eligibility parser with a review screen; hand-encode every trial shown in the demo
 - [ ] Site-level enrollment data (the flywheel) is what would make the site-rate model trustworthy
 - [ ] Side-payment / priority-credit mechanism, since coordination gains need transfers to be no-loser
+
+## Checks in progress (17 Oct)
+
+Pre-registered checks running in parallel worktrees, each committing its method before its results,
+with adversarial audits. A result enters this README only after its audit.
+
+| task | status | result so far |
+|---|---|---|
+| A. optimizer's curse holdout (choose with half the history, score with the other) | audit found issues; being fixed | the held-out number becomes the headline |
+| B. where the joint optimum comes from (capacity settings, beta = 0) | fixed after audit; re-audit running | |
+| C. transfer surplus of the joint optimum | waits for B | |
+| D. browser QA | merged | 2,576 of 2,580 on-screen numbers match the API; the other 4 were backend inconsistencies, now fixed. 7 label and layout defects fixed. No phone-width breakage. Report: `docs/qa/2026-10-17-browser-qa.md` |
+| E. hand-encoded eligibility for the 146 demo trials, basket and cohort labels, academic flag | encoding and verification done; integration next | basket and multi-cohort trials will be held out of headline numbers |
+| F. attenuation check of beta | merged | see section 1 |
+
+Two findings from D that the final numbers must handle:
+
+- **Solver budget.** The solver stops at a 6 s limit, so the in-sample headline depends on CPU load:
+  1.32x live vs 1.28x in the grid for US-Northeast.
+- **Near-ties.** "Share faster" counted near-ties. The API now also reports a material threshold
+  (>= 1 month): "91% faster" is 62% at >= 1 month.

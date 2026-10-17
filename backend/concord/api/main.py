@@ -122,10 +122,10 @@ def sponsors(region: str = "US", as_of: str | None = None, min_trials: int = 2) 
     # Same definitions as the instance builder: region by site state, as_of = inside the enrollment window.
     states = service.REGIONS[region]
     region_sql = "s.country='United States'" + (f" AND s.state IN ({','.join('?' * len(states))})" if states else "")
-    when = (f"t.start_date <= ? AND julianday(t.start_date) + {ENROLL_FRACTION} * (julianday(COALESCE("
+    when = (f"t.status NOT IN ('WITHDRAWN') AND t.start_date <= ? AND julianday(t.start_date) + {ENROLL_FRACTION} * (julianday(COALESCE("
             "t.primary_completion_date, t.completion_date, '2100-01-01')) - julianday(t.start_date)) > julianday(?)"
             if as_of else "t.status='RECRUITING'")
-    rows = con.execute(f"""SELECT t.sponsor, COUNT(DISTINCT t.nct_id) FROM trials t
+    rows = con.execute(f"""SELECT t.sponsor, COUNT(DISTINCT t.nct_id) FROM trials t JOIN trial_model tm USING(nct_id)
                            JOIN trial_sites ts USING(nct_id) JOIN sites s USING(site_id)
                            WHERE {service.BASE_FILTER} AND {when} AND {region_sql}
                            GROUP BY t.sponsor HAVING COUNT(DISTINCT t.nct_id) >= ?

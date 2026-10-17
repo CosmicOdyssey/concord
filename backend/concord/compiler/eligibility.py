@@ -108,6 +108,15 @@ def extract_criteria(text: str) -> list[Criterion]:
     for strict, loose in SUPERSEDES.items():
         if strict in found:
             found.pop(loose, None)
+    # A trial that requires a driver mentions it again in its exclusions (other variants, prior targeted
+    # therapy), so the broad "driver-positive excluded" rule must not fire: together they described an
+    # empty population (460 EGFR, 59 ALK, 8 ROS1 trials before this fix).
+    for req, excl in (("egfr_req", "no_egfr"), ("alk_req", "no_alk"), ("ros1_req", "no_ros1")):
+        if req in found:
+            found.pop(excl, None)
+    # "Resectable stage II-IIIA" also fires the stage III-IV rule; resectable wins (115 trials).
+    if "resectable" in found:
+        found.pop("stage_iii", None)
     if "tx_naive" in found:
         found.pop("prior_platinum", None)
     if "squamous" in found and "nonsquamous" in found:

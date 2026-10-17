@@ -221,7 +221,8 @@ def term_sheet(protocol: Protocol, site: dict, expected_patients: float, multipl
         "coverage_grid": coverage_grid(protocol, site.get("state"), site.get("city"), site.get("country")),
         "budget": budget,
         "expected_patients": round(expected_patients, 1),
-        "expected_site_total": round(fixed + budget["per_patient_total"] * expected_patients, 2),
+        # Total from the rounded patient count, so the sheet adds up as displayed.
+        "expected_site_total": round(fixed + budget["per_patient_total"] * round(expected_patients, 1), 2),
         "agreement": ACTA_TERMS,
         "disclaimer": "Decision support only. Not a legal fair-market-value determination or a coverage determination.",
     }

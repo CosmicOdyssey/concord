@@ -39,3 +39,21 @@ def test_demo_protocol_budget_only_prices_research_nodes():
         assert b["locality"] == "METROPOLITAN BOSTON"
         assert any(l["schedule"] == "PFS" and l["verified"] and l["amount"] > l["national"] for l in b["procedure_lines"])
     assert not b["unpriced_codes"]
+
+
+def test_required_driver_is_not_also_excluded():
+    text = """Inclusion Criteria:
+* Documented EGFR exon 19 deletion or L858R mutation
+Exclusion Criteria:
+* Prior treatment with an EGFR tyrosine kinase inhibitor
+"""
+    ids = {c.id for c in extract_criteria(text)}
+    assert "egfr_req" in ids and "no_egfr" not in ids
+
+
+def test_resectable_overrides_stage_iii():
+    text = """Inclusion Criteria:
+* Resectable stage II to IIIA non-small cell lung cancer
+"""
+    ids = {c.id for c in extract_criteria(text)}
+    assert "resectable" in ids and "stage_iii" not in ids
