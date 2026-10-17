@@ -156,9 +156,9 @@ export default function ModelView() {
                   )}
                   {bt.low_history_rule && (
                     <span>
-                      Low-history rule: {int(bt.low_history_rule.n_below)} sites below the prior’s{' '}
-                      {num(bt.low_history_rule.prior_quantile * 100, 0)}th-percentile rate ({num(bt.low_history_rule.rate, 3)}{' '}
-                      pts/mo) are capped there
+                      Low-history rule: sites with fewer than {int(bt.low_history_rule.n_below)} past lung trials are capped
+                      at the prior’s {num(bt.low_history_rule.prior_quantile * 100, 0)}th-percentile rate (
+                      {num(bt.low_history_rule.rate, 3)} pts/mo)
                     </span>
                   )}
                 </div>
@@ -400,7 +400,7 @@ function BacktestTable({ byModel }: { byModel: Record<string, Record<string, Bac
 }
 
 const SPEC_LABEL: Record<string, string> = {
-  within: 'Within site (primary)',
+  within: 'Within site',
   site_fe: 'Site fixed effects',
   pooled: 'Pooled (across sites)',
 }
@@ -510,7 +510,10 @@ function CongestionCard({ data, error }: { data: CongestionTest | null; error: s
                   if (!rr) return null
                   return (
                     <tr key={k} className={k === data.primary ? 'row-on' : ''}>
-                      <td>{SPEC_LABEL[sp]}</td>
+                      <td>
+                        {SPEC_LABEL[sp]}
+                        {k === data.primary && ' (primary)'}
+                      </td>
                       <td>{EXPOSURE_LABEL[ex]}</td>
                       <td className="num">{num(rr.coef, 4)}</td>
                       <td className="num nowrap">

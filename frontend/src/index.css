@@ -743,6 +743,11 @@ th.sortable.num button {
 .tbl-trials {
   min-width: 1120px;
 }
+/* Let the long allocation headers wrap so the Months saved column is not clipped at laptop widths. */
+.tbl-trials thead th,
+.tbl-trials th.sortable button {
+  white-space: normal;
+}
 .trial-cell {
   min-width: 170px;
   max-width: 260px;

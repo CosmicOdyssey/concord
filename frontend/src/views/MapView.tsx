@@ -4,7 +4,7 @@ import type { LatLngBoundsExpression } from 'leaflet'
 import type { AllocKey, ClearResult, Site } from '../api'
 import type { ClearState } from '../App'
 import { Badge, ErrorBox, Loading, NeedsClear, RunLine, useDarkMode } from '../components'
-import { ALLOC_HINT, ALLOC_LABEL, int, loadOf, pct } from '../format'
+import { ALLOC_HINT, ALLOC_LABEL, int, isNum, loadOf, pct } from '../format'
 import { DEFAULT_SCENARIO } from '../api'
 
 const ALLOCS: AllocKey[] = ['actual', 'indep', 'coord', 'coord_free']
@@ -217,8 +217,9 @@ export default function MapView({ clear }: { clear: ClearState }) {
             </table>
           </div>
           <p className="muted small">
-            Of {int(r.counts.sites)} candidate sites, {int(r.counts.trials)} trials. Shares are of trial–site slots,
-            computed here from the returned assignments.
+            {int(r.counts.sites)} sites in the region instance
+            {isNum(r.summary.assumptions.candidate_sites) && <> ({int(r.summary.assumptions.candidate_sites)} open to reassignment)</>},{' '}
+            {int(r.counts.trials)} trials. Shares are of trial–site slots, computed here from the returned assignments.
           </p>
 
           <h2>Busiest sites · {ALLOC_LABEL[alloc]}</h2>

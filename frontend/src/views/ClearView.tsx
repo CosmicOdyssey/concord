@@ -273,7 +273,7 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
     }
   }
   const th = (k: SortKey, label: string, cls = '', title?: string) => (
-    <th className={`sortable ${cls}`} aria-sort={sortKey === k ? (asc ? 'ascending' : 'descending') : 'none'} title={title}>
+    <th key={k} className={`sortable ${cls}`} aria-sort={sortKey === k ? (asc ? 'ascending' : 'descending') : 'none'} title={title}>
       <button onClick={() => setSort(k)}>
         {label}
         <span className="sort-ind">{sortKey === k ? (asc ? '▲' : '▼') : ''}</span>

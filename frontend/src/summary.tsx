@@ -165,7 +165,8 @@ export function AssumptionsUsed({ a }: { a: Assumptions }) {
         <span className="muted">Site rates</span>
         <div>
           low-history rule <strong>{a.low_history}</strong>
-          {isNum(a.low_history_n) && <> ({int(a.low_history_n)} sites affected)</>}
+          {/* low_history_n is the threshold (LOW_HISTORY_N), not a count of sites. */}
+          {isNum(a.low_history_n) && <> (low history = fewer than {int(a.low_history_n)} past lung trials)</>}
           {isNum(a.level_factor) && <> · level factor ×{num(a.level_factor, 3)}</>}
           {isNum(a.rate_cap_q) && <> · capped at q{num(a.rate_cap_q * 100, 0)}</>}
         </div>
