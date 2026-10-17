@@ -554,8 +554,8 @@ def counter_proposal_html(res: dict, detail: str = "simple") -> str:
     w("<div class='noprint'><button onclick='window.print()'>Print or save as PDF</button></div>")
     w(f"<h1>{'SYNTHETIC: ' if synthetic else ''}Counter-proposal: {e(res['nct_id'])} at {e(s['label'])}</h1>")
     if synthetic:
-        w(f"<div class='banner synth'>SYNTHETIC sample proposal: invented prices to demonstrate the check. Not "
-          f"{e(s['label'])}'s proposal and not market data.</div>")
+        w(f"<div class='banner synth'>SYNTHETIC sample proposal: invented prices to demonstrate the check. Not a "
+          f"proposal from {e(s['label'])}, and not market data.</div>")
     w(f"<div class='banner'>{e(terms.DISCLAIMER)}</div>")
     w(f"<p><span class='tag'>Illustrative protocol</span> {e(res['label'])}. Not the sponsor's protocol. "
       f"Generated {e(res['generated'])} by Concord. Every line states where its number comes from. "

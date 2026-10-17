@@ -63,12 +63,30 @@ function useDebounced<T>(value: T, ms: number): T {
   return v
 }
 
+/** Band in percent of Medicare, as the backend accepts it (10% <= low <= high <= 500%). */
+function bandValid(l: number, h: number): boolean {
+  return Number.isFinite(l) && Number.isFinite(h) && l >= 10 && h <= 500 && l <= h
+}
+
+/** Routine care at every scheduled occurrence: billed to insurance (NCD 310.1), never a sponsor cost. */
+function insuranceOnly(r: ProposalRow | undefined): boolean {
+  return r?.coverage?.sponsor_visits === 0
+}
+
+function InsuranceBadge() {
+  return (
+    <Badge tone="neutral" title="Routine care at every scheduled occurrence in this protocol: billed to insurance under Medicare NCD 310.1, not to the sponsor. The range is shown for reference.">
+      billed to insurance (NCD 310.1)
+    </Badge>
+  )
+}
+
 function locText(l: Locality | null): string {
   return l ? `${localityTitle(l.name)} (${l.state} locality ${l.code})` : 'national amounts (no locality)'
 }
 
 function askText(r: ProposalRow): string {
-  return r.reference_rate ? `${+(r.ask * 100).toFixed(1)}%` : usd(r.ask)
+  return r.ask_rate ? `${+(r.ask * 100).toFixed(1)}%` : usd(r.ask)
 }
 
 function refText(r: ProposalRow): string {
@@ -109,14 +127,16 @@ export default function TermsProposalCheck({ nct, siteId, params }: { nct: strin
     return () => ctl.abort()
   }, [nct])
 
-  const bandOk = Number.isFinite(lo) && Number.isFinite(hi) && lo >= 10 && hi <= 500 && lo <= hi
+  const bandOk = bandValid(lo, hi)
   const query = useMemo(
     () => ({ siteId, csv: text, bandLow: lo / 100, bandHigh: hi / 100, params }),
     [siteId, text, lo, hi, params],
   )
   const dq = useDebounced(query, 350)
   const dkey = JSON.stringify(dq)
-  const ready = !!dq.siteId && dq.csv.trim().length > 0 && bandOk
+  // Gate on both the band being typed and the debounced band actually sent: the debounced one lags, and a stale
+  // invalid band would be sent (HTTP 400) right after the typed one turns valid again.
+  const ready = !!dq.siteId && dq.csv.trim().length > 0 && bandOk && bandValid(Math.round(dq.bandLow * 1e4) / 100, Math.round(dq.bandHigh * 1e4) / 100)
   useEffect(() => {
     if (!ready) return
     const ctl = new AbortController()
@@ -135,7 +155,8 @@ export default function TermsProposalCheck({ nct, siteId, params }: { nct: strin
   const current = !!res && res.key === JSON.stringify(query)
   const error = res && 'error' in res && current ? res.error : null
   const stale = !!data && !current
-  const isSample = !!sample && text === sample.csv
+  // the shipped sample, or any CSV that keeps its '# ... SYNTHETIC' comment line (the backend detects it)
+  const isSample = (!!sample && text === sample.csv) || (!!data && data.synthetic)
 
   const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
@@ -231,7 +252,7 @@ export default function TermsProposalCheck({ nct, siteId, params }: { nct: strin
               </button>
             )}
             {isSample && (
-              <Badge tone="warn" title={sample?.label}>
+              <Badge tone="warn" title={sample?.label ?? data?.synthetic_label}>
                 SYNTHETIC sample
               </Badge>
             )}
@@ -505,6 +526,12 @@ function TopGaps({ r }: { r: ProposalResult }) {
                 {usd(t.range_low)}–{usd(t.range_high)}
               </span>{' '}
               <FlagBadge flag={t.flag} /> <span className="muted">by</span> <span className="num strong">{usd(t.outside_by)}</span>
+              {insuranceOnly(row) && (
+                <>
+                  {' '}
+                  <InsuranceBadge />
+                </>
+              )}
             </li>
           )
         })}
@@ -544,7 +571,10 @@ function FlaggedLines({ r }: { r: ProposalResult }) {
                     <RangeCell row={row} />
                   </td>
                   <td>
-                    <FlagBadge flag={row.flag} />
+                    <span className="tp-flags">
+                      <FlagBadge flag={row.flag} />
+                      {insuranceOnly(row) && <InsuranceBadge />}
+                    </span>
                   </td>
                 </tr>
               ))}
@@ -606,7 +636,10 @@ function AllLines({ r }: { r: ProposalResult }) {
                   <RangeCell row={row} />
                 </td>
                 <td>
-                  <FlagBadge flag={row.flag} />
+                  <span className="tp-flags">
+                    <FlagBadge flag={row.flag} />
+                    {insuranceOnly(row) && <InsuranceBadge />}
+                  </span>
                 </td>
                 <td className="tf-prov tp-src">
                   {row.source ? row.source.text : 'No source: not in this protocol’s schedule'}

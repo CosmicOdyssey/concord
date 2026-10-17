@@ -198,3 +198,11 @@
     min-width: 9rem;
   }
 }
+
+/* a line's flag plus, for routine-only codes, the "billed to insurance" marker */
+.tp-flags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}

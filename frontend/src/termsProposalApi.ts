@@ -21,6 +21,8 @@ export interface ProposalRow {
   ask: number
   ask_raw: string
   percent: boolean
+  /** The ask is a rate (overhead given as a percentage), shown as a percent. */
+  ask_rate: boolean
   flag: Flag
   flag_label: string
   kind: 'procedure' | 'lab' | 'non_procedure' | null
@@ -48,6 +50,9 @@ export interface ProposalResult {
   short_title: string
   label: string
   disclaimer: string
+  /** The CSV carries a '# ... SYNTHETIC' comment line (the shipped sample does): invented prices. */
+  synthetic: boolean
+  synthetic_label: string
   site: SiteOpt
   locality: Locality | null
   band: { low: number; high: number; label: string; text: string }

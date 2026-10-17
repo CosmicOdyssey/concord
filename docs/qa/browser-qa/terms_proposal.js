@@ -99,6 +99,9 @@ const check = (name, ok, detail = '') => {
         check(`${name}: disclaimer`, text.includes(DISCLAIMER))
         check(`${name}: illustrative strip`, text.includes(ILLUSTRATIVE))
         check(`${name}: proposed standard label`, text.includes('proposed standard (not market data)'))
+        // routine-only codes (sponsor pays none) carry a visible insurance marker wherever they are listed
+        const nIns = api.rows.filter((r) => r.coverage && r.coverage.sponsor_visits === 0 && r.flag !== 'in_range').length
+        if (nIns) check(`${name}: insurance marker on routine-only lines`, text.includes('billed to insurance (NCD 310.1)'))
         const low = text.toLowerCase()
         check(`${name}: no forecast wording`, !FORBIDDEN.some((w) => low.includes(w)), FORBIDDEN.filter((w) => low.includes(w)).join(','))
         const nRows = await page.$$eval('#tf-step-5 .tp-table tbody tr', (r) => r.length)
@@ -143,6 +146,34 @@ const check = (name, ok, detail = '') => {
         await page.close()
       }
 
+  // ---------------------------------------------------------------- band edits: invalid then valid again
+  // The debounced band lags the typed one; going invalid long enough for the debounce to catch up and then valid
+  // again must not send the stale invalid band (an HTTP 400 and a console error).
+  {
+    const name = 'band-race-simple-1440-light'
+    const page = await open(name, 1440, 'light', 'simple')
+    await page.evaluate(() => [...document.querySelectorAll('#tf-step-5 button')].find((x) => x.textContent.includes('Load synthetic sample')).click())
+    await page.waitForSelector('#tf-step-5 .tp-summary', { timeout: 60000 })
+    const setHigh = async (v) => {
+      const inp = await page.$('#tf-step-5 input[aria-label^="Band high"]')
+      await inp.click({ clickCount: 3 })
+      await page.keyboard.press('Backspace')
+      await inp.type(String(v))
+    }
+    await setHigh(120)
+    await sleep(700)
+    await setHigh(50)
+    await sleep(900)
+    check(`${name}: invalid band alert`, (await step5(page)).includes('Use a band from 10% to 500%'))
+    await setHigh(150)
+    await sleep(1500)
+    const text = await step5(page)
+    const usd = (x) => `$${x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    check(`${name}: back to the default range`, text.includes(`${usd(api.summary.coded.range_low)}–${usd(api.summary.coded.range_high)}`))
+    check(`${name}: no error shown`, !(await page.$('#tf-step-5 div.error[role="alert"]')))
+    await page.close()
+  }
+
   // ---------------------------------------------------------------- messy upload with markup in an item
   {
     const name = 'upload-detailed-1440-light'
@@ -184,6 +215,8 @@ const check = (name, ok, detail = '') => {
     if (check(`${name}: downloaded`, !!f, files.join(','))) {
       const html = fs.readFileSync(path.join(dl, f), 'utf8')
       check(`${name}: SYNTHETIC in filename`, f.includes('SYNTHETIC'), f)
+      check(`${name}: SYNTHETIC in the document`, html.includes('<h1>SYNTHETIC: ') && html.includes('SYNTHETIC sample proposal: invented prices'))
+      check(`${name}: routine-only line answered as insurance`, html.includes('Routine care billed to insurance'))
       check(`${name}: disclaimer + illustrative`, html.includes(DISCLAIMER) && html.includes('Illustrative protocol'))
       check(`${name}: band assumption`, html.includes('Assumption: the justified range'))
       const main = (html.match(/<tr class='main'>/g) || []).length
