@@ -8,6 +8,7 @@ import TermsView from './views/TermsView'
 import ModelView from './views/ModelView'
 import RobustnessView from './views/RobustnessView'
 import PortfolioView from './views/PortfolioView'
+import ProtocolTermsView from './views/ProtocolTermsView'
 
 const TABS = [
   { id: 'map', label: 'Congestion map' },
@@ -16,6 +17,7 @@ const TABS = [
   { id: 'portfolio', label: 'Portfolio' },
   { id: 'prices', label: 'Price tags' },
   { id: 'terms', label: 'Pre-cleared terms' },
+  { id: 'terms-flow', label: 'Protocol to terms' },
   { id: 'model', label: 'Model & data' },
 ] as const
 type TabId = (typeof TABS)[number]['id']
@@ -167,6 +169,7 @@ export default function App() {
         )}
         {tab === 'prices' && <PriceTagsView clear={clear} selected={selectedTrial} setSelected={setSelectedTrial} />}
         {tab === 'terms' && <TermsView clear={clear} />}
+        {tab === 'terms-flow' && <ProtocolTermsView />}
         {tab === 'model' && <ModelView />}
       </main>
       <footer className="footer small muted">

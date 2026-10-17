@@ -195,13 +195,15 @@ def _trial_facts(nct: str) -> dict:
                         "FROM trials WHERE nct_id=?", (nct,)).fetchone()
         if r is None:
             return {}
-        us = con.execute("SELECT COUNT(*) FROM trial_sites ts JOIN sites s USING(site_id) "
-                         "WHERE ts.nct_id=? AND s.country='United States'", (nct,)).fetchone()[0]
+        us, us_wd = con.execute("SELECT COUNT(*), COALESCE(SUM(ts.site_status='WITHDRAWN'), 0) FROM trial_sites ts "
+                                "JOIN sites s USING(site_id) WHERE ts.nct_id=? AND s.country='United States'",
+                                (nct,)).fetchone()
     finally:
         con.close()
     out = dict(r)
     out["phases"] = json.loads(out["phases"] or "[]")
     out["n_us_sites"] = us
+    out["n_us_sites_withdrawn"] = us_wd
     return out
 
 
@@ -793,7 +795,7 @@ def termsheet_markdown(ts: dict) -> str:
       f"{_money(t['per_participant_coordinator'])}, overhead {_money(t['per_participant_overhead'])}; "
       f"of which lab placeholders {_money(t['per_participant_placeholder'])})")
     for x in t["per_occurrence"]:
-        w(f"- {x['label']} ({x['repeat']}): {_money(x['amount'])} each, invoiced as completed")
+        w(f"- {x['label']}, {x['repeat']}: {_money(x['amount'])} each, invoiced as completed")
     w(f"- Screen failure, as incurred: {_money(t['screen_failure'])} (the screening visit payment)")
     w(f"- Per site, one time: {_money(t['per_site_one_time'])}")
     w(f"- Routine care billed to insurance per participant (Medicare amounts at this locality, for reference): "
@@ -900,7 +902,8 @@ def termsheet_html(ts: dict) -> str:
     t = b["totals"]
     rate = next(i["amount"] for i in b["standard_schedule"] if i["id"] == "overhead")
     h: list[str] = [f"<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' "
-                    f"content='width=device-width,initial-scale=1'><title>Term sheet {e(b['nct_id'])}</title>"
+                    f"content='width=device-width,initial-scale=1'><link rel='icon' href='data:,'>"
+                    f"<title>Term sheet {e(b['nct_id'])}</title>"
                     f"<style>{_CSS}</style></head><body>"]
     w = h.append
     w("<div class='noprint'><button onclick='window.print()'>Print or save as PDF</button></div>")
@@ -949,7 +952,7 @@ def termsheet_html(ts: dict) -> str:
       f"overhead {_money(t['per_participant_overhead'])}; of which lab placeholders "
       f"{_money(t['per_participant_placeholder'])})</li>")
     for x in t["per_occurrence"]:
-        w(f"<li>{e(x['label'])} ({e(x['repeat'])}): {_money(x['amount'])} each, invoiced as completed</li>")
+        w(f"<li>{e(x['label'])}, {e(x['repeat'])}: {_money(x['amount'])} each, invoiced as completed</li>")
     w(f"<li>Screen failure, as incurred: {_money(t['screen_failure'])} (the screening visit payment)</li>")
     w(f"<li>Per site, one time: {_money(t['per_site_one_time'])}</li>")
     w(f"<li>Routine care billed to insurance per participant (Medicare amounts at this locality, for reference): "

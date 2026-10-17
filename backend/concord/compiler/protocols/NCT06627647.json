@@ -33,7 +33,7 @@
   ],
   "visits": [
     {"id": "SCR", "label": "Screening", "short": "Scr", "kind": "screening", "day": -28, "day_end": -1, "window": "Day -28 to -1"},
-    {"id": "C1D1", "label": "Cycle 1 Day 1", "short": "C1", "kind": "treatment", "day": 1, "minus": 0, "plus": 0, "window": "Day 1 (within 3 days of randomization)"},
+    {"id": "C1D1", "label": "Cycle 1 Day 1", "short": "C1", "kind": "treatment", "day": 1, "minus": 0, "plus": 0, "window": "Day 1, within 3 days of randomization"},
     {"id": "C2D1", "label": "Cycle 2 Day 1", "short": "C2", "kind": "treatment", "day": 22, "minus": 3, "plus": 3, "window": "Day 22 ±3"},
     {"id": "C3D1", "label": "Cycle 3 Day 1", "short": "C3", "kind": "treatment", "day": 43, "minus": 3, "plus": 3, "window": "Day 43 ±3"},
     {"id": "C4D1", "label": "Cycle 4 Day 1", "short": "C4", "kind": "treatment", "day": 64, "minus": 3, "plus": 3, "window": "Day 64 ±3"},
