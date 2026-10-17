@@ -154,7 +154,14 @@ function checkMap() {
       eq(`map/${a}`, `conc ${b} amc`, row[3], pct(stats[b].amc))
       eq(`map/${a}`, `conc ${b} max`, row[4], int(stats[b].max))
     })
-    contains(`map/${a}`, 'site/trial counts', norm(g.main), `Of ${int(r.counts.sites)} candidate sites, ${int(r.counts.trials)} trials.`)
+    contains(
+      `map/${a}`,
+      'site/trial counts',
+      norm(g.main),
+      norm(g.main).includes('candidate sites, ')
+        ? `Of ${int(r.counts.sites)} candidate sites, ${int(r.counts.trials)} trials.` // before the label fix
+        : `${int(r.counts.sites)} sites in the region instance (${int(r.summary.assumptions.candidate_sites)} open to reassignment), ${int(r.counts.trials)} trials.`,
+    )
     contains(
       `map/${a}`,
       'concentration sentence',
@@ -459,7 +466,15 @@ function checkModel() {
     ;['industry_p23', 'industry_p3', 'all'].forEach((sl, j) => eq('model', `bt n ${sl}`, t.rows[models.length][1 + 2 * j], int(bt.by_model.model?.[sl]?.n)))
     if (bt.calibration_slope_industry_p23) contains('model', 'slope', m, `${num(bt.calibration_slope_industry_p23.slope, 2)} ± ${num(bt.calibration_slope_industry_p23.se, 2)}`)
     if (isNum(bt.level_log_bias_industry_p23)) contains('model', 'level bias', m, `log bias ${num(bt.level_log_bias_industry_p23, 3)}`)
-    if (bt.low_history_rule) contains('model', 'low history rule', m, `${int(bt.low_history_rule.n_below)} sites below the prior’s ${num(bt.low_history_rule.prior_quantile * 100, 0)}th-percentile rate (${num(bt.low_history_rule.rate, 3)} pts/mo)`)
+    if (bt.low_history_rule)
+      contains(
+        'model',
+        'low history rule',
+        m,
+        m.includes('sites below the prior')
+          ? `${int(bt.low_history_rule.n_below)} sites below the prior’s ${num(bt.low_history_rule.prior_quantile * 100, 0)}th-percentile rate (${num(bt.low_history_rule.rate, 3)} pts/mo)` // before the label fix
+          : `sites with fewer than ${int(bt.low_history_rule.n_below)} past lung trials are capped at the prior’s ${num(bt.low_history_rule.prior_quantile * 100, 0)}th-percentile rate (${num(bt.low_history_rule.rate, 3)} pts/mo)`,
+      )
     contains('model', 'off by factor', m, `typically off by a factor of ${num(Math.exp(bt.by_model?.model?.industry_p23?.median_abs_log_error ?? bt.median_abs_log_error_model), 1)}`)
     out.notes.push(`backtest low_history_rule: ${JSON.stringify(bt.low_history_rule)}`)
   }
