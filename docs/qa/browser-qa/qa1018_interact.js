@@ -46,8 +46,10 @@ const wait = (page, fn, arg, timeout = 90000) => page.waitForFunction(fn, { time
     localStorage.clear()
   })
   await page.reload({ waitUntil: 'domcontentloaded' })
-  await wait(page, () => document.querySelectorAll('.tf-stats .stat-value').length >= 4 && document.querySelector('.tf-decomp-total'))
-  const inp = await page.$('.tf-mult input')
+  await wait(page, () => document.querySelector('#tf-step-3 .tf-payer-value') && document.querySelector('.tf-decomp-total'))
+  // One step at a time (tabs): the multiplier is on step 3, Budget at a site.
+  await Q.showStep(page, 3)
+  const inp = await page.$('#tf-step-3 .tf-mult input')
   await inp.click({ clickCount: 3 })
   await inp.type('120')
   await page.evaluate(() => document.activeElement.blur())
@@ -57,7 +59,7 @@ const wait = (page, fn, arg, timeout = 90000) => page.waitForFunction(fn, { time
   await wait(page, () => (document.querySelectorAll('.tf-cmp-site')[1]?.innerText ?? '').includes('Montefiore'))
   await Q.settle(page, 800)
   const scr = await page.evaluate(() => ({
-    per: document.querySelector('.tf-stats .stat-value')?.innerText,
+    per: document.querySelector('#tf-step-3 .tf-payer-value')?.innerText,
     totals: [...document.querySelectorAll('.tf-cmp-total')].map((e) => e.innerText),
     delta: document.querySelector('.tf-decomp-total')?.innerText,
     sites: [...document.querySelectorAll('.tf-cmp-site')].map((e) => e.innerText.replace(/\s+/g, ' ')),

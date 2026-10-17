@@ -60,7 +60,7 @@ function measure(page, sel) {
     await page.close()
   }
   {
-    const page = await open(browser, '#terms-flow/NCT05800015', () => document.querySelectorAll('.tf-stats .stat-value').length >= 4 && document.querySelector('.tf-decomp-total') && document.querySelector('.tf-sheet'))
+    const page = await open(browser, '#terms-flow/NCT05800015', () => document.querySelector('#tf-step-3 .tf-payer-value') && document.querySelector('.tf-decomp-total') && document.querySelector('.tf-sheet'))
     // One step at a time (tabs): choose each step in the step nav before measuring it.
     for (const [step, name] of [
       [2, 'terms-schedule'],

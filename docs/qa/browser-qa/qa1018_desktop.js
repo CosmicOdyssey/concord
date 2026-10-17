@@ -281,7 +281,7 @@ async function waitFor(page, fn, arg, timeout = 60000) {
     const ck = Q.checker('c Protocol to terms', checks)
     log.api.length = 0
     await page.goto(`${BASE}/#terms-flow/NCT05800015`, { waitUntil: 'domcontentloaded' })
-    await waitFor(page, () => document.querySelector('.tf-grid') && document.querySelectorAll('.tf-stats .stat-value').length >= 4 && document.querySelector('.tf-decomp-total') && document.querySelector('.tf-sheet'), null, 90000)
+    await waitFor(page, () => document.querySelector('.tf-grid') && document.querySelector('#tf-step-3 .tf-payer-value') && document.querySelector('.tf-decomp-total') && document.querySelector('.tf-sheet'), null, 90000)
     await Q.settle(page, 800)
     report.steps.c = { hash: await page.evaluate(() => location.hash) }
     await Q.snap(browser, page, '03-terms-top', { fullPage: false })
