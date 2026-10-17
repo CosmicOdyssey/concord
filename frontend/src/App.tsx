@@ -40,7 +40,15 @@ const TABS = [
     // Kept out of the main navigation (mentor feedback: Protocol to terms is the product); reachable at #financial.
     navHidden: true,
   },
-  { id: 'portfolio-command', label: 'Portfolio Command', sub: 'Assumption-based planning', hint: 'Budget-constrained synthetic allocation; no validated recruitment forecast.' },
+  {
+    id: 'portfolio-command',
+    label: 'Portfolio Command',
+    sub: 'Assumption-based planning',
+    hint: 'Budget-constrained synthetic allocation; no validated recruitment forecast.',
+    // Teammate PR #2. Kept out of the main navigation pending review: it reports modeled "months saved", which the
+    // product does not claim (see decisions.md #24 and the app rule). Reachable at #portfolio-command.
+    navHidden: true,
+  },
   { id: 'research', label: 'Research', sub: 'In-sample model outputs', hint: 'The earlier site-clearing views, kept for reference. Not product claims.' },
 ] as const
 type TabId = (typeof TABS)[number]['id']
