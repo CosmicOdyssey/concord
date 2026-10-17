@@ -42,6 +42,7 @@ import {
 } from '../termsFlowApi'
 import { CoverageList, CoverageSplit, NodeDetail, RuleChip, RuleList, ScheduleGrid, VisitTimeline } from './ProtocolTermsSchedule'
 import './protocolTerms.css'
+import TermsSpread from './TermsSpread'
 
 type Async<T> = { status: 'idle' } | { status: 'loading' } | { status: 'error'; error: string } | { status: 'ok'; data: T; pending: boolean }
 type Settled<T> = { key: string; tick: number; data: T } | { key: string; tick: number; error: string }
@@ -614,7 +615,9 @@ export default function ProtocolTermsView() {
             }
             details={cmpData && <CompareDetails c={cmpData} />}
             detailsLabel="Locality factors and every sponsor-paid item, site by site"
-          />
+          >
+            {siteOk && <TermsSpread nct={nct} siteA={siteA} siteB={cmpOk ? siteB : null} overrides={dparams.overrides} standard={dparams.standard} />}
+          </Step>
 
           {/* 5. Term sheet */}
           <Step
