@@ -82,3 +82,10 @@ Judgment calls made without being able to ask. Newest last. Each says what and w
     allocations were re-scored, not re-solved, with site log rates shrunk by b. b = 1 reproduces holdout.json
     exactly. The pre-registered script was not touched; the new script imports its helpers. Findings, README and
     handoff now lead with the calibrated figure (about 1.2x held-out) alongside the uncalibrated 1.7x.
+21. **Overlap: shared sites that can't be counted show nothing, not "sites hidden" or 0** (user: "What's the use of
+    sites hidden matrix if you can't see the sites?", 18 Oct). One helper decides whether a pair's sites are
+    countable (both trials list an identifiable site). Uncountable pairs show only eligibility overlap in the matrix
+    and list, are left out of the site stats ("—" when no pair is countable), and the list drops its Shared sites
+    column when nothing is countable; trial rows say other sponsors' trials at an all-anonymized trial's sites
+    can't be counted. Only 4 of 80 sponsors are affected (AstraZeneca 0% identifiable; Novartis, Avistone,
+    Hummingbird partly). Sponsors with identifiable sites render exactly as before (browser-checked).

@@ -24,6 +24,7 @@ const UB = '†'
 const UB_TEXT = "upper bound: a required biomarker or cohort restriction the synthetic population can't represent"
 const UNREVIEWED = '‡'
 const UNREVIEWED_TEXT = 'criteria of one or both trials come from the rule-based parse (not reviewed)'
+const ANON = 'sites anonymized on CT.gov'
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const STORE_KEY = 'concord.overlap.v2'
 const BINS: [number, string][] = [
@@ -130,6 +131,11 @@ function sitesLabel(n: number): string {
   return `${int(n)} site${n === 1 ? '' : 's'}`
 }
 
+/** Shared sites are countable only if both trials list an identifiable site: anonymized ones never match, so unknown, not 0. */
+function sitesKnown(a: OverlapTrial | undefined, b: OverlapTrial | undefined): boolean {
+  return !!a && !!b && a.n_sites_identified > 0 && b.n_sites_identified > 0
+}
+
 function stripHand(s: string): string {
   return s.replace(/^\[hand-encoded\]\s*/, '')
 }
@@ -196,8 +202,8 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
       .then((s) => {
         setSponsors(s)
         setSnapshot(s.snapshot_date)
-        // Default to the first sponsor whose sites are identifiable: an all-anonymized sponsor (e.g. AstraZeneca)
-        // would show a matrix of hidden site counts.
+        // Default to the first sponsor whose sites are identifiable: for an all-anonymized sponsor (e.g. AstraZeneca)
+        // no shared site can be counted, so the matrix shows eligibility overlap only.
         setForm((f) =>
           f.sponsor || s.sponsors.length === 0
             ? f
@@ -313,13 +319,27 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
 
   const stats = useMemo(() => {
     if (!data) return null
-    const pairs = data.pairs
+    // Site stats cover only pairs whose shared sites can be counted.
+    const pairs = data.pairs.filter((p) => sitesKnown(tIdx.get(p.p), tIdx.get(p.q)))
     const sharing = pairs.filter((p) => p.shared_sites > 0).length
     const top = [...pairs].sort((x, y) => y.shared_sites - x.shared_sites)[0]
     const nested = pairs.filter((p) => p.overlap_informative && p.shared_sites >= 10 && Math.max(p.o_pq, p.o_qp) >= 0.8)
     const closedNow = data.trials.filter((t) => !t.recruiting_at_snapshot)
-    return { sharing, top, nested: nested.length, nestedUb: nested.filter((p) => p.upper_bound).length, closedNow }
-  }, [data])
+    return {
+      known: pairs.length,
+      noneKnown: data.pairs.length > 0 && pairs.length === 0,
+      someUnknown: pairs.length > 0 && pairs.length < data.pairs.length,
+      sharing,
+      top,
+      nested: nested.length,
+      nestedUb: nested.filter((p) => p.upper_bound).length,
+      closedNow,
+    }
+  }, [data, tIdx])
+  // Why no pair has a countable site: the whole sponsor (e.g. AstraZeneca) or one anonymized trial in every pair.
+  const anonNote = trials.every((t) => t.n_sites_identified === 0)
+    ? "This sponsor lists its sites anonymously on ClinicalTrials.gov, so shared sites can't be counted."
+    : "Every pair includes a trial that lists only anonymized sites on ClinicalTrials.gov, so shared sites can't be counted."
 
   const stale = loading && !!data
   const worldwide = !data?.region
@@ -354,7 +374,7 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
                 <option key={s.sponsor} value={s.sponsor}>
                   {s.sponsor}
                   {sponsorsFresh ? ` (${s.trials})` : ''}
-                  {mostlyAnonymized(s) ? ' · sites anonymized on CT.gov' : ''}
+                  {mostlyAnonymized(s) ? ` · ${ANON}` : ''}
                 </option>
               ))}
             </select>
@@ -469,23 +489,42 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
             <Stat
               label="Pairs sharing a site"
               value={
-                <>
-                  {int(stats.sharing)} <span className="unit">of {int(data.pairs.length)} pairs</span>
-                </>
+                stats.noneKnown ? (
+                  '—'
+                ) : (
+                  <>
+                    {int(stats.sharing)} <span className="unit">of {int(stats.known)} pairs</span>
+                  </>
+                )
               }
-              sub={`share at least one identifiable registered site (${worldwide ? 'worldwide' : data.region_label})`}
+              sub={
+                stats.noneKnown
+                  ? ANON
+                  : `share at least one identifiable registered site (${worldwide ? 'worldwide' : data.region_label})` +
+                    (stats.someUnknown ? `; only the ${int(stats.known)} pairs whose sites can be counted` : '')
+              }
             />
             <Stat
               label="Most shared sites"
               value={stats.top ? int(stats.top.shared_sites) : '—'}
               sub={
-                !stats.top ? 'needs two trials' : stats.top.shared_sites > 0 ? `${stats.top.p} × ${stats.top.q}` : 'no pair shares an identifiable site'
+                stats.noneKnown
+                  ? ANON
+                  : !stats.top
+                    ? 'needs two trials'
+                    : stats.top.shared_sites > 0
+                      ? `${stats.top.p} × ${stats.top.q}`
+                      : 'no pair shares an identifiable site'
               }
             />
             <Stat
               label="Nested pairs"
-              value={int(stats.nested)}
-              sub={`≥ 10 shared sites and ≥ 80% eligibility overlap in one direction${stats.nestedUb ? ` (${stats.nestedUb} upper bound ${UB})` : ''}`}
+              value={stats.noneKnown ? '—' : int(stats.nested)}
+              sub={
+                stats.noneKnown
+                  ? ANON
+                  : `≥ 10 shared sites and ≥ 80% eligibility overlap in one direction${stats.nestedUb ? ` (${stats.nestedUb} upper bound ${UB})` : ''}`
+              }
             />
           </div>
 
@@ -502,9 +541,21 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
                   <p className="small muted" style={{ margin: 0 }}>
                     {mode === 'matrix' ? (
                       <>
-                        Each cell: shared registered sites · % of the <strong>row</strong> trial's eligible patients who also
-                        qualify for the <strong>column</strong> trial / the reverse. Diagonal: the trial's registered sites. Click
-                        a cell for the detail.
+                        Each cell: {stats.noneKnown ? '' : 'shared registered sites · '}% of the <strong>row</strong> trial's
+                        eligible patients who also qualify for the <strong>column</strong> trial / the reverse. Diagonal: the
+                        trial's registered sites. Click a cell for the detail.
+                        {stats.noneKnown
+                          ? ` ${anonNote}`
+                          : stats.someUnknown
+                            ? ' Cells without a site count involve a trial whose sites are all anonymized on ClinicalTrials.gov.'
+                            : ''}
+                      </>
+                    ) : stats.noneKnown ? (
+                      <>Every pair, largest eligibility overlap first. {anonNote} Click a row for the detail.</>
+                    ) : stats.someUnknown ? (
+                      <>
+                        Every pair, most shared sites first, then pairs whose shared sites can't be counted (a trial lists only
+                        anonymized sites), by eligibility overlap. Click a row for the detail.
                       </>
                     ) : (
                       <>Every pair, most shared sites first. Click a row for the detail.</>
@@ -523,17 +574,19 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
               {mode === 'matrix' ? (
                 <Matrix trials={trials} orient={orient} selected={selected} onSelect={setSelected} />
               ) : (
-                <PairList data={data} orient={orient} selected={selected} onSelect={setSelected} />
+                <PairList data={data} tIdx={tIdx} hideSites={stats.noneKnown} orient={orient} selected={selected} onSelect={setSelected} />
               )}
               <div className="ov-legend small">
-                <span className="ov-legend-bins">
-                  Shared sites:
-                  {BINS.map(([, label], i) => (
-                    <span key={label} className={`ov-swatch ov-b${i}`}>
-                      {label}
-                    </span>
-                  ))}
-                </span>
+                {!stats.noneKnown && (
+                  <span className="ov-legend-bins">
+                    Shared sites:
+                    {BINS.map(([, label], i) => (
+                      <span key={label} className={`ov-swatch ov-b${i}`}>
+                        {label}
+                      </span>
+                    ))}
+                  </span>
+                )}
                 <span>
                   <span className="ov-ub">{UB}</span> {UB_TEXT}
                 </span>
@@ -642,8 +695,10 @@ function monthsText(p: OverlapPair): string {
   return `${num(p.months_both_recruiting_estimated, 1)} months both recruiting (estimated, through the snapshot at most)`
 }
 
-function cellText(o: Oriented): string {
-  const s = `${o.a} × ${o.b}: ${sitesLabel(o.pair.shared_sites)} shared. `
+function cellText(o: Oriented, known: boolean): string {
+  const s = known
+    ? `${o.a} × ${o.b}: ${sitesLabel(o.pair.shared_sites)} shared. `
+    : `${o.a} × ${o.b}: shared sites can't be counted (${ANON}). `
   const ov = o.pair.overlap_informative
     ? `${pct(o.o_ab)} of ${o.a}'s eligible patients also qualify for ${o.b}; ${pct(o.o_ba)} of ${o.b}'s also qualify for ${o.a}. `
     : 'Overlap not informative (no criteria encoded for one trial). '
@@ -736,23 +791,22 @@ function Matrix({
                 const sel =
                   !!selected &&
                   ((selected[0] === r.nct_id && selected[1] === c.nct_id) || (selected[0] === c.nct_id && selected[1] === r.nct_id))
-                // A trial with no identifiable site (all "Research Site" entries) cannot share one: unknown, not 0.
-                const hidden = r.n_sites_identified === 0 || c.n_sites_identified === 0
-                const label = hidden
-                  ? `${o.a} × ${o.b}: shared sites unknown (one trial lists only anonymized sites). ` +
-                    cellText(o).split('shared. ')[1]
-                  : cellText(o)
+                // Unknown pairs show only the eligibility overlap: no site count to show.
+                const known = sitesKnown(r, c)
+                const label = cellText(o, known)
                 return (
                   <td
                     key={c.nct_id}
                     data-cell={`${r.nct_id}|${c.nct_id}`}
-                    className={`ov-cell ov-b${hidden ? 0 : bin(o.pair.shared_sites)}${sel ? ' ov-sel' : ''}`}
+                    className={`ov-cell ${known ? `ov-b${bin(o.pair.shared_sites)}` : 'ov-b0 ov-nosites'}${sel ? ' ov-sel' : ''}`}
                   >
                     <button className="ov-cellbtn" onClick={() => onSelect([r.nct_id, c.nct_id])} title={label} aria-label={label} aria-pressed={sel}>
-                      <span className="ov-cell-sites">
-                        {hidden ? <span className="muted">sites hidden</span> : sitesLabel(o.pair.shared_sites)}
-                        <span className="ov-sep"> ·</span>
-                      </span>
+                      {known && (
+                        <span className="ov-cell-sites">
+                          {sitesLabel(o.pair.shared_sites)}
+                          <span className="ov-sep"> ·</span>
+                        </span>
+                      )}
                       <span className="ov-cell-pcts">
                         {pctPair(o)}
                         <Marks p={o.pair} />
@@ -771,18 +825,31 @@ function Matrix({
 
 function PairList({
   data,
+  tIdx,
+  hideSites,
   orient,
   selected,
   onSelect,
 }: {
   data: OverlapAudit
+  tIdx: Map<string, OverlapTrial>
+  /** No pair's shared sites can be counted: drop the column rather than fill it with dashes. */
+  hideSites: boolean
   orient: (a: string, b: string) => Oriented | null
   selected: Pair | null
   onSelect: (p: Pair) => void
 }) {
-  const rows = [...data.pairs].sort(
-    (x, y) => y.shared_sites - x.shared_sites || Math.max(y.o_pq, y.o_qp) - Math.max(x.o_pq, x.o_qp),
-  )
+  // Countable pairs first by shared sites, then the rest by eligibility overlap alone. Uninformative overlap
+  // (no criteria encoded: 1.0 from the backend, shown as '—') sorts last among the uncountable pairs.
+  const overlap = (p: OverlapPair, known: boolean) => (known || p.overlap_informative ? Math.max(p.o_pq, p.o_qp) : -1)
+  const rows = data.pairs
+    .map((p) => ({ p, known: sitesKnown(tIdx.get(p.p), tIdx.get(p.q)) }))
+    .sort(
+      (x, y) =>
+        Number(y.known) - Number(x.known) ||
+        (x.known ? y.p.shared_sites - x.p.shared_sites : 0) ||
+        overlap(y.p, y.known) - overlap(x.p, x.known),
+    )
   return (
     <div className="table-scroll">
       <table className="tbl tbl-compact ov-pairs">
@@ -790,7 +857,7 @@ function PairList({
           <tr>
             <th>Trial P</th>
             <th>Trial Q</th>
-            <th className="num">Shared sites</th>
+            {!hideSites && <th className="num">Shared sites</th>}
             <th className="num">P → Q</th>
             <th className="num">Q → P</th>
             <th className="num">Both recruiting (est.)</th>
@@ -798,7 +865,7 @@ function PairList({
           </tr>
         </thead>
         <tbody>
-          {rows.map((p) => {
+          {rows.map(({ p, known }) => {
             const o = orient(p.p, p.q)!
             const sel = !!selected && new Set(selected).has(p.p) && new Set(selected).has(p.q)
             return (
@@ -816,7 +883,13 @@ function PairList({
               >
                 <td className="nowrap">{p.p}</td>
                 <td className="nowrap">{p.q}</td>
-                <td className="num">{int(p.shared_sites)}</td>
+                {hideSites ? null : known ? (
+                  <td className="num">{int(p.shared_sites)}</td>
+                ) : (
+                  <td className="num muted" title={`Shared sites can't be counted (${ANON})`}>
+                    –
+                  </td>
+                )}
                 <td className="num">{p.overlap_informative ? pct(o.o_ab) : '—'}</td>
                 <td className="num">{p.overlap_informative ? pct(o.o_ba) : '—'}</td>
                 <td className="num nowrap">{num(p.months_both_recruiting_estimated, 1)} mo</td>
@@ -1006,6 +1079,8 @@ function PairDetail({
   const snap = data.snapshot_date
   const unrev = [A, B].filter((t) => t.eligibility_source !== 'hand-encoded').map((t) => t.nct_id)
   const sparse = [A, B].filter((t) => t.sparse_criteria)
+  const known = sitesKnown(A, B)
+  const anonOnly = [A, B].filter((t) => t.n_sites_identified === 0).map((t) => t.nct_id)
   return (
     <section className="card ov-detail" aria-label="Pair detail">
       <div className="section-head" style={{ marginBottom: 0 }}>
@@ -1055,11 +1130,11 @@ function PairDetail({
           </p>
         </div>
         <div className="ov-fact">
-          <div className="ov-fact-n">{int(p.shared_sites)}</div>
+          <div className="ov-fact-n">{known ? int(p.shared_sites) : '–'}</div>
           <p>
-            shared registered sites ({worldwide ? 'worldwide' : data.region_label})
+            shared registered sites ({worldwide ? 'worldwide' : data.region_label}){known ? '' : `: can't be counted, ${ANON}`}
             {p.anonymized_same_city > 0 &&
-              ` · plus ${int(p.anonymized_same_city)} ${p.anonymized_same_city === 1 ? 'city' : 'cities'} where both list an anonymized site (facility unknown, not counted)`}
+              ` · ${known ? 'plus ' : ''}${int(p.anonymized_same_city)} ${p.anonymized_same_city === 1 ? 'city' : 'cities'} where both list an anonymized site (facility unknown, not counted)`}
           </p>
         </div>
         <div className="ov-fact">
@@ -1143,14 +1218,24 @@ function PairDetail({
         </div>
       </div>
 
-      <div>
-        <h3>Shared sites ({int(p.shared_sites)})</h3>
-        {p.shared_site_ids.length ? (
-          <SiteTable ids={p.shared_site_ids} sites={sites} dateLabel={data.as_of} worldwide={worldwide} />
-        ) : (
-          <p className="ov-empty">No identifiable registered site in common{worldwide ? '' : ` in ${data.region_label}`}.</p>
-        )}
-      </div>
+      {known ? (
+        <div>
+          <h3>Shared sites ({int(p.shared_sites)})</h3>
+          {p.shared_site_ids.length ? (
+            <SiteTable ids={p.shared_site_ids} sites={sites} dateLabel={data.as_of} worldwide={worldwide} />
+          ) : (
+            <p className="ov-empty">No identifiable registered site in common{worldwide ? '' : ` in ${data.region_label}`}.</p>
+          )}
+        </div>
+      ) : (
+        <div>
+          <h3>Shared sites</h3>
+          <p className="ov-empty">
+            Shared sites can't be counted because {anonOnly.join(' and ')} {anonOnly.length === 1 ? 'lists' : 'list'} only
+            anonymized sites on ClinicalTrials.gov.
+          </p>
+        </div>
+      )}
     </section>
   )
 }
@@ -1236,10 +1321,16 @@ function TrialRow({
         </div>
       </div>
       <div>
-        <div className="ov-count">
-          <strong>{int(t.other_sponsor_trials_at_sites)}</strong> other sponsors' trials recruiting at its sites on this date
-        </div>
-        <div className="small muted">{int(t.other_sponsor_trials_at_sites_industry)} of them industry-sponsored</div>
+        {t.n_sites_identified === 0 ? (
+          <div className="ov-count muted">Other sponsors' trials at its sites can't be counted: its sites are anonymized on CT.gov</div>
+        ) : (
+          <>
+            <div className="ov-count">
+              <strong>{int(t.other_sponsor_trials_at_sites)}</strong> other sponsors' trials recruiting at its sites on this date
+            </div>
+            <div className="small muted">{int(t.other_sponsor_trials_at_sites_industry)} of them industry-sponsored</div>
+          </>
+        )}
         {t.n_sites > 0 && (
           <button className="btn btn-small" style={{ marginTop: '0.35rem' }} onClick={onToggle} aria-expanded={open}>
             {open ? 'Hide sites' : `Per-site counts (${int(t.n_sites)})`}

@@ -132,6 +132,12 @@
 .ov-sep {
   color: var(--muted);
 }
+/* Pair whose shared sites can't be counted (anonymized trial): the one line of percentages, centered. */
+.ov-nosites .ov-cellbtn {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
 .ov-ub {
   font-weight: 700;
   color: var(--warn-ink);
@@ -165,6 +171,11 @@
 .ov-b0 .ov-cell-pcts {
   color: var(--muted);
   font-weight: 500;
+}
+/* Uncountable pair: neutral background, but the percentages are the cell's only content, so not muted. */
+.ov-b0.ov-nosites .ov-cell-pcts {
+  color: var(--text-2);
+  font-weight: inherit;
 }
 .ov-b1 {
   background: color-mix(in srgb, var(--accent) 9%, var(--surface));
