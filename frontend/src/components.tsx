@@ -122,7 +122,7 @@ export function RunLine({
       )}
       <span>{params.as_of ? <>as of <strong>{params.as_of}</strong></> : 'recruiting today'}</span>
       <span className="muted">
-        β {params.beta === null ? 'data estimate' : params.beta} · site rates {params.low_history} · universe{' '}
+        β {params.beta === null ? 'default (full-sample estimate)' : params.beta} · site rates {params.low_history} · universe{' '}
         {params.universe} · activation lag {params.activation_lag} mo
         {params.overlap_scale !== 1 && <> · overlap ×{params.overlap_scale}</>}
         {params.capacity_scale !== 1 && <> · capacity ×{params.capacity_scale}</>}

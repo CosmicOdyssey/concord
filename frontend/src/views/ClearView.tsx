@@ -3,7 +3,17 @@ import { DEFAULT_SCENARIO, scenarioKey, type AllocKey, type LowHistory, type Sce
 import type { ClearState } from '../App'
 import { Badge, ErrorBox, Loading, RunLine } from '../components'
 import { ALLOC_HINT, ALLOC_LABEL, ctgovUrl, int, isNum, num, phaseLabel, signedMonths, tOf } from '../format'
-import { AssumptionsUsed, betaInfo, CalibrationLine, DecompositionTable, HeadlineBlock } from '../summary'
+import {
+  AssumptionsUsed,
+  atLeast,
+  backgroundSlowerMaterial,
+  betaInfo,
+  CalibrationLine,
+  DecompositionTable,
+  HeadlineBlock,
+  isFullSampleBeta,
+  materialMonths,
+} from '../summary'
 
 type SortKey = 'trial' | 'sponsor' | 'target' | 'sites' | AllocKey | 'saved'
 const T_COLS: AllocKey[] = ['actual', 'indep', 'coord', 'coord_free']
@@ -149,7 +159,7 @@ export function AssumptionsForm({
             inputMode="decimal"
             step="0.01"
             min="0"
-            placeholder="data estimate"
+            placeholder="default: full-sample estimate"
             value={betaText}
             onChange={(e) => {
               const v = e.target.value
@@ -158,7 +168,9 @@ export function AssumptionsForm({
               setForm({ ...form, beta: n === null || Number.isNaN(n) ? null : n })
             }}
           />
-          <span className="muted small">{betaHint ?? 'Blank = estimate from the within-site regression.'} The master doc assumed 1.</span>
+          <span className="muted small">
+            {betaHint ?? 'Blank = default β = full-sample estimate from the within-site regression.'} The master doc assumed 1.
+          </span>
         </label>
         <label className="field">
           <span className="field-label">Low-history site rates</span>
@@ -285,8 +297,8 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
   const modified = scenarioKey({ ...form, region: DEFAULT_SCENARIO.region }) !== scenarioKey(DEFAULT_SCENARIO)
   const b = s ? betaInfo(s.assumptions) : null
   const betaHint =
-    b && r?.params.beta === null && isNum(b.ci95[0])
-      ? `Blank = data estimate (${num(b.beta, 3)}, 95% CI ${num(b.ci95[0], 3)} to ${num(b.ci95[1], 3)}).`
+    r?.params.beta === null && isFullSampleBeta(b)
+      ? `Blank = default β = full-sample estimate (${num(b.beta, 3)}, 95% CI ${num(b.ci95[0], 3)} to ${num(b.ci95[1], 3)}).`
       : undefined
   const nBackground = r ? r.trials.filter((t) => !t.movable).length : 0
 
@@ -364,8 +376,9 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
             {s.background_trials > 0 && (
               <p className="muted small">
                 {int(s.background_trials)} background trials are held at their registered sites and excluded from every number.
-                Under the joint optimum with losers allowed, {int(s.background_worse_under_coord_free)} of them would be slower;
-                the headline allocation caps every trial, background included, at its registered time.
+                Under the joint optimum with losers allowed, {int(backgroundSlowerMaterial(r))} of them would be slower by{' '}
+                {atLeast(materialMonths(s.coord_free_vs_actual), true)} ({int(s.background_worse_under_coord_free)} by any
+                amount); the headline allocation caps every trial, background included, at its registered time.
               </p>
             )}
           </div>

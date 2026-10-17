@@ -112,8 +112,13 @@ export interface Comparison {
   dividend_trial_months: number
   ratio: number | null
   median_speedup: number | null
+  /** Any change, including near-ties (|ΔT| > 0). */
   share_faster: number | null
   share_slower: number | null
+  /** Moved by at least material_threshold_months. Missing in robustness grids computed before the field existed. */
+  share_faster_material?: number | null
+  share_slower_material?: number | null
+  material_threshold_months?: number | null
   worst_slowdown_months: number | null
   median_T_base: number | null
   median_T_new: number | null
@@ -140,7 +145,8 @@ export interface SolverStats {
 
 export interface BetaInfo {
   beta: number
-  ci95: [number, number]
+  /** Only for the data estimate; absent for a user setting ("user setting") or the fallback. */
+  ci95?: [number, number]
   p?: number
   source: string
 }
@@ -245,6 +251,10 @@ export interface RegressionResult {
   se?: number
   p: number
   ci95: [number, number]
+  /** Trial-clustered values, kept next to the two-way clustered ones once the backend reports both. */
+  se_trial_only?: number
+  ci95_trial_only?: [number, number]
+  p_trial_only?: number
   pct_per_competitor?: number
   n_rows: number
   clusters?: number
@@ -260,6 +270,46 @@ export interface CongestionTest {
   primary: string
   model_implied_coef_overlap: number
   verdict?: string
+  // Optional fields added by the two-way-clustering / subset / parser-sensitivity revision of the
+  // congestion test. Rendered only when present.
+  /** Method behind the primary se / ci95 / p, e.g. "two-way clustered (trial, site)". */
+  se_method?: string
+  subsets?: Record<string, CongestionSubset>
+  multiple_comparisons?: {
+    method: string
+    k: number
+    alpha: number
+    note: string
+    bonferroni_ci95: Record<string, [number, number]>
+  }
+  parser_sensitivity?: ParserSensitivity[]
+  default_beta?: { value: number; source: string; ci95: [number, number]; note?: string }
+}
+
+export interface SubsetFit {
+  coef: number
+  se?: number
+  ci95: [number, number]
+  p: number
+  clusters?: number
+  n_rows?: number
+}
+
+export interface CongestionSubset {
+  label: string
+  definition: string
+  within?: SubsetFit
+  site_fe?: SubsetFit
+  pooled?: SubsetFit
+  is_default?: boolean
+}
+
+export interface ParserSensitivity {
+  parser_version: string
+  commit: string
+  description: string
+  within_overlap: { coef: number; ci95: [number, number]; p: number; clusters?: number }
+  empty_masks?: number
 }
 
 export interface SponsorCount {

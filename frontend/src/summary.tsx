@@ -2,6 +2,40 @@ import type { Assumptions, BetaInfo, CalibrationCheck, ClearResult, Comparison, 
 import { Badge, Caveat, Stat } from './components'
 import { int, isNum, money, num, pct, times } from './format'
 
+/** Material threshold (months) for "faster/slower": the API reports it per comparison block (1.0). */
+const MATERIAL_MONTHS = 1
+
+export function materialMonths(c?: Comparison | null): number {
+  return isNum(c?.material_threshold_months) ? c.material_threshold_months : MATERIAL_MONTHS
+}
+
+/** "≥ 1 mo" / "≥ 1 month": the label that goes with a material share. */
+export function atLeast(months: number, long = false): string {
+  const n = Number.isInteger(months) ? String(months) : num(months, 1)
+  return long ? `≥ ${n} month${months === 1 ? '' : 's'}` : `≥ ${n} mo`
+}
+
+/** Main number = share that moved by at least the material threshold ("—" when the field is
+ *  missing, never 0); the any-change share, which counts near-ties, is small secondary text. */
+export function ShareCell({ material, any }: { material: number | null | undefined; any: number | null | undefined }) {
+  return (
+    <>
+      {pct(material)}
+      <div className="muted small nowrap">{pct(any)} any change</div>
+    </>
+  )
+}
+
+/** Background trials materially slower under the joint optimum with losers allowed. The API sends
+ *  only the any-change count, so this is counted from the per-trial times in the same response
+ *  (no times = no sites = slower). */
+export function backgroundSlowerMaterial(r: ClearResult): number {
+  const thr = materialMonths(r.summary.coord_free_vs_actual)
+  return r.trials.filter(
+    (t) => !t.movable && isNum(t.T_actual) && (!isNum(t.T_coord_free) || t.T_coord_free >= t.T_actual + thr - 1e-9),
+  ).length
+}
+
 export const COMPARISONS: { key: ComparisonKey; label: string; detail: string; headline?: boolean }[] = [
   {
     key: 'coord_vs_actual',
@@ -32,8 +66,14 @@ export const COMPARISONS: { key: ComparisonKey; label: string; detail: string; h
 ]
 
 export function betaInfo(a: Assumptions): BetaInfo | null {
-  if (typeof a.beta === 'number') return { beta: a.beta, ci95: [NaN, NaN], source: 'scenario value' }
+  if (typeof a.beta === 'number') return { beta: a.beta, source: 'scenario value' }
   return a.beta ?? null
+}
+
+/** The default β is the full-sample within-site estimate; it is the one that carries a CI. A user
+ *  setting ("user setting") and the not-estimated fallback have none. */
+export function isFullSampleBeta(b: BetaInfo | null): b is BetaInfo & { ci95: [number, number] } {
+  return !!b && Array.isArray(b.ci95) && isNum(b.ci95[0]) && isNum(b.ci95[1])
 }
 
 function worst(c: Comparison): string {
@@ -61,11 +101,12 @@ export function HeadlineBlock({ r }: { r: ClearResult }) {
         />
         <Stat label="Median per-trial speedup" value={times(h.median_speedup)} sub="T registered ÷ T coordinated" />
         <Stat
-          label="Trials faster"
-          value={pct(h.share_faster)}
+          label={`Trials faster by ${atLeast(materialMonths(h), true)}`}
+          value={pct(h.share_faster_material)}
           sub={
             <>
-              {pct(h.share_slower)} slower ({worst(h)}) by construction
+              {pct(h.share_faster)} any change · slower by {atLeast(materialMonths(h))}: {pct(h.share_slower_material)} (
+              {pct(h.share_slower)} any change; {worst(h)}) by construction
             </>
           }
         />
@@ -101,6 +142,7 @@ export function HeadlineBlock({ r }: { r: ClearResult }) {
 
 export function DecompositionTable({ r, compact }: { r: ClearResult; compact?: boolean }) {
   const s = r.summary
+  const thr = atLeast(materialMonths(s.coord_vs_actual))
   return (
     <div className="table-scroll">
       <table className={`tbl${compact ? ' tbl-compact' : ''}`}>
@@ -109,8 +151,12 @@ export function DecompositionTable({ r, compact }: { r: ClearResult; compact?: b
             <th>Comparison</th>
             <th className="num">Ratio</th>
             <th className="num">Median speedup</th>
-            <th className="num">Faster</th>
-            <th className="num">Slower</th>
+            <th className="num" title={`Share of trials faster by ${thr}; below it, the share faster by any amount (near-ties included)`}>
+              Faster {thr}
+            </th>
+            <th className="num" title={`Share of trials slower by ${thr}; below it, the share slower by any amount (near-ties included)`}>
+              Slower {thr}
+            </th>
             <th className="num">Worst slowdown</th>
             <th className="num">Trial-months</th>
             <th className="num">Median T (mo)</th>
@@ -128,8 +174,12 @@ export function DecompositionTable({ r, compact }: { r: ClearResult; compact?: b
                 </td>
                 <td className="num strong">{times(c.ratio)}</td>
                 <td className="num">{times(c.median_speedup)}</td>
-                <td className="num">{pct(c.share_faster)}</td>
-                <td className={`num${(c.share_slower ?? 0) > 0 ? ' neg' : ''}`}>{pct(c.share_slower)}</td>
+                <td className="num">
+                  <ShareCell material={c.share_faster_material} any={c.share_faster} />
+                </td>
+                <td className={`num${((isNum(c.share_slower_material) ? c.share_slower_material : c.share_slower) ?? 0) > 0 ? ' neg' : ''}`}>
+                  <ShareCell material={c.share_slower_material} any={c.share_slower} />
+                </td>
                 <td className="num nowrap">{worst(c)}</td>
                 <td className="num">{int(c.dividend_trial_months)}</td>
                 <td className="num nowrap">
@@ -152,13 +202,14 @@ export function AssumptionsUsed({ a }: { a: Assumptions }) {
         <span className="muted">Congestion elasticity β</span>
         <div className="tnum">
           {b ? num(b.beta, 3) : '—'}
-          {b && isNum(b.ci95[0]) && (
+          {isFullSampleBeta(b) && (
             <>
               {' '}
               (95% CI {num(b.ci95[0], 3)} to {num(b.ci95[1], 3)})
             </>
           )}
         </div>
+        {isFullSampleBeta(b) && <div className="strong">default β = full-sample estimate</div>}
         {b && <div className="muted">{b.source}</div>}
       </div>
       <div>
