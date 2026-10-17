@@ -14,6 +14,7 @@ import {
   FALLBACK_TERMS,
   FEATURED,
   OVERLAP_QUERY,
+  TERMS_GLOSS,
   TERMS_NCT,
   TERMS_SITE_A,
   TERMS_SITE_B,
@@ -22,6 +23,7 @@ import {
   type Crop,
   type CropPair,
   type TermsFragment,
+  type TermsSide,
 } from '../landingData'
 import { overlapApi } from '../overlapApi'
 import { skipTo } from '../skip'
@@ -124,9 +126,22 @@ const possessive = (name: string) => (name.endsWith('s') ? `${name}'` : `${name}
 
 const shortName = (sponsor: string) => sponsor.replace(/ (LLC|Inc\.?|Pharmaceuticals)$/, '')
 
-/** "Recruiting on September 1, 2024 (estimated)" or, on the snapshot date, a registry fact. */
-function asOfText(crop: Crop): string {
-  return crop.basis === 'estimated' ? `${calDate(crop.asOf)} (estimated from registered enrollment windows)` : `${calDate(crop.asOf)} (registry status)`
+/** How recruiting on a date before the snapshot is estimated (the Portfolio overlap tab's wording): ClinicalTrials.gov
+ *  registers a start and a primary completion, not when recruiting closed. */
+const WINDOW_ASSUMPTION =
+  "estimated: from each trial's registered start to start + 65% of the time to its registered primary completion, bounded by its status at the snapshot; the 65% is an assumption"
+
+/** "September 1, 2024 (estimated: ... the 65% is an assumption ...)" or, on the snapshot date, a registry fact. Simple
+ *  keeps the assumption label visible and puts the method in a hover card. */
+function AsOf({ crop, detailed }: { crop: Crop; detailed: boolean }) {
+  if (crop.basis !== 'estimated') return <>{calDate(crop.asOf)} (registry status)</>
+  if (detailed) return <>{`${calDate(crop.asOf)} (${WINDOW_ASSUMPTION})`}</>
+  return (
+    <>
+      {calDate(crop.asOf)} (estimated; the recruiting window is an assumption{' '}
+      <InfoTip label="How recruiting on a past date is estimated" content={`Recruiting on ${calDate(crop.asOf)} is ${WINDOW_ASSUMPTION}.`} />)
+    </>
+  )
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -144,6 +159,55 @@ const sourcesCard = (
 
 const insuranceCard =
   'Medicare rates for the routine-care lines, a public benchmark for fair-value reasoning in sponsor-site negotiation. Billed to the participant’s insurer, not part of the sponsor’s total and never subtracted from it.'
+
+const pct0 = (part: number, whole: number) => Math.round((part / whole) * 100)
+const rest = (s: TermsSide) => (s.split ? s.sponsor - s.split.cms : 0)
+
+/** How much of the sponsor total is priced from public CMS fee schedules before anyone negotiates, and how much comes
+ *  from the proposed standard schedule (an assumption). Computed from the comparison's own lines and totals. */
+function PublicShare({ f, detailed }: { f: TermsFragment; detailed: boolean }) {
+  const a = f.a.split!
+  const b = f.b.split
+  const breakdown = (s: TermsSide) =>
+    s.split
+      ? `per-visit research fees ${usd(s.split.fees)}, coordinator time ${usd(s.split.coordinator)} and ${Math.round(f.overheadRate * 100)}% overhead ${usd(s.split.overhead)}`
+      : ''
+  const card = (
+    <span className="lp-src">
+      <span className="hc-title">Priced from public sources, and the rest</span>
+      <span>
+        {usd(a.cms)} at Site A: the research-only procedures with a CPT or lab code, over the fixed schedule ({f.scope.replace(/\.$/, '').toLowerCase()}),
+        priced from the {SRC_PFS}, and the {SRC_CLFS}, at 100% of Medicare.
+      </span>
+      <span>
+        {usd(rest(f.a))}: {breakdown(f.a)}. {SRC_STANDARD}
+      </span>
+    </span>
+  )
+  if (!detailed)
+    return (
+      <p className="lp-terms-note lp-public">
+        <span className="num strong lp-ink">{usd(a.cms)}</span> ({pct0(a.cms, f.a.sponsor)}%) of Site A's {usd(f.a.sponsor)} is priced from public CMS 2026 fee
+        schedules, so both sides can check it; the other <span className="num strong lp-ink">{usd(rest(f.a))}</span> comes from Concord's proposed standard
+        schedule, an assumption left to negotiate. <InfoTip label="What is priced from public sources" content={card} />
+      </p>
+    )
+  return (
+    <p className="lp-terms-note lp-public">
+      Priced from public sources before anyone negotiates: <span className="num strong lp-ink">{usd(a.cms)}</span> of Site A's {usd(f.a.sponsor)} (
+      {pct0(a.cms, f.a.sponsor)}%)
+      {b && (
+        <>
+          {' '}
+          and <span className="num strong lp-ink">{usd(b.cms)}</span> of Site B's {usd(f.b.sponsor)} ({pct0(b.cms, f.b.sponsor)}%)
+        </>
+      )}
+      : the research procedures, at CMS 2026 fee-schedule rates (100% of Medicare; the multiplier is itself a term in Protocol to terms). Left to negotiate:{' '}
+      <span className="num strong lp-ink">{usd(rest(f.a))}</span> at Site A from Concord's proposed standard schedule (assumption): {breakdown(f.a)}
+      {b && <>; at Site B, {breakdown(f.b)}</>}. <InfoTip label="What is priced from public sources" content={card} />
+    </p>
+  )
+}
 
 /** Protocol to terms section: two sites priced, and (Detailed) one term-sheet line with its formula. */
 function TermsWindow({ f }: { f: TermsFragment }) {
@@ -165,8 +229,7 @@ function TermsWindow({ f }: { f: TermsFragment }) {
       </div>
       <div className="lp-win-body">
         <p className="lp-proto">
-          <span className="strong lp-ink">Protocol: {TERMS_NCT}</span> · Fianlimab + cemiplimab + chemotherapy vs placebo + cemiplimab + chemotherapy, first-line advanced
-          NSCLC
+          <span className="strong lp-ink">Protocol: {TERMS_NCT}</span> · {TERMS_GLOSS}
         </p>
         <div className={detailed ? 'lp-terms' : 'lp-terms lp-terms-simple'}>
           <div className="lp-terms-main">
@@ -215,6 +278,7 @@ function TermsWindow({ f }: { f: TermsFragment }) {
                 </tbody>
               </table>
             </div>
+            {f.a.split && <PublicShare f={f} detailed={detailed} />}
             {lower &&
               (detailed ? (
                 <p className="lp-terms-note">
@@ -266,7 +330,10 @@ function TermsWindow({ f }: { f: TermsFragment }) {
                 </div>
                 <div>
                   <dt>Why</dt>
-                  <dd>The protocol scans every 6 weeks where standard care scans about every 9, so one scan in three is extra.</dd>
+                  <dd>
+                    The protocol scans every 6 weeks where Concord's authored standard-care reference (an assumption, not a coverage determination) scans about
+                    every 9, so one scan in three is extra.
+                  </dd>
                 </div>
                 <div>
                   <dt>Price</dt>
@@ -363,7 +430,7 @@ function PairCard({ crop, sel }: { crop: Crop; sel: Oriented }) {
               {p.from ? (
                 <>
                   since {calDate(p.from)} · <span className="num strong">{p.months.toFixed(1)}</span> months through {calDate(p.to ?? crop.snapshot)}{' '}
-                  (estimated)
+                  (estimated with the 65% recruiting-window assumption)
                 </>
               ) : (
                 'not at the same time'
@@ -523,7 +590,7 @@ function PairCriteria({ crop }: { crop: Crop }) {
 function Contrasts({ crop }: { crop: Crop }) {
   const region = regionWord(crop)
   const sitesNoPatients = crop.pairs
-    .filter((p) => (p.shared ?? 0) > 0 && pctInt(Math.max(p.o_pq, p.o_qp)) === 0)
+    .filter((p) => (p.shared ?? 0) > 0 && p.o_pq === 0 && p.o_qp === 0)
     .sort((x, y) => (y.shared ?? 0) - (x.shared ?? 0))[0]
   const patientsNoSites = crop.pairs.filter((p) => p.shared === 0 && pctInt(Math.max(p.o_pq, p.o_qp)) >= 80).sort((x, y) => Math.max(y.o_pq, y.o_qp) - Math.max(x.o_pq, x.o_qp))[0]
   if (!sitesNoPatients && !patientsNoSites) return null
@@ -678,7 +745,7 @@ export default function LandingView({ focus }: { focus: { id: string | null; n: 
               <h2 id="lp-h-overlap">A sponsor's trials, checked against each other</h2>
               {detailed ? (
                 <p className="lp-body">
-                  Pick a sponsor and a date. Concord lists that sponsor's non-small-cell lung cancer (NSCLC) trials recruiting that day (estimated for past dates) and
+                  Pick a sponsor and a date. Concord lists that sponsor's non-small-cell lung cancer (NSCLC) trials recruiting that day (estimated for past dates, with an assumed recruiting window) and
                   counts the registered sites each pair shares. On a synthetic patient population, it estimates what share of one trial's eligible patients also qualify
                   for the other, and lists the criteria that separate the two. Counts and shares only: no forecasts.
                 </p>
@@ -707,7 +774,7 @@ export default function LandingView({ focus }: { focus: { id: string | null; n: 
                 {detailed && <PairCriteria crop={crop} />}
               </div>
               <figcaption className="lp-figcap">
-                {possessive(crop.sponsor)} <span className="num">{crop.trials.length}</span> NSCLC trials recruiting on {asOfText(crop)}, from public ClinicalTrials.gov records
+                {possessive(crop.sponsor)} <span className="num">{crop.trials.length}</span> NSCLC trials recruiting on <AsOf crop={crop} detailed={detailed} />, from public ClinicalTrials.gov records
                 (snapshot {calDate(crop.snapshot)}). Number: registered {region}sites both trials list, not sites confirmed enrolling. Shade: the larger share of one
                 trial's eligible patients who also qualify for the other, on a synthetic population of {crop.population.toLocaleString('en-US')} simulated patients.
                 {detailed && " † marks an upper bound: a trial has a restriction the synthetic population can't represent, so the share is a ceiling."}

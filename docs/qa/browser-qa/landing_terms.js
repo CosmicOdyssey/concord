@@ -80,6 +80,9 @@ async function settle(page) {
               sections,
               nav: [...document.querySelectorAll('.lp-nav a')].map((a) => `${a.innerText.trim()}|${a.getAttribute('href')}`),
               headCta: [q('.lp-head .lp-demo')?.innerText.trim(), q('.lp-head .lp-demo')?.getAttribute('href')],
+              headCtaShown: !!q('.lp-head .lp-demo') && getComputedStyle(q('.lp-head .lp-demo')).display !== 'none',
+              publicLine: q('#landing-terms .lp-public')?.innerText.replace(/\s+/g, ' ') ?? '',
+              proto: q('#landing-terms .lp-proto')?.innerText.replace(/\s+/g, ' ') ?? '',
               heroCta: [...document.querySelectorAll('.lp-hero .lp-actions a')].map((a) => `${a.innerText.trim()}|${a.getAttribute('href')}`),
               money: [...document.querySelectorAll('.lp-money')].map((x) => x.innerText),
               illustrative: q('#landing-terms .lp-caution')?.innerText,
@@ -104,14 +107,36 @@ async function settle(page) {
           check(`${tag}: empty hash shows the landing`, r.hash === '' && !!r.h1)
           check(`${tag}: hero headline and subhead verbatim`, r.h1 === H1 && r.sub === SUB, { h1: r.h1, sub: r.sub })
           check(`${tag}: sections: hero, Protocol to terms, Portfolio overlap, What we tested`, r.sections.slice(0, 4).join(',') === 'lp-hero,landing-terms,landing-overlap,landing-tested', r.sections)
+          // Phones (640 px or less) hide the header's copy of the primary action: the hero's identical button is the first
+          // thing on the page. Wider screens show it in the sticky header.
           check(
-            `${tag}: header nav order and primary action`,
-            r.nav.join(',') === 'Protocol to terms|#home/terms,Portfolio overlap|#home/overlap,What we tested|#home/tested' && r.headCta[1] === '#terms-flow',
-            { nav: r.nav, cta: r.headCta },
+            `${tag}: header nav order and primary action (${width > 640 ? 'shown in the header' : 'hidden in the header; the hero button carries it'})`,
+            r.nav.join(',') === 'Protocol to terms|#home/terms,Portfolio overlap|#home/overlap,What we tested|#home/tested' &&
+              r.headCta[1] === '#terms-flow' &&
+              r.headCtaShown === width > 640,
+            { nav: r.nav, cta: r.headCta, shown: r.headCtaShown },
           )
           check(`${tag}: hero primary goes to #terms-flow, one quiet secondary`, r.heroCta.length === 2 && r.heroCta[0].endsWith('|#terms-flow') && /Protocol to terms/.test(r.heroCta[0]), r.heroCta)
           check(`${tag}: terms fragment (live) and its marks`, r.money.length === 4 && r.illustrative === 'Illustrative, authored from public trial information' && r.fmv, { money: r.money, ill: r.illustrative })
           check(`${tag}: term-sheet line only in Detailed`, r.sheet === (density === 'detailed'))
+          // How much of the sponsor total is priced from public CMS fee schedules: recomputed here from the comparison API.
+          {
+            const want = await page.evaluate(async () => {
+              const c = await (await fetch('/api/terms-flow/NCT05800015/compare?site_a=334d690736c4&site_b=0bf11037dddd&multiplier=1')).json()
+              const usd = (x) => x.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+              const side = (k) => {
+                const t = c[k].totals
+                const cms = Math.round(c.rows.filter((x) => x.schedule === 'PFS' || x.schedule === 'CLFS').reduce((s, x) => s + x[k === 'a' ? 'unit_a' : 'unit_b'] * x.n_fixed, 0) * 100) / 100
+                return { cms: usd(cms), rest: usd(t.per_participant - cms), total: usd(t.per_participant), pct: `${Math.round((cms / t.per_participant) * 100)}%` }
+              }
+              return { a: side('a'), b: side('b') }
+            })
+            const L = r.publicLine
+            const okA = L.includes(want.a.cms) && L.includes(want.a.total) && L.includes(want.a.pct) && L.includes(want.a.rest)
+            const okB = density === 'simple' || (L.includes(want.b.cms) && L.includes(want.b.total) && L.includes(want.b.pct))
+            check(`${tag}: public-source share of the sponsor total (from the API) with the assumption label`, okA && okB && /CMS 2026 fee/.test(L) && /assumption/.test(L), { line: L, want })
+          }
+          check(`${tag}: Terms window names the protocol by its official-title paraphrase`, /vs cemiplimab \+ chemotherapy/.test(r.proto) && !/placebo/.test(r.proto), r.proto)
           check(`${tag}: overlap preview is the Regeneron preset with the fianlimab pair`, r.cardTitle === 'NCT05785767 × NCT05800015' && r.cells === 10 && /Regeneron Pharmaceuticals · Sep 1, 2024/.test(r.strip), {
             title: r.cardTitle,
             figs: r.cardFigs,
@@ -121,14 +146,22 @@ async function settle(page) {
           check(`${tag}: fianlimab pair numbers`, r.cardFigs.join(',') === '16,100%,26%', r.cardFigs)
           check(
             `${tag}: overlap honesty marks visible`,
-            /synthetic population/.test(r.cardFoot) && /Registered sites, not confirmed enrolling/.test(r.cardFoot) && /Upper bound/.test(r.legend) && /estimated/.test(r.figcap) && /not sites confirmed enrolling/.test(r.figcap),
-            { foot: r.cardFoot, legend: r.legend },
+            /synthetic population/.test(r.cardFoot) &&
+              /Registered sites, not confirmed enrolling/.test(r.cardFoot) &&
+              /Upper bound/.test(r.legend) &&
+              /estimated/.test(r.figcap) &&
+              /assumption/.test(r.figcap) &&
+              (density === 'simple' || /65%/.test(r.figcap)) &&
+              /not sites confirmed enrolling/.test(r.figcap),
+            { foot: r.cardFoot, legend: r.legend, figcap: r.figcap },
           )
           check(`${tag}: criteria only in Detailed`, r.crit === (density === 'detailed'))
           check(`${tag}: What we tested and the credit line stay`, r.tested && r.credit)
           check(`${tag}: no horizontal page scroll`, !r.hscroll, [r.scrollWidth, r.clientWidth])
           await page.screenshot({ path: path.join(OUT, `landing-${tag}.png`), fullPage: true })
           await page.screenshot({ path: path.join(OUT, `landing-${tag}-top.png`), fullPage: false })
+          // Element shots: unstick the header first so it is not painted over the section.
+          await page.addStyleTag({ content: '.lp-head{position:static!important}' })
           for (const s of ['terms', 'overlap']) await (await page.$(`#landing-${s}`)).screenshot({ path: path.join(OUT, `landing-${tag}-${s}.png`) })
           check(`${tag}: no page or console errors`, page.__errors.length === 0, page.__errors.slice(0, 3))
           await ctx.close()

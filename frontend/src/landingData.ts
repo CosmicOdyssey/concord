@@ -18,6 +18,8 @@ export const TRIAL_GLOSS: Record<string, string> = {
   NCT05785767: 'Fianlimab + cemiplimab vs cemiplimab, first-line advanced NSCLC, PD-L1 ≥50%',
   NCT05800015: 'Fianlimab + cemiplimab + chemotherapy vs cemiplimab + chemotherapy, first-line advanced NSCLC, any PD-L1',
 }
+/** The Terms window's one-line description of the demo protocol: the same paraphrase of its official title. */
+export const TERMS_GLOSS = 'Fianlimab + cemiplimab + chemotherapy vs cemiplimab + chemotherapy, first-line advanced NSCLC'
 
 export interface CropTrial {
   nct: string
@@ -181,6 +183,17 @@ export const TERMS_SITE_A = '334d690736c4'
 export const TERMS_SITE_B = '0bf11037dddd'
 const CT_CHEST = 'ct_chest'
 
+/** How a site's per-participant sponsor total splits: research procedures priced from the CMS 2026 fee schedules
+ *  (PFS at the site's locality, CLFS national) versus Concord's proposed standard schedule (an assumption). */
+export interface SponsorSplit {
+  /** Research procedures priced from CMS fee schedules (sum of unit price x fixed-schedule visits). */
+  cms: number
+  /** Per-visit research fees from the proposed standard schedule. */
+  fees: number
+  coordinator: number
+  overhead: number
+}
+
 export interface TermsSide {
   site: string
   localityCode: string
@@ -189,6 +202,8 @@ export interface TermsSide {
   sponsor: number
   /** Billable to insurance, per participant (Medicare rates). */
   insurance: number
+  /** null when the split can't be shown honestly (placeholder prices, or the parts don't add up to the total). */
+  split: SponsorSplit | null
 }
 
 export interface TermsFragment {
@@ -211,8 +226,22 @@ export interface TermsFragment {
 
 /** GET /api/terms-flow/NCT05800015/compare?site_a=334d690736c4&site_b=0bf11037dddd&multiplier=1. */
 export const FALLBACK_TERMS: TermsFragment = {
-  a: { site: 'NYU Langone Health Perlmutter Cancer Center, New York, NY', localityCode: '01', localityName: 'Manhattan', sponsor: 6568.67, insurance: 6820.11 },
-  b: { site: 'Hattiesburg Clinic, Hattiesburg, MS', localityCode: '00', localityName: 'Mississippi', sponsor: 6193.66, insurance: 5500.88 },
+  a: {
+    site: 'NYU Langone Health Perlmutter Cancer Center, New York, NY',
+    localityCode: '01',
+    localityName: 'Manhattan',
+    sponsor: 6568.67,
+    insurance: 6820.11,
+    split: { cms: 1339.95, fees: 1990.0, coordinator: 1925.0, overhead: 1313.72 },
+  },
+  b: {
+    site: 'Hattiesburg Clinic, Hattiesburg, MS',
+    localityCode: '00',
+    localityName: 'Mississippi',
+    sponsor: 6193.66,
+    insurance: 5500.88,
+    split: { cms: 1039.93, fees: 1990.0, coordinator: 1925.0, overhead: 1238.73 },
+  },
   delta: -375.01,
   deltaItems: -300.02,
   fromPe: -270.04,
@@ -233,6 +262,23 @@ const sentence = (s: string) => {
   return t ? `${t[0].toUpperCase()}${t.slice(1)}.` : ''
 }
 
+const cents = (x: number) => Math.round(x * 100) / 100
+
+/** A side's split from the comparison rows (every sponsor line with a price, grouped by procedure, with the number of
+ *  fixed-schedule visits it falls on) and that side's totals. null when any sponsor line is a placeholder price or the
+ *  parts don't add up to the API's totals to the cent. */
+function splitFrom(c: Compare, side: 'a' | 'b'): SponsorSplit | null {
+  const t = c[side].totals
+  if (t.per_participant_placeholder > 0 || c.rows.some((r) => r.placeholder)) return null
+  const unit = (r: Compare['rows'][number]) => (side === 'a' ? r.unit_a : r.unit_b) * r.n_fixed
+  const cms = cents(c.rows.filter((r) => r.schedule === 'PFS' || r.schedule === 'CLFS').reduce((s, r) => s + unit(r), 0))
+  const fees = cents(c.rows.filter((r) => r.schedule === 'Standard').reduce((s, r) => s + unit(r), 0))
+  const ok =
+    Math.abs(cms + fees - t.per_participant_research_items) < 0.015 &&
+    Math.abs(t.per_participant_research_items + t.per_participant_coordinator + t.per_participant_overhead - t.per_participant) < 0.015
+  return ok ? { cms, fees, coordinator: t.per_participant_coordinator, overhead: t.per_participant_overhead } : null
+}
+
 /** The fragment from a live comparison, or null when the response does not have the expected shape (Site B lower,
  *  the CT line present), in which case the fallback, which the copy describes, stays. */
 export function termsFromCompare(c: Compare): TermsFragment | null {
@@ -246,6 +292,7 @@ export function termsFromCompare(c: Compare): TermsFragment | null {
       localityName: titleCase(c.a.locality.name),
       sponsor: c.a.totals.per_participant,
       insurance: c.a.totals.per_participant_insurance_medicare,
+      split: splitFrom(c, 'a'),
     },
     b: {
       site: c.b.site.label,
@@ -253,6 +300,7 @@ export function termsFromCompare(c: Compare): TermsFragment | null {
       localityName: titleCase(c.b.locality.name),
       sponsor: c.b.totals.per_participant,
       insurance: c.b.totals.per_participant_insurance_medicare,
+      split: splitFrom(c, 'b'),
     },
     delta: s.delta_per_participant,
     deltaItems: s.delta_research_items,
