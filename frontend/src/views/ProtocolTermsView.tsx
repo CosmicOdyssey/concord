@@ -124,8 +124,11 @@ function locName(l: Locality | null): string {
 export default function ProtocolTermsView() {
   const [nct, setNct] = useState<string>(() => nctFromHash() ?? DEFAULT_NCT)
   const [overrides, setOverrides] = useState<Overrides>(() => readStore(`tf:overrides:${nctFromHash() ?? DEFAULT_NCT}`, {}))
-  const [standard, setStandard] = useState<StandardEdits>(() => readStore('tf:standard', {}))
-  const [multPct, setMultPct] = useState<number>(() => readStore('tf:multiplier', 100))
+  const [standard, setStandard] = useState<StandardEdits>(() => readStore('tf:standard:v1', {}))
+  const [multPct, setMultPct] = useState<number>(() => {
+    const v = readStore<unknown>('tf:multiplier', 100)
+    return typeof v === 'number' && v >= 10 && v <= 500 ? v : 100
+  })
   const [siteA, setSiteA] = useState('')
   const [siteB, setSiteB] = useState('')
   const [selected, setSelected] = useState<string | null>(null)
@@ -155,7 +158,7 @@ export default function ProtocolTermsView() {
   }, [nct, selectTrial])
 
   useEffect(() => writeStore(`tf:overrides:${nct}`, overrides), [nct, overrides])
-  useEffect(() => writeStore('tf:standard', standard), [standard])
+  useEffect(() => writeStore('tf:standard:v1', standard), [standard])
   useEffect(() => writeStore('tf:multiplier', multPct), [multPct])
 
   const [trials, retryTrials] = useFetch<TrialCard[]>('trials', (s) => termsApi.trials(s))
@@ -171,11 +174,18 @@ export default function ProtocolTermsView() {
     if (!siteB || !ids.has(siteB)) setSiteB(b ?? sitesData.sites[1]?.site_id ?? '')
   }, [sitesData, siteA, siteB])
 
+  const proto = protocol.status === 'ok' && protocol.data.nct_id === nct ? protocol.data : null
+  // Stored overrides may name nodes of an older protocol file: send only the ones that exist.
+  const validOverrides = useMemo(() => {
+    if (!proto) return {}
+    const ids = new Set(proto.nodes.map((n) => n.id))
+    return Object.fromEntries(Object.entries(overrides).filter(([k, v]) => ids.has(k) && (v === 'routine' || v === 'research'))) as Overrides
+  }, [proto, overrides])
   const multiplier = Math.min(500, Math.max(10, Number.isFinite(multPct) ? multPct : 100)) / 100
-  const params: PriceParams = useMemo(() => ({ multiplier, overrides, standard }), [multiplier, overrides, standard])
+  const params: PriceParams = useMemo(() => ({ multiplier, overrides: validOverrides, standard }), [multiplier, validOverrides, standard])
   const dparams = useDebounced(params, 250)
   const pkey = JSON.stringify(dparams)
-  const siteOk = !!sitesData && sitesData.sites.some((s) => s.site_id === siteA)
+  const siteOk = !!proto && !!sitesData && sitesData.sites.some((s) => s.site_id === siteA)
   const [budget, retryBudget] = useFetch<Budget>(siteOk ? `b:${nct}:${siteA}:${pkey}` : null, (s) =>
     termsApi.budget(nct, siteA, dparams, s),
   )
@@ -184,7 +194,6 @@ export default function ProtocolTermsView() {
     termsApi.compare(nct, siteA, siteB, dparams, s),
   )
 
-  const proto = protocol.status === 'ok' && protocol.data.nct_id === nct ? protocol.data : null
   const states = useMemo(() => (proto ? nodeStates(proto, overrides) : new Map<string, NodeState>()), [proto, overrides])
   const bud = budget.status === 'ok' && budget.data.nct_id === nct ? budget.data : null
   const lineById = useMemo(() => new Map(bud?.visits.flatMap((v) => v.lines.map((l) => [l.node_id, l] as const)) ?? []), [bud])
@@ -379,14 +388,13 @@ export default function ProtocolTermsView() {
                 <label className="field tf-mult">
                   <span className="field-label">% of Medicare</span>
                   <span className="tf-mult-input">
-                    <input
-                      type="number"
+                    <NumField
+                      value={multPct}
                       min={10}
                       max={500}
                       step={5}
-                      value={multPct}
-                      onChange={(e) => setMultPct(e.target.value === '' ? 100 : Number(e.target.value))}
-                      aria-label="Percent of Medicare applied to coded items"
+                      onCommit={(v) => setMultPct(v ?? 100)}
+                      label="Percent of Medicare applied to coded items"
                     />
                     <span>%</span>
                   </span>
@@ -755,6 +763,47 @@ function Provenance({ l, mult }: { l: Line; mult: number }) {
   return <span className="muted">{l.note ?? 'no site charge'}</span>
 }
 
+/** Number input that keeps what the user is typing (including an empty box) and commits only valid
+ * values; an empty box commits null (back to the default) when it loses focus. */
+function NumField({
+  value,
+  min,
+  max,
+  step,
+  label,
+  onCommit,
+}: {
+  value: number | null
+  min: number
+  max?: number
+  step: number
+  label: string
+  onCommit: (v: number | null) => void
+}) {
+  const [draft, setDraft] = useState<string | null>(null)
+  const shown = draft ?? (value === null ? '' : String(value))
+  return (
+    <input
+      type="number"
+      min={min}
+      max={max}
+      step={step}
+      value={shown}
+      aria-label={label}
+      onChange={(e) => {
+        const s = e.target.value
+        setDraft(s)
+        const n = Number(s)
+        if (s !== '' && Number.isFinite(n) && n >= min && (max === undefined || n <= max)) onCommit(n)
+      }}
+      onBlur={() => {
+        if (draft === '') onCommit(null)
+        setDraft(null)
+      }}
+    />
+  )
+}
+
 function StandardEditor({
   items,
   screenFail,
@@ -801,19 +850,13 @@ function StandardEditor({
                     ) : (
                       <span className="tf-num-input">
                         {!isRate && <span>$</span>}
-                        <input
-                          type="number"
+                        <NumField
+                          value={val === null ? null : isRate ? Math.round(val * 1000) / 10 : val}
                           min={0}
                           max={isRate ? 100 : undefined}
                           step={isRate ? 1 : 5}
-                          value={val === null ? '' : isRate ? Math.round(val * 1000) / 10 : val}
-                          aria-label={`${it.label} amount`}
-                          onChange={(e) => {
-                            if (e.target.value === '') return set(it.id, null, it.default)
-                            const raw = Number(e.target.value)
-                            if (!Number.isFinite(raw) || raw < 0) return
-                            set(it.id, isRate ? Math.min(raw, 100) / 100 : raw, it.default)
-                          }}
+                          label={`${it.label} amount`}
+                          onCommit={(raw) => set(it.id, raw === null ? null : isRate ? raw / 100 : raw, it.default)}
                         />
                         {isRate && <span>%</span>}
                       </span>
