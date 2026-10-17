@@ -332,7 +332,7 @@ function DevBanner({ v }: { v: Validation | null }) {
   const hi = Math.max(...facs)
   const signal = !!ind && ind.ci95[0] > 0
   return (
-    <Banner title="In development.">
+    <Banner title="Historical evidence, not a forecast.">
       Scores come from public registry history.
       {facs.length > 0 ? (
         <>
