@@ -24,3 +24,6 @@ Thumbs.db
 data/ratecard.json
 # Per-agent data copies for parallel analyses
 data/work/
+
+# Agent worktrees
+.claude/
