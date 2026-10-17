@@ -144,7 +144,11 @@ sponsor's trials held fixed. Eligibility is hand-encoded (`compiler/overrides.py
 - **Self-competition.** The two fianlimab Phase 2/3 trials (NCT05785767, NCT05800015) shared 16
   registered U.S. sites, and every patient eligible for the first was eligible for the second
   (overlap 1.0).
-- **No-loser clearing:** 1.27x (median 1.26x); all 5 trials faster.
+- **No-loser clearing:** 1.27x (median 1.26x); all 5 trials faster. Across the elasticity range it
+  is 1.24-2.08x. It is highest at beta = 0, because with any congestion, moves onto Regeneron's sites
+  slightly slow other sponsors' trials there, and the no-loser cap protects those trials too. Rows
+  that allow any idle U.S. site (`universe=history`, 3.6x) lean on noisy site rates and are not the
+  claim. Grid: `data/robustness/US_Regeneron_2024-09-01.json`.
 - **Pure coordination:** about 1.00x, consistent with section 1.
 
 ### 5. Term sheets
