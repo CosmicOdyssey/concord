@@ -82,6 +82,17 @@ export interface LineDetailScope {
   mult?: { pct: number; set: (pct: number) => void }
   /** The budget's overhead control (a fraction; null resets to the proposed default). */
   overhead?: { value: number; def: number; set: (v: number | null) => void }
+  /** The schedule version (an added trial's import.updated): part of every request, so a new schedule never reuses a
+   *  cached answer for the old one. */
+  ver?: string
+  /** The node ids of the protocol on screen: a breakdown asks only for these (a line of an older schedule, still on
+   *  screen while the new budget loads, is "no line selected", not a request that would 404). */
+  nodeIds?: ReadonlySet<string>
+}
+
+/** Whether `nodeId` is a line of the schedule the scope prices (always, when the scope does not list its nodes). */
+export function scopeHasNode(s: LineDetailScope, nodeId: string): boolean {
+  return !s.nodeIds || s.nodeIds.has(nodeId)
 }
 
 export const LineDetailContext = createContext<LineDetailScope | null>(null)
@@ -95,11 +106,22 @@ export function lineDetailUrl(s: LineDetailScope, nodeId: string): string {
   if (s.siteB && s.siteB !== s.siteA) q.set('site_b', s.siteB)
   if (Object.keys(s.params.overrides).length) q.set('overrides', JSON.stringify(s.params.overrides))
   if (Object.keys(s.params.standard).length) q.set('standard', JSON.stringify(s.params.standard))
+  // ignored by the API; keys the request (and the cache below) on the schedule version
+  if (s.ver) q.set('ver', s.ver)
   return `/api/terms-flow/${encodeURIComponent(s.nct)}/line-detail?${q.toString()}`
 }
 
 // Responses by URL, so a hover card and the term-sheet table showing the same line share one request.
 const cache = new Map<string, Promise<LineDetail>>()
+
+/** A failed request, with its HTTP status (404: the node is not a line of the schedule the API now has). */
+class DetailError extends Error {
+  readonly status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.status = status
+  }
+}
 
 function fetchDetail(url: string): Promise<LineDetail> {
   const hit = cache.get(url)
@@ -113,7 +135,7 @@ function fetchDetail(url: string): Promise<LineDetail> {
       } catch {
         /* non-JSON error body */
       }
-      throw new Error(`${res.status} ${detail}`)
+      throw new DetailError(`${res.status} ${detail}`, res.status)
     }
     return (await res.json()) as LineDetail
   })
@@ -123,21 +145,30 @@ function fetchDetail(url: string): Promise<LineDetail> {
   return p
 }
 
-export type DetailState = { data: LineDetail | null; error: string | null; pending: boolean }
+/** `missing`: the API answered 404, the node is not a line of the current schedule (shown as no line selected). */
+export type DetailState = { data: LineDetail | null; error: string | null; missing: boolean; pending: boolean }
 
 /** The line's breakdown; the last response stays on screen (marked pending) while a new one loads. */
 export function useLineDetail(url: string | null, retry = 0): DetailState {
-  const [st, setSt] = useState<{ url: string | null; data: LineDetail | null; error: string | null }>({ url: null, data: null, error: null })
+  const [st, setSt] = useState<{ url: string | null; data: LineDetail | null; error: string | null; missing: boolean }>({
+    url: null,
+    data: null,
+    error: null,
+    missing: false,
+  })
   useEffect(() => {
     if (!url) return
     let live = true
     fetchDetail(url).then(
-      (data) => live && setSt({ url, data, error: null }),
-      (e: unknown) => live && setSt((s) => ({ url, data: s.data, error: e instanceof Error ? e.message : String(e) })),
+      (data) => live && setSt({ url, data, error: null, missing: false }),
+      (e: unknown) =>
+        live &&
+        setSt((s) => ({ url, data: s.data, error: e instanceof Error ? e.message : String(e), missing: e instanceof DetailError && e.status === 404 })),
     )
     return () => {
       live = false
     }
   }, [url, retry])
-  return { data: st.data, error: st.url === url ? st.error : null, pending: !!url && st.url !== url }
+  const here = st.url === url
+  return { data: st.data, error: here ? st.error : null, missing: here && st.missing, pending: !!url && !here }
 }
