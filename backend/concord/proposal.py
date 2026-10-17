@@ -34,6 +34,7 @@ SAMPLE_DIR = terms.PROTOCOL_DIR / "samples"
 SAMPLE_SUFFIX = "_SYNTHETIC_site-proposal.csv"
 SAMPLE_LABEL = ("SYNTHETIC sample: an invented site proposal to demonstrate the check. Not a real site's prices "
                 "and not market data.")
+_SYNTHETIC_MARK = re.compile(r"^[ \t﻿]*#.*\bSYNTHETIC\b", re.M)
 
 BAND_DEFAULT = (1.0, 1.5)
 BAND_MIN, BAND_MAX = 0.1, 5.0
@@ -83,18 +84,37 @@ class ProposalError(terms.TermsError):
 
 # ---------------------------------------------------------------- parsing
 
-_AMOUNT = re.compile(r"^(?:usd)?\s*\$?\s*(?P<num>\d[\d,]*(?:\.\d*)?|\.\d+)\s*(?P<pct>%)?\s*(?:usd)?$", re.I)
+# A comma in an amount only groups thousands ('1,250.00'); '6,50' or '1,2345' is not a number here. In a
+# semicolon-separated file a decimal comma ('6,50', '1.234,50') is read instead (see parse_amount).
+_AMOUNT = re.compile(r"^(?:usd)?\s*\$?\s*(?P<num>\d{1,3}(?:,\d{3})+(?:\.\d*)?|\d+(?:\.\d*)?|\.\d+)\s*(?P<pct>%)?\s*(?:usd)?$",
+                     re.I)
+_AMOUNT_DECIMAL_COMMA = re.compile(r"^(?:usd)?\s*\$?\s*(?P<num>\d{1,3}(?:\.\d{3})+,\d{1,2}|\d+,\d{1,2})\s*(?P<pct>%)?\s*"
+                                   r"(?:usd)?$", re.I)
+# A header row: its amount cell names a column ('amount', 'Proposed price', 'USD') or its item cell does
+# ('item_or_code', 'Code', 'Description'). Any other unreadable first row is listed as an error, never dropped.
+_HDR_WORD = (r"(?:amounts?|prices?|costs?|fees?|asks?|proposed|proposal|usd|total|rate|value|charge|site|s|per|each|"
+             r"unit|occurrence|visit|in|dollars)")
+_HEADER_AMT = re.compile(rf"{_HDR_WORD}(?: {_HDR_WORD})*")  # fullmatch on _norm() text: words split by one space
+_HEADER_ITEM = re.compile(r"^(?:items?|codes?|item or code|code or item|item code|code item|description|service|"
+                          r"procedure|line item|name|cpt|hcpcs|cpt code|cpt hcpcs|cpt hcpcs code|budget item)$")
 _GROUPED = re.compile(r"^\$?\s*\d{1,3}(?:,\d{3})+(?:\.\d+)?\s*%?$")
 _CODE_ONLY = re.compile(r"^(?:\d{5}|[A-Z]\d{4}|\d{4}[A-Z])$")
 _CODE_TOKEN = re.compile(r"(?<![A-Z0-9])(\d{5}|[A-Z]\d{4}|\d{4}[A-Z])(?![A-Z0-9])")
 
 
-def parse_amount(s: str) -> tuple[float, bool] | None:
-    """'$1,234.50' -> (1234.5, False); '30%' -> (30.0, True); None if it is not a plain non-negative amount."""
-    m = _AMOUNT.match((s or "").strip())
-    if not m:
-        return None
-    num = m.group("num").replace(",", "")
+def parse_amount(s: str, decimal_comma: bool = False) -> tuple[float, bool] | None:
+    """'$1,234.50' -> (1234.5, False); '30%' -> (30.0, True); None if it is not a plain non-negative amount.
+    A comma only groups thousands ('6,50' -> None). With decimal_comma (a semicolon-separated file) '6,50' -> 6.5
+    and '1.234,50' -> 1234.5."""
+    s = (s or "").strip()
+    m = _AMOUNT_DECIMAL_COMMA.match(s) if decimal_comma else None
+    if m:
+        num = m.group("num").replace(".", "").replace(",", ".")
+    else:
+        m = _AMOUNT.match(s)
+        if not m:
+            return None
+        num = m.group("num").replace(",", "")
     try:
         v = float(num)
     except ValueError:
@@ -119,6 +139,21 @@ def _split(fields: list[str]) -> tuple[str, str, bool] | None:
     return ", ".join(x for x in f[:-1] if x), f[-1], False
 
 
+def _delimiter(body: list[str]) -> str:
+    """Tab if the first record has one; semicolon when most of the first records split on ';' into two or more
+    fields (so '85025;6,50' is not read as comma-separated); otherwise comma."""
+    first = body[0] if body else ""
+    if "\t" in first:
+        return "\t"
+    head = body[:20]
+    semi = sum(1 for ln in head if ";" in ln and len(next(csv.reader([ln], delimiter=";"), [])) >= 2)
+    return ";" if head and semi * 2 > len(head) else ","
+
+
+def _is_header(item: str, amt_s: str) -> bool:
+    return bool(_HEADER_AMT.fullmatch(_norm(amt_s)) or amt_s.strip() in ("$", "($)") or _HEADER_ITEM.match(_norm(item)))
+
+
 def parse_csv(text: str) -> dict:
     """Rows of a site proposal. Tolerates a header row, '#' comment lines, blank lines, a UTF-8 BOM, '$',
     thousands separators (quoted or not), '%', and semicolon or tab separators. Returns
@@ -131,12 +166,8 @@ def parse_csv(text: str) -> dict:
     text = text.lstrip("﻿")
     lines = text.splitlines()
     body = [ln for ln in lines if ln.strip() and not ln.lstrip().startswith("#")]
-    delim = ","
-    if body and "," not in body[0]:
-        if "\t" in body[0]:
-            delim = "\t"
-        elif ";" in body[0]:
-            delim = ";"
+    delim = _delimiter(body)
+    decimal_comma = delim == ";"
     rows, errors, header = [], [], False
     seen_data = False
     for lineno, ln in enumerate(lines, start=1):
@@ -148,9 +179,9 @@ def parse_csv(text: str) -> dict:
             errors.append({"row": lineno, "text": ln.strip()[:200], "error": "expected two columns: item or code, amount"})
             continue
         item, amt_s, rejoined = sp
-        parsed = parse_amount(amt_s)
+        parsed = parse_amount(amt_s, decimal_comma)
         if parsed is None:
-            if not seen_data and not header and re.search(r"[A-Za-z]", amt_s):
+            if not seen_data and not header and _is_header(item, amt_s):
                 header = True  # a header row such as "item_or_code,amount"
                 continue
             errors.append({"row": lineno, "text": ln.strip()[:200],
@@ -165,7 +196,7 @@ def parse_csv(text: str) -> dict:
             continue
         seen_data = True
         rows.append({"row": lineno, "item": item[:200], "amount": v, "percent": pct, "raw": amt_s[:40],
-                     "rejoined": rejoined})
+                     "rejoined": rejoined, "decimal_comma": decimal_comma and "," in amt_s})
         if len(rows) > MAX_ROWS:
             raise ProposalError(f"too many rows (over {MAX_ROWS})")
     return {"rows": rows, "errors": errors, "header": header}
@@ -299,12 +330,15 @@ def check(nct: str, site_id: str, csv_text: str, band_low: float = BAND_DEFAULT[
     errors = list(parsed["errors"])
     for r in parsed["rows"]:
         row = {"row": r["row"], "item": r["item"], "ask": r["amount"], "ask_raw": r["raw"], "percent": r["percent"],
+               "ask_rate": False,
                "flag": "unmatched", "flag_label": FLAGS["unmatched"], "kind": None, "match": None, "method": None,
                "matched_label": None, "code": None, "medicare": None, "range_low": None, "range_high": None,
                "outside_by": 0.0, "reference": None, "reference_unit": None, "reference_label": None,
                "source": None, "notes": []}
         if r["rejoined"]:
             row["notes"].append("amount read from unquoted thousands separators; check it")
+        if r.get("decimal_comma"):
+            row["notes"].append(f"amount '{r['raw']}' read with a decimal comma (semicolon-separated file); check it")
         found = _codes_in(r["item"])
         hit_codes = [c for c in found if c in codes]
         target: tuple[str, str, str] | None = None
@@ -370,8 +404,16 @@ def check(nct: str, site_id: str, csv_text: str, band_low: float = BAND_DEFAULT[
             ref = b["totals"]["screen_failure"] if it["unit"] == "as_incurred" else it["amount"]
             ask = r["amount"]
             if it["unit"] == "rate":
-                ask = ask / 100.0 if (r["percent"] or ask > 1) else ask
-                row["ask"] = round(ask, 4)
+                if not r["percent"] and ("$" in r["raw"] or ask > 100):
+                    # '$30000' or '30000' is a flat overhead fee in dollars, not a rate
+                    row["notes"].append("overhead given as a dollar amount; Concord's standard is a rate of research "
+                                        "items and coordinator time")
+                else:
+                    row["ask_rate"] = True
+                    if not r["percent"] and ask >= 1:
+                        row["notes"].append(f"read as {ask:g}% (no % sign given)")
+                    ask = ask / 100.0 if (r["percent"] or ask >= 1) else ask
+                    row["ask"] = round(ask, 4)
             elif r["percent"]:
                 row["notes"].append("a percentage is only meaningful for the overhead rate; read as dollars")
             row.update({"kind": "non_procedure", "match": it["id"], "method": target[2],
@@ -405,6 +447,8 @@ def check(nct: str, site_id: str, csv_text: str, band_low: float = BAND_DEFAULT[
     clfs = terms.medicare._cms().get("clfs", {})  # noqa: SLF001
     return {
         "nct_id": nct, "short_title": p["short_title"], "label": p["label"], "disclaimer": terms.DISCLAIMER,
+        # a '# ... SYNTHETIC ...' comment line (the shipped sample has one) marks invented prices everywhere downstream
+        "synthetic": bool(_SYNTHETIC_MARK.search(csv_text or "")), "synthetic_label": SAMPLE_LABEL,
         "site": b["site"], "locality": loc, "band": {"low": lo, "high": hi, "label": BAND_LABEL,
                                                        "text": band_text(lo, hi)},
         "multiplier": b["multiplier"], "pfs_source": pfs.get("source"), "clfs_source": clfs.get("source"),
@@ -455,7 +499,7 @@ def _m(x: float | None) -> str:
 
 
 def _ask_text(r: dict) -> str:
-    if r.get("reference_rate"):
+    if r.get("ask_rate"):
         return f"{r['ask'] * 100:.1f}%".replace(".0%", "%")
     return _m(r["ask"])
 
@@ -469,9 +513,16 @@ def _range_text(r: dict) -> str:
     return "-"
 
 
+def _insurance_only(r: dict) -> bool:
+    """Routine care at every scheduled occurrence: billed to insurance (NCD 310.1), never a sponsor cost."""
+    return (r.get("coverage") or {}).get("sponsor_visits") == 0
+
+
 def response_text(r: dict) -> str:
     """The counter-proposal's mechanical response to one line."""
     f = r["flag"]
+    if f in ("above", "below", "in_range") and _insurance_only(r):
+        return f"Routine care billed to insurance under {terms.NCD}, not to the sponsor; range shown for reference"
     if f == "above":
         return f"Above the justified range by {_m(r['outside_by'])}: counter at or below {_m(r['range_high'])}, or ask for an itemized justification"
     if f == "below":
@@ -490,16 +541,21 @@ def counter_proposal_html(res: dict, detail: str = "simple") -> str:
     s, loc, sm = res["site"], res["locality"], res["summary"]
     c, cd = sm["counts"], sm["coded"]
     detailed = detail == "detailed"
+    synthetic = bool(res.get("synthetic"))
     rows = res["rows"] if detailed else [r for r in res["rows"] if r["flag"] != "in_range"]
+    by_row = {r["row"]: r for r in res["rows"]}
     loc_text = (f"{loc['name']} ({loc['state']} locality {loc['code']}); {loc['method']}" if loc
                 else "national amounts (no Medicare locality resolved)")
     h: list[str] = [f"<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' "
                     f"content='width=device-width,initial-scale=1'><link rel='icon' href='data:,'>"
-                    f"<title>Counter-proposal {e(res['nct_id'])}</title><style>{terms._CSS}{_EXTRA_CSS}</style>"  # noqa: SLF001
-                    f"</head><body>"]
+                    f"<title>{'SYNTHETIC: ' if synthetic else ''}Counter-proposal {e(res['nct_id'])}</title>"
+                    f"<style>{terms._CSS}{_EXTRA_CSS}</style></head><body>"]  # noqa: SLF001
     w = h.append
     w("<div class='noprint'><button onclick='window.print()'>Print or save as PDF</button></div>")
-    w(f"<h1>Counter-proposal: {e(res['nct_id'])} at {e(s['label'])}</h1>")
+    w(f"<h1>{'SYNTHETIC: ' if synthetic else ''}Counter-proposal: {e(res['nct_id'])} at {e(s['label'])}</h1>")
+    if synthetic:
+        w(f"<div class='banner synth'>SYNTHETIC sample proposal: invented prices to demonstrate the check. Not "
+          f"{e(s['label'])}'s proposal and not market data.</div>")
     w(f"<div class='banner'>{e(terms.DISCLAIMER)}</div>")
     w(f"<p><span class='tag'>Illustrative protocol</span> {e(res['label'])}. Not the sponsor's protocol. "
       f"Generated {e(res['generated'])} by Concord. Every line states where its number comes from. "
@@ -524,8 +580,11 @@ def counter_proposal_html(res: dict, detail: str = "simple") -> str:
           f"occurrence of each); the justified range totals <b>{_m(cd['range_low'])} to {_m(cd['range_high'])}</b>. "
           f"Above the range top by {_m(cd['above_by'])} in total; below the range bottom by {_m(cd['below_by'])}.</li>")
     for t in sm["top_outside"]:
+        routine = _insurance_only(by_row.get(t["row"], {}))
         w(f"<li>Row {t['row']}: {e(t['item'])} asks {_m(t['ask'])} against {_m(t['range_low'])} to "
-          f"{_m(t['range_high'])} ({e(FLAGS[t['flag']])} by {_m(t['outside_by'])})</li>")
+          f"{_m(t['range_high'])} ({e(FLAGS[t['flag']])} by {_m(t['outside_by'])})"
+          + (f"; routine care billed to insurance under {e(terms.NCD)}, not to the sponsor" if routine else "")
+          + "</li>")
     if sm["n_errors"]:
         w(f"<li>{sm['n_errors']} row(s) could not be read (listed at the end).</li>")
     w("</ul>")

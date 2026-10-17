@@ -25,9 +25,39 @@ def _row(res: dict, n: int) -> dict:
     ("1250", (1250.0, False)), ("$1,250.00", (1250.0, False)), (" $ 95 ", (95.0, False)), ("6.50", (6.5, False)),
     ("30%", (30.0, True)), ("USD 40", (40.0, False)), ("$.75", (0.75, False)),
     ("abc", None), ("-5", None), ("(100)", None), ("", None), ("1e3", None), ("$", None),
+    ("$15,000", (15000.0, False)), ("1,234,567.89", (1234567.89, False)),
+    ("6,50", None), ("1,2345", None), ("12,34,567", None), ("1500,00", None),  # a comma only groups thousands
 ])
 def test_parse_amount(raw, expect):
     assert proposal.parse_amount(raw) == expect
+
+
+def test_parse_amount_decimal_comma():
+    assert proposal.parse_amount("6,50", decimal_comma=True) == (6.5, False)
+    assert proposal.parse_amount("$1.234,50", decimal_comma=True) == (1234.5, False)
+    assert proposal.parse_amount("30%", decimal_comma=True) == (30.0, True)
+    assert proposal.parse_amount("275", decimal_comma=True) == (275.0, False)
+
+
+def test_semicolon_csv_with_decimal_commas():
+    p = proposal.parse_csv("Code;Proposed price (USD)\n85025;6,50\n80053;14,00\n71260;$1.234,50")
+    assert p["header"] is True and p["errors"] == []
+    assert [(r["item"], r["amount"]) for r in p["rows"]] == [("85025", 6.5), ("80053", 14.0), ("71260", 1234.5)]
+    assert all(r["decimal_comma"] for r in p["rows"])
+    # a comma file whose first item happens to contain a semicolon stays comma-separated
+    p = proposal.parse_csv("Labs; fasting,12\n71260,275\n93000,20")
+    assert [(r["item"], r["amount"]) for r in p["rows"]] == [("Labs; fasting", 12.0), ("71260", 275.0), ("93000", 20.0)]
+
+
+def test_unreadable_first_row_is_an_error_not_a_header():
+    for first in ("Study start-up fee,TBD", "IRB fee,N/A", "IRB fee,Fee waived"):
+        p = proposal.parse_csv(f"{first}\n71260,275")
+        assert p["header"] is False and [r["item"] for r in p["rows"]] == ["71260"]
+        assert len(p["errors"]) == 1 and p["errors"][0]["row"] == 1 and "not a number" in p["errors"][0]["error"]
+    for head in ("item_or_code,amount", "Item,Site ask", "Description,Price per occurrence", "CPT/HCPCS code,USD",
+                 "Service,$", "Code,Amount (USD)"):
+        p = proposal.parse_csv(f"{head}\n71260,275")
+        assert p["header"] is True and p["errors"] == [], head
 
 
 def test_parse_messy_csv():
@@ -146,6 +176,38 @@ def test_routine_only_code_is_noted():
 
 
 @needs_data
+def test_routine_only_code_response_says_insurance():
+    res = proposal.check(NCT, _default_site(), "70553,4000\n71260,4000")
+    mri, ct = res["rows"]
+    assert mri["flag"] == "above" and "billed to insurance" in proposal.response_text(mri)
+    assert "counter at or below" not in proposal.response_text(mri)
+    assert ct["coverage"]["sponsor_visits"] > 0 and "counter at or below" in proposal.response_text(ct)
+    page = proposal.counter_proposal_html(res, "simple")
+    assert "not to the sponsor" in page
+
+
+@needs_data
+def test_overhead_rate_vs_dollars():
+    site = _default_site()
+    for raw, ask, rate in (("30%", 0.30, True), ("30", 0.30, True), ("0.3", 0.30, True), ("1", 0.01, True),
+                           ("$30000", 30000.0, False), ("30000", 30000.0, False), ("\"$30,000\"", 30000.0, False)):
+        r = proposal.check(NCT, site, f"Institutional overhead,{raw}")["rows"][0]
+        assert r["match"] == "overhead" and r["ask"] == pytest.approx(ask) and r["ask_rate"] is rate, raw
+        assert r["reference_rate"] is True and r["reference"] == pytest.approx(0.25)
+        assert proposal._ask_text(r) == ("30%" if ask == 0.30 else "1%" if ask == 0.01 else "$30,000.00")  # noqa: SLF001
+        if not rate:
+            assert any("dollar amount" in n for n in r["notes"])
+
+
+@needs_data
+def test_semicolon_decimal_comma_flags():
+    res = proposal.check(NCT, _default_site(), "85025;6,50\n80053;14,00")
+    assert [(r["code"], r["ask"]) for r in res["rows"]] == [("85025", 6.5), ("80053", 14.0)]
+    assert [r["flag"] for r in res["rows"]] == ["below", "in_range"]
+    assert all(any("decimal comma" in n for n in r["notes"]) for r in res["rows"])
+
+
+@needs_data
 def test_percent_on_a_coded_line_is_an_error():
     res = proposal.check(NCT, _default_site(), "71260,150%\n93000,20")
     assert len(res["rows"]) == 1 and res["summary"]["n_errors"] == 1
@@ -167,6 +229,16 @@ def test_synthetic_sample():
     assert cd["range_low"] <= cd["range_high"] and len(res["summary"]["top_outside"]) == 3
     tops = [t["outside_by"] for t in res["summary"]["top_outside"]]
     assert tops == sorted(tops, reverse=True)
+    # the export of the synthetic sample says so, in both modes, next to the site's name
+    assert res["synthetic"] is True
+    for detail in ("simple", "detailed"):
+        page = proposal.counter_proposal_html(res, detail)
+        assert "<title>SYNTHETIC: " in page and "<h1>SYNTHETIC: " in page
+        assert "SYNTHETIC sample proposal: invented prices" in page and "not market data" in page
+    # the same rows without the comment line are not marked synthetic
+    plain = "\n".join(ln for ln in s["csv"].splitlines() if not ln.startswith("#"))
+    res2 = proposal.check(NCT, _default_site(), plain)
+    assert res2["synthetic"] is False and "SYNTHETIC" not in proposal.counter_proposal_html(res2, "detailed")
     with pytest.raises(terms.NotFound):
         proposal.sample("NCT06627647")
 
@@ -213,3 +285,7 @@ def test_api_endpoints():
     h = c.post(f"/api/terms-flow/{NCT}/counter-proposal.html", json={**body, "detail": "detailed"})
     assert h.status_code == 200 and h.headers["content-type"].startswith("text/html")
     assert "attachment" in h.headers["content-disposition"] and terms.DISCLAIMER in h.text
+    assert "_SYNTHETIC.html" in h.headers["content-disposition"] and "SYNTHETIC sample proposal" in h.text
+    plain = "\n".join(ln for ln in body["csv"].splitlines() if not ln.startswith("#"))
+    h2 = c.post(f"/api/terms-flow/{NCT}/counter-proposal.html", json={**body, "csv": plain})
+    assert h2.status_code == 200 and "SYNTHETIC" not in h2.headers["content-disposition"]

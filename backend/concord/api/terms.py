@@ -138,6 +138,7 @@ def counter_proposal(nct: str, body: ProposalIn) -> HTMLResponse:
     """Printable counter-proposal (print to PDF from the browser). Simple: summary and flagged lines;
     detailed: every line."""
     res = _check(nct, body)
-    name = f"counter-proposal_{res['nct_id']}_{res['site']['site_id']}.html"
+    name = (f"counter-proposal_{res['nct_id']}_{res['site']['site_id']}"
+            f"{'_SYNTHETIC' if res.get('synthetic') else ''}.html")
     return HTMLResponse(proposal.counter_proposal_html(res, body.detail),
                         headers={"Content-Disposition": f'attachment; filename="{name}"'})
