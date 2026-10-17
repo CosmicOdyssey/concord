@@ -152,8 +152,12 @@ def proposal_check(nct: str, body: ProposalIn) -> dict:
 
 
 @router.get("/{nct}/proposal-sample")
-def proposal_sample(nct: str) -> dict:
-    """The SYNTHETIC sample proposal for this trial (invented to demonstrate the check; not a real site's)."""
+def proposal_sample(nct: str) -> dict | None:
+    """The SYNTHETIC sample proposal for this trial (invented to demonstrate the check; not a real site's); null
+    for a known trial without one (404 only for an unknown trial)."""
+    _call(terms.load_protocol, nct.upper())
+    if not proposal.sample_path(nct.upper()).exists():
+        return None
     return _call(proposal.sample, nct.upper())
 
 

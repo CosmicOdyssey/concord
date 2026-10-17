@@ -275,7 +275,9 @@ def test_api_endpoints():
     site = _default_site()
     s = c.get(f"/api/terms-flow/{NCT}/proposal-sample")
     assert s.status_code == 200 and "SYNTHETIC" in s.json()["filename"]
-    assert c.get("/api/terms-flow/NCT06627647/proposal-sample").status_code == 404
+    none = c.get("/api/terms-flow/NCT06627647/proposal-sample")  # a known trial without a sample: null, not 404
+    assert none.status_code == 200 and none.json() is None
+    assert c.get("/api/terms-flow/NCT00000001/proposal-sample").status_code == 404
     body = {"site_id": site, "csv": s.json()["csv"]}
     r = c.post(f"/api/terms-flow/{NCT}/proposal-check", json=body)
     assert r.status_code == 200 and r.json()["summary"]["counts"]["unmatched"] == 1

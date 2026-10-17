@@ -29,7 +29,7 @@ import json
 import re
 import urllib.error
 import urllib.request
-from datetime import date
+from datetime import date, datetime, timezone
 
 from concord import terms, terms_registry
 from concord.compiler import registry_snapshot
@@ -70,7 +70,8 @@ PROC_TABLE: list[tuple[str, str, str, str, str, str]] = [
      "Labs", "both"),
     ("bnp", r"nt-?pro-?bnp|natriuretic peptide", "Natriuretic peptide (NT-proBNP)", "83880", "Labs", "both"),
     ("trop", r"troponin", "Troponin, quantitative", "84484", "Labs", "both"),
-    ("k", r"potassium|hyperkal", "Potassium, serum", "84132", "Labs", "both"),
+    # not "potassium-sparing diuretic" (a medication criterion, not a test)
+    ("k", r"\bpotassium\b(?![- ]sparing)|hyperkal", "Potassium, serum", "84132", "Labs", "both"),
     ("cbc", r"complete blood count|ha?ematology|\bcbc\b|neutrophil count|platelet count", "Blood count with differential",
      "85025", "Labs", "both"),
     ("chem", r"chemistry|liver function|metabolic panel|\balt\b|\bast\b|bilirubin|transaminase", "Comprehensive chemistry panel",
@@ -82,7 +83,9 @@ PROC_TABLE: list[tuple[str, str, str, str, str, str]] = [
     ("hiv", r"\bhiv\b|human immunodeficiency virus", "HIV-1/2 antigen and antibody", "87389", "Labs", "elig"),
     ("ecg", r"\becg\b|\bekg\b|electrocardiogra|\bqtc\b", "Electrocardiogram, 12-lead, with interpretation", "93000",
      "Cardiac tests", "both"),
-    ("echo", r"echocardiogra|ejection fraction|\blvef\b", "Echocardiogram, complete, with Doppler", "93306",
+    # not the registry mislabel "echocardiogram (ECG)": that is an ECG, drafted by the row above
+    ("echo", r"echocardiogra(?:m|phy)(?!\s*\(\s*(?:ECG|EKG)\s*\))|ejection fraction|\blvef\b",
+     "Echocardiogram, complete, with Doppler", "93306",
      "Cardiac tests", "both"),
     ("6mw", r"6[- ]?minute walk|six[- ]minute walk|\b6mwd?t?\b", "Six-minute walk test", "94618", "Function tests",
      "both"),
@@ -214,6 +217,11 @@ def _clear() -> None:
     terms_registry.snapshot.cache_clear()
 
 
+def _now() -> str:
+    """Version stamp of a written schedule (import.updated): the screen refetches prices when it changes."""
+    return datetime.now(timezone.utc).isoformat()
+
+
 def study(nct: str) -> dict | None:
     if not NCT_RE.match(nct or ""):
         return None
@@ -275,6 +283,13 @@ def add_trial(nct: str, fetch=None) -> dict:
                         "NCT ID (not in the repo or the database). U.S. locations only (protocolSection."
                         "contactsLocationsModule.locations); site_id uses the database key.")
         _write(_path(nct, "snapshot"), snap)
+    _clear()
+    if not terms._site_rows(nct):  # noqa: SLF001 - the same site list every step reads
+        for kind in ("study", "snapshot", "protocol"):
+            _path(nct, kind).unlink(missing_ok=True)
+        _clear()
+        raise terms.TermsError(f"{nct} has no registered U.S. sites on ClinicalTrials.gov; Concord prices at a U.S. "
+                               f"site's Medicare locality, so it cannot build a site budget")
     if load(nct) is None:
         _write(_path(nct, "protocol"), draft_from_registry(st))
     _clear()
@@ -306,24 +321,32 @@ def _day_of(n: float, unit: str) -> int:
     return int(round(n * _UNIT_DAYS[unit])) + 1
 
 
-def timepoints(text: str) -> list[tuple[int, str, str]]:
-    """(study day, unit, number) for each time point a time frame names. Baseline is day 1."""
-    out: list[tuple[int, str, str]] = []
+# "up to (approximately) 30 weeks", "through Week 52", "until Month 6": the END of an observation window, not a
+# scheduled visit (a horizon).
+_HORIZON_BEFORE_RE = re.compile(r"\b(?:up\s+to|through|thru|until|till)\s*(?:(?:approximately|approx\.?|about|around"
+                                r"|~|a\s+maximum\s+of|maximum\s+of)\s*)?$", re.I)
+
+
+def timepoints(text: str) -> list[tuple[int, str, str, bool]]:
+    """(study day, unit, number, horizon) for each time point a time frame names. Baseline is day 1. horizon is
+    True for the end of a window ('up to', 'through', 'until' N): not a scheduled visit."""
+    out: list[tuple[int, str, str, bool]] = []
     t = text or ""
     if _BASELINE_RE.search(t):
-        out.append((1, "day", "1"))
+        out.append((1, "day", "1", False))
     for m in _LIST_RE.finditer(t):
         unit = _unit(m.group(1))
+        horizon = bool(_HORIZON_BEFORE_RE.search(t[: m.start()]))
         for num in re.findall(r"-?\d+", m.group(2)):
             n = float(num)
             if n < 0 or n * _UNIT_DAYS[unit] > 3660 * 1.1:
                 continue
-            out.append((_day_of(n, unit), unit, num))
+            out.append((_day_of(n, unit), unit, num, horizon))
     for m in _NUM_UNIT_RE.finditer(t):
         n, unit = float(m.group(1)), _unit(m.group(2))
         if n <= 0 or n * _UNIT_DAYS[unit] > 3660 * 1.1:
             continue
-        out.append((_day_of(n, unit), unit, m.group(1)))
+        out.append((_day_of(n, unit), unit, m.group(1), bool(_HORIZON_BEFORE_RE.search(t[: m.start()]))))
     return out
 
 
@@ -363,14 +386,17 @@ def draft_from_registry(st: dict) -> dict:
             field = f"outcomesModule.{key}[{i}]"
             tps = timepoints(o.get("timeFrame", ""))
             measures.append({"field": field, "measure": o.get("measure", ""), "description": o.get("description", ""),
-                             "timeFrame": o.get("timeFrame", ""), "days": sorted({d for d, _, _ in tps})})
-            for d, unit, num in tps:
+                             "timeFrame": o.get("timeFrame", ""), "days": sorted({tp[0] for tp in tps})})
+            for d, unit, num, horizon in tps:
                 if d == 1:
                     continue
+                pt = {"day": d, "unit": unit, "num": num, "field": f"{field}.timeFrame",
+                      "quote": o.get("timeFrame", ""), "horizon": horizon}
                 near = next((k for k in points if abs(k - d) <= 3), None)
                 if near is None:
-                    points[d] = {"day": d, "unit": unit, "num": num, "field": f"{field}.timeFrame",
-                                 "quote": o.get("timeFrame", "")}
+                    points[d] = pt
+                elif points[near]["horizon"] and not horizon:  # a named time point outranks a window's end
+                    points[near] = {**pt, "day": near}
     later = sorted(points)[: MAX_VISITS - 2]
     dropped = len(points) - len(later)
     first_tf = next((m for m in measures if 1 in m["days"]), None)
@@ -391,9 +417,20 @@ def draft_from_registry(st: dict) -> dict:
         while any(v["id"] == vid for v in visits):
             vid += "b"
         label = f"{pt['unit'].capitalize()} {pt['num']}"
-        visits.append({"id": vid, "label": label, "short": vid, "kind": "treatment", "day": d, "minus": 0, "plus": 0,
-                       "window": f"Day {d} (window not in the registry)",
-                       "inferred": _inferred(pt["field"], pt["quote"])})
+        if pt["horizon"]:
+            # The end of an outcome's time frame: its items are drafted once there, with no coordinator time (not a
+            # scheduled visit), and the label says so.
+            visits.append({"id": vid, "label": f"Up to {label}: end of time frame, not a scheduled visit",
+                           "short": f"≤{vid}", "kind": "treatment", "day": d, "minus": 0, "plus": 0,
+                           "coordinator": False, "horizon": True,
+                           "window": (f"Day {d}: the end of the outcome's time frame, not a scheduled visit; no "
+                                      f"coordinator time - {CONFIRM}"),
+                           "inferred": _inferred(pt["field"], pt["quote"])
+                           + "; the time frame names only its end (a horizon), not a visit"})
+        else:
+            visits.append({"id": vid, "label": label, "short": vid, "kind": "treatment", "day": d, "minus": 0,
+                           "plus": 0, "window": f"Day {d} (window not in the registry)",
+                           "inferred": _inferred(pt["field"], pt["quote"])})
         day_to_vid[d] = vid
 
     def vids_for(days: list[int]) -> list[str]:
@@ -517,6 +554,7 @@ def draft_from_registry(st: dict) -> dict:
     used = {v for vs in sched.values() for v in vs}
     visits = [v for v in visits if v["id"] in used or v["id"] in ("SCR", "D1")]
     n_unpriced = sum(1 for p in proc_list if p["pricing"] == "unpriced")
+    n_horizon = sum(1 for v in visits if v.get("horizon"))
     trial_title = ident.get("acronym") or ident.get("briefTitle", nct)
     conds = ps.get("conditionsModule", {}).get("conditions", [])
     masking = design.get("designInfo", {}).get("maskingInfo", {}).get("masking", "not given")
@@ -524,15 +562,19 @@ def draft_from_registry(st: dict) -> dict:
     out.update({
         "label": DRAFT_LABEL,
         "why_chosen": f"Added by NCT ID. The schedule is a draft from the ClinicalTrials.gov record (fetched {fetched}).",
-        "per_participant_scope": (f"the {len(visits)} drafted visits (screening, day 1 and the time points named in "
-                                  f"the registry's outcome measures); dosing visits between them are not in the "
-                                  f"registry"),
+        "per_participant_scope": (f"the {len(visits) - n_horizon} drafted visits (screening, day 1 and the time "
+                                  f"points named in the registry's outcome measures)"
+                                  + (f" and {n_horizon} end{'s' if n_horizon > 1 else ''} of an outcome's time frame "
+                                     f"(items only, no coordinator time)" if n_horizon else "")
+                                  + "; dosing visits between them are not in the registry"),
         "sources": sources[:60],
         "assumptions": [
             "The registry does not publish a schedule of assessments. Every visit and item here is inferred from "
             "registry fields (quoted on each) and must be confirmed against the protocol.",
             "Visit days come from outcome-measure time frames (a month is taken as 30.4 days); visit windows are "
             "not in the registry. Screening is placed at Day -28 to -1 (an assumption).",
+            "A time frame that names only its end ('up to 30 weeks', 'through Week 52') is the end of an observation "
+            "window, not a scheduled visit: its items are drafted once there, with no coordinator time.",
             "Study drug administration is drafted at Day 1 only: the registry rarely gives the dosing interval.",
             "Physician office visits (E/M), routine vitals and blood draws are not named in the registry and are not "
             "drafted; add them in the CSV.",
@@ -545,8 +587,9 @@ def draft_from_registry(st: dict) -> dict:
         "import": {"source": "registry_draft", "label": DRAFT_LABEL, "fetched": fetched,
                    "source_url": API.format(nct=nct), "n_visits": len(visits),
                    "n_items": sum(len(vs) for vs in sched.values()), "n_procedures": len(proc_list),
-                   "n_unpriced_procedures": n_unpriced, "unmapped": unmapped, "warnings": [],
-                   "coverage_note": COVERAGE_NOTE},
+                   "n_unpriced_procedures": n_unpriced,
+                   "n_unpriced_items": sum(len(vs) for pid, vs in sched.items() if procs[pid]["pricing"] == "unpriced"),
+                   "unmapped": unmapped, "warnings": [], "coverage_note": COVERAGE_NOTE, "updated": _now()},
     })
     return out
 
@@ -640,9 +683,12 @@ def parse_soa_csv(text: str) -> dict:
     text = text.replace("﻿", "")
     sample = text[:4000]
     delim = max([",", ";", "\t"], key=lambda d: sample.count(d))
-    rows = [r for r in csv.reader(io.StringIO(text), delimiter=delim)]
-    rows = [[_norm(c) for c in r] for r in rows]
-    rows = [r for r in rows if any(r) and not r[0].startswith("#")]
+    # Each row keeps its line in the user's file (blank and '#' comment lines are dropped, not renumbered), so
+    # every "row N" citation and warning points at the line the user sees.
+    reader = csv.reader(io.StringIO(text), delimiter=delim)
+    raw = [(reader.line_num, [_norm(c) for c in r]) for r in reader]
+    numbered = [(ln, r) for ln, r in raw if any(r) and not r[0].startswith("#")]
+    rows = [r for _, r in numbered]
     if not rows:
         raise terms.TermsError("the CSV is empty")
     if len(rows) > MAX_ROWS:
@@ -673,7 +719,7 @@ def parse_soa_csv(text: str) -> dict:
     visits: dict[str, dict] = {}
     items: list[dict] = []
     cur = ""
-    for n, r in enumerate(rows[start:], start=start + 1):
+    for n, r in numbered[start:]:
         v = cell(r, "visit") or cur
         proc = cell(r, "procedure")
         if not v or not proc:
@@ -707,6 +753,9 @@ def parse_soa_csv(text: str) -> dict:
     if len(visits) > MAX_VISITS:
         raise terms.TermsError(f"more than {MAX_VISITS} visits")
     return {"visits": visits, "items": items, "warnings": warnings, "week_col": week_col}
+
+
+NOT_A_VISIT_RE = re.compile(r"not a scheduled visit", re.I)
 
 
 def protocol_from_csv(nct: str, text: str) -> dict:
@@ -749,6 +798,8 @@ def protocol_from_csv(nct: str, text: str) -> dict:
                         "short_window": f"x{rep}"})
         else:
             out["kind"] = "treatment"
+        if v is not scr and NOT_A_VISIT_RE.search(v["name"]):  # e.g. an exported draft's end of a time frame
+            out.update({"coordinator": False, "window": win + " (not a scheduled visit: no coordinator time)"})
         visits.append(out)
     std_ids = {i[0] for i in terms.STANDARD_ITEMS if i[3] not in ("as_incurred", "rate", "per_site", "per_visit")}
     procs: dict[tuple[str, str], dict] = {}
@@ -769,8 +820,13 @@ def protocol_from_csv(nct: str, text: str) -> dict:
         elif low in ("no-charge", "no charge", "none"):
             pricing, how, code = "none", "no site charge (from your CSV)", ""
         elif code and _CODE_RE.match(code):
-            pricing = "cpt"
             how = descriptor_ref(code) + " (code from your CSV)"
+            if terms._price_code(code, None) is None:  # noqa: SLF001 - the budget prices with the same function
+                pricing = "unpriced"
+                how += "; no amount in the loaded CMS fee schedules, left unpriced"
+                warnings.append(f"Row {it['row']}: code {code} is not in the loaded CMS fee schedules; left unpriced.")
+            else:
+                pricing = "cpt"
         else:
             if code:
                 warnings.append(f"Row {it['row']}: '{it['code']}' is not a CPT/HCPCS code; mapped from the procedure "
@@ -791,10 +847,11 @@ def protocol_from_csv(nct: str, text: str) -> dict:
                 pid += "_2"
             p = {"id": pid, "label": it["procedure"], "category": "Uploaded schedule", "pricing": pricing,
                  "mapping": how, "inferred": f"from your CSV, row {it['row']}"}
-            if code and pricing == "cpt":
+            if code and pricing in ("cpt", "unpriced"):  # an unpriced CSV code stays visible on the line
                 p["code"] = code
             if pricing == "unpriced":
-                p["note"] = terms.UNPRICED_NOTE
+                p["note"] = (f"Code {code} is not in the loaded CMS fee schedules: research item left unpriced, to be "
+                             f"negotiated (never counted as zero)" if code else terms.UNPRICED_NOTE)
             if pricing == "none":
                 p["note"] = "No site charge (from your CSV)"
             procs[key] = p
@@ -834,6 +891,7 @@ def protocol_from_csv(nct: str, text: str) -> dict:
     n_fixed = sum((v.get("occurrences") or 1) for v in visits)
     n_items = sum(len(vs) for vs in sched.values())
     plist = list(procs.values())
+    by_id = {p["id"]: p for p in plist}
     base.update({
         "label": CSV_LABEL,
         "why_chosen": "Added by NCT ID; schedule of assessments uploaded as CSV.",
@@ -845,15 +903,18 @@ def protocol_from_csv(nct: str, text: str) -> dict:
                         "sponsor's protocol.",
                         "Items without a code are mapped from their names only through Concord's procedure-to-code "
                         "table (marked on each); anything else is left unpriced.",
+                        "Each visit carries the proposed per-visit coordinator time, except a visit whose name says "
+                        "'not a scheduled visit'.",
                         "Coverage: every item is research (assumed until reviewed)."],
         "visits": visits, "procedures": plist, "schedule": schedule,
         "import": {"source": "csv", "label": CSV_LABEL, "fetched": (st or {}).get("_concord", {}).get("fetched"),
                    "source_url": API.format(nct=nct),
                    "n_visits": len(visits), "n_items": n_items, "n_procedures": len(plist),
                    "n_unpriced_procedures": sum(1 for p in plist if p["pricing"] == "unpriced"),
+                   "n_unpriced_items": sum(len(vs) for pid, vs in sched.items() if by_id[pid]["pricing"] == "unpriced"),
                    "unmapped": [{"field": f"CSV: {p['label']}", "quote": p["label"], "why": p["mapping"]}
                                 for p in plist if p["pricing"] == "unpriced"],
-                   "warnings": warnings, "coverage_note": COVERAGE_NOTE},
+                   "warnings": warnings, "coverage_note": COVERAGE_NOTE, "updated": _now()},
     })
     return base
 
@@ -914,14 +975,21 @@ def export_csv(nct: str) -> str:
     w = csv.writer(buf, lineterminator="\n")
     w.writerow(TEMPLATE_HEADER)
     for v in p["visits"]:
-        for n in (n for n in p["nodes"] if n["visit"] == v["id"]):
+        rep = vis[v["id"]].get("occurrences") if v["kind"] == "repeat" else None
+        day = v.get("day", "")  # follow-up and open-ended visits may have none; the importer places them in order
+        nodes = [n for n in p["nodes"] if n["visit"] == v["id"]]
+        if not nodes:  # keep the visit (and its coordinator time) through a re-import
+            w.writerow([v["label"], day, EMPTY_VISIT, "no-charge", rep or ""])
+        for n in nodes:
             x = procs[n["procedure"]]
             pr = x["pricing"]
-            code = (x.get("code") or "") if pr == "cpt" else pr if pr.startswith("standard:") else (
+            code = (x.get("code") or "") if pr in ("cpt", "unpriced") else pr if pr.startswith("standard:") else (
                 "no-charge" if pr == "none" else "")
-            rep = vis[v["id"]].get("occurrences") if v["kind"] == "repeat" else None
-            w.writerow([v["label"], v["day"], x["label"], code, rep or ""])
+            w.writerow([v["label"], day, x["label"], code, rep or ""])
     return buf.getvalue()
+
+
+EMPTY_VISIT = "Visit (no items listed)"
 
 
 def template_csv() -> str:
@@ -929,7 +997,7 @@ def template_csv() -> str:
             "# One row per procedure at a visit. day: study day (Day 1 = first dose) or write W4 / Week 4 / Month 6.\n"
             "# code: CPT/HCPCS (optional), standard:<item> for a proposed standard fee, or no-charge.\n"
             "# repeats: how many times that visit happens per participant (optional, default 1).\n"
-            "Screening,-28,Office visit, new patient,99204,\n"
+            "Screening,-28,\"Office visit, new patient\",99204,\n"
             "Screening,-28,Blood count with differential,85025,\n"
             "Screening,-28,ECG,93000,\n"
             "Day 1,1,Study drug injection,96372,\n"

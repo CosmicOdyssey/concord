@@ -92,7 +92,9 @@ def _rules(p: dict) -> dict[str, dict]:
     """RULES with this protocol's worked examples, so a non-lung protocol never shows the lung example."""
     own = p.get("rule_examples") or {}
     used = {n["rule"] for n in p.get("nodes", [])}
-    rules = {**RULES, **{k: v for k, v in ASSUMED_RULES.items() if k in used}}
+    # An added trial lists only the rules its items carry (RA): R1-R5 decide from a sponsor protocol it lacks.
+    rules = ({k: v for k, v in _ALL_RULES.items() if k in used} if p.get("import")
+             else {**RULES, **{k: v for k, v in ASSUMED_RULES.items() if k in used}})
     return {k: ({**v, "text": v["text"].replace(_RULE_EXAMPLES[k], own[k])} if k in own and k in _RULE_EXAMPLES else v)
             for k, v in rules.items()}
 
