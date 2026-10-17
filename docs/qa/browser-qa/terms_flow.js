@@ -82,7 +82,7 @@ async function ready(page) {
         const r = await page.evaluate(
           (DISCLAIMER, ILLUSTRATIVE) => {
             const txt = (sel) => document.querySelector(sel)?.innerText ?? ''
-            const steps = [1, 2, 3, 4, 5].map((n) => txt(`#tf-step-${n}`))
+            const steps = [1, 2, 3, 4, 5, 6].map((n) => txt(`#tf-step-${n}`))
             // Inside a closed <details> an element keeps a layout box, so ask for the closed disclosure itself.
             const visible = (el) => !!el && !el.closest('details:not([open])') && el.getBoundingClientRect().height > 0
             return {
@@ -130,7 +130,9 @@ async function ready(page) {
         check(`${name} no horizontal page scroll`, !lay.overflow, JSON.stringify(lay.offenders.slice(0, 3)))
         check(`${name} disclaimer banner`, r.banner.includes(DISCLAIMER), r.banner)
         r.steps.forEach((s, i) => check(`${name} step ${i + 1} illustrative label`, s.illustrative))
-        ;[3, 4, 5].forEach((n) => check(`${name} step ${n} disclaimer`, r.steps[n - 1].disclaimer))
+        // Price-bearing steps: Budget, Compare, Term sheet. (Step 5, Site proposal, shows it with a checked proposal:
+        // terms_proposal.js.)
+        ;[3, 4, 6].forEach((n) => check(`${name} step ${n} disclaimer`, r.steps[n - 1].disclaimer))
         check(`${name} grid shown only in Detailed`, r.gridVisible === (density === 'detailed'))
         check(`${name} standard schedule shown only in Detailed`, r.stdVisible === (density === 'detailed'))
         // Two payers, explained where the numbers are, in both densities.
@@ -343,9 +345,10 @@ async function ready(page) {
       tag: document.activeElement?.tagName,
       top: Math.round(document.getElementById('tf-step-4').getBoundingClientRect().top),
       navBottom: Math.round(document.querySelector('nav.tf-flow').getBoundingClientRect().bottom),
+      vh: window.innerHeight,
     }))
     check('step nav (Enter) focuses step 4 heading', nav.focus === 'tf-step-4' && nav.tag === 'H2', JSON.stringify(nav))
-    check('step 4 clears the sticky header and step nav', nav.top >= nav.navBottom && nav.top < 400, JSON.stringify(nav))
+    check('step 4 top in view, below the sticky header and step nav', nav.top >= nav.navBottom && nav.top < nav.vh - 100, JSON.stringify(nav))
     // leaving the tab and coming back keeps the trial; the address bar carries it
     const tab = (label) =>
       page.evaluate((l) => {
