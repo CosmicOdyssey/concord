@@ -256,9 +256,25 @@ def sponsors(as_of: str | None = None, region: str | None = None, min_trials: in
         WHERE t.is_lung=1 AND t.sponsor_class='INDUSTRY' AND t.sponsor IS NOT NULL AND {rec}{in_region}
         GROUP BY t.sponsor HAVING COUNT(*) >= ? ORDER BY n DESC, t.sponsor""",
                        rec_args + rargs + [min_trials]).fetchall()
+    # Share of each sponsor's registered site rows that name a real site. Some sponsors (e.g. AstraZeneca)
+    # anonymize every site ("Research Site"), so no site can be matched across their trials.
+    ident: dict[str, tuple[int, int]] = {}
+    for sp, n, anon in con.execute(f"""
+            SELECT t.sponsor, COUNT(*), SUM(s.anonymized) FROM trials t
+            JOIN trial_sites ts USING(nct_id) JOIN sites s USING(site_id)
+            WHERE t.is_lung=1 AND t.sponsor_class='INDUSTRY' AND t.sponsor IS NOT NULL AND {rec}
+              AND {SITE_ROW_OK.format(a='ts')} AND {rsql}
+            GROUP BY t.sponsor""", rec_args + rargs).fetchall():
+        ident[sp] = (int(n), int(anon or 0))
     con.close()
+
+    def entry(r):
+        n, anon = ident.get(r["sponsor"], (0, 0))
+        return {"sponsor": r["sponsor"], "trials": r["n"], "site_rows": n,
+                "identified_share": (round((n - anon) / n, 4) if n else None)}
+
     return {"as_of": as_of, "snapshot_date": snapshot_date(), "basis": basis(as_of), "region": region or None,
-            "region_label": label, "sponsors": [{"sponsor": r["sponsor"], "trials": r["n"]} for r in rows]}
+            "region_label": label, "sponsors": [entry(r) for r in rows]}
 
 
 # ---------------------------------------------------------------- API: the audit

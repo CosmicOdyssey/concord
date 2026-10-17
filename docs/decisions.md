@@ -71,3 +71,9 @@ Judgment calls made without being able to ask. Newest last. Each says what and w
     the 5-50 gene panel (81445: $597.91 vs $597.00). The Terms view's "includes placeholder lab prices"
     labels now appear only when a total still contains placeholder amounts. API restarted to reload the
     cached rate table.
+19. **Overlap matrix: anonymized sites are "sites hidden", not 0** (reported by the user, 18 Oct). With no preset,
+    the tab defaulted to the sponsor with the most trials, AstraZeneca, whose 201 registered sites are all
+    anonymized on CT.gov ("Research Site"), so every off-diagonal cell read "0 sites". That is unknown, not
+    zero. Now: the sponsor list reports each sponsor's share of identifiable site rows; the default is the first
+    sponsor with mostly identifiable sites (Merck at the snapshot); anonymized sponsors are labelled in the picker;
+    cells involving a trial with no identifiable site read "sites hidden".

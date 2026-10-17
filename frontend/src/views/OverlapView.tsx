@@ -7,6 +7,7 @@ import { Badge, Caveat, ErrorBox, Loading, Stat } from '../components'
 import { ctgovUrl, int, num, pct, phaseLabel } from '../format'
 import {
   FIANLIMAB_PAIR,
+  mostlyAnonymized,
   overlapApi,
   REGENERON_OVERLAP_PRESET,
   type OverlapAudit,
@@ -195,7 +196,13 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
       .then((s) => {
         setSponsors(s)
         setSnapshot(s.snapshot_date)
-        setForm((f) => (f.sponsor || s.sponsors.length === 0 ? f : { ...f, sponsor: s.sponsors[0].sponsor }))
+        // Default to the first sponsor whose sites are identifiable: an all-anonymized sponsor (e.g. AstraZeneca)
+        // would show a matrix of hidden site counts.
+        setForm((f) =>
+          f.sponsor || s.sponsors.length === 0
+            ? f
+            : { ...f, sponsor: (s.sponsors.find((x) => !mostlyAnonymized(x)) ?? s.sponsors[0]).sponsor },
+        )
       })
       .catch((e: unknown) => {
         if (!ctl.signal.aborted) setSponsorErr(e instanceof Error ? e.message : String(e))
@@ -347,6 +354,7 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
                 <option key={s.sponsor} value={s.sponsor}>
                   {s.sponsor}
                   {sponsorsFresh ? ` (${s.trials})` : ''}
+                  {mostlyAnonymized(s) ? ' · sites anonymized on CT.gov' : ''}
                 </option>
               ))}
             </select>
@@ -728,16 +736,21 @@ function Matrix({
                 const sel =
                   !!selected &&
                   ((selected[0] === r.nct_id && selected[1] === c.nct_id) || (selected[0] === c.nct_id && selected[1] === r.nct_id))
-                const label = cellText(o)
+                // A trial with no identifiable site (all "Research Site" entries) cannot share one: unknown, not 0.
+                const hidden = r.n_sites_identified === 0 || c.n_sites_identified === 0
+                const label = hidden
+                  ? `${o.a} × ${o.b}: shared sites unknown (one trial lists only anonymized sites). ` +
+                    cellText(o).split('shared. ')[1]
+                  : cellText(o)
                 return (
                   <td
                     key={c.nct_id}
                     data-cell={`${r.nct_id}|${c.nct_id}`}
-                    className={`ov-cell ov-b${bin(o.pair.shared_sites)}${sel ? ' ov-sel' : ''}`}
+                    className={`ov-cell ov-b${hidden ? 0 : bin(o.pair.shared_sites)}${sel ? ' ov-sel' : ''}`}
                   >
                     <button className="ov-cellbtn" onClick={() => onSelect([r.nct_id, c.nct_id])} title={label} aria-label={label} aria-pressed={sel}>
                       <span className="ov-cell-sites">
-                        {sitesLabel(o.pair.shared_sites)}
+                        {hidden ? <span className="muted">sites hidden</span> : sitesLabel(o.pair.shared_sites)}
                         <span className="ov-sep"> ·</span>
                       </span>
                       <span className="ov-cell-pcts">

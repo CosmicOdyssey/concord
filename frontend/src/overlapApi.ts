@@ -5,7 +5,12 @@ import { ApiError, type Criterion } from './api'
 export interface OverlapSponsor {
   sponsor: string
   trials: number
+  /** Share of the sponsor's registered site rows that name a real site (null: no site rows). */
+  identified_share?: number | null
 }
+
+/** Sponsors whose sites are mostly anonymized on CT.gov: no site can be matched across their trials. */
+export const mostlyAnonymized = (s: OverlapSponsor) => typeof s.identified_share === 'number' && s.identified_share < 0.5
 
 /** 'registry': as_of is the registry snapshot, so recruiting = the CT.gov status (a fact).
  *  'estimated': an earlier date, from enrollment windows bounded by the status at the snapshot. */
