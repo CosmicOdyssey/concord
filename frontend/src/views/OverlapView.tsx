@@ -1,10 +1,21 @@
-// Portfolio overlap audit: where one sponsor's own concurrent NSCLC trials recruit at the same sites for
-// overlapping patients. Descriptive only (counts, dates, eligibility shares); no forecasts anywhere, and no
-// date after the registry snapshot.
-import { useEffect, useMemo, useRef, useState } from 'react'
+// Portfolio overlap (Calm, design direction C): where one sponsor's own concurrent NSCLC trials share registered sites
+// and eligible patients, and the criteria that separate each pair. Descriptive only (counts, dates, eligibility shares
+// on a synthetic population); no forecasts anywhere, and no date after the registry snapshot.
+//
+// Simple: the matrix shows one number per cell (shared registered sites) on a quiet shade of the larger eligible-patient
+// share, with the 80% dot and the upper-bound / unreviewed marks; the rest of each pair is in its hover/focus/tap card,
+// and secondary tables sit in "Details" disclosures. Detailed: every cell keeps its full text, and every table, note
+// and definition is inline. Both densities keep every control and deep link.
+//
+// Deep links: #overlap/regeneron (the Regeneron Sept 2024 preset, fianlimab pair selected) and
+// #overlap/<sponsor>[/<region>][/<YYYY-MM-DD>], e.g. #overlap/merck (Merck at the snapshot, all registered sites
+// worldwide), #overlap/merck/us, #overlap/bristol/us-northeast/2025-06-01. <sponsor> is the start of the sponsor's name
+// (case and punctuation ignored); <region> is world, us or a U.S. region key.
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Criterion } from '../api'
-import { Badge, Caveat, ErrorBox, Loading, Stat } from '../components'
-import { ctgovUrl, int, num, pct, phaseLabel } from '../format'
+import { Caveat, Details, ErrorBox, Gloss, HoverCard, InfoTip, Loading, PageHead, Qualifier, Segmented, Stat, Window } from '../components'
+import { useDensity } from '../density'
+import { ctgovUrl, int, num, pct } from '../format'
 import {
   FIANLIMAB_PAIR,
   mostlyAnonymized,
@@ -14,30 +25,37 @@ import {
   type OverlapPair,
   type OverlapQuery,
   type OverlapSite,
+  type OverlapSponsor,
   type OverlapSponsors,
   type OverlapTrial,
 } from '../overlapApi'
+import { useTheme } from '../theme'
 import './overlap.css'
 
-const DEEP_LINK = /^#overlap\/regeneron/i
 const UB = '†'
-const UB_TEXT = "upper bound: a required biomarker or cohort restriction the synthetic population can't represent"
 const UNREVIEWED = '‡'
-const UNREVIEWED_TEXT = 'criteria of one or both trials come from the rule-based parse (not reviewed)'
 const ANON = 'sites anonymized on CT.gov'
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const STORE_KEY = 'concord.overlap.v2'
-const BINS: [number, string][] = [
-  [0, '0'],
-  [1, '1–4'],
-  [5, '5–9'],
-  [10, '10–24'],
-  [25, '25+'],
-]
+/** Copy deck B6: the region picker's default option is every registered site worldwide. */
+const DEFAULT_REGION = ''
+const FALLBACK_REGIONS = ['US-Northeast', 'US-Midwest', 'US-South', 'US-West', 'US']
+
+// Mark meanings, copy deck B6 ("Marks" and "Legend"), verbatim.
+const MARK_UB = "A ceiling, not a measurement. A trial has a restriction the synthetic population can't represent."
+const MARK_UNREV =
+  'Criteria for at least one trial come from the rule-based parse, not yet reviewed by a person. The parse never sets the Upper bound mark, so a missing mark here does not mean the share is exact.'
+const MARK_UNREV_CRIT = "This trial's criteria come from the rule-based parse, not yet reviewed by a person."
+const MARK_SPARSE = 'A trial in this pair has 2 or fewer encoded criteria, so most patients pass it and containment in it says little.'
+const MARK_NONUM = "Shared sites can't be counted: a trial lists only anonymized sites. Not zero."
+const ANON_SPONSOR_NOTE =
+  'This sponsor lists its sites on ClinicalTrials.gov only as anonymized "Research Site" entries, so shared sites can\'t be counted; those cells show eligibility overlap only.'
+const FOOT = 'Synthetic population. Registered sites, not confirmed enrolling.'
+
 const DESIGN_LABEL: Record<string, string> = {
-  single_population: 'single population',
-  basket: 'basket',
-  multi_cohort: 'multi-cohort',
+  single_population: 'Single population',
+  basket: 'Basket',
+  multi_cohort: 'Multi-cohort',
 }
 const STATUS_LABEL: Record<string, string> = {
   RECRUITING: 'Recruiting',
@@ -69,8 +87,10 @@ const CONCEPT_LABEL: Record<string, string> = {
   autoimmune: 'Autoimmune disease',
   never_smoker: 'Smoking history',
 }
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 type Pair = [string, string]
+type Mode = 'matrix' | 'list'
 
 interface SharedOriented {
   concept: string
@@ -95,8 +115,11 @@ interface Oriented {
 interface Stored {
   form: OverlapQuery
   selected: Pair | null
-  mode: 'matrix' | 'list'
+  mode: Mode
 }
+
+/** #overlap/regeneron is the preset; #overlap/<sponsor>[/<region>][/<date>] opens a sponsor. */
+type Link = { kind: 'preset' } | { kind: 'sponsor'; slug: string; region: string | null; asOf: string | null }
 
 function loadStored(): Stored | null {
   try {
@@ -119,16 +142,65 @@ function saveStored(s: Stored) {
   }
 }
 
-function bin(n: number): number {
-  let b = 0
-  BINS.forEach(([lo], i) => {
-    if (n >= lo) b = i
-  })
-  return b
+function setHash(h: string) {
+  try {
+    window.history.replaceState(null, '', h)
+  } catch {
+    /* ignore */
+  }
 }
 
-function sitesLabel(n: number): string {
-  return `${int(n)} site${n === 1 ? '' : 's'}`
+/** Lower-case words joined by '-', punctuation dropped: "Merck Sharp & Dohme LLC" -> "merck-sharp-dohme-llc". */
+function slugify(s: string): string {
+  return s
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+function parseLink(hash: string, regions: string[]): Link | null {
+  const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean)
+  if (parts[0]?.toLowerCase() !== 'overlap' || !parts[1]) return null
+  let raw = parts[1]
+  try {
+    raw = decodeURIComponent(raw)
+  } catch {
+    /* keep the raw segment */
+  }
+  const slug = slugify(raw)
+  if (!slug) return null
+  const rest = parts.slice(2).map((s) => s.toLowerCase())
+  if (slug === 'regeneron' && rest.length === 0) return { kind: 'preset' }
+  let region: string | null = null
+  let asOf: string | null = null
+  for (const s of rest) {
+    if (DATE_RE.test(s)) asOf = s
+    else if (s === 'world' || s === 'worldwide' || s === 'all') region = ''
+    else {
+      const r = regions.find((x) => x.toLowerCase() === s)
+      if (r) region = r
+    }
+  }
+  return { kind: 'sponsor', slug, region, asOf }
+}
+
+/** The sponsor a slug names: an exact match, else the first (most trials) whose name starts with it. */
+function matchSponsor(list: OverlapSponsor[], slug: string): OverlapSponsor | null {
+  const named = list.map((s) => ({ s, k: slugify(s.sponsor) }))
+  return (
+    named.find((x) => x.k === slug)?.s ??
+    named.find((x) => x.k.startsWith(`${slug}-`))?.s ??
+    named.find((x) => x.k.startsWith(slug))?.s ??
+    null
+  )
+}
+
+/** The first sponsor whose sites are identifiable: for an all-anonymized sponsor (e.g. AstraZeneca) no shared site can
+ *  be counted, so the matrix would show eligibility overlap only. */
+function defaultSponsor(s: OverlapSponsors): string {
+  return (s.sponsors.find((x) => !mostlyAnonymized(x)) ?? s.sponsors[0])?.sponsor ?? ''
 }
 
 /** Shared sites are countable only if both trials list an identifiable site: anonymized ones never match, so unknown, not 0. */
@@ -148,28 +220,129 @@ function conceptLabel(c: string): string {
   return CONCEPT_LABEL[c] ?? c.replace(/_/g, ' ')
 }
 
+function isoParts(iso: string): [number, number, number] | null {
+  if (!DATE_RE.test(iso)) return null
+  const [y, m, d] = iso.split('-').map(Number)
+  return m >= 1 && m <= 12 ? [y, m, d] : null
+}
+
+/** Prose date (copy deck): "October 16, 2026". */
+function longDate(iso: string | null | undefined): string {
+  const p = iso ? isoParts(iso) : null
+  return p ? `${MONTHS[p[1] - 1]} ${p[2]}, ${p[0]}` : (iso ?? '—')
+}
+
+/** Tight UI date (copy deck): "Oct 16, 2026". */
+function shortDate(iso: string | null | undefined): string {
+  const p = iso ? isoParts(iso) : null
+  return p ? `${MONTHS[p[1] - 1].slice(0, 3)} ${p[2]}, ${p[0]}` : (iso ?? '—')
+}
+
+/** "Phase 2/3", "Phase 1", "Early phase 1". */
+function phaseText(phases: string[] | null | undefined): string {
+  const ps = (phases ?? []).filter((p) => p !== 'NA')
+  if (ps.length === 0) return 'Phase not given'
+  if (ps.every((p) => /^PHASE\d$/.test(p))) return `Phase ${ps.map((p) => p.slice(5)).join('/')}`
+  return ps.map((p) => p.replace(/^EARLY_PHASE(\d)$/, 'Early phase $1').replace(/^PHASE(\d)$/, 'Phase $1')).join('/')
+}
+
+function plural(n: number, one: string, many = `${one}s`): string {
+  return `${int(n)} ${n === 1 ? one : many}`
+}
+
+function sitesLabel(n: number): string {
+  return plural(n, 'site')
+}
+
+/** The label a trial goes by in the matrix: its acronym, else its NCT id. */
+function trialLabel(t: OverlapTrial): string {
+  return t.acronym || t.nct_id
+}
+
 function regionOptions(regions: string[]): { value: string; label: string }[] {
   const sub = regions.filter((r) => r !== 'US')
   return [
+    { value: '', label: 'All registered sites worldwide' },
     { value: 'US', label: 'All U.S. sites' },
-    ...sub.map((r) => ({ value: r, label: `${r} (U.S.)` })),
-    { value: '', label: 'All sites worldwide (CT.gov)' },
+    ...sub.map((r) => ({ value: r, label: r.startsWith('US-') ? `U.S. ${r.slice(3)}` : r })),
   ]
 }
 
-function setHash(h: string) {
-  try {
-    window.history.replaceState(null, '', h)
-  } catch {
-    /* ignore */
-  }
+const pctInt = (x: number) => Math.round(x * 100)
+
+/** Shade step of the larger eligible-patient share as shown (rounded): 0, under 25, under 50, under 80, 80 or more.
+ *  null: no criteria encoded for one trial, so the overlap is not informative (hatched). Same steps as the landing hero. */
+function heatOf(o: Oriented): number | null {
+  if (!o.pair.overlap_informative) return null
+  const s = pctInt(Math.max(o.o_ab, o.o_ba))
+  return s === 0 ? 0 : s < 25 ? 1 : s < 50 ? 2 : s < 80 ? 3 : 4
+}
+
+function hiOf(o: Oriented): boolean {
+  return o.pair.overlap_informative && pctInt(Math.max(o.o_ab, o.o_ba)) >= 80
+}
+
+function markGlyphs(p: OverlapPair): string {
+  return (p.upper_bound ? UB : '') + (p.unreviewed_criteria ? UNREVIEWED : '')
+}
+
+function summarizeStatuses(ts: OverlapTrial[]): string {
+  const n = new Map<string, number>()
+  ts.forEach((t) => n.set(t.status_now, (n.get(t.status_now) ?? 0) + 1))
+  return [...n.entries()].map(([s, k]) => `${statusLabel(s)}: ${int(k)}`).join(', ')
+}
+
+function defaultPair(d: OverlapAudit): Pair | null {
+  if (d.pairs.length === 0) return null
+  const best = [...d.pairs].sort(
+    (x, y) =>
+      Number(y.overlap_informative) - Number(x.overlap_informative) ||
+      y.shared_sites - x.shared_sites ||
+      Math.max(y.o_pq, y.o_qp) - Math.max(x.o_pq, x.o_qp),
+  )[0]
+  return [best.p, best.q]
+}
+
+function cellLabel(o: Oriented, A: OverlapTrial, B: OverlapTrial, known: boolean, selected: boolean): string {
+  const a = trialLabel(A)
+  const b = trialLabel(B)
+  const p = o.pair
+  return (
+    `${a} × ${b}: ` +
+    (known ? `${sitesLabel(p.shared_sites)} shared (registered)` : `shared sites can't be counted (${ANON})`) +
+    '; ' +
+    (p.overlap_informative
+      ? `${pct(o.o_ab)} of ${a}'s eligible patients also eligible for ${b}, ${pct(o.o_ba)} the reverse`
+      : 'eligibility overlap not informative (no criteria encoded for one trial)') +
+    `; ${num(p.months_both_recruiting_estimated, 1)} months both recruiting (estimated)` +
+    (p.upper_bound ? '; upper bound' : '') +
+    (p.unreviewed_criteria ? '; unreviewed criteria' : '') +
+    (selected ? '; selected' : '')
+  )
 }
 
 export default function OverlapView({ regions }: { regions?: string[] }) {
-  // Initial state: the deep link wins, else what this tab showed before (sessionStorage), else the snapshot.
+  const regionList = regions ?? FALLBACK_REGIONS
+  const regionsRef = useRef(regionList)
+  regionsRef.current = regionList
+  const { density } = useDensity()
+  const detailed = density === 'detailed'
+  const { theme } = useTheme()
+  const ids = useId()
+
+  // Initial state: a deep link wins, else what this tab showed before (sessionStorage), else the snapshot.
   const [init] = useState(() => {
-    if (DEEP_LINK.test(window.location.hash)) return { form: REGENERON_OVERLAP_PRESET, selected: FIANLIMAB_PAIR as Pair, mode: 'matrix' as const }
-    return loadStored() ?? { form: { sponsor: '', as_of: '', region: 'US' }, selected: null, mode: 'matrix' as const }
+    const link = parseLink(window.location.hash, regionList)
+    if (link?.kind === 'preset') return { form: REGENERON_OVERLAP_PRESET, selected: FIANLIMAB_PAIR as Pair, mode: 'matrix' as Mode, slug: null }
+    if (link?.kind === 'sponsor')
+      return {
+        form: { sponsor: '', as_of: link.asOf ?? '', region: link.region ?? DEFAULT_REGION },
+        selected: null,
+        mode: (loadStored()?.mode ?? 'matrix') as Mode,
+        slug: link.slug,
+      }
+    const s = loadStored()
+    return s ? { ...s, slug: null } : { form: { sponsor: '', as_of: '', region: DEFAULT_REGION }, selected: null, mode: 'matrix' as Mode, slug: null }
   })
   const [form, setForm] = useState<OverlapQuery>(init.form)
   const [wantPair, setWantPair] = useState<Pair | null>(init.selected)
@@ -180,9 +353,13 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Pair | null>(null)
-  const [mode, setMode] = useState<'matrix' | 'list'>(init.mode)
+  const [mode, setMode] = useState<Mode>(init.mode)
   const [openTrial, setOpenTrial] = useState<string | null>(null)
   const [reload, setReload] = useState(0)
+  // A sponsor deep link waiting for the sponsor list of its date and region, and the slug it could not match.
+  const slugRef = useRef<string | null>(init.slug)
+  const [linkTick, setLinkTick] = useState(0)
+  const [linkMiss, setLinkMiss] = useState<string | null>(null)
 
   const afterSnapshot = !!snapshot && DATE_RE.test(form.as_of) && form.as_of > snapshot
   const validDate = form.as_of === '' || (DATE_RE.test(form.as_of) && !afterSnapshot)
@@ -200,21 +377,24 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
     overlapApi
       .sponsors(form.as_of, form.region, ctl.signal)
       .then((s) => {
+        if (ctl.signal.aborted) return
         setSponsors(s)
         setSnapshot(s.snapshot_date)
-        // Default to the first sponsor whose sites are identifiable: for an all-anonymized sponsor (e.g. AstraZeneca)
-        // no shared site can be counted, so the matrix shows eligibility overlap only.
-        setForm((f) =>
-          f.sponsor || s.sponsors.length === 0
-            ? f
-            : { ...f, sponsor: (s.sponsors.find((x) => !mostlyAnonymized(x)) ?? s.sponsors[0]).sponsor },
-        )
+        const slug = slugRef.current
+        if (slug !== null) {
+          slugRef.current = null
+          const hit = matchSponsor(s.sponsors, slug)
+          setLinkMiss(hit ? null : slug)
+          setForm((f) => ({ ...f, sponsor: hit?.sponsor ?? defaultSponsor(s) }))
+          return
+        }
+        setForm((f) => (f.sponsor || s.sponsors.length === 0 ? f : { ...f, sponsor: defaultSponsor(s) }))
       })
       .catch((e: unknown) => {
         if (!ctl.signal.aborted) setSponsorErr(e instanceof Error ? e.message : String(e))
       })
     return () => ctl.abort()
-  }, [form.as_of, form.region, validDate])
+  }, [form.as_of, form.region, validDate, linkTick])
 
   // The audit itself.
   useEffect(() => {
@@ -225,17 +405,18 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
     overlapApi
       .audit(form, ctl.signal)
       .then((d) => {
+        if (ctl.signal.aborted) return
         setData(d)
         setSnapshot(d.snapshot_date)
-        const ids = new Set(d.trials.map((t) => t.nct_id))
-        const has = (p: Pair | null) => !!p && ids.has(p[0]) && ids.has(p[1])
+        const known = new Set(d.trials.map((t) => t.nct_id))
+        const has = (p: Pair | null) => !!p && known.has(p[0]) && known.has(p[1])
         setSelected((cur) => {
           if (wantPair && has(wantPair)) return wantPair
           if (has(cur)) return cur
           return defaultPair(d)
         })
         setWantPair(null)
-        setOpenTrial((cur) => (cur && ids.has(cur) ? cur : null))
+        setOpenTrial((cur) => (cur && known.has(cur) ? cur : null))
       })
       .catch((e: unknown) => {
         if (!ctl.signal.aborted) setError(e instanceof Error ? e.message : String(e))
@@ -249,6 +430,8 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
   }, [form.sponsor, form.as_of, form.region, validDate, reload])
 
   const update = (patch: Partial<OverlapQuery>) => {
+    slugRef.current = null
+    setLinkMiss(null)
     setForm((f) => ({ ...f, ...patch }))
     setHash('#overlap')
   }
@@ -256,6 +439,8 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
   const loadPreset = () => {
     const P = REGENERON_OVERLAP_PRESET
     const same = form.sponsor === P.sponsor && form.as_of === P.as_of && form.region === P.region
+    slugRef.current = null
+    setLinkMiss(null)
     setHash('#overlap/regeneron')
     if (same && data) {
       setSelected(FIANLIMAB_PAIR)
@@ -265,12 +450,25 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
     setForm(P)
   }
 
-  // #overlap/regeneron typed or linked while this tab is already open (App only switches tabs on hashchange).
-  const presetRef = useRef(loadPreset)
-  presetRef.current = loadPreset
+  const applyLink = (l: Link) => {
+    if (l.kind === 'preset') {
+      loadPreset()
+      return
+    }
+    slugRef.current = l.slug
+    setLinkMiss(null)
+    setWantPair(null)
+    setForm({ sponsor: '', as_of: l.asOf ?? '', region: l.region ?? DEFAULT_REGION })
+    setLinkTick((n) => n + 1)
+  }
+
+  // A deep link typed or followed while this tab is already open (App only switches tabs on hashchange).
+  const linkRef = useRef(applyLink)
+  linkRef.current = applyLink
   useEffect(() => {
     const onHash = () => {
-      if (DEEP_LINK.test(window.location.hash)) presetRef.current()
+      const l = parseLink(window.location.hash, regionsRef.current)
+      if (l) linkRef.current(l)
     }
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
@@ -334,35 +532,109 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
       nested: nested.length,
       nestedUb: nested.filter((p) => p.upper_bound).length,
       closedNow,
+      uninformative: data.pairs.some((p) => !p.overlap_informative),
     }
   }, [data, tIdx])
-  // Why no pair has a countable site: the whole sponsor (e.g. AstraZeneca) or one anonymized trial in every pair.
-  const anonNote = trials.every((t) => t.n_sites_identified === 0)
-    ? "This sponsor lists its sites anonymously on ClinicalTrials.gov, so shared sites can't be counted."
-    : "Every pair includes a trial that lists only anonymized sites on ClinicalTrials.gov, so shared sites can't be counted."
+  const allAnon = trials.length > 0 && trials.every((t) => t.n_sites_identified === 0)
 
   const stale = loading && !!data
   const worldwide = !data?.region
   const registry = data?.basis === 'registry'
+  const pickedA = current ? tIdx.get(current.a) : undefined
+  const pickedB = current ? tIdx.get(current.b) : undefined
+  const pickedStatus = pickedA && pickedB ? `Selected ${trialLabel(pickedA)} × ${trialLabel(pickedB)}. Criteria compared below.` : ''
+
+  const statTiles = data && stats && (
+    <div className="stats ov-stats">
+      <Stat
+        label={registry ? 'Trials recruiting (CT.gov status)' : 'Trials recruiting on the date (estimated)'}
+        value={int(trials.length)}
+        sub={
+          registry
+            ? `lung trials of this lead sponsor listed as Recruiting or Enrolling by invitation at the ${shortDate(data.snapshot_date)} snapshot`
+            : 'lung trials of this lead sponsor inside their estimated enrollment windows, bounded by the CT.gov status at the snapshot'
+        }
+      />
+      <Stat
+        label="Pairs sharing a site"
+        value={
+          stats.noneKnown ? (
+            '—'
+          ) : (
+            <>
+              {int(stats.sharing)} <span className="unit">of {int(stats.known)} pairs</span>
+            </>
+          )
+        }
+        sub={
+          stats.noneKnown
+            ? ANON
+            : `share at least one identifiable registered site (${worldwide ? 'worldwide' : data.region_label})` +
+              (stats.someUnknown ? `; only the ${int(stats.known)} pairs whose sites can be counted` : '')
+        }
+      />
+      <Stat
+        label="Most shared sites"
+        value={stats.top ? int(stats.top.shared_sites) : '—'}
+        sub={
+          stats.noneKnown
+            ? ANON
+            : !stats.top
+              ? 'needs two trials'
+              : stats.top.shared_sites > 0
+                ? `${stats.top.p} × ${stats.top.q}`
+                : 'no pair shares an identifiable site'
+        }
+      />
+      <Stat
+        label="Nested pairs"
+        value={stats.noneKnown ? '—' : int(stats.nested)}
+        sub={
+          stats.noneKnown
+            ? ANON
+            : `≥ 10 shared sites and ≥ 80% eligibility overlap in one direction${stats.nestedUb ? ` (${stats.nestedUb} upper bound ${UB})` : ''}`
+        }
+      />
+    </div>
+  )
+
+  const trialList = data && (
+    <ul className="ov-tlist">
+      {trials.map((t) => (
+        <TrialRow
+          key={t.nct_id}
+          t={t}
+          sites={data.sites}
+          snapshot={data.snapshot_date}
+          worldwide={worldwide}
+          detailed={detailed}
+          open={openTrial === t.nct_id}
+          onToggle={() => setOpenTrial((c) => (c === t.nct_id ? null : t.nct_id))}
+        />
+      ))}
+    </ul>
+  )
 
   return (
-    <div className="view">
-      <div className="view-head">
-        <h1>Portfolio overlap audit</h1>
-        <p className="lede">
-          Where one sponsor's own concurrent NSCLC trials recruit at the same sites for overlapping patients. Everything here
-          is descriptive: registered sites and statuses from ClinicalTrials.gov, enrollment windows for past dates, and
-          eligibility overlap on a synthetic population. No enrollment forecasts, and no dates after the registry snapshot.
-        </p>
-      </div>
+    <div className="view ov">
+      <PageHead
+        title="Portfolio overlap"
+        lede="Where one sponsor's lung cancer trials recruiting on the same date share registered sites and eligible patients, and the criteria that separate each pair."
+        meta={snapshot ? `Registry snapshot: ${shortDate(snapshot)}` : undefined}
+      />
 
-      <section className="card controls ov-controls" aria-label="Audit inputs">
-        <div className="controls-row">
-          <label className="field field-wide">
-            <span className="field-label">
-              Sponsor{sponsorsFresh && sponsors ? ` · ${sponsors.sponsors.length} with ≥ 2 lung trials recruiting on the date` : ''}
-            </span>
-            <select value={form.sponsor} onChange={(e) => update({ sponsor: e.target.value })}>
+      <div className="ov-controls">
+        <div className="ov-filters" role="group" aria-label="Overlap filters">
+          <div className="field ov-f-sponsor">
+            <label className="field-label" htmlFor={`${ids}-sponsor`}>
+              Sponsor
+            </label>
+            <select
+              id={`${ids}-sponsor`}
+              value={form.sponsor}
+              onChange={(e) => update({ sponsor: e.target.value })}
+              aria-describedby={detailed && sponsorsFresh ? `${ids}-sponsor-hint` : undefined}
+            >
               {!form.sponsor && <option value="">Loading sponsors…</option>}
               {sponsorOptions.extra && (
                 <option value={sponsorOptions.extra}>
@@ -378,346 +650,563 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
                 </option>
               ))}
             </select>
-          </label>
-          <label className="field">
-            <span className="field-label">As of{snapshot ? ` · snapshot ${snapshot}` : ''}</span>
+            {detailed && sponsorsFresh && sponsors && (
+              <span className="ov-hint" id={`${ids}-sponsor-hint`}>
+                {plural(sponsors.sponsors.length, 'sponsor')} with 2 or more lung trials recruiting on this date; trial counts in brackets
+              </span>
+            )}
+          </div>
+          <div className="field ov-f-date">
+            <label className="field-label" htmlFor={`${ids}-date`}>
+              As of
+            </label>
             <input
+              id={`${ids}-date`}
               type="date"
               value={form.as_of || snapshot || ''}
               max={snapshot ?? undefined}
               onChange={(e) => update({ as_of: e.target.value === snapshot ? '' : e.target.value })}
+              aria-describedby={detailed && snapshot ? `${ids}-date-hint` : undefined}
             />
-          </label>
-          <label className="field">
-            <span className="field-label">Sites</span>
-            <select value={form.region} onChange={(e) => update({ region: e.target.value })}>
-              {regionOptions(regions ?? ['US-Northeast', 'US-Midwest', 'US-South', 'US-West', 'US']).map((o) => (
+            {detailed && snapshot && (
+              <span className="ov-hint" id={`${ids}-date-hint`}>
+                Snapshot {shortDate(snapshot)}; earlier dates are estimated
+              </span>
+            )}
+          </div>
+          <div className="field ov-f-region">
+            <label className="field-label" htmlFor={`${ids}-region`}>
+              Region
+            </label>
+            <select id={`${ids}-region`} value={form.region} onChange={(e) => update({ region: e.target.value })}>
+              {regionOptions(regionList).map((o) => (
                 <option key={o.value || 'world'} value={o.value}>
                   {o.label}
                 </option>
               ))}
             </select>
-          </label>
-          <button className="btn ov-preset" onClick={loadPreset}>
-            Regeneron, 1 Sept 2024
+          </div>
+          <button
+            type="button"
+            className="btn ov-preset"
+            onClick={loadPreset}
+            title="The Regeneron example: its lung trials on Sep 1, 2024 at U.S. sites, with the two fianlimab trials selected"
+          >
+            Regeneron, Sep 1, 2024
           </button>
         </div>
         {afterSnapshot ? (
-          <p className="small neg">
-            The registry snapshot is {snapshot}. Later dates would be projections, so this audit does not show them.{' '}
-            <button className="btn btn-small" onClick={() => update({ as_of: '' })}>
-              Use {snapshot}
+          <p className="ov-invalid">
+            The registry snapshot is {longDate(snapshot)}. Later dates would be projections, so this audit does not show them.{' '}
+            <button type="button" className="btn btn-small" onClick={() => update({ as_of: '' })}>
+              Use {shortDate(snapshot)}
             </button>
           </p>
         ) : (
-          !validDate && <p className="small neg">Enter a full date (YYYY-MM-DD).</p>
+          !validDate && <p className="ov-invalid">Enter a full date (YYYY-MM-DD).</p>
         )}
         {sponsorErr && <ErrorBox error={sponsorErr} />}
-      </section>
+      </div>
 
       {error && <ErrorBox error={error} onRetry={() => setReload((n) => n + 1)} />}
-      {loading && !data && <Loading label="Reading registered sites and eligibility…" />}
+      {loading && !data && <Loading label="Loading registry data…" />}
+      <p className="sr-only" aria-live="polite">
+        {pickedStatus}
+      </p>
 
       {data && stats && (
         <>
-          <div className="ov-runline small">
-            <span>
-              <strong>{data.sponsor}</strong>
+          <div className="ov-cluster">
+          <div className="ov-summary">
+            <p className="ov-sumline">
+              <span className="num">{int(trials.length)}</span> {trials.length === 1 ? 'trial' : 'trials'} {registry ? '' : 'estimated '}recruiting on{' '}
+              {longDate(data.as_of)} · <span className="num">{int(data.pairs.length)}</span> {data.pairs.length === 1 ? 'pair' : 'pairs'}
+            </p>
+            <span className="ov-updating" role="status">
+              {stale ? 'Updating…' : ''}
             </span>
-            <span>
-              as of <strong>{data.as_of}</strong>
-            </span>
-            {registry ? (
-              <Badge tone="ok" title="On the snapshot date, recruiting means the CT.gov status: a registered fact">
-                CT.gov status at the snapshot
-              </Badge>
-            ) : (
-              <Badge tone="neutral" title={`Earlier than the ${data.snapshot_date} snapshot: estimated from enrollment windows`}>
-                estimated windows · snapshot {data.snapshot_date}
-              </Badge>
+            {trials.length >= 2 && (
+              <Segmented
+                label="Pair view"
+                className="ov-mode"
+                value={mode}
+                onChange={setMode}
+                options={[
+                  { value: 'matrix', label: 'Matrix' },
+                  { value: 'list', label: 'Pair list' },
+                ]}
+              />
             )}
-            <span>{data.region_label}</span>
-            <span className="muted">
-              synthetic population n = {int(data.population.n)} · eligibility{' '}
-              {int(trials.filter((t) => t.eligibility_source === 'hand-encoded').length)} hand-encoded,{' '}
-              {int(trials.filter((t) => t.eligibility_source !== 'hand-encoded').length)} rule-based parse
-            </span>
-            {stale && <Badge tone="info">updating…</Badge>}
           </div>
-          {!registry && stats.closedNow.length > 0 && (
-            <Caveat>
-              {stats.closedNow.length === trials.length ? `All ${int(trials.length)}` : `${int(stats.closedNow.length)} of ${int(trials.length)}`}{' '}
-              of these trials are no longer recruiting on ClinicalTrials.gov at the {data.snapshot_date} snapshot (
-              {summarizeStatuses(stats.closedNow)}). The registry does not publish when enrollment closed, so whether each was
-              recruiting on {data.as_of} is estimated from its enrollment window; a window that would run past the snapshot is
-              cut there.
-            </Caveat>
-          )}
-          {data.n_sites > 0 && data.n_sites_anonymized / data.n_sites >= 0.2 && (
-            <Caveat>
-              {int(data.n_sites_anonymized)} of {int(data.n_sites)} registered sites of these trials are anonymized on
-              ClinicalTrials.gov (“Research Site”). They are collapsed to one entry per city and cannot be matched across
-              trials, so shared-site and other-sponsor counts here undercount for this sponsor. Same-city anonymized entries are
-              listed in the pair detail, not counted.
-            </Caveat>
-          )}
-          {data.excluded_open_ended.length > 0 && (
-            <Caveat>
-              Left out: {data.excluded_open_ended.join(', ')} started by this date and are no longer recruiting, but register no
-              completion date at all, so no enrollment window can be estimated.
-            </Caveat>
-          )}
-          {data.not_yet_recruiting.length > 0 && (
-            <Caveat>
-              Not counted: {data.not_yet_recruiting.map((t) => t.nct_id).join(', ')}{' '}
-              {data.not_yet_recruiting.length === 1 ? 'is' : 'are'} listed as Not yet recruiting on ClinicalTrials.gov at the{' '}
-              {data.snapshot_date} snapshot
-              {registry ? '' : ', although the registered (anticipated) start is on or before this date'}.
-            </Caveat>
-          )}
 
-          <div className="stats">
-            <Stat
-              label={registry ? 'Trials recruiting (CT.gov status)' : 'Trials recruiting on the date (estimated)'}
-              value={int(trials.length)}
-              sub={
-                registry
-                  ? `lung trials of this lead sponsor listed as Recruiting or Enrolling by invitation at the ${data.snapshot_date} snapshot`
-                  : 'lung trials of this lead sponsor inside their estimated enrollment windows, bounded by the CT.gov status at the snapshot'
-              }
-            />
-            <Stat
-              label="Pairs sharing a site"
-              value={
-                stats.noneKnown ? (
-                  '—'
+          {detailed && (
+            <p className="ov-runline">
+              <span>
+                <span className="strong">{data.sponsor}</span> · {data.region_label}
+              </span>
+              <span>
+                {registry ? (
+                  <Qualifier tone="muted">CT.gov status at the snapshot</Qualifier>
                 ) : (
-                  <>
-                    {int(stats.sharing)} <span className="unit">of {int(stats.known)} pairs</span>
-                  </>
-                )
-              }
-              sub={
-                stats.noneKnown
-                  ? ANON
-                  : `share at least one identifiable registered site (${worldwide ? 'worldwide' : data.region_label})` +
-                    (stats.someUnknown ? `; only the ${int(stats.known)} pairs whose sites can be counted` : '')
-              }
-            />
-            <Stat
-              label="Most shared sites"
-              value={stats.top ? int(stats.top.shared_sites) : '—'}
-              sub={
-                stats.noneKnown
-                  ? ANON
-                  : !stats.top
-                    ? 'needs two trials'
-                    : stats.top.shared_sites > 0
-                      ? `${stats.top.p} × ${stats.top.q}`
-                      : 'no pair shares an identifiable site'
-              }
-            />
-            <Stat
-              label="Nested pairs"
-              value={stats.noneKnown ? '—' : int(stats.nested)}
-              sub={
-                stats.noneKnown
-                  ? ANON
-                  : `≥ 10 shared sites and ≥ 80% eligibility overlap in one direction${stats.nestedUb ? ` (${stats.nestedUb} upper bound ${UB})` : ''}`
-              }
-            />
-          </div>
+                  <Qualifier info={`Earlier than the ${shortDate(data.snapshot_date)} snapshot: recruiting is estimated from enrollment windows.`}>
+                    Estimated windows
+                  </Qualifier>
+                )}
+              </span>
+              <span>
+                <Gloss term="synthetic-population">Synthetic population</Gloss> n = <span className="num">{int(data.population.n)}</span>
+              </span>
+              <span>
+                Eligibility: <span className="num">{int(trials.filter((t) => t.eligibility_source === 'hand-encoded').length)}</span> hand-encoded,{' '}
+                <span className="num">{int(trials.filter((t) => t.eligibility_source !== 'hand-encoded').length)}</span> rule-based parse
+              </span>
+            </p>
+          )}
 
-          {trials.length === 0 ? (
+          {linkMiss && (
+            <Caveat>
+              No sponsor named “{linkMiss.replace(/-/g, ' ')}” has 2 or more lung trials recruiting on {longDate(data.as_of)} in this region, so this shows{' '}
+              {data.sponsor}.
+            </Caveat>
+          )}
+          <AuditNotes data={data} trials={trials} closedNow={stats.closedNow} registry={registry} detailed={detailed} />
+
+          {detailed && statTiles}
+
+          {trials.length < 2 ? (
             <div className="empty">
-              No lung trials of {data.sponsor} are {registry ? 'listed as recruiting at the snapshot' : 'inside their estimated enrollment window on ' + data.as_of}
-              {data.region ? ` with a registered site in ${data.region_label}` : ''}.
+              <p className="ov-empty-lead">This sponsor had fewer than 2 lung cancer trials recruiting on this date. Try another date or sponsor.</p>
+              <p className="small">
+                {trials.length === 0 ? 'No' : 'One'} lung trial of {data.sponsor}{' '}
+                {trials.length === 1 ? 'is' : 'are'} {registry ? 'listed as recruiting at the snapshot' : `inside an estimated enrollment window on ${longDate(data.as_of)}`}
+                {data.region ? ` with a registered site in ${data.region_label}` : ''}.
+              </p>
             </div>
           ) : (
-            <section className="card" aria-label="Pair matrix">
-              <div className="section-head">
-                <div>
-                  <h2>{mode === 'matrix' ? 'Pair matrix' : 'Pair list'}</h2>
-                  <p className="small muted" style={{ margin: 0 }}>
-                    {mode === 'matrix' ? (
-                      <>
-                        Each cell: {stats.noneKnown ? '' : 'shared registered sites · '}% of the <strong>row</strong> trial's
-                        eligible patients who also qualify for the <strong>column</strong> trial / the reverse. Diagonal: the
-                        trial's registered sites. Click a cell for the detail.
-                        {stats.noneKnown
-                          ? ` ${anonNote}`
-                          : stats.someUnknown
-                            ? ' Cells without a site count involve a trial whose sites are all anonymized on ClinicalTrials.gov.'
-                            : ''}
-                      </>
-                    ) : stats.noneKnown ? (
-                      <>Every pair, largest eligibility overlap first. {anonNote} Click a row for the detail.</>
-                    ) : stats.someUnknown ? (
-                      <>
-                        Every pair, most shared sites first, then pairs whose shared sites can't be counted (a trial lists only
-                        anonymized sites), by eligibility overlap. Click a row for the detail.
-                      </>
-                    ) : (
-                      <>Every pair, most shared sites first. Click a row for the detail.</>
-                    )}
-                  </p>
-                </div>
-                <div className="seg" role="group" aria-label="Pair view">
-                  <button className={`seg-btn${mode === 'matrix' ? ' seg-on' : ''}`} aria-pressed={mode === 'matrix'} onClick={() => setMode('matrix')}>
-                    Matrix
-                  </button>
-                  <button className={`seg-btn${mode === 'list' ? ' seg-on' : ''}`} aria-pressed={mode === 'list'} onClick={() => setMode('list')}>
-                    Pair list
-                  </button>
-                </div>
-              </div>
-              {mode === 'matrix' ? (
-                <Matrix trials={trials} orient={orient} selected={selected} onSelect={setSelected} />
-              ) : (
-                <PairList data={data} tIdx={tIdx} hideSites={stats.noneKnown} orient={orient} selected={selected} onSelect={setSelected} />
+            <>
+              {mode === 'matrix' && (
+                <LegendRow theme={theme} uncountable={stats.noneKnown || stats.someUnknown} uninformative={stats.uninformative} />
               )}
-              <div className="ov-legend small">
-                {!stats.noneKnown && (
-                  <span className="ov-legend-bins">
-                    Shared sites:
-                    {BINS.map(([, label], i) => (
-                      <span key={label} className={`ov-swatch ov-b${i}`}>
-                        {label}
-                      </span>
-                    ))}
-                  </span>
-                )}
-                <span>
-                  <span className="ov-ub">{UB}</span> {UB_TEXT}
-                </span>
-                {data.pairs.some((p) => p.unreviewed_criteria) && (
-                  <span>
-                    <span className="ov-unrev">{UNREVIEWED}</span> {UNREVIEWED_TEXT}
-                  </span>
-                )}
-                {data.pairs.some((p) => !p.overlap_informative) && <span>— no criteria encoded for a trial: overlap not informative</span>}
-              </div>
-            </section>
+              {stats.noneKnown ? (
+                <p className="ov-anon">
+                  {allAnon
+                    ? ANON_SPONSOR_NOTE
+                    : "Every pair includes a trial that lists only anonymized sites on ClinicalTrials.gov, so shared sites can't be counted; those cells show eligibility overlap only."}
+                </p>
+              ) : (
+                stats.someUnknown && (
+                  <p className="ov-anon">
+                    Cells with no number involve a trial that lists only anonymized sites on ClinicalTrials.gov: shared sites can't be counted. Unknown,
+                    not zero.
+                  </p>
+                )
+              )}
+              <Window
+                label={mode === 'matrix' ? 'Pair matrix' : 'Pair list'}
+                className={`ov-win${stale ? ' ov-stale' : ''}`}
+                title={data.sponsor}
+                meta={data.region_label}
+                aside={
+                  mode === 'matrix'
+                    ? "Row trial vs column trial · diagonal: the trial's registered sites"
+                    : "P → Q: share of P's eligible patients who also qualify for Q"
+                }
+                flush
+              >
+                <div aria-busy={stale || undefined}>
+                  {mode === 'matrix' ? (
+                    <Matrix
+                      trials={trials}
+                      orient={orient}
+                      selected={selected}
+                      onSelect={setSelected}
+                      detailed={detailed}
+                      worldwide={worldwide}
+                    />
+                  ) : (
+                    <PairList data={data} tIdx={tIdx} hideSites={stats.noneKnown} orient={orient} selected={selected} onSelect={setSelected} />
+                  )}
+                </div>
+              </Window>
+              <p className="ov-caption">
+                <Gloss term="synthetic-population">Synthetic population</Gloss>. <Gloss term="registered-site">Registered sites</Gloss>, not
+                confirmed enrolling.{' '}
+                {mode === 'matrix'
+                  ? "Hover or focus a cell for details; select it to compare the two trials' criteria below."
+                  : (stats.noneKnown
+                      ? 'Every pair, largest eligibility overlap first.'
+                      : stats.someUnknown
+                        ? "Every pair, most shared sites first, then pairs whose shared sites can't be counted, by eligibility overlap."
+                        : 'Every pair, most shared sites first.') + " Select a row to compare the two trials' criteria below."}
+              </p>
+              {!detailed && <Details summary="Summary counts">{statTiles}</Details>}
+            </>
           )}
+          </div>
 
-          {current && <PairDetail o={current} tIdx={tIdx} sites={data.sites} data={data} worldwide={worldwide} />}
+          {current && pickedA && pickedB && (
+            <PairDetail
+              o={current}
+              A={pickedA}
+              B={pickedB}
+              sites={data.sites}
+              data={data}
+              worldwide={worldwide}
+              detailed={detailed}
+              onClear={() => {
+                setSelected(null)
+                setWantPair(null)
+              }}
+            />
+          )}
 
           {trials.length > 0 && (
-            <section className="card" aria-label="Trials">
-              <h2>
-                Trials recruiting on {data.as_of} {registry ? '(CT.gov status)' : '(estimated)'}
-              </h2>
-              <p className="small muted" style={{ marginTop: 0 }}>
-                Other sponsors' trials: distinct lung trials of other lead sponsors (any sponsor class, any phase){' '}
-                {registry ? 'listed as recruiting at the snapshot' : 'recruiting on this date by the same rule'} at the trial's
-                identifiable registered sites. A count, not an effect.
-              </p>
-              <ul className="ov-tlist">
-                {trials.map((t) => (
-                  <TrialRow
-                    key={t.nct_id}
-                    t={t}
-                    sites={data.sites}
-                    snapshot={data.snapshot_date}
-                    worldwide={worldwide}
-                    open={openTrial === t.nct_id}
-                    onToggle={() => setOpenTrial((c) => (c === t.nct_id ? null : t.nct_id))}
+            <Window label="Trials" className="ov-trials">
+              <div className="ov-trials-head">
+                <h2>Trials recruiting on {longDate(data.as_of)}</h2>
+                {registry ? <Qualifier tone="muted">CT.gov status</Qualifier> : <Qualifier>Estimated</Qualifier>}
+                {!detailed && (
+                  <InfoTip
+                    label="Details: other sponsors' trials"
+                    content={`Other sponsors' trials: distinct lung trials of other lead sponsors (any sponsor class, any phase) ${registry ? 'listed as recruiting at the snapshot' : 'recruiting on this date by the same rule'} at the trial's identifiable registered sites. A count, not an effect.`}
                   />
-                ))}
-              </ul>
-            </section>
+                )}
+              </div>
+              {detailed && (
+                <p className="ov-trials-note">
+                  Other sponsors' trials: distinct lung trials of other lead sponsors (any sponsor class, any phase){' '}
+                  {registry ? 'listed as recruiting at the snapshot' : 'recruiting on this date by the same rule'} at the trial's identifiable registered
+                  sites. A count, not an effect.
+                </p>
+              )}
+              {detailed ? (
+                trialList
+              ) : (
+                <>
+                  <p className="ov-trials-lede">
+                    Each trial's registered sites, where its criteria come from, and how many other sponsors' lung trials recruit at those sites.
+                  </p>
+                  <Details summary={`All ${plural(trials.length, 'trial')}, with per-site counts`}>{trialList}</Details>
+                </>
+              )}
+            </Window>
           )}
 
-          <section className="card" aria-label="Provenance">
-            <h2>Where these numbers come from</h2>
-            <ul className="ov-prov">
-              <li>
-                <strong>Recruiting on a date.</strong> On the registry snapshot ({data.snapshot_date}, the ClinicalTrials.gov
-                download) it is the CT.gov status: Recruiting or Enrolling by invitation. An earlier date is estimated: from the
-                registered start to start + 65% of the time to the registered primary completion (the 65% is an assumption),
-                bounded by the status at the snapshot. A trial still recruiting then counts from its start; any other status means
-                enrollment closed by the snapshot; withdrawn and not-yet-recruiting trials never count. Later dates are refused:
-                nothing is projected.
-              </li>
-              <li>
-                <strong>Sites</strong> are the lists registered on ClinicalTrials.gov at the snapshot (site activation dates are
-                not public). Sites withdrawn from a trial are dropped. Sites registered anonymously (“Research Site”) are collapsed
-                to one pseudo-site per city and are never counted as shared.
-              </li>
-              <li>
-                <strong>Eligibility overlap</strong> is computed on a synthetic population of {int(data.population.n)} advanced-NSCLC
-                patients whose prevalences are rounded modeling assumptions, not patient data. Criteria are hand-encoded from each
-                trial's CT.gov text where available (reviewed), otherwise taken from a rule-based parse (unreviewed,{' '}
-                <span className="ov-unrev">{UNREVIEWED}</span>). The criteria diff matches criteria by the patient attribute they
-                restrict, not by name.
-              </li>
-              <li>
-                <span className="ov-ub">{UB}</span> <strong>Upper bound</strong>: a required biomarker or cohort restriction the
-                synthetic population can't represent (or another restriction it does not model), so the overlap shown is a ceiling
-                on the modeled populations, not a measurement. The rule-based parse never sets this flag, so an unflagged{' '}
-                <span className="ov-unrev">{UNREVIEWED}</span> pair is unreviewed, not verified.
-              </li>
-              <li>No speedup, time-to-fill or enrollment rate is shown or implied: this view counts and compares.</li>
-            </ul>
-          </section>
+          {detailed ? (
+            <LegendDefs data={data} theme={theme} />
+          ) : (
+            <Details summary="Legend, definitions and sources" className="ov-defs-disclosure">
+              <LegendDefs data={data} theme={theme} />
+            </Details>
+          )}
         </>
       )}
     </div>
   )
 }
 
-function summarizeStatuses(ts: OverlapTrial[]): string {
-  const n = new Map<string, number>()
-  ts.forEach((t) => n.set(t.status_now, (n.get(t.status_now) ?? 0) + 1))
-  return [...n.entries()].map(([s, k]) => `${statusLabel(s)}: ${int(k)}`).join(', ')
-}
-
-function defaultPair(d: OverlapAudit): Pair | null {
-  if (d.pairs.length === 0) return null
-  const best = [...d.pairs].sort(
-    (x, y) =>
-      Number(y.overlap_informative) - Number(x.overlap_informative) ||
-      y.shared_sites - x.shared_sites ||
-      Math.max(y.o_pq, y.o_qp) - Math.max(x.o_pq, x.o_qp),
-  )[0]
-  return [best.p, best.q]
-}
-
-function trialShort(t: OverlapTrial): string {
-  return t.acronym ? `${t.acronym}` : t.nct_id
-}
-
-function pctPair(o: Oriented): string {
-  return o.pair.overlap_informative ? `${pct(o.o_ab)} / ${pct(o.o_ba)}` : '—'
-}
-
-function monthsText(p: OverlapPair): string {
-  return `${num(p.months_both_recruiting_estimated, 1)} months both recruiting (estimated, through the snapshot at most)`
-}
-
-function cellText(o: Oriented, known: boolean): string {
-  const s = known
-    ? `${o.a} × ${o.b}: ${sitesLabel(o.pair.shared_sites)} shared. `
-    : `${o.a} × ${o.b}: shared sites can't be counted (${ANON}). `
-  const ov = o.pair.overlap_informative
-    ? `${pct(o.o_ab)} of ${o.a}'s eligible patients also qualify for ${o.b}; ${pct(o.o_ba)} of ${o.b}'s also qualify for ${o.a}. `
-    : 'Overlap not informative (no criteria encoded for one trial). '
+/** The audit's caveats. Each changes what the numbers mean, so a short form stays visible in Simple (the full text in
+ *  its info card); Detailed shows the full text. */
+function AuditNotes({
+  data,
+  trials,
+  closedNow,
+  registry,
+  detailed,
+}: {
+  data: OverlapAudit
+  trials: OverlapTrial[]
+  closedNow: OverlapTrial[]
+  registry: boolean
+  detailed: boolean
+}) {
+  const notes: { key: string; short: ReactNode; full: string }[] = []
+  if (!registry && closedNow.length > 0) {
+    const share = closedNow.length === trials.length ? `All ${int(trials.length)}` : `${int(closedNow.length)} of ${int(trials.length)}`
+    notes.push({
+      key: 'closed',
+      short: (
+        <>
+          {share} of these trials are no longer recruiting at the {shortDate(data.snapshot_date)} snapshot, so whether each was recruiting on{' '}
+          {longDate(data.as_of)} is estimated.
+        </>
+      ),
+      full:
+        `${share} of these trials are no longer recruiting on ClinicalTrials.gov at the ${longDate(data.snapshot_date)} snapshot (` +
+        `${summarizeStatuses(closedNow)}). The registry does not publish when enrollment closed, so whether each was recruiting on ` +
+        `${longDate(data.as_of)} is estimated from its enrollment window; a window that would run past the snapshot is cut there.`,
+    })
+  }
+  if (data.n_sites > 0 && data.n_sites_anonymized / data.n_sites >= 0.2) {
+    notes.push({
+      key: 'anon',
+      short: (
+        <>
+          {int(data.n_sites_anonymized)} of {int(data.n_sites)} registered sites are anonymized on ClinicalTrials.gov, so shared-site counts here
+          undercount for this sponsor.
+        </>
+      ),
+      full:
+        `${int(data.n_sites_anonymized)} of ${int(data.n_sites)} registered sites of these trials are anonymized on ClinicalTrials.gov ` +
+        '(“Research Site”). They are collapsed to one entry per city and cannot be matched across trials, so shared-site and ' +
+        'other-sponsor counts here undercount for this sponsor. Same-city anonymized entries are listed in the pair detail, not counted.',
+    })
+  }
+  if (data.excluded_open_ended.length > 0) {
+    const full = `Left out: ${data.excluded_open_ended.join(', ')} started by this date and are no longer recruiting, but register no completion date at all, so no enrollment window can be estimated.`
+    notes.push({ key: 'open', short: full, full })
+  }
+  if (data.not_yet_recruiting.length > 0) {
+    const full =
+      `Not counted: ${data.not_yet_recruiting.map((t) => t.nct_id).join(', ')} ${data.not_yet_recruiting.length === 1 ? 'is' : 'are'} listed as ` +
+      `Not yet recruiting on ClinicalTrials.gov at the ${longDate(data.snapshot_date)} snapshot` +
+      `${registry ? '' : ', although the registered (anticipated) start is on or before this date'}.`
+    notes.push({ key: 'nyr', short: full, full })
+  }
+  if (notes.length === 0) return null
   return (
-    s +
-    ov +
-    monthsText(o.pair) +
-    '.' +
-    (o.pair.upper_bound ? ` ${UB} ${UB_TEXT}.` : '') +
-    (o.pair.unreviewed_criteria ? ` ${UNREVIEWED} ${UNREVIEWED_TEXT}.` : '')
+    <div className="ov-notes">
+      {notes.map((n) =>
+        detailed || n.short === n.full ? (
+          <Caveat key={n.key}>{n.full}</Caveat>
+        ) : (
+          <Caveat key={n.key}>
+            {n.short} <InfoTip label="More about this note" content={n.full} />
+          </Caveat>
+        ),
+      )}
+    </div>
   )
 }
 
-function Marks({ p }: { p: OverlapPair }) {
+/** The compact legend above the matrix (both densities), as in the C mockup. */
+function LegendRow({ theme, uncountable, uninformative }: { theme: 'light' | 'dark'; uncountable: boolean; uninformative: boolean }) {
   return (
+    <div className="ov-legend" role="group" aria-label="Matrix legend">
+      <span className="ov-lg">
+        <span className="strong">Number:</span>
+        <HoverCard content="Registered sites both trials list on ClinicalTrials.gov.">shared registered sites</HoverCard>
+      </span>
+      <span className="ov-lg">
+        <HoverCard
+          content={`The larger share of one trial's eligible patients who also qualify for the other, on a synthetic population. ${theme === 'dark' ? 'Brighter' : 'Darker'} means more.`}
+        >
+          Shade
+        </HoverCard>
+        <span className="ov-sws" aria-hidden="true">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <span key={i} className={`ov-sw ov-h${i}`} />
+          ))}
+        </span>
+        <span className="num">0% → 100%</span>
+      </span>
+      <span className="ov-lg">
+        <span className="ov-lg-dot" aria-hidden="true" />
+        80% or more, one way
+      </span>
+      <span className="ov-lg">
+        <span className="ov-lg-mk" aria-hidden="true">
+          {UB}
+        </span>
+        <HoverCard content={MARK_UB}>Upper bound</HoverCard>
+      </span>
+      <span className="ov-lg">
+        <span className="ov-lg-mk" aria-hidden="true">
+          {UNREVIEWED}
+        </span>
+        <HoverCard content={MARK_UNREV}>Unreviewed</HoverCard>
+      </span>
+      <span className="ov-lg">
+        <span className="ov-lg-mk" aria-hidden="true">
+          {UNREVIEWED}
+        </span>
+        <span>on a trial name:</span>
+        <HoverCard content={MARK_UNREV_CRIT}>Unreviewed criteria</HoverCard>
+      </span>
+      {uncountable && (
+        <span className="ov-lg">
+          <span className="strong">No number:</span>
+          <HoverCard content={MARK_NONUM}>can't be counted</HoverCard>
+        </span>
+      )}
+      {uninformative && (
+        <span className="ov-lg">
+          <span className="ov-sw ov-hx" aria-hidden="true" />
+          <span className="strong">Hatched:</span>
+          <HoverCard content="No criteria are encoded for one of the trials, so the eligibility overlap is not informative.">overlap not informative</HoverCard>
+        </span>
+      )}
+    </div>
+  )
+}
+
+/** Hover/focus/tap card for a pair (copy deck B6 "Pair hover card template": Simple shows the bulleted lines, Detailed
+ *  all of them). */
+function PairTip({
+  o,
+  A,
+  B,
+  known,
+  detailed,
+  selected,
+}: {
+  o: Oriented
+  A: OverlapTrial
+  B: OverlapTrial
+  known: boolean
+  detailed: boolean
+  selected: boolean
+}) {
+  const p = o.pair
+  const a = trialLabel(A)
+  const b = trialLabel(B)
+  const ca = new Map(A.criteria.map((c) => [c.id, c.label]))
+  const cb = new Map(B.criteria.map((c) => [c.id, c.label]))
+  const both = o.shared.filter((g) => g.same).flatMap((g) => g.a.map((id) => ca.get(id) ?? id))
+  const onlyA = o.onlyA.map((id) => ca.get(id) ?? id)
+  const onlyB = o.onlyB.map((id) => cb.get(id) ?? id)
+  const marks = (
     <>
-      {p.upper_bound && <span className="ov-ub">{UB}</span>}
-      {p.unreviewed_criteria && <span className="ov-unrev">{UNREVIEWED}</span>}
+      {p.upper_bound && <span className="ov-mtext">{UB} Upper bound</span>}
+      {p.unreviewed_criteria && <span className="ov-mtext">{UNREVIEWED} Unreviewed</span>}
     </>
+  )
+  // Detailed: numbers on the left, the criteria lists on the right, so the card stays short enough to sit beside
+  // its cell rather than over it.
+  return (
+    <div className={detailed ? 'ov-tip ov-tip-wide' : 'ov-tip'}>
+      <span className="hc-title">
+        {a} × {b}
+      </span>
+      {detailed && (
+        <span className="ov-tip-sub">
+          {A.nct_id} · {phaseText(A.phases)} · {sitesLabel(A.n_sites)} — {B.nct_id} · {phaseText(B.phases)} · {sitesLabel(B.n_sites)}
+        </span>
+      )}
+      <div className={detailed ? 'ov-tip-cols' : undefined}>
+      <dl className="ov-tip-rows">
+        <div>
+          <dt>Shared registered sites</dt>
+          <dd>{known ? <span className="num">{int(p.shared_sites)}</span> : <span className="ov-tip-unk">can't be counted ({ANON})</span>}</dd>
+        </div>
+        {p.overlap_informative ? (
+          <>
+            <div>
+              <dt>
+                {a}'s eligible patients also eligible for {b}
+              </dt>
+              <dd>
+                <span className="num">{pct(o.o_ab)}</span>
+                {marks}
+              </dd>
+            </div>
+            <div>
+              <dt>
+                {b}'s eligible patients also eligible for {a}
+              </dt>
+              <dd>
+                <span className="num">{pct(o.o_ba)}</span>
+                {marks}
+              </dd>
+            </div>
+          </>
+        ) : (
+          <div>
+            <dt>Eligible patients in both</dt>
+            <dd>
+              <span className="ov-tip-unk">Not informative: no criteria encoded for one of the trials</span>
+              {marks}
+            </dd>
+          </div>
+        )}
+        <div>
+          <dt>Months both recruiting (estimated)</dt>
+          <dd className="num">{num(p.months_both_recruiting_estimated, 1)}</dd>
+        </div>
+        {detailed && (
+          <>
+            <div>
+              <dt>Both recruiting</dt>
+              <dd className="ov-tip-plain">
+                {p.both_recruiting_from
+                  ? `${shortDate(p.both_recruiting_from)} to ${p.both_recruiting_at_snapshot || !p.both_recruiting_to ? 'the snapshot' : shortDate(p.both_recruiting_to)}`
+                  : 'not at the same time'}
+              </dd>
+            </div>
+            {p.anonymized_same_city > 0 && (
+              <div>
+                <dt>Same city, sites anonymized</dt>
+                <dd className="num">{int(p.anonymized_same_city)}</dd>
+              </div>
+            )}
+          </>
+        )}
+      </dl>
+      {detailed && (
+        <div className="ov-tip-crit">
+          <span className="ov-tip-block">
+            <span className="ov-tip-l">Criteria in both</span>
+            {both.length ? both.join(' · ') : 'None'}
+          </span>
+          <span className="ov-tip-block">
+            <span className="ov-tip-l">Only in {a}</span>
+            {onlyA.length ? onlyA.join(' · ') : 'None'}
+          </span>
+          <span className="ov-tip-block">
+            <span className="ov-tip-l">Only in {b}</span>
+            {onlyB.length ? onlyB.join(' · ') : 'None'}
+          </span>
+        </div>
+      )}
+      </div>
+      {p.sparse_criteria.length > 0 && (
+        <span className="ov-tip-block ov-tip-caution">
+          <span className="ov-tip-l">Sparse criteria ({p.sparse_criteria.join(', ')})</span>
+          {MARK_SPARSE}
+        </span>
+      )}
+      <span className="hc-src">{FOOT}</span>
+      <span className="ov-tip-cta">{selected ? 'Criteria compared below the matrix ↓' : 'Compare criteria ↓'}</span>
+    </div>
+  )
+}
+
+/** Hover/focus/tap card for a trial (row and column headers, diagonal). Copy deck B6 "Trial row-header hover card". */
+function TrialTip({ t, detailed, worldwide, diag }: { t: OverlapTrial; detailed: boolean; worldwide: boolean; diag?: boolean }) {
+  const hand = t.eligibility_source === 'hand-encoded'
+  return (
+    <div className="ov-tip">
+      <span className="hc-title">{trialLabel(t)}</span>
+      <span className="ov-tip-sub">
+        {t.nct_id} · {phaseText(t.phases)} · {int(t.n_sites)} registered sites{worldwide ? '' : ' in region'}
+        {t.n_sites_anonymized > 0 ? ` (${int(t.n_sites_anonymized)} anonymized)` : ''}
+      </span>
+      <span className="ov-tip-text">{t.title}</span>
+      <span className="ov-tip-block">
+        <span className="ov-tip-l">Criteria</span>
+        {hand ? 'Hand-encoded and reviewed' : `Rule-based parse, unreviewed (${UNREVIEWED})`}
+        {t.no_criteria ? '; none parsed, so overlap with this trial is not informative' : ''}
+      </span>
+      {t.upper_bound && (
+        <span className="ov-tip-block ov-tip-caution">
+          <span className="ov-tip-l">{UB} Upper bound</span>
+          {t.upper_bound_reasons.join('; ')}
+        </span>
+      )}
+      {t.sparse_criteria && (
+        <span className="ov-tip-block ov-tip-caution">
+          <span className="ov-tip-l">Sparse criteria</span>
+          {plural(t.criteria.length, 'encoded criterion', 'encoded criteria')}: most synthetic patients pass them.
+        </span>
+      )}
+      {detailed && t.criteria.length > 0 && (
+        <span className="ov-tip-block">
+          <span className="ov-tip-l">Encoded criteria</span>
+          {t.criteria.map((c) => c.label).join(' · ')}
+        </span>
+      )}
+      {diag && <span className="hc-src">Diagonal: the trial's registered sites. Registered, not confirmed enrolling.</span>}
+    </div>
   )
 }
 
@@ -726,11 +1215,15 @@ function Matrix({
   orient,
   selected,
   onSelect,
+  detailed,
+  worldwide,
 }: {
   trials: OverlapTrial[]
   orient: (a: string, b: string) => Oriented | null
   selected: Pair | null
   onSelect: (p: Pair) => void
+  detailed: boolean
+  worldwide: boolean
 }) {
   const scroller = useRef<HTMLDivElement>(null)
   // Keep the selected cell in view horizontally (narrow screens), without scrolling the page.
@@ -745,21 +1238,31 @@ function Matrix({
     if (c.left < b.left + sticky || c.right > b.right) box.scrollLeft += c.left - (b.left + sticky) - 8
   }, [selected, trials])
   return (
-    <div className="ov-matrix-scroll" ref={scroller}>
-      <table className="ov-matrix">
+    <div className="ov-mscroll" ref={scroller}>
+      <table className={`ov-matrix${detailed ? ' ov-matrix-detailed' : ''}`}>
+        <caption className="sr-only">
+          Shared registered sites and eligible-patient overlap for {trials.length} trials: rows against columns. Shade is the larger eligible-patient share.
+        </caption>
         <thead>
           <tr>
             <th className="ov-corner" scope="col">
-              row → column
+              Row × column
             </th>
             {trials.map((t) => (
               <th key={t.nct_id} scope="col" className="ov-colh">
-                <span className="ov-id">{trialShort(t)}</span>
-                <span className="ov-sub">{phaseLabel(t.phases)}</span>
-                <span className="ov-sub">
-                  {t.eligibility_source}
-                  {t.eligibility_source !== 'hand-encoded' && <span className="ov-unrev">{UNREVIEWED}</span>}
-                </span>
+                <HoverCard
+                  className="ov-hbtn ov-hbtn-col"
+                  label={`${trialLabel(t)}, ${phaseText(t.phases)}, ${int(t.n_sites)} registered sites${t.eligibility_source !== 'hand-encoded' ? ', unreviewed criteria' : ''}`}
+                  content={<TrialTip t={t} detailed={detailed} worldwide={worldwide} />}
+                >
+                  <span className="ov-vt">
+                    <span className="ov-vt-label">
+                      {trialLabel(t)}
+                      {t.eligibility_source !== 'hand-encoded' && <span className="ov-hmk">{UNREVIEWED}</span>}
+                    </span>
+                    <span className="ov-vt-sub">{phaseText(t.phases)}</span>
+                  </span>
+                </HoverCard>
               </th>
             ))}
           </tr>
@@ -767,23 +1270,36 @@ function Matrix({
         <tbody>
           {trials.map((r) => (
             <tr key={r.nct_id}>
-              <th scope="row" className="ov-rowh" title={r.title}>
-                <span className="ov-id">
-                  {trialShort(r)}
-                  {r.upper_bound && <span className="ov-ub" title={UB_TEXT}>{UB}</span>}
-                  {r.eligibility_source !== 'hand-encoded' && (
-                    <span className="ov-unrev" title="rule-based parse (not reviewed)">
-                      {UNREVIEWED}
-                    </span>
-                  )}
-                </span>
-                <span className="ov-title">{r.title}</span>
+              <th scope="row" className="ov-rowh">
+                <HoverCard
+                  className="ov-hbtn ov-hbtn-row"
+                  label={`${trialLabel(r)}, ${phaseText(r.phases)}, ${int(r.n_sites)} registered sites${r.eligibility_source !== 'hand-encoded' ? ', unreviewed criteria' : ''}`}
+                  content={<TrialTip t={r} detailed={detailed} worldwide={worldwide} />}
+                >
+                  <span className="ov-rh-label">
+                    {trialLabel(r)}
+                    {r.eligibility_source !== 'hand-encoded' && <span className="ov-hmk">{UNREVIEWED}</span>}
+                  </span>
+                  <span className="ov-rh-sub">
+                    {phaseText(r.phases)}
+                    {detailed ? ` · ${sitesLabel(r.n_sites)}` : ''}
+                  </span>
+                </HoverCard>
               </th>
               {trials.map((c) => {
                 if (c.nct_id === r.nct_id)
                   return (
-                    <td key={c.nct_id} className="ov-diag" title={`${r.nct_id}: ${sitesLabel(r.n_sites)} registered`}>
-                      {sitesLabel(r.n_sites)}
+                    <td key={c.nct_id} className="ov-diag">
+                      <HoverCard
+                        className="ov-cell ov-cell-diag"
+                        label={`${trialLabel(r)}: ${int(r.n_sites)} registered sites`}
+                        content={<TrialTip t={r} detailed={detailed} worldwide={worldwide} diag />}
+                      >
+                        <span className="ov-cn">
+                          <span className="num">{int(r.n_sites)}</span>
+                          {detailed && <span className="ov-unit"> {r.n_sites === 1 ? 'site' : 'sites'}</span>}
+                        </span>
+                      </HoverCard>
                     </td>
                   )
                 const o = orient(r.nct_id, c.nct_id)
@@ -791,27 +1307,45 @@ function Matrix({
                 const sel =
                   !!selected &&
                   ((selected[0] === r.nct_id && selected[1] === c.nct_id) || (selected[0] === c.nct_id && selected[1] === r.nct_id))
-                // Unknown pairs show only the eligibility overlap: no site count to show.
+                // Pairs whose shared sites can't be counted show no number (unknown, not 0), only the eligibility shade.
                 const known = sitesKnown(r, c)
-                const label = cellText(o, known)
+                const heat = heatOf(o)
+                const mk = markGlyphs(o.pair)
                 return (
                   <td
                     key={c.nct_id}
                     data-cell={`${r.nct_id}|${c.nct_id}`}
-                    className={`ov-cell ${known ? `ov-b${bin(o.pair.shared_sites)}` : 'ov-b0 ov-nosites'}${sel ? ' ov-sel' : ''}`}
+                    className={`ov-c${sel ? ' ov-sel' : ''}${known ? '' : ' ov-nosites'}`}
+                    onClick={() => onSelect([r.nct_id, c.nct_id])}
                   >
-                    <button className="ov-cellbtn" onClick={() => onSelect([r.nct_id, c.nct_id])} title={label} aria-label={label} aria-pressed={sel}>
-                      {known && (
-                        <span className="ov-cell-sites">
-                          {sitesLabel(o.pair.shared_sites)}
-                          <span className="ov-sep"> ·</span>
+                    <HoverCard
+                      className={`ov-cell ov-h${heat === null ? 'x' : heat}`}
+                      label={cellLabel(o, r, c, known, sel)}
+                      content={<PairTip o={o} A={r} B={c} known={known} detailed={detailed} selected={sel} />}
+                    >
+                      {detailed ? (
+                        <>
+                          {known && (
+                            <span className="ov-cn">
+                              <span className="num">{int(o.pair.shared_sites)}</span>
+                              <span className="ov-unit"> {o.pair.shared_sites === 1 ? 'site' : 'sites'}</span>
+                              {mk && <span className="ov-mk">{mk}</span>}
+                            </span>
+                          )}
+                          <span className="ov-cp">
+                            {/* The slash stays with the first share, so a narrow cell breaks only after it. */}
+                            <span className="num">{o.pair.overlap_informative ? `${pct(o.o_ab)} / ${pct(o.o_ba)}` : '—'}</span>
+                            {!known && mk && <span className="ov-mk">{mk}</span>}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="ov-cn">
+                          {known && <span className="num">{int(o.pair.shared_sites)}</span>}
+                          {mk && <span className="ov-mk">{mk}</span>}
                         </span>
                       )}
-                      <span className="ov-cell-pcts">
-                        {pctPair(o)}
-                        <Marks p={o.pair} />
-                      </span>
-                    </button>
+                      {hiOf(o) && <span className="ov-hi" />}
+                    </HoverCard>
                   </td>
                 )
               })}
@@ -820,6 +1354,28 @@ function Matrix({
         </tbody>
       </table>
     </div>
+  )
+}
+
+function FlagMarks({ p }: { p: OverlapPair }) {
+  return (
+    <span className="ov-flags">
+      {p.upper_bound && (
+        <Qualifier mark={UB} info={MARK_UB}>
+          Upper bound
+        </Qualifier>
+      )}
+      {p.unreviewed_criteria && (
+        <Qualifier mark={UNREVIEWED} info={MARK_UNREV}>
+          Unreviewed
+        </Qualifier>
+      )}
+      {p.sparse_criteria.length > 0 && (
+        <Qualifier tone="muted" info={MARK_SPARSE}>
+          Sparse criteria
+        </Qualifier>
+      )}
+    </span>
   )
 }
 
@@ -851,38 +1407,56 @@ function PairList({
         overlap(y.p, y.known) - overlap(x.p, x.known),
     )
   return (
-    <div className="table-scroll">
+    <div className="table-scroll ov-pairs-scroll">
       <table className="tbl tbl-compact ov-pairs">
         <thead>
           <tr>
-            <th>Trial P</th>
-            <th>Trial Q</th>
-            {!hideSites && <th className="num">Shared sites</th>}
-            <th className="num">P → Q</th>
-            <th className="num">Q → P</th>
-            <th className="num">Both recruiting (est.)</th>
-            <th>Flags</th>
+            <th scope="col">Trial P</th>
+            <th scope="col">Trial Q</th>
+            {!hideSites && (
+              <th scope="col" className="num">
+                Shared sites
+              </th>
+            )}
+            <th scope="col" className="num">
+              P → Q
+            </th>
+            <th scope="col" className="num">
+              Q → P
+            </th>
+            <th scope="col" className="num">
+              Both recruiting (est.)
+            </th>
+            <th scope="col">Marks</th>
           </tr>
         </thead>
         <tbody>
           {rows.map(({ p, known }) => {
             const o = orient(p.p, p.q)!
             const sel = !!selected && new Set(selected).has(p.p) && new Set(selected).has(p.q)
+            const P = tIdx.get(p.p)
+            const Q = tIdx.get(p.q)
             return (
               <tr
                 key={`${p.p}|${p.q}`}
                 className={`clickable${sel ? ' row-on' : ''}`}
                 tabIndex={0}
+                aria-current={sel || undefined}
                 onClick={() => onSelect([p.p, p.q])}
                 onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
                     onSelect([p.p, p.q])
                   }
                 }}
               >
-                <td className="nowrap">{p.p}</td>
-                <td className="nowrap">{p.q}</td>
+                <td className="nowrap" title={P?.acronym ?? undefined}>
+                  {p.p}
+                </td>
+                <td className="nowrap" title={Q?.acronym ?? undefined}>
+                  {p.q}
+                </td>
                 {hideSites ? null : known ? (
                   <td className="num">{int(p.shared_sites)}</td>
                 ) : (
@@ -894,32 +1468,14 @@ function PairList({
                 <td className="num">{p.overlap_informative ? pct(o.o_ba) : '—'}</td>
                 <td className="num nowrap">{num(p.months_both_recruiting_estimated, 1)} mo</td>
                 <td>
-                  {p.upper_bound && <Badge tone="warn" title={UB_TEXT}>{UB} upper bound</Badge>}{' '}
-                  {p.unreviewed_criteria && <Badge tone="neutral" title={UNREVIEWED_TEXT}>{UNREVIEWED} unreviewed parse</Badge>}{' '}
-                  {p.sparse_criteria.length > 0 && <Badge tone="neutral">few criteria</Badge>}
+                  <FlagMarks p={p} />
                 </td>
               </tr>
             )
           })}
         </tbody>
       </table>
-      <p className="small muted">
-        P → Q: share of P's eligible synthetic patients who also qualify for Q. Both recruiting: estimated, never past the
-        snapshot.
-      </p>
     </div>
-  )
-}
-
-function SourceBadge({ t }: { t: OverlapTrial }) {
-  return t.eligibility_source === 'hand-encoded' ? (
-    <Badge tone="ok" title="Encoded by hand from the CT.gov eligibility text and reviewed">
-      hand-encoded
-    </Badge>
-  ) : (
-    <Badge tone="neutral" title="Rule-based parse of the CT.gov eligibility text; not reviewed">
-      {UNREVIEWED} rule-based parse
-    </Badge>
   )
 }
 
@@ -927,8 +1483,12 @@ function SourceBadge({ t }: { t: OverlapTrial }) {
 function WindowEnd({ t, snapshot }: { t: OverlapTrial; snapshot: string }) {
   if (!t.estimated_window_end) return <span className="muted">none (no completion date registered)</span>
   if (t.estimated_window_end > snapshot)
-    return <span className="muted" title="Start + 65% of the time to the registered primary completion falls after the snapshot; not shown as a date">after the snapshot</span>
-  return <>{t.estimated_window_end}</>
+    return (
+      <span className="muted" title="Start + 65% of the time to the registered primary completion falls after the snapshot; not shown as a date">
+        after the snapshot
+      </span>
+    )
+  return <>{shortDate(t.estimated_window_end)}</>
 }
 
 function StatusNote({ t, snapshot }: { t: OverlapTrial; snapshot: string }) {
@@ -939,7 +1499,7 @@ function StatusNote({ t, snapshot }: { t: OverlapTrial; snapshot: string }) {
         <span className="muted">
           {t.recruiting_at_snapshot
             ? ' · still recruiting after the estimated window end'
-            : ` · enrollment closed by ${snapshot}, before the estimated window end`}
+            : ` · enrollment closed by ${shortDate(snapshot)}, before the estimated window end`}
         </span>
       )}
     </>
@@ -954,24 +1514,24 @@ function TrialCard({ t, worldwide, snapshot }: { t: OverlapTrial; worldwide: boo
           {t.nct_id}
         </a>
         {t.acronym && <span>{t.acronym}</span>}
-        <SourceBadge t={t} />
+        <SourceMark t={t} />
         {t.upper_bound && (
-          <Badge tone="warn" title={t.upper_bound_reasons.join('; ')}>
-            {UB} upper bound
-          </Badge>
+          <Qualifier mark={UB} info={t.upper_bound_reasons.join('; ')}>
+            Upper bound
+          </Qualifier>
         )}
       </div>
       <p className="ov-tcard-title">{t.title}</p>
       <dl className="ov-dl">
         <dt>Phase</dt>
-        <dd>{phaseLabel(t.phases)}</dd>
+        <dd>{phaseText(t.phases)}</dd>
         <dt>Start</dt>
-        <dd>{t.start_date}</dd>
+        <dd>{shortDate(t.start_date)}</dd>
         <dt>Estimated window end</dt>
         <dd>
           <WindowEnd t={t} snapshot={snapshot} />
         </dd>
-        <dt>CT.gov status at {snapshot}</dt>
+        <dt>CT.gov status at {shortDate(snapshot)}</dt>
         <dd>
           <StatusNote t={t} snapshot={snapshot} />
         </dd>
@@ -981,7 +1541,7 @@ function TrialCard({ t, worldwide, snapshot }: { t: OverlapTrial; worldwide: boo
           {t.n_sites_anonymized > 0 && <span className="muted"> ({int(t.n_sites_anonymized)} anonymized)</span>}
         </dd>
         <dt>Design</dt>
-        <dd>{t.design ? DESIGN_LABEL[t.design] ?? t.design : <span className="muted">not hand-reviewed</span>}</dd>
+        <dd>{t.design ? (DESIGN_LABEL[t.design] ?? t.design) : <span className="muted">not hand-reviewed</span>}</dd>
         <dt>Encoded criteria</dt>
         <dd>
           {int(t.criteria.length)}
@@ -990,252 +1550,350 @@ function TrialCard({ t, worldwide, snapshot }: { t: OverlapTrial; worldwide: boo
         <dt>Eligible share</dt>
         <dd>{pct(t.eligible_share, 1)} of the synthetic population</dd>
       </dl>
-      {t.upper_bound && <p className="small muted" style={{ marginBottom: 0 }}>Upper bound because: {t.upper_bound_reasons.join('; ')}.</p>}
+      {t.upper_bound && <p className="ov-tcard-note">Upper bound because: {t.upper_bound_reasons.join('; ')}.</p>}
     </div>
   )
 }
 
-function CritItem({ c }: { c: Criterion }) {
-  return (
-    <li className="ov-crit">
-      <div className="ov-crit-head">
-        <span>{c.label}</span>
-        <Badge tone={c.kind === 'inclusion' ? 'info' : 'neutral'}>{c.kind}</Badge>
-      </div>
-      <p className="source">{stripHand(c.source)}</p>
-    </li>
+/** Where a trial's criteria come from: hand-encoded (reviewed) or the rule-based parse (unreviewed, ‡). */
+function SourceMark({ t }: { t: OverlapTrial }) {
+  return t.eligibility_source === 'hand-encoded' ? (
+    <Qualifier tone="muted" info="Eligibility criteria entered and reviewed by a person.">
+      Hand-encoded
+    </Qualifier>
+  ) : (
+    <Qualifier mark={UNREVIEWED} info={MARK_UNREV_CRIT}>
+      Unreviewed criteria
+    </Qualifier>
   )
 }
 
-function SharedItem({
-  g,
-  a,
-  b,
-  ca,
-  cb,
-}: {
-  g: SharedOriented
-  a: string
-  b: string
-  ca: Map<string, Criterion>
-  cb: Map<string, Criterion>
-}) {
-  const as = g.a.map((id) => ca.get(id)).filter((c): c is Criterion => !!c)
-  const bs = g.b.map((id) => cb.get(id)).filter((c): c is Criterion => !!c)
-  const text = (cs: Criterion[]) => cs.map((c) => stripHand(c.source)).join(' ')
-  const labels = (cs: Criterion[]) => cs.map((c) => c.label).join('; ')
-  const oneLine = g.same && text(as) === text(bs) && labels(as) === labels(bs)
+/** One criterion: its label; the CT.gov source sentence inline in Detailed, in a hover card in Simple. */
+function CritLine({ label, source, kind, detailed }: { label: string; source: ReactNode; kind?: string; detailed: boolean }) {
+  if (detailed)
+    return (
+      <>
+        <span className="ov-crit-label">
+          {label}
+          {kind && <span className="ov-crit-kind"> · {kind}</span>}
+        </span>
+        <span className="ov-crit-src">{source}</span>
+      </>
+    )
   return (
-    <li className="ov-crit">
-      <div className="ov-crit-head">
-        <span>{conceptLabel(g.concept)}</span>
-        {g.same ? (
-          <Badge tone="neutral" title="Both trials' criteria on this select the same synthetic patients">
-            same
-          </Badge>
-        ) : (
-          <Badge tone="warn" title="Both trials restrict this, differently">
-            differs
-          </Badge>
-        )}
-      </div>
-      {oneLine ? (
-        <p className="source">
-          {labels(as)} · {text(as)}
-        </p>
-      ) : (
-        <>
-          <p className="source">
-            <b>{a}:</b> {labels(as)} · {text(as)}
-          </p>
-          <p className="source">
-            <b>{b}:</b> {labels(bs)} · {text(bs)}
-          </p>
-        </>
-      )}
-    </li>
+    <HoverCard content={<div className="ov-tip ov-tip-src">{source}</div>} className="ov-crit-gloss">
+      {label}
+    </HoverCard>
   )
 }
 
 function PairDetail({
   o,
-  tIdx,
+  A,
+  B,
   sites,
   data,
   worldwide,
+  detailed,
+  onClear,
 }: {
   o: Oriented
-  tIdx: Map<string, OverlapTrial>
+  A: OverlapTrial
+  B: OverlapTrial
   sites: Record<string, OverlapSite>
   data: OverlapAudit
   worldwide: boolean
+  detailed: boolean
+  onClear: () => void
 }) {
-  const A = tIdx.get(o.a)
-  const B = tIdx.get(o.b)
-  if (!A || !B) return null
+  const hid = useId()
   const ca = new Map(A.criteria.map((c) => [c.id, c]))
   const cb = new Map(B.criteria.map((c) => [c.id, c]))
   const p = o.pair
+  const a = trialLabel(A)
+  const b = trialLabel(B)
   const snap = data.snapshot_date
-  const unrev = [A, B].filter((t) => t.eligibility_source !== 'hand-encoded').map((t) => t.nct_id)
+  const unrev = [A, B].filter((t) => t.eligibility_source !== 'hand-encoded')
   const sparse = [A, B].filter((t) => t.sparse_criteria)
   const known = sitesKnown(A, B)
   const anonOnly = [A, B].filter((t) => t.n_sites_identified === 0).map((t) => t.nct_id)
-  return (
-    <section className="card ov-detail" aria-label="Pair detail">
-      <div className="section-head" style={{ marginBottom: 0 }}>
-        <h2 style={{ margin: 0 }}>
-          Pair detail: {o.a} × {o.b}
-        </h2>
-        <div>
-          {p.upper_bound && (
-            <Badge tone="warn" title={UB_TEXT}>
-              {UB} upper bound
-            </Badge>
-          )}{' '}
-          {p.unreviewed_criteria && (
-            <Badge tone="neutral" title={UNREVIEWED_TEXT}>
-              {UNREVIEWED} unreviewed parse
-            </Badge>
-          )}
-        </div>
-      </div>
-
-      <div className="ov-two">
-        <TrialCard t={A} worldwide={worldwide} snapshot={snap} />
-        <TrialCard t={B} worldwide={worldwide} snapshot={snap} />
-      </div>
-
-      <div className="ov-facts">
-        <div className="ov-fact">
-          <div className="ov-fact-n">
-            {p.overlap_informative ? pct(o.o_ab) : '—'}
-            <Marks p={p} />
-          </div>
-          <p>
-            {p.overlap_informative
-              ? `${pct(o.o_ab)} of ${o.a}'s eligible patients also qualify for ${o.b}`
-              : 'Not informative: no criteria encoded for one of the trials'}
-          </p>
-        </div>
-        <div className="ov-fact">
-          <div className="ov-fact-n">
-            {p.overlap_informative ? pct(o.o_ba) : '—'}
-            <Marks p={p} />
-          </div>
-          <p>
-            {p.overlap_informative
-              ? `${pct(o.o_ba)} of ${o.b}'s eligible patients also qualify for ${o.a}`
-              : 'Not informative: no criteria encoded for one of the trials'}
-          </p>
-        </div>
-        <div className="ov-fact">
-          <div className="ov-fact-n">{known ? int(p.shared_sites) : '–'}</div>
-          <p>
-            shared registered sites ({worldwide ? 'worldwide' : data.region_label}){known ? '' : `: can't be counted, ${ANON}`}
-            {p.anonymized_same_city > 0 &&
-              ` · ${known ? 'plus ' : ''}${int(p.anonymized_same_city)} ${p.anonymized_same_city === 1 ? 'city' : 'cities'} where both list an anonymized site (facility unknown, not counted)`}
-          </p>
-        </div>
-        <div className="ov-fact">
-          <div className="ov-fact-n">
-            {num(p.months_both_recruiting_estimated, 1)} <span className="unit">months</span>
-          </div>
-          <p>
-            both recruiting (estimated windows, cut at the {snap} snapshot)
-            {p.both_recruiting_from && p.both_recruiting_to ? `: ${p.both_recruiting_from} to ${p.both_recruiting_to}` : ''}
-            {p.both_recruiting_at_snapshot ? ' · both still recruiting at the snapshot' : ''}
-          </p>
-        </div>
-      </div>
+  const crit = (m: Map<string, Criterion>, ids: string[]) => ids.map((id) => m.get(id)).filter((c): c is Criterion => !!c)
+  const text = (cs: Criterion[]) => cs.map((c) => stripHand(c.source)).join(' ')
+  const labels = (cs: Criterion[]) => cs.map((c) => c.label).join('; ')
+  const same = o.shared.filter((g) => g.same)
+  const diff = o.shared.filter((g) => !g.same)
+  const onlyA = crit(ca, o.onlyA)
+  const onlyB = crit(cb, o.onlyB)
+  const ubReasons = [A, B]
+    .filter((t) => t.upper_bound)
+    .map((t) => `${t.nct_id}: ${t.upper_bound_reasons.join('; ')}`)
+    .join(' · ')
+  const ubInfo = (
+    <>
+      <span className="hc-title">Upper bound</span>
+      {MARK_UB}
+      {ubReasons && <span className="hc-src">{ubReasons}</span>}
+    </>
+  )
+  const qualifiers = (
+    <span className="ov-pfig-q">
       {p.upper_bound && (
-        <Caveat>
-          {UB} {UB_TEXT.charAt(0).toUpperCase() + UB_TEXT.slice(1)}.{' '}
-          {[A, B]
-            .filter((t) => t.upper_bound)
-            .map((t) => `${t.nct_id}: ${t.upper_bound_reasons.join('; ')}`)
-            .join(' · ')}
-        </Caveat>
+        <Qualifier mark={UB} info={ubInfo}>
+          Upper bound
+        </Qualifier>
       )}
-      {(unrev.length > 0 || sparse.length > 0) && (
-        <Caveat>
-          {unrev.length > 0 && (
-            <>
-              {UNREVIEWED} {unrev.join(' and ')} {unrev.length === 1 ? 'uses' : 'use'} the rule-based parse of the CT.gov text,
-              which is not reviewed and can miss restrictions (that inflates overlap; the parse never sets the upper-bound
-              flag).{' '}
-            </>
-          )}
-          {sparse.map((t) => (
-            <span key={t.nct_id}>
-              {t.nct_id} has only {int(t.criteria.length)} encoded {t.criteria.length === 1 ? 'criterion' : 'criteria'} (
-              {pct(t.eligible_share)} of the synthetic population pass), so a high share of the other trial's patients
-              “also qualifying” for it says little.{' '}
-            </span>
-          ))}
-        </Caveat>
+      {p.unreviewed_criteria && (
+        <Qualifier mark={UNREVIEWED} info={MARK_UNREV}>
+          Unreviewed
+        </Qualifier>
       )}
+      {p.sparse_criteria.length > 0 && (
+        <Qualifier tone="muted" info={MARK_SPARSE}>
+          Sparse criteria
+        </Qualifier>
+      )}
+    </span>
+  )
+  const trialLine = (t: OverlapTrial) =>
+    `${t.acronym ? `${t.acronym}: ` : ''}${t.nct_id} · ${phaseText(t.phases)} · ${int(t.n_sites)} registered sites${worldwide ? '' : ' in region'} · criteria ${
+      t.eligibility_source === 'hand-encoded' ? 'hand-encoded and reviewed' : `from the rule-based parse, unreviewed (${UNREVIEWED})`
+    }`
 
-      <div>
-        <h3>Criteria diff</h3>
-        <p className="small muted" style={{ marginTop: 0 }}>
-          Matched by the patient attribute each criterion restricts (driver-mutation requirements count as one), not by name:
-          the encoders name the same idea differently. “Same” means both select the same synthetic patients. Source sentences
-          from each trial's CT.gov eligibility text ({A.eligibility_source} for {o.a}, {B.eligibility_source} for {o.b}).
-        </p>
-        <div className="ov-diff">
-          <div className="ov-diff-col">
-            <h4>Only {o.a} ({o.onlyA.length})</h4>
-            {o.onlyA.length ? (
-              <ul className="ov-crits">{o.onlyA.map((id) => ca.get(id) && <CritItem key={id} c={ca.get(id)!} />)}</ul>
+  const sharedSites = known ? (
+    p.shared_site_ids.length ? (
+      <SiteTable ids={p.shared_site_ids} sites={sites} dateLabel={shortDate(data.as_of)} worldwide={worldwide} />
+    ) : (
+      <p className="ov-empty">No identifiable registered site in common{worldwide ? '' : ` in ${data.region_label}`}.</p>
+    )
+  ) : (
+    <p className="ov-empty">
+      Shared sites can't be counted because {anonOnly.join(' and ')} {anonOnly.length === 1 ? 'lists' : 'list'} only anonymized sites on
+      ClinicalTrials.gov.
+    </p>
+  )
+
+  return (
+    <section className="win ov-detail" aria-labelledby={hid}>
+      <div className="win-body">
+        <div className="ov-pd-head">
+          <div className="ov-pd-title">
+            <p className="ov-pd-kicker">Selected pair</p>
+            <h2 id={hid}>
+              {a} × {b}
+            </h2>
+            <p className="ov-pd-sub">
+              {trialLine(A)}
+              <br />
+              {trialLine(B)}
+            </p>
+          </div>
+          <button type="button" className="btn btn-small ov-clear" onClick={onClear}>
+            Clear selection
+          </button>
+        </div>
+
+        <dl className="ov-pfig">
+          <div className="ov-fact">
+            <dt>Shared registered sites ({worldwide ? 'worldwide' : data.region_label})</dt>
+            <dd>
+              {known ? <span className="num ov-fig">{int(p.shared_sites)}</span> : <span className="ov-fig-unk">Can't be counted ({ANON})</span>}
+              {p.anonymized_same_city > 0 && (
+                <span className="ov-fact-sub">
+                  {known ? 'Plus ' : ''}
+                  {plural(p.anonymized_same_city, 'city', 'cities')} where both list an anonymized site (facility unknown, not counted)
+                </span>
+              )}
+            </dd>
+          </div>
+          <div className="ov-fact">
+            <dt>
+              {a}'s eligible patients also eligible for {b}
+            </dt>
+            <dd>
+              {p.overlap_informative ? <span className="num ov-fig">{pct(o.o_ab)}</span> : <span className="ov-fig-unk">Not informative</span>}
+              {qualifiers}
+            </dd>
+          </div>
+          <div className="ov-fact">
+            <dt>
+              {b}'s eligible patients also eligible for {a}
+            </dt>
+            <dd>
+              {p.overlap_informative ? <span className="num ov-fig">{pct(o.o_ba)}</span> : <span className="ov-fig-unk">Not informative</span>}
+              {qualifiers}
+            </dd>
+          </div>
+          <div className="ov-fact">
+            <dt>Both recruiting (estimated)</dt>
+            <dd>
+              <span className="num ov-fig">{num(p.months_both_recruiting_estimated, 1)}</span> <span className="ov-fig-unit">months</span>
+              <span className="ov-fact-sub">
+                {!p.both_recruiting_from
+                  ? `Not recruiting at the same time by the ${shortDate(snap)} snapshot`
+                  : p.both_recruiting_at_snapshot || !p.both_recruiting_to
+                    ? `Since ${shortDate(p.both_recruiting_from)}; both still recruiting at the ${shortDate(snap)} snapshot`
+                    : `${shortDate(p.both_recruiting_from)} to ${shortDate(p.both_recruiting_to)}; windows cut at the ${shortDate(snap)} snapshot`}
+              </span>
+            </dd>
+          </div>
+        </dl>
+        {!p.overlap_informative && <p className="ov-empty">Not informative: no criteria encoded for one of the trials.</p>}
+
+        {detailed && p.upper_bound && (
+          <Caveat>
+            {UB} Upper bound: a required biomarker or cohort restriction the synthetic population can't represent, so the overlap shown is a ceiling, not a
+            measurement. {ubReasons}
+          </Caveat>
+        )}
+        {detailed && (unrev.length > 0 || sparse.length > 0) && (
+          <Caveat>
+            {unrev.length > 0 && (
+              <>
+                {UNREVIEWED} {unrev.map((t) => t.nct_id).join(' and ')} {unrev.length === 1 ? 'uses' : 'use'} the rule-based parse of the CT.gov text, which
+                is not reviewed and can miss restrictions (that inflates overlap; the parse never sets the upper-bound flag).{' '}
+              </>
+            )}
+            {sparse.map((t) => (
+              <span key={t.nct_id}>
+                {t.nct_id} has only {plural(t.criteria.length, 'encoded criterion', 'encoded criteria')} ({pct(t.eligible_share)} of the synthetic
+                population pass), so a high share of the other trial's patients “also qualifying” for it says little.{' '}
+              </span>
+            ))}
+          </Caveat>
+        )}
+
+        {detailed ? (
+          <div className="ov-two">
+            <TrialCard t={A} worldwide={worldwide} snapshot={snap} />
+            <TrialCard t={B} worldwide={worldwide} snapshot={snap} />
+          </div>
+        ) : (
+          <Details summary="Both trials: dates, status, sites and criteria counts">
+            <div className="ov-two">
+              <TrialCard t={A} worldwide={worldwide} snapshot={snap} />
+              <TrialCard t={B} worldwide={worldwide} snapshot={snap} />
+            </div>
+          </Details>
+        )}
+
+        <div className="ov-cmp" role="group" aria-label="Criteria compared">
+          <div className="ov-pblock ov-pblock-both">
+            <h3>Criteria in both ({same.length})</h3>
+            {same.length ? (
+              <ul className="ov-clist">
+                {same.map((g) => {
+                  const as = crit(ca, g.a)
+                  const bs = crit(cb, g.b)
+                  const oneLine = text(as) === text(bs) && labels(as) === labels(bs)
+                  return (
+                    <li key={g.concept}>
+                      <CritLine
+                        label={labels(as) || conceptLabel(g.concept)}
+                        detailed={detailed}
+                        source={
+                          oneLine ? (
+                            text(as)
+                          ) : (
+                            <>
+                              <span className="ov-src-line">
+                                <b>{a}:</b> {labels(as)} · {text(as)}
+                              </span>
+                              <span className="ov-src-line">
+                                <b>{b}:</b> {labels(bs)} · {text(bs)}
+                              </span>
+                            </>
+                          )
+                        }
+                      />
+                    </li>
+                  )
+                })}
+              </ul>
             ) : (
-              <p className="ov-empty">None: {o.b} restricts everything {o.a} does.</p>
+              <p className="ov-empty">No restriction selects the same patients in both.</p>
             )}
           </div>
-          <div className="ov-diff-col">
-            <h4>
-              Both restrict ({o.shared.length}
-              {o.shared.some((g) => !g.same) ? `, ${o.shared.filter((g) => !g.same).length} differently` : ''})
-            </h4>
-            {o.shared.length ? (
-              <ul className="ov-crits">
-                {o.shared.map((g) => (
-                  <SharedItem key={g.concept} g={g} a={o.a} b={o.b} ca={ca} cb={cb} />
+          <div className="ov-pblock">
+            <h3>Restricted differently ({diff.length})</h3>
+            {diff.length ? (
+              <ul className="ov-clist">
+                {diff.map((g) => {
+                  const as = crit(ca, g.a)
+                  const bs = crit(cb, g.b)
+                  return (
+                    <li key={g.concept}>
+                      {detailed && <span className="ov-crit-concept">{conceptLabel(g.concept)}</span>}
+                      <span className="ov-vsline">
+                        <CritLine label={labels(as)} detailed={detailed} source={text(as)} />
+                        <span className="ov-vs"> vs </span>
+                        <CritLine label={labels(bs)} detailed={detailed} source={text(bs)} />
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : (
+              <p className="ov-empty">None</p>
+            )}
+          </div>
+          <div className="ov-pblock">
+            <h3>
+              Only in {a} ({onlyA.length})
+            </h3>
+            {onlyA.length ? (
+              <ul className="ov-clist">
+                {onlyA.map((c) => (
+                  <li key={c.id}>
+                    <CritLine label={c.label} kind={c.kind} detailed={detailed} source={stripHand(c.source)} />
+                  </li>
                 ))}
               </ul>
             ) : (
-              <p className="ov-empty">No restriction in common.</p>
+              <p className="ov-empty">
+                None: {b} restricts everything {a} does.
+              </p>
             )}
           </div>
-          <div className="ov-diff-col">
-            <h4>Only {o.b} ({o.onlyB.length})</h4>
-            {o.onlyB.length ? (
-              <ul className="ov-crits">{o.onlyB.map((id) => cb.get(id) && <CritItem key={id} c={cb.get(id)!} />)}</ul>
+          <div className="ov-pblock">
+            <h3>
+              Only in {b} ({onlyB.length})
+            </h3>
+            {onlyB.length ? (
+              <ul className="ov-clist">
+                {onlyB.map((c) => (
+                  <li key={c.id}>
+                    <CritLine label={c.label} kind={c.kind} detailed={detailed} source={stripHand(c.source)} />
+                  </li>
+                ))}
+              </ul>
             ) : (
-              <p className="ov-empty">None: {o.a} restricts everything {o.b} does.</p>
+              <p className="ov-empty">
+                None: {a} restricts everything {b} does.
+              </p>
             )}
           </div>
         </div>
-      </div>
+        <p className="ov-pd-foot">
+          Criteria are matched by concept, the patient attribute each one restricts, not by name. "Restricted differently" means both trials restrict that
+          attribute, in different ways ({a}'s version first).{' '}
+          {unrev.length
+            ? `${UNREVIEWED} ${unrev.map((t) => `${trialLabel(t)}'s`).join(' and ')} criteria come from the rule-based parse, not yet reviewed by a person.`
+            : "Both trials' criteria were hand-encoded and reviewed."}{' '}
+          {detailed
+            ? `Source sentences from each trial's CT.gov eligibility text (${A.eligibility_source} for ${a}, ${B.eligibility_source} for ${b}). `
+            : 'Hover or focus a criterion for its source sentence. '}
+          {FOOT}
+        </p>
 
-      {known ? (
-        <div>
-          <h3>Shared sites ({int(p.shared_sites)})</h3>
-          {p.shared_site_ids.length ? (
-            <SiteTable ids={p.shared_site_ids} sites={sites} dateLabel={data.as_of} worldwide={worldwide} />
-          ) : (
-            <p className="ov-empty">No identifiable registered site in common{worldwide ? '' : ` in ${data.region_label}`}.</p>
-          )}
-        </div>
-      ) : (
-        <div>
-          <h3>Shared sites</h3>
-          <p className="ov-empty">
-            Shared sites can't be counted because {anonOnly.join(' and ')} {anonOnly.length === 1 ? 'lists' : 'list'} only
-            anonymized sites on ClinicalTrials.gov.
-          </p>
-        </div>
-      )}
+        {detailed ? (
+          <div className="ov-shared">
+            <h3>{known ? `Shared sites (${int(p.shared_sites)})` : 'Shared sites'}</h3>
+            {sharedSites}
+          </div>
+        ) : (
+          <Details summary={known ? `Shared sites (${int(p.shared_sites)})` : 'Shared sites'}>{sharedSites}</Details>
+        )}
+      </div>
     </section>
   )
 }
@@ -1246,8 +1904,10 @@ function SiteTable({ ids, sites, dateLabel, worldwide }: { ids: string[]; sites:
       <table className="tbl tbl-compact ov-sites-tbl">
         <thead>
           <tr>
-            <th>Site</th>
-            <th className="num ov-count-col">Other sponsors' lung trials recruiting here on {dateLabel}</th>
+            <th scope="col">Site</th>
+            <th scope="col" className="num ov-count-col">
+              Other sponsors' lung trials recruiting here on {dateLabel}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -1276,6 +1936,7 @@ function TrialRow({
   sites,
   snapshot,
   worldwide,
+  detailed,
   open,
   onToggle,
 }: {
@@ -1283,65 +1944,218 @@ function TrialRow({
   sites: Record<string, OverlapSite>
   snapshot: string
   worldwide: boolean
+  detailed: boolean
   open: boolean
   onToggle: () => void
 }) {
+  const sitesId = useId()
   return (
     <li className="ov-trow">
-      <div>
+      <div className="ov-trow-main">
         <div className="ov-trow-id">
           <a href={ctgovUrl(t.nct_id)} target="_blank" rel="noreferrer">
             {t.nct_id}
           </a>
-          {t.acronym && <span>{t.acronym}</span>}
-          <SourceBadge t={t} />
-          {t.design && <Badge tone="neutral">{DESIGN_LABEL[t.design] ?? t.design}</Badge>}
+          {t.acronym && <span className="ov-trow-acr">{t.acronym}</span>}
+          {(detailed || t.eligibility_source !== 'hand-encoded') && <SourceMark t={t} />}
           {t.upper_bound && (
-            <Badge tone="warn" title={t.upper_bound_reasons.join('; ')}>
-              {UB} upper bound
-            </Badge>
+            <Qualifier mark={UB} info={t.upper_bound_reasons.join('; ')}>
+              Upper bound
+            </Qualifier>
           )}
-          {t.no_criteria && <Badge tone="bad">no criteria parsed</Badge>}
+          {t.sparse_criteria && (
+            <Qualifier tone="muted" info={`${plural(t.criteria.length, 'encoded criterion', 'encoded criteria')}: most synthetic patients pass them.`}>
+              Sparse criteria
+            </Qualifier>
+          )}
+          {t.no_criteria && <Qualifier info="The rule-based parse found no criteria, so overlap with this trial is not informative.">No criteria parsed</Qualifier>}
+          {detailed && t.design && <span className="ov-trow-design">{DESIGN_LABEL[t.design] ?? t.design}</span>}
         </div>
         <p className="ov-trow-title">{t.title}</p>
       </div>
       <div className="ov-trow-facts">
-        <div>
-          {phaseLabel(t.phases)} · started {t.start_date}
-        </div>
-        <div>
-          Estimated window end <WindowEnd t={t} snapshot={snapshot} />
-        </div>
-        <div>
-          CT.gov status at {snapshot}: <StatusNote t={t} snapshot={snapshot} />
-        </div>
-        <div>
-          {sitesLabel(t.n_sites)} registered {worldwide ? 'worldwide' : 'in region'}
-          {t.n_sites_anonymized > 0 && <span className="muted"> ({int(t.n_sites_anonymized)} anonymized)</span>}
-        </div>
+        {detailed ? (
+          <>
+            <div>
+              {phaseText(t.phases)} · started {shortDate(t.start_date)}
+            </div>
+            <div>
+              Estimated window end <WindowEnd t={t} snapshot={snapshot} />
+            </div>
+            <div>
+              CT.gov status at {shortDate(snapshot)}: <StatusNote t={t} snapshot={snapshot} />
+            </div>
+            <div>
+              {sitesLabel(t.n_sites)} registered {worldwide ? 'worldwide' : 'in region'}
+              {t.n_sites_anonymized > 0 && <span className="muted"> ({int(t.n_sites_anonymized)} anonymized)</span>}
+            </div>
+          </>
+        ) : (
+          <div>
+            {phaseText(t.phases)} · {sitesLabel(t.n_sites)} registered {worldwide ? 'worldwide' : 'in region'}
+            {t.n_sites_anonymized > 0 && <span className="muted"> ({int(t.n_sites_anonymized)} anonymized)</span>}
+          </div>
+        )}
       </div>
-      <div>
+      <div className="ov-trow-count">
         {t.n_sites_identified === 0 ? (
           <div className="ov-count muted">Other sponsors' trials at its sites can't be counted: its sites are anonymized on CT.gov</div>
         ) : (
           <>
             <div className="ov-count">
-              <strong>{int(t.other_sponsor_trials_at_sites)}</strong> other sponsors' trials recruiting at its sites on this date
+              <strong className="num">{int(t.other_sponsor_trials_at_sites)}</strong> other sponsors' trials recruiting at its sites on this date
             </div>
-            <div className="small muted">{int(t.other_sponsor_trials_at_sites_industry)} of them industry-sponsored</div>
+            {detailed && <div className="ov-count-sub">{int(t.other_sponsor_trials_at_sites_industry)} of them industry-sponsored</div>}
           </>
         )}
         {t.n_sites > 0 && (
-          <button className="btn btn-small" style={{ marginTop: '0.35rem' }} onClick={onToggle} aria-expanded={open}>
+          <button type="button" className="btn btn-small ov-sites-btn" onClick={onToggle} aria-expanded={open} aria-controls={open ? sitesId : undefined}>
             {open ? 'Hide sites' : `Per-site counts (${int(t.n_sites)})`}
           </button>
         )}
       </div>
       {open && (
-        <div className="ov-trow-sites">
+        <div className="ov-trow-sites" id={sitesId}>
           <SiteTable ids={t.site_ids} sites={sites} dateLabel="this date" worldwide={worldwide} />
         </div>
       )}
     </li>
+  )
+}
+
+/** The full legend and the definitions (C mockup, Detailed), with the method notes that used to be the provenance list.
+ *  Inline in Detailed; in a "Details" disclosure in Simple. */
+function LegendDefs({ data, theme }: { data: OverlapAudit; theme: 'light' | 'dark' }) {
+  const lid = useId()
+  const did = useId()
+  return (
+    <div className="ov-defs">
+      <section aria-labelledby={lid} className="ov-defs-col">
+        <h2 id={lid}>Legend</h2>
+        <dl className="ov-dlrows">
+          <div>
+            <dt>Number</dt>
+            <dd>Registered sites both trials list on ClinicalTrials.gov.</dd>
+          </div>
+          <div>
+            <dt>
+              <span className="num">a% / b%</span>
+            </dt>
+            <dd>Share of the row trial's eligible patients who also qualify for the column trial, then the reverse, on a synthetic population.</dd>
+          </div>
+          <div>
+            <dt>No number</dt>
+            <dd>A trial lists only anonymized sites on ClinicalTrials.gov, so shared sites can't be counted. Unknown, not zero.</dd>
+          </div>
+          <div>
+            <dt>Shade</dt>
+            <dd>
+              The larger share of one trial's eligible patients who also qualify for the other, on a synthetic population.{' '}
+              {theme === 'dark' ? 'Brighter' : 'Darker'} means more.
+            </dd>
+          </div>
+          <div>
+            <dt>Dot</dt>
+            <dd>80% or more, one way: the larger of the two shares is at least 80% as shown.</dd>
+          </div>
+          <div>
+            <dt>Hatched, or —</dt>
+            <dd>No criteria are encoded for one of the trials, so the eligibility overlap is not informative.</dd>
+          </div>
+          <div>
+            <dt>
+              <span aria-hidden="true">{UB} </span>Upper bound
+            </dt>
+            <dd>A ceiling, because a trial has a restriction the synthetic population can't represent.</dd>
+          </div>
+          <div>
+            <dt>
+              <span aria-hidden="true">{UNREVIEWED} </span>Unreviewed
+            </dt>
+            <dd>
+              At least one trial's criteria come from our rule-based parse and have not been reviewed. The parse never sets the Upper bound mark, so a missing
+              mark here does not mean the share is exact.
+            </dd>
+          </div>
+          <div>
+            <dt>Unreviewed criteria</dt>
+            <dd>On a row or column header: this trial's criteria come from the rule-based parse.</dd>
+          </div>
+          <div>
+            <dt>Sparse criteria</dt>
+            <dd>A trial with 2 or fewer encoded criteria admits most patients, so overlap with it says little.</dd>
+          </div>
+        </dl>
+      </section>
+      <section aria-labelledby={did} className="ov-defs-col">
+        <h2 id={did}>Definitions and sources</h2>
+        <dl className="ov-dlrows">
+          <div>
+            <dt>Registered site</dt>
+            <dd>
+              A site listed for the trial on ClinicalTrials.gov. Being listed does not mean the site is enrolling. Site lists are as registered at the snapshot
+              (site activation dates are not public); sites withdrawn from a trial are dropped.
+            </dd>
+          </div>
+          <div>
+            <dt>Shared sites</dt>
+            <dd>
+              Identifiable registered sites on both trials. Sites registered anonymously (“Research Site”) are collapsed to one pseudo-site per city and are
+              never counted as shared.
+            </dd>
+          </div>
+          <div>
+            <dt>Synthetic population</dt>
+            <dd>
+              {int(data.population.n)} simulated advanced-NSCLC patients. Prevalences are rounded modeling assumptions, not patient data.
+            </dd>
+          </div>
+          <div>
+            <dt>Eligibility criteria</dt>
+            <dd>
+              Hand-encoded from each trial's CT.gov text where available (reviewed), otherwise taken from a rule-based parse (unreviewed, {UNREVIEWED}).
+            </dd>
+          </div>
+          <div>
+            <dt>Recruiting on the date</dt>
+            <dd>
+              On the snapshot ({longDate(data.snapshot_date)}, the ClinicalTrials.gov download): status Recruiting or Enrolling by invitation. An earlier date
+              is estimated: from the registered start to start + 65% of the time to the registered primary completion (the 65% is an assumption), bounded by
+              the status at the snapshot. A trial still recruiting then counts from its start; any other status means enrollment closed by the snapshot;
+              withdrawn and not-yet-recruiting trials never count. Later dates are refused: nothing is projected.
+            </dd>
+          </div>
+          <div>
+            <dt>Months both recruiting</dt>
+            <dd>Overlap of the two bounded windows, never past the snapshot. Estimated.</dd>
+          </div>
+          <div>
+            <dt>Criteria compared</dt>
+            <dd>Matched by concept (the patient attribute restricted; driver-mutation requirements are one concept), not by name.</dd>
+          </div>
+          <div>
+            <dt>
+              <span aria-hidden="true">{UB} </span>Upper bound
+            </dt>
+            <dd>
+              A required biomarker or cohort restriction the synthetic population can't represent (or another restriction it does not model), so the overlap
+              shown is a ceiling on the modeled populations, not a measurement. The rule-based parse never sets this flag, so an unflagged {UNREVIEWED} pair
+              is unreviewed, not verified.
+            </dd>
+          </div>
+          <div>
+            <dt>Other sponsors' trials</dt>
+            <dd>
+              Distinct lung trials of other lead sponsors (any sponsor class, any phase) recruiting on the date at a trial's identifiable registered sites. A
+              count, not an effect.
+            </dd>
+          </div>
+          <div>
+            <dt>Not shown</dt>
+            <dd>No speedup, time-to-fill or enrollment rate is shown or implied, and no date after the registry snapshot: this view counts and compares.</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
   )
 }

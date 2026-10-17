@@ -35,9 +35,10 @@ const wait = (page, fn, arg, timeout = 90000) => page.waitForFunction(fn, { time
   }
   await page.evaluate(() => [...document.querySelectorAll('.ov-pairs tbody tr')].find((r) => r.innerText.includes('NCT05557591') && r.innerText.includes('NCT05785767')).click())
   await wait(page, () => (document.querySelector('.ov-detail h2')?.innerText ?? '').includes('NCT05557591 × NCT05785767'))
-  const facts = await page.$$eval('.ov-detail .ov-fact-n', (e) => e.map((x) => x.innerText.replace(/\s+/g, ' ').trim()))
+  // Calm pair detail: shared sites, the two shares, months both recruiting (in both densities).
+  const facts = await page.$$eval('.ov-detail .ov-fact', (e) => e.map((f) => f.querySelector('.ov-fig, .ov-fig-unk').innerText.replace(/\s+/g, ' ').trim()))
   const p2 = d.pairs.find((x) => x.p === 'NCT05557591' && x.q === 'NCT05785767')
-  ck('pair detail after list click', JSON.stringify([Q.fmt.pct(p2.o_pq), Q.fmt.pct(p2.o_qp), String(p2.shared_sites), `${Q.fmt.num(p2.months_both_recruiting_estimated, 1)} months`]), JSON.stringify(facts))
+  ck('pair detail after list click', JSON.stringify([String(p2.shared_sites), Q.fmt.pct(p2.o_pq), Q.fmt.pct(p2.o_qp), Q.fmt.num(p2.months_both_recruiting_estimated, 1)]), JSON.stringify(facts))
 
   // Protocol to terms: multiplier 120%, preset Manhattan vs the Bronx, compare toggle off.
   await page.goto(`${BASE}/#terms-flow/NCT05800015`, { waitUntil: 'domcontentloaded' })

@@ -29,7 +29,7 @@ const TABS = [
     const layout = await Q.layoutCheck(page)
     // Tab bars: every tab reachable (inside a horizontal scroller that fits the screen, or fully visible).
     const bars = await page.evaluate(() =>
-      [...document.querySelectorAll('nav.tabs, .rs-tabs, .tf-steps, .ov-controls .controls-row')].map((b) => {
+      [...document.querySelectorAll('nav.tabs, .rs-tabs, .tf-steps, .ov-filters')].map((b) => {
         const r = b.getBoundingClientRect()
         const cs = getComputedStyle(b)
         return { el: b.className, left: Math.round(r.left), right: Math.round(r.right), clientWidth: b.clientWidth, scrollWidth: b.scrollWidth, overflowX: cs.overflowX, flexWrap: cs.flexWrap }
