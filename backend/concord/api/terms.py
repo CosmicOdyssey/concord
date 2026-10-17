@@ -152,8 +152,12 @@ def proposal_check(nct: str, body: ProposalIn) -> dict:
 
 
 @router.get("/{nct}/proposal-sample")
-def proposal_sample(nct: str) -> dict:
-    """The SYNTHETIC sample proposal for this trial (invented to demonstrate the check; not a real site's)."""
+def proposal_sample(nct: str) -> dict | None:
+    """The SYNTHETIC sample proposal for this trial (invented to demonstrate the check; not a real site's); null
+    for a known trial without one (404 only for an unknown trial)."""
+    _call(terms.load_protocol, nct.upper())
+    if not proposal.sample_path(nct.upper()).exists():
+        return None
     return _call(proposal.sample, nct.upper())
 
 
@@ -180,3 +184,50 @@ def line_detail(nct: str, node_id: str, site_a: str, site_b: str | None = None, 
     factor = Medicare rate, then x multiplier + overhead (assumptions) = sponsor price, reconciled with Budget."""
     return _call(_line_detail.line_detail, nct.upper(), node_id, site_a, site_b or None, multiplier,
                  _json_map(overrides, "overrides"), _json_map(standard, "standard"))
+
+
+# ---------------------------------------------------------------- any trial: add by NCT ID, SoA CSV (trial_import)
+
+from concord import trial_import  # noqa: E402 - kept with the routes it serves
+
+
+class AddTrialIn(BaseModel):
+    nct_id: str = Field(max_length=20)
+
+
+class SoaIn(BaseModel):
+    csv: str = Field(max_length=trial_import.MAX_CSV_CHARS)
+
+
+@router.post("/add-trial")
+def add_trial(body: AddTrialIn) -> dict:
+    """Fetch a trial once from the public ClinicalTrials.gov API v2 into the data dir's cache and draft its
+    schedule from the registry (every drafted item cited). 404 for an unknown NCT ID."""
+    return _call(trial_import.add_trial, body.nct_id)
+
+
+@router.get("/soa-template.csv", response_class=PlainTextResponse)
+def soa_template() -> PlainTextResponse:
+    """Schedule of assessments CSV template (visit, day, procedure, code, repeats)."""
+    return PlainTextResponse(trial_import.template_csv(), media_type="text/csv; charset=utf-8", headers={
+        "Content-Disposition": 'attachment; filename="schedule-of-assessments_template.csv"'})
+
+
+@router.get("/{nct}/soa.csv", response_class=PlainTextResponse)
+def soa_export(nct: str) -> PlainTextResponse:
+    """Any trial's current schedule in the template format (edit it and upload it back for an added trial)."""
+    text = _call(trial_import.export_csv, nct.upper())
+    return PlainTextResponse(text, media_type="text/csv; charset=utf-8", headers={
+        "Content-Disposition": f'attachment; filename="schedule-of-assessments_{nct.upper()}.csv"'})
+
+
+@router.post("/{nct}/soa-csv")
+def soa_upload(nct: str, body: SoaIn) -> dict:
+    """Replace an added trial's schedule with an uploaded schedule of assessments (CSV)."""
+    return _call(trial_import.upload_soa, nct.upper(), body.csv)
+
+
+@router.post("/{nct}/soa-draft")
+def soa_draft(nct: str) -> dict:
+    """Go back to the draft from the registry for an added trial."""
+    return _call(trial_import.reset_draft, nct.upper())

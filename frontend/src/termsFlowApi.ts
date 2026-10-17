@@ -1,8 +1,11 @@
 // Types and fetchers for the protocol-to-terms flow (backend: concord/api/terms.py, concord/terms.py).
 // Nothing here is a forecast: schedules, coverage labels and prices from published fee schedules only.
 
+import type { ImportInfo } from './termsImportApi'
+
 export type Coverage = 'routine' | 'research'
-export type RuleId = 'R1' | 'R2' | 'R3' | 'R4' | 'R5'
+/** RA: research (assumed until reviewed), every item of a trial added by NCT ID. */
+export type RuleId = 'R1' | 'R2' | 'R3' | 'R4' | 'R5' | 'RA'
 export type Overrides = Record<string, Coverage>
 export type StandardEdits = Record<string, number>
 
@@ -37,6 +40,8 @@ export interface TrialCard {
   label: string
   trial: TrialFacts
   design: { design: string; confidence: string | null } | null
+  /** Set for a trial added by NCT ID (termsImportApi). */
+  import?: ImportInfo
 }
 
 export interface Visit {
@@ -54,6 +59,9 @@ export interface Visit {
   repeat?: string
   anchor?: string
   coordinator?: boolean
+  /** Added trial: where the visit comes from ("inferred from the registry: <field> "<quote>" - confirm ..."). */
+  inferred?: string
+  occurrences?: number
 }
 
 export interface Procedure {
@@ -63,6 +71,9 @@ export interface Procedure {
   pricing: string
   category: string
   note?: string
+  /** Added trial: the registry field it was inferred from, and how it maps to a code. */
+  inferred?: string
+  mapping?: string
 }
 
 export interface ProtocolNode {
@@ -111,6 +122,8 @@ export interface Protocol {
   disclaimer: string
   /** How registry excerpts are quoted (verbatim; ellipsis marks omissions). */
   quote_note: string
+  /** Set for a trial added by NCT ID (termsImportApi). */
+  import?: ImportInfo
 }
 
 export interface Locality {

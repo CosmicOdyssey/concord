@@ -78,11 +78,25 @@ RULES: dict[str, dict] = {
 _RULE_EXAMPLES = {"R4": "CT every 6 weeks against a 9-week reference: one scan in three"}
 
 
+# A trial added by NCT ID (concord.trial_import) has no sponsor protocol to decide coverage from: every item is RA
+# until a reviewer marks it routine. Listed only for protocols that use it.
+ASSUMED_RULES: dict[str, dict] = {
+    "RA": {"coverage": "research", "title": "Research (assumed until reviewed)",
+           "text": "Assumption: without the sponsor's protocol, routine care and research cannot be told apart from the "
+                   "registry, so every item of an added trial is paid by the sponsor until a reviewer marks it "
+                   "routine care. Not a coverage determination."}}
+_ALL_RULES = {**RULES, **ASSUMED_RULES}
+
+
 def _rules(p: dict) -> dict[str, dict]:
     """RULES with this protocol's worked examples, so a non-lung protocol never shows the lung example."""
     own = p.get("rule_examples") or {}
+    used = {n["rule"] for n in p.get("nodes", [])}
+    # An added trial lists only the rules its items carry (RA): R1-R5 decide from a sponsor protocol it lacks.
+    rules = ({k: v for k, v in _ALL_RULES.items() if k in used} if p.get("import")
+             else {**RULES, **{k: v for k, v in ASSUMED_RULES.items() if k in used}})
     return {k: ({**v, "text": v["text"].replace(_RULE_EXAMPLES[k], own[k])} if k in own and k in _RULE_EXAMPLES else v)
-            for k, v in RULES.items()}
+            for k, v in rules.items()}
 
 
 # The reference R3 and R4 compare against. Authored, not a coverage determination.
@@ -159,16 +173,18 @@ def standard_schedule(edits: dict[str, float] | None = None) -> dict[str, dict]:
 # ---------------------------------------------------------------- protocols
 
 def list_protocols() -> list[str]:
-    return sorted(p.stem for p in PROTOCOL_DIR.glob("NCT*.json"))
+    from concord import trial_import  # trials added by NCT ID (imports this module)
+    return sorted({p.stem for p in PROTOCOL_DIR.glob("NCT*.json")} | set(trial_import.added()))
 
 
 @lru_cache(maxsize=8)
 def load_protocol(nct: str) -> dict:
     """Read and expand a protocol file: schedule entries become nodes with ids '<visit>:<procedure>'."""
     path = PROTOCOL_DIR / f"{nct}.json"
-    if not nct.startswith("NCT") or not path.exists():
+    from concord import trial_import  # a trial added by NCT ID: its cached schedule (imports this module)
+    p = json.loads(path.read_text(encoding="utf-8")) if nct.startswith("NCT") and path.exists() else trial_import.load(nct)
+    if p is None:
         raise NotFound(f"no authored protocol for {nct}; available: {list_protocols()}")
-    p = json.loads(path.read_text(encoding="utf-8"))
     visits = {v["id"]: v for v in p["visits"]}
     procs = {x["id"]: x for x in p["procedures"]}
     if len(visits) != len(p["visits"]) or len(procs) != len(p["procedures"]):
@@ -177,13 +193,13 @@ def load_protocol(nct: str) -> dict:
     for entry in p["schedule"]:
         proc = procs[entry["proc"]]
         for at in entry["at"]:
-            if at["rule"] not in RULES:
+            if at["rule"] not in _ALL_RULES:
                 raise ValueError(f"{nct}: unknown rule {at['rule']}")
             for vid in at["visits"]:
                 if vid not in visits:
                     raise ValueError(f"{nct}: unknown visit {vid}")
                 nodes.append({"id": f"{vid}:{proc['id']}", "visit": vid, "procedure": proc["id"],
-                              "rule": at["rule"], "coverage": RULES[at["rule"]]["coverage"],
+                              "rule": at["rule"], "coverage": _ALL_RULES[at["rule"]]["coverage"],
                               "reason": at["reason"], "window": at.get("window")})
     ids = [n["id"] for n in nodes]
     if len(ids) != len(set(ids)):
@@ -257,6 +273,7 @@ def protocol_view(nct: str) -> dict:
         "area": p.get("area"), "condition": p.get("condition"),
         "practice_basis": p.get("practice_basis", "standard NSCLC practice"),
         "trial": _trial_facts(nct), "design": _design(nct), "disclaimer": DISCLAIMER, "quote_note": QUOTE_NOTE,
+        **({"import": p["import"]} if p.get("import") else {}),
     }
 
 
@@ -268,9 +285,11 @@ def trials() -> list[dict]:
                     "arms": p["arms"], "dosing": p["dosing"], "masking": p["masking"],
                     "registry_notes": p.get("registry_notes", []), "label": p["label"],
                     "area": p.get("area"), "condition": p.get("condition"),
-                    "trial": _trial_facts(nct), "design": _design(nct)})
-    # Regeneron first: it is the reference case of the demo.
-    out.sort(key=lambda t: (0 if (t["trial"].get("sponsor") or "").startswith("Regeneron") else 1, t["nct_id"]))
+                    "trial": _trial_facts(nct), "design": _design(nct),
+                    **({"import": p["import"]} if p.get("import") else {})})
+    # Regeneron first: it is the reference case of the demo. Trials added by NCT ID come after the authored ones.
+    out.sort(key=lambda t: ("import" in t, 0 if (t["trial"].get("sponsor") or "").startswith("Regeneron") else 1,
+                            t["nct_id"]))
     return out
 
 
@@ -555,7 +574,7 @@ def _coverage(p: dict, overrides: dict[str, str] | None) -> dict[str, dict]:
                             "basis": f"reviewer override (rule {n['rule']} said {n['coverage']})"}
         else:
             out[n["id"]] = {"coverage": n["coverage"], "override": False,
-                            "basis": f"{n['rule']}: {RULES[n['rule']]['title']}"}
+                            "basis": f"{n['rule']}: {_ALL_RULES[n['rule']]['title']}"}
     return out
 
 
