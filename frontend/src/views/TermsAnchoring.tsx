@@ -57,7 +57,8 @@ function PctInput({ value, min, max, step, label, onCommit }: { value: number; m
   )
 }
 
-/** The negotiation band on coded lines, in percent of Medicare. Low above high is held back until it is valid. */
+/** The negotiation band on coded lines, in percent of Medicare (10% to 500%). A low above the high end (or a high
+ *  below the low end) is not committed; the box returns to the last valid value when it loses focus. */
 export function BandInputs({ lo, hi, onChange }: { lo: number; hi: number; onChange: (lo: number, hi: number) => void }) {
   return (
     <fieldset className="tfa-band">
@@ -65,9 +66,9 @@ export function BandInputs({ lo, hi, onChange }: { lo: number; hi: number; onCha
         Range on coded lines, % of Medicare <AssumptionTag title="A band you set, not market data" />
       </legend>
       <span className="tfa-band-row">
-        <PctInput value={lo} min={10} max={500} step={5} label="Range low, percent of Medicare" onCommit={(v) => onChange(v, Math.max(v, hi))} />
+        <PctInput value={lo} min={10} max={hi} step={5} label="Range low, percent of Medicare" onCommit={(v) => onChange(v, hi)} />
         <span aria-hidden="true">to</span>
-        <PctInput value={hi} min={10} max={500} step={5} label="Range high, percent of Medicare" onCommit={(v) => onChange(Math.min(lo, v), v)} />
+        <PctInput value={hi} min={lo} max={500} step={5} label="Range high, percent of Medicare" onCommit={(v) => onChange(lo, v)} />
       </span>
     </fieldset>
   )
