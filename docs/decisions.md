@@ -46,3 +46,12 @@ Judgment calls made without being able to ask. Newest last. Each says what and w
     model (typical miss about 2x on held-out trials), not observed enrollment. The findings title says
     "coordination gains largely disappear; site-selection gains remain in the model". Flagged for the user in
     the morning handoff; the pivot's product rule (no predicted speedups in product views) is unaffected.
+12. **Integration order and conflicts.** Workstream 3 owns `App.tsx` (new top-level order Findings -> Portfolio
+    overlap -> Protocol to terms -> Research). The other two workstreams' tab additions were dropped in favour
+    of W3's file, and their views replaced W3's placeholders. Overlap and terms views are lazy-loaded so the
+    landing page stays light.
+13. **Findings page leads with the conservative self-overlap count** (21 pairs where both trials' eligibility
+    is hand-encoded; 19 of them upper bounds), not the broad 134 (113 rest on the unreviewed rule-based parse),
+    following the overlap workstream's own recommendation. Both numbers are in `data/findings/self_overlap.json`.
+14. **Beta interval on the Findings page is labelled as floored at 0**, with the coefficient's own interval
+    (-0.297 to +0.111) next to it, so nobody reads "0.00 to 0.30" as excluding zero by construction.

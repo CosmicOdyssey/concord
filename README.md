@@ -1,11 +1,24 @@
 # Concord
 
-A clearing mechanism for clinical-trial enrollment capacity. HackHarvard 2026, Regeneron track.
+Tools for NSCLC trial portfolios on public ClinicalTrials.gov data. HackHarvard 2026, Regeneron track.
 
-Today each sponsor picks sites on its own from the same shortlist, so trials pile onto the same
-academic centers. Concord allocates sites **across concurrent trials at once** and attaches pre-cleared
-terms (Medicare-indexed rate card, standard non-procedure schedule, coverage analysis) to each match.
-This README reports what the data supports after we tried to break the result; see **Results**.
+Concord started as a clearing mechanism that would allocate sites across concurrent trials at once.
+Testing that idea on 7,221 NSCLC trials (see **Results**) showed that coordination gains largely
+disappear out of sample and that competing trials barely slow each other within a site. So the product
+now does things that need no forecasting:
+
+- **Portfolio overlap audit** (`#overlap`): where a sponsor's own concurrently recruiting trials share
+  registered sites and eligible patients, with the criteria that distinguish each pair. Counts and overlaps
+  only.
+- **Protocol to terms** (`#terms-flow`): a protocol's schedule of assessments becomes a coverage grid
+  (routine care vs research-only, rule shown, reviewer override), a per-patient budget priced from the
+  real CMS 2026 physician fee schedule with Medicare locality, a proposed standard non-procedure schedule,
+  and a term sheet with provenance on every line. Decision support, not a fair-market-value legal opinion.
+- **Findings** (landing page): the research results that motivate both. The earlier clearing views live
+  under **Research**, labelled as in-sample model outputs.
+
+Rule for the whole app: no view shows a predicted speedup, time-to-fill or enrollment rate as a product
+claim.
 
 ## Layout
 
@@ -48,6 +61,12 @@ cd frontend && npm install && npm run dev          # http://localhost:5173, prox
 
 | Endpoint | What |
 |---|---|
+| `GET /api/findings` | findings page content (`data/findings/findings.json`, built by `python -m concord.findings`) |
+| `GET /api/findings/self-overlap` | same-sponsor overlap statistic (`data/findings/self_overlap.json`) |
+| `GET /api/overlap/sponsors?as_of&region` | sponsors with >= 2 lung trials recruiting on a date |
+| `GET /api/overlap?sponsor&as_of&region` | a sponsor's concurrent trials, pairwise shared sites, eligibility overlap, criteria diff |
+| `GET /api/terms-flow/trials` | demo protocols (illustrative, authored from public trial information) |
+| `GET /api/terms-flow/{nct}/protocol, /sites, /budget, /compare, /termsheet.md, /termsheet.html` | schedule of assessments, coverage, site budget, two-site comparison, term sheet export |
 | `GET /api/status` | crawl state, counts, model prior, backtest, congestion test |
 | `POST /api/clear` `{region, as_of, sponsor, beta, low_history, universe, ...}` | registered vs best-response vs coordinated allocations (free and no-loser) |
 | `GET /api/robustness?<scenario>` | headline under each congestion elasticity x site-rate rule (precomputed) |
