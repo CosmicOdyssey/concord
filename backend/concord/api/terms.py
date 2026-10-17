@@ -13,11 +13,13 @@ low-high range on coded lines and totals (concord.anchoring).
 from __future__ import annotations
 
 import json
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import HTMLResponse, PlainTextResponse
+from pydantic import BaseModel, Field
 
-from concord import terms
+from concord import proposal, terms
 
 router = APIRouter(prefix="/api/terms-flow", tags=["protocol to terms"])
 
@@ -121,3 +123,46 @@ def spreads(nct: str, site_a: str, site_b: str | None = None, mult_lo: float = 1
     """Per-participant ranges from geography, the multiplier band and a band on non-procedure fees."""
     return _call(terms_spread.spreads, nct.upper(), site_a, site_b or None, mult_lo, mult_hi, fee_lo, fee_hi,
                  _json_map(overrides, "overrides"), _json_map(standard, "standard"))
+
+
+# ---------------------------------------------------------------- site proposal check (concord.proposal)
+
+class ProposalIn(BaseModel):
+    """A site's proposed prices as CSV text (item or code, amount), checked at one registered site."""
+    site_id: str
+    csv: str = Field(max_length=proposal.MAX_CSV_CHARS)
+    band_low: float = proposal.BAND_DEFAULT[0]
+    band_high: float = proposal.BAND_DEFAULT[1]
+    multiplier: float = 1.0
+    overrides: dict[str, str] = Field(default_factory=dict)
+    standard: dict[str, float] = Field(default_factory=dict)
+    detail: Literal["simple", "detailed"] = "simple"
+
+
+def _check(nct: str, body: ProposalIn) -> dict:
+    return _call(proposal.check, nct.upper(), body.site_id, body.csv, body.band_low, body.band_high,
+                 body.multiplier, body.overrides, body.standard)
+
+
+@router.post("/{nct}/proposal-check")
+def proposal_check(nct: str, body: ProposalIn) -> dict:
+    """Each row of a site's proposal matched to the protocol at that site and flagged against the Medicare
+    amount x band (an assumption) or marked for itemized justification."""
+    return _check(nct, body)
+
+
+@router.get("/{nct}/proposal-sample")
+def proposal_sample(nct: str) -> dict:
+    """The SYNTHETIC sample proposal for this trial (invented to demonstrate the check; not a real site's)."""
+    return _call(proposal.sample, nct.upper())
+
+
+@router.post("/{nct}/counter-proposal.html", response_class=HTMLResponse)
+def counter_proposal(nct: str, body: ProposalIn) -> HTMLResponse:
+    """Printable counter-proposal (print to PDF from the browser). Simple: summary and flagged lines;
+    detailed: every line."""
+    res = _check(nct, body)
+    name = (f"counter-proposal_{res['nct_id']}_{res['site']['site_id']}"
+            f"{'_SYNTHETIC' if res.get('synthetic') else ''}.html")
+    return HTMLResponse(proposal.counter_proposal_html(res, body.detail),
+                        headers={"Content-Disposition": f'attachment; filename="{name}"'})
