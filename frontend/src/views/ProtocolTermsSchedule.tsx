@@ -51,6 +51,14 @@ export function VisitTimeline({ protocol }: { protocol: Protocol }) {
   const scr = timed.find((v) => v.kind === 'screening')
   const step = later.length > 1 ? (LATER_X1 - LATER_X0) / (later.length - 1) : 0
   const win = timed.find((v) => v.kind === 'treatment' && v.minus)?.minus
+  const treat = timed.filter((v) => v.kind === 'treatment' && v.day !== undefined)
+  // Schedules longer than the 21-day-cycle demo (e.g. visits to week 104) are drawn in visit order, not to scale.
+  const ordinal = treat.some((v) => (v.day as number) > D1)
+  const scrX0 = ordinal ? X0 : xOf(scr?.day ?? D0)
+  const scrX1 = ordinal ? X0 + 28 : xOf(scr?.day_end ?? -1)
+  const ordStep = treat.length > 1 ? (X1 - (X0 + 52)) / (treat.length - 1) : 0
+  const xAt = (v: Visit, i: number) => (ordinal ? X0 + 52 + i * ordStep : xOf(v.day as number))
+  const lung = !protocol.area
   return (
     <figure className="tf-timeline-fig">
       <div className="tf-timeline-wrap">
@@ -58,25 +66,31 @@ export function VisitTimeline({ protocol }: { protocol: Protocol }) {
           className="tf-timeline"
           viewBox={`0 0 ${VIEW_W} 120`}
           role="img"
-          aria-label="Visit timeline: screening, 21-day cycles with windows, then per-occurrence and follow-up visits"
+          aria-label={
+            lung
+              ? 'Visit timeline: screening, 21-day cycles with windows, then per-occurrence and follow-up visits'
+              : 'Visit timeline in visit order, not to scale: screening, scheduled visits with windows, then per-occurrence visits'
+          }
         >
           <line x1={X0 - 10} x2={X1 + 12} y1={58} y2={58} className="tf-tl-axis" />
           {scr && scr.day !== undefined && (
             <g>
-              <rect x={xOf(scr.day)} y={50} width={xOf(scr.day_end ?? -1) - xOf(scr.day)} height={16} rx={4} className="tf-tl-scr" />
-              <text x={(xOf(scr.day) + xOf(scr.day_end ?? -1)) / 2} y={88} className="tf-tl-label" textAnchor="middle">
+              <rect x={scrX0} y={50} width={scrX1 - scrX0} height={16} rx={4} className="tf-tl-scr" />
+              <text x={(scrX0 + scrX1) / 2} y={88} className="tf-tl-label" textAnchor="middle">
                 {scr.short}
               </text>
-              <text x={(xOf(scr.day) + xOf(scr.day_end ?? -1)) / 2} y={103} className="tf-tl-sub" textAnchor="middle">
-                d −28 to −1
+              <text x={(scrX0 + scrX1) / 2} y={103} className="tf-tl-sub" textAnchor="middle">
+                d {String(scr.day).replace('-', '−')} to {String(scr.day_end ?? -1).replace('-', '−')}
               </text>
             </g>
           )}
-          {timed
-            .filter((v) => v.kind === 'treatment' && v.day !== undefined)
-            .map((v) => {
-              const x = xOf(v.day as number)
-              const w = Math.max(xOf((v.day as number) + (v.plus ?? 0)) - xOf((v.day as number) - (v.minus ?? 0)), 0)
+          {treat.map((v, i) => {
+              const x = xAt(v, i)
+              const w = ordinal
+                ? (v.plus ?? 0) > 0
+                  ? 16
+                  : 0
+                : Math.max(xOf((v.day as number) + (v.plus ?? 0)) - xOf((v.day as number) - (v.minus ?? 0)), 0)
               const img = imaging.get(v.id)
               return (
                 <g key={v.id}>
@@ -121,14 +135,17 @@ export function VisitTimeline({ protocol }: { protocol: Protocol }) {
       </div>
       <figcaption className="tf-timeline-key">
         <span>
-          <span className="tf-key tf-key-dot" aria-hidden="true" /> Day 1 of each 21-day cycle
+          <span className="tf-key tf-key-dot" aria-hidden="true" /> {lung ? 'Day 1 of each 21-day cycle' : 'Scheduled visit (study day)'}
         </span>
         <span>
           <span className="tf-key tf-key-win" aria-hidden="true" /> {win ? `±${win}-day visit window` : 'Visit window'}
         </span>
-        <span>
-          <span className="tf-key tf-key-img" aria-hidden="true" /> Scheduled tumor assessment (week)
-        </span>
+        {imaging.size > 0 && (
+          <span>
+            <span className="tf-key tf-key-img" aria-hidden="true" /> Scheduled tumor assessment (week)
+          </span>
+        )}
+        {ordinal && <span>Drawn in visit order, not to scale</span>}
         <span>
           <span className="tf-key tf-key-rep" aria-hidden="true" /> Repeating visit, priced per occurrence
         </span>

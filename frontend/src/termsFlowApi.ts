@@ -18,11 +18,17 @@ export interface TrialFacts {
   n_sites?: number
   n_us_sites?: number
   n_us_sites_withdrawn?: number
+  /** Set when the facts come from a static registry snapshot (trial not in the database). */
+  source?: string
+  conditions?: string[]
 }
 
 export interface TrialCard {
   nct_id: string
   short_title: string
+  /** e.g. "Outside lung cancer"; absent for the lung trials. */
+  area?: string | null
+  condition?: string | null
   why_chosen: string
   arms: { label: string; text: string }[]
   dosing: string
@@ -96,6 +102,10 @@ export interface Protocol {
   rules: Rule[]
   standard_care_reference: string[]
   standard_care_source: string
+  area?: string | null
+  condition?: string | null
+  /** What the authors used where the registry is silent (e.g. "standard NSCLC practice"). */
+  practice_basis?: string
   trial: TrialFacts
   design: { design: string; confidence: string | null } | null
   disclaimer: string
@@ -127,6 +137,9 @@ export interface SiteOpt {
   status: string | null
   locality: Locality | null
   label: string
+  /** Why no locality was resolved (registry-snapshot sites are never matched by city name). */
+  locality_note?: string
+  source?: string
 }
 
 export interface SitesResp {

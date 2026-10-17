@@ -351,13 +351,13 @@ export default function ProtocolTermsView() {
         info={
           <>
             <span className="hc-title">How a schedule is authored</span>
-            Concord authors each schedule from the trial’s ClinicalTrials.gov record. Where the registry is silent, it uses standard NSCLC practice and
-            lists the assumption. The sponsors’ own protocols are not public.
+            Concord authors each schedule from the trial’s ClinicalTrials.gov record. Where the registry is silent, it uses standard practice for the
+            condition and lists the assumption. The sponsors’ own protocols are not public.
           </>
         }
         lede={
           <>
-            Pick a trial{trialList ? `: ${countWord(trialList.length)} first-line NSCLC chemo-immunotherapy trials with every-3-week dosing in the registry` : ''}.
+            Pick a trial{trialList ? `: ${trialPickerText(trialList)}` : ''}.
             Concord reads its schedule of assessments: which visits happen when, and what is done at each.
           </>
         }
@@ -728,10 +728,24 @@ function Step({
 
 // ====================================================================== 1. protocol
 
+/** "two first-line NSCLC chemo-immunotherapy trials …, and one outside lung cancer (geographic atrophy (eye))". */
+function trialPickerText(list: TrialCard[]): string {
+  const lung = list.filter((t) => !t.area)
+  const other = list.filter((t) => !!t.area)
+  const parts: string[] = []
+  if (lung.length) parts.push(`${countWord(lung.length)} first-line NSCLC chemo-immunotherapy trials with every-3-week dosing in the registry`)
+  if (other.length) {
+    const conds = other.map((t) => (t.condition ?? '').toLowerCase()).filter(Boolean)
+    parts.push(`${countWord(other.length)} outside lung cancer${conds.length ? ` (${conds.join(', ')})` : ''}`)
+  }
+  return parts.join(', and ')
+}
+
 function TrialCardView({ t, on, detailed, onPick }: { t: TrialCard; on: boolean; detailed: boolean; onPick: () => void }) {
   const f = t.trial
   const facts = (
     <>
+      {f.source && <p className="tf-fact muted">Trial facts and sites: {f.source}. This trial is not in Concord’s lung-trial database.</p>}
       <ul className="tf-arms">
         {t.arms.map((a) => (
           <li key={a.label}>
@@ -766,7 +780,15 @@ function TrialCardView({ t, on, detailed, onPick }: { t: TrialCard; on: boolean;
       >
         <span className="tf-radio" aria-hidden="true" />
         <span className="tf-trial-text">
-          <span className="tf-trial-sponsor">{f.sponsor ?? 'Sponsor'}</span>
+          <span className="tf-trial-sponsor">
+            {f.sponsor ?? 'Sponsor'}
+            {t.area && (
+              <span className="badge badge-info tf-trial-area">
+                {t.area}
+                {t.condition ? ` · ${t.condition}` : ''}
+              </span>
+            )}
+          </span>
           <span className="tf-trial-title">{t.short_title}</span>
         </span>
       </button>
@@ -798,7 +820,7 @@ function AuthoredNotes({ proto }: { proto: Protocol }) {
     <div className="tf-notes">
       {detailed && <h3>How this schedule was authored</h3>}
       <p className="small">
-        Authored {dateText(proto.authored)} from the ClinicalTrials.gov record of {proto.nct_id}. Where the registry is silent we used standard NSCLC practice.{' '}
+        Authored {dateText(proto.authored)} from the ClinicalTrials.gov record of {proto.nct_id}. Where the registry is silent we used {proto.practice_basis ?? 'standard NSCLC practice'}.{' '}
         {proto.quote_note}
       </p>
       <h3>Registry facts used</h3>
@@ -937,7 +959,7 @@ function LocalityLine({ b }: { b: Budget }) {
               </span>
             </>
           ) : (
-            'No Medicare locality resolved for this site: national amounts are used.'
+            (b.site.locality_note ?? 'No Medicare locality resolved for this site: national amounts are used.')
           )
         }
       />
@@ -1146,7 +1168,7 @@ function BudgetDetails({
   const t = b.totals
   return (
     <div className="tf-bud-details">
-      <LocalityCard l={b.locality} cf={b.conversion_factor} source={b.pfs_source} />
+      <LocalityCard l={b.locality} cf={b.conversion_factor} source={b.pfs_source} note={b.site.locality_note} />
       <h3>Paid outside the per-participant amount</h3>
       <div className="table-scroll">
         <table className="tbl tbl-compact tf-other">
@@ -1195,8 +1217,8 @@ function BudgetDetails({
   )
 }
 
-function LocalityCard({ l, cf, source }: { l: Locality | null; cf: number | null; source: string | null }) {
-  if (!l) return <p className="small note">No Medicare locality resolved for this site: national amounts are used.</p>
+function LocalityCard({ l, cf, source, note }: { l: Locality | null; cf: number | null; source: string | null; note?: string }) {
+  if (!l) return <p className="small note">{note ?? 'No Medicare locality resolved for this site: national amounts are used.'}</p>
   return (
     <div className="tf-loc">
       <div>
