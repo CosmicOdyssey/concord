@@ -286,6 +286,8 @@ export interface Anchoring {
   shares: AnchorShare[]
   rounding_to_open: number
   note: string
+  /** Named CMS files, year and locality behind the public-rates share. */
+  public_sources?: string[]
 }
 
 export interface BreakdownRow {

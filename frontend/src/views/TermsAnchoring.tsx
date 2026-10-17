@@ -2,7 +2,7 @@
 // what each sponsor dollar is anchored to, the negotiation band on coded lines (an assumption the user sets), the
 // editable overhead assumption, the RVU basis and lab notes, plain-language GPCI labels and the category breakdowns.
 // Every number comes from the API; nothing here is market data or a forecast.
-import { useState, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { Badge, HoverCard, InfoTip, Segmented } from '../components'
 import { useDensity } from '../density'
 import { usd } from '../format'
@@ -31,9 +31,48 @@ function AssumptionTag({ title }: { title?: string }) {
 
 // ---------------------------------------------------------------------- inputs
 
-/** Percent input that keeps the draft while typing and commits only valid values. */
-function PctInput({ value, min, max, step, label, onCommit }: { value: number; min: number; max: number; step: number; label: string; onCommit: (v: number) => void }) {
+function inRange(s: string, min: number, max: number): boolean {
+  const n = Number(s)
+  return s.trim() !== '' && Number.isFinite(n) && n >= min && n <= max
+}
+
+/** Percent input. Typed values are committed only on Enter or when the box loses focus, so a partial value
+ *  ("20" on the way to "200") is never applied; the arrow keys and spinner commit each step. A value outside
+ *  min..max is not applied: the box returns to the last value and onNote says why (shown under the input). */
+function PctInput({
+  value,
+  min,
+  max,
+  step,
+  label,
+  bound,
+  noteId,
+  onCommit,
+  onNote,
+}: {
+  value: number
+  min: number
+  max: number
+  step: number
+  label: string
+  /** Why the bounds are what they are, for the rejection note (e.g. "the low end cannot be above the high end"). */
+  bound?: string
+  noteId: string
+  onCommit: (v: number) => void
+  onNote: (msg: string | null) => void
+}) {
   const [draft, setDraft] = useState<string | null>(null)
+  const commit = (s: string) => {
+    setDraft(null)
+    if (inRange(s, min, max)) {
+      onNote(null)
+      if (Number(s) !== value) onCommit(Number(s))
+    } else {
+      const what = s.trim() === '' ? 'An empty box' : `${s}%`
+      onNote(`${what} is outside ${min}% to ${max}%${bound ? ` (${bound})` : ''}; kept ${value}%.`)
+    }
+  }
+  const invalid = draft !== null && !inRange(draft, min, max)
   return (
     <span className="tf-num-input">
       <input
@@ -44,15 +83,37 @@ function PctInput({ value, min, max, step, label, onCommit }: { value: number; m
         step={step}
         value={draft ?? String(value)}
         aria-label={label}
+        aria-invalid={invalid || undefined}
+        aria-describedby={noteId}
         onChange={(e) => {
           const s = e.target.value
-          setDraft(s)
-          const n = Number(s)
-          if (s !== '' && Number.isFinite(n) && n >= min && n <= max) onCommit(n)
+          onNote(null)
+          // Typing (an InputEvent with an inputType) waits for Enter or blur; a spinner or arrow-key step commits now.
+          const it = (e.nativeEvent as Partial<InputEvent>).inputType
+          if (!it && inRange(s, min, max)) commit(s)
+          else setDraft(s)
         }}
-        onBlur={() => setDraft(null)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && draft !== null) commit(draft)
+          else if (e.key === 'Escape' && draft !== null) {
+            setDraft(null)
+            onNote(null)
+          }
+        }}
+        onBlur={() => {
+          if (draft !== null) commit(draft)
+        }}
       />
       <span aria-hidden="true">%</span>
+    </span>
+  )
+}
+
+/** Under a percent input: how to apply a typed value, or why the last one was not applied. */
+function InputNote({ id, msg }: { id: string; msg: string | null }) {
+  return (
+    <span id={id} className={`tfa-input-note${msg ? ' tfa-input-note-err' : ''}`} role="status">
+      {msg ?? 'Press Enter or leave the box to apply.'}
     </span>
   )
 }
@@ -60,22 +121,47 @@ function PctInput({ value, min, max, step, label, onCommit }: { value: number; m
 /** The negotiation band on coded lines, in percent of Medicare (10% to 500%). A low above the high end (or a high
  *  below the low end) is not committed; the box returns to the last valid value when it loses focus. */
 export function BandInputs({ lo, hi, onChange }: { lo: number; hi: number; onChange: (lo: number, hi: number) => void }) {
+  const noteId = useId()
+  const [msg, setMsg] = useState<string | null>(null)
   return (
     <fieldset className="tfa-band">
       <legend className="field-label">
         Range on coded lines, % of Medicare <AssumptionTag title="A band you set, not market data" />
       </legend>
       <span className="tfa-band-row">
-        <PctInput value={lo} min={10} max={hi} step={5} label="Range low, percent of Medicare" onCommit={(v) => onChange(v, hi)} />
+        <PctInput
+          value={lo}
+          min={10}
+          max={hi}
+          step={5}
+          label="Range low, percent of Medicare"
+          bound={hi < 500 ? 'the low end cannot be above the high end' : undefined}
+          noteId={noteId}
+          onCommit={(v) => onChange(v, hi)}
+          onNote={setMsg}
+        />
         <span aria-hidden="true">to</span>
-        <PctInput value={hi} min={lo} max={500} step={5} label="Range high, percent of Medicare" onCommit={(v) => onChange(lo, v)} />
+        <PctInput
+          value={hi}
+          min={lo}
+          max={500}
+          step={5}
+          label="Range high, percent of Medicare"
+          bound={lo > 10 ? 'the high end cannot be below the low end' : undefined}
+          noteId={noteId}
+          onCommit={(v) => onChange(lo, v)}
+          onNote={setMsg}
+        />
       </span>
+      <InputNote id={noteId} msg={msg} />
     </fieldset>
   )
 }
 
 /** The overhead rate (an assumption): percent of research items and coordinator time. */
 export function OverheadInput({ value, def, onChange }: { value: number; def: number; onChange: (v: number | null) => void }) {
+  const noteId = useId()
+  const [msg, setMsg] = useState<string | null>(null)
   return (
     <label className="field tfa-over">
       <span className="field-label">
@@ -87,8 +173,11 @@ export function OverheadInput({ value, def, onChange }: { value: number; def: nu
         max={100}
         step={1}
         label="Overhead, percent of research items and coordinator time (assumption)"
+        noteId={noteId}
         onCommit={(v) => onChange(Math.abs(v / 100 - def) < 1e-9 ? null : v / 100)}
+        onNote={setMsg}
       />
+      <InputNote id={noteId} msg={msg} />
     </label>
   )
 }
@@ -115,7 +204,7 @@ function AnchorDefinitions({ a }: { a: Anchoring }) {
   )
 }
 
-function ShareSources({ s }: { s: AnchorShare }) {
+function ShareSources({ s, sources }: { s: AnchorShare; sources?: string[] }) {
   return (
     <>
       <span className="hc-title">
@@ -127,6 +216,12 @@ function ShareSources({ s }: { s: AnchorShare }) {
         </span>
       ))}
       <span className="hc-src">{s.definition}</span>
+      {s.id === 'public' &&
+        sources?.map((x) => (
+          <span key={x} className="hc-src">
+            Source: {x}
+          </span>
+        ))}
     </>
   )
 }
@@ -154,7 +249,7 @@ export function AnchorBar({ a }: { a: Anchoring }) {
         {a.shares.map((s) => (
           <li key={s.id}>
             <span className={`tf-key ${ANCHOR_CLASS[s.id]}`} aria-hidden="true" />
-            <HoverCard content={<ShareSources s={s} />}>{s.label}</HoverCard>
+            <HoverCard content={<ShareSources s={s} sources={a.public_sources} />}>{s.label}</HoverCard>
             <span className="tfa-legend-v">
               <span className="num strong">{usd(s.amount)}</span> <span className="num muted">{s.pct.toFixed(1)}%</span>
             </span>
@@ -224,6 +319,23 @@ function rangeText(lo: number | null | undefined, hi: number | null | undefined)
 
 // ---------------------------------------------------------------------- range
 
+function bandExcludesPoint(band: Band): boolean {
+  return band.point_multiplier < band.lo - 1e-9 || band.point_multiplier > band.hi + 1e-9
+}
+
+/** One sentence when the term sheet's % of Medicare (the headline total) is outside the band, so the headline and
+ *  the range printed under it never disagree silently. Renders nothing when the headline is inside the range. */
+export function BandOutsideNote({ b }: { b: Budget }) {
+  if (!b.band || !bandExcludesPoint(b.band)) return null
+  return (
+    <>
+      {' '}
+      The term sheet’s <span className="tnum">{pct(b.band.point_multiplier)}</span> of Medicare (<span className="tnum">{usd(b.totals.per_participant)}</span>) is
+      outside this range, which is measured from Medicare’s own rate.
+    </>
+  )
+}
+
 /** Per-participant low-high at the user's band; non-procedure lines stay at their point value. */
 export function RangeFigure({ b }: { b: Budget }) {
   const detailed = useDensity().density === 'detailed'
@@ -245,9 +357,15 @@ export function RangeFigure({ b }: { b: Budget }) {
         <span className="tnum">
           {pct(band.lo)}–{pct(band.hi)}
         </span>{' '}
-        of Medicare <AssumptionTag title={band.note} />. Proposed standard fees and coordinator time stay at their point value; overhead
+        of Medicare <AssumptionTag title={band.note} />. Proposed standard fees{t.n_placeholder_lines > 0 ? ', placeholder prices' : ''} and
+        coordinator time stay at their point value; overhead
         {over?.amount != null ? ` (${pct(over.amount)})` : ''} follows its rate.
       </p>
+      {bandExcludesPoint(band) && (
+        <p className="tfa-lede tfa-outside">
+          <BandOutsideNote b={b} />
+        </p>
+      )}
       {detailed && (
         <ul className="tfa-list small">
           <li>
@@ -276,8 +394,8 @@ function BandInfo({ band }: { band: Band }) {
         Range at {pct(band.lo)}–{pct(band.hi)} of Medicare
       </span>
       <p>
-        Each sponsor-paid coded line (physician and lab fee schedule) is shown at its Medicare amount × {pct(band.lo)} and × {pct(band.hi)}. Non-procedure
-        lines keep their point value, and overhead is recomputed at its rate on each end.
+        Each sponsor-paid coded line priced from a loaded CMS file (physician and lab fee schedule) is shown at its Medicare amount × {pct(band.lo)} and
+        × {pct(band.hi)}. Non-procedure lines and placeholder prices keep their point value, and overhead is recomputed at its rate on each end.
       </p>
       <span className="hc-src">{band.note}</span>
     </>

@@ -41,7 +41,7 @@ import {
   ruleTitle,
 } from '../termsFlowApi'
 import { CoverageList, CoverageSplit, NodeDetail, RuleChip, RuleList, ScheduleGrid, VisitTimeline } from './ProtocolTermsSchedule'
-import { AnchorChip, BandInputs, BudgetTransparency, CompareWhy, GpciLabel, LineRange, OverheadInput } from './TermsAnchoring'
+import { AnchorChip, BandInputs, BandOutsideNote, BudgetTransparency, CompareWhy, GpciLabel, LineRange, OverheadInput } from './TermsAnchoring'
 import { GPCI_PLAIN } from './termsAnchoringText'
 import './protocolTerms.css'
 
@@ -1045,7 +1045,8 @@ function PayerFigure({ b, stale }: { b: Budget; stale: boolean }) {
         {b.band && t.per_participant_low != null && t.per_participant_high != null && (
           <p className="tf-payer-sub">
             Range <span className="num">{usd(t.per_participant_low)}</span> – <span className="num">{usd(t.per_participant_high)}</span> at{' '}
-            {pctText(b.band.lo)}–{pctText(b.band.hi)} of Medicare (assumption)
+            {pctText(b.band.lo)}–{pctText(b.band.hi)} of Medicare (assumption).
+            <BandOutsideNote b={b} />
           </p>
         )}
         <dl className="tf-compose">

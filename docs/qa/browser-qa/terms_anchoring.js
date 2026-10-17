@@ -190,6 +190,93 @@ const check = (name, ok, detail = '') => {
     await page.close()
   }
 
+  // Rejected typing never commits a partial value; arrow keys step live; Enter commits; the public share names its
+  // CMS files; a term-sheet % of Medicare outside the band is said in one sentence (Simple view).
+  {
+    const page = await open('inputs', 1440)
+    const range0 = await page.evaluate(() => document.querySelector('.tfa-range-v')?.innerText)
+    const lo = await page.$('input[aria-label="Range low, percent of Medicare"]')
+    await lo.click({ clickCount: 3 })
+    await lo.type('200')
+    const invalidWhileTyping = await page.evaluate((el) => el.getAttribute('aria-invalid'), lo)
+    await page.keyboard.press('Tab')
+    await sleep(1200)
+    const s1 = await page.evaluate(() => ({
+      lo: document.querySelector('input[aria-label="Range low, percent of Medicare"]')?.value,
+      range: document.querySelector('.tfa-range-v')?.innerText,
+      note: document.querySelector('.tfa-band .tfa-input-note')?.innerText,
+    }))
+    check('typed 200 in low: box back to 100', s1.lo === '100', s1.lo)
+    check('typed 200 in low: range unchanged', s1.range === range0, `${s1.range} vs ${range0}`)
+    check('typed 200 in low: note says why', /200% is outside 10% to 150%.*kept 100%/.test(s1.note ?? ''), s1.note)
+    check('typed 200 in low: aria-invalid while typing', invalidWhileTyping === 'true', String(invalidWhileTyping))
+    await (await page.$('.tf-controls')).screenshot({ path: path.join(OUT, 'band_rejected_200_simple-1440-light.png') }).catch(() => {})
+    const ov = await page.$('.tfa-over input')
+    await ov.click({ clickCount: 3 })
+    await ov.type('150')
+    await page.keyboard.press('Tab')
+    await sleep(1200)
+    const s2 = await page.evaluate(() => ({
+      v: document.querySelector('.tfa-over input')?.value,
+      note: document.querySelector('.tfa-over .tfa-input-note')?.innerText,
+      q: document.querySelector('#tf-step-3 .section-quals')?.innerText,
+    }))
+    check('typed 150 in overhead: box back to 25', s2.v === '25', s2.v)
+    check('typed 150 in overhead: note says why', /150% is outside 0% to 100%.*kept 25%/.test(s2.note ?? ''), s2.note)
+    check('typed 150 in overhead: qualifier still 25%', /Overhead 25% is an assumption/.test(s2.q ?? ''), s2.q)
+    // Arrow key steps commit live.
+    await lo.focus()
+    await page.keyboard.press('ArrowUp')
+    const want105 = await getJson(`/api/terms-flow/${NCT}/budget?site_id=${A}&multiplier=1&band_lo=1.05&band_hi=1.5`)
+    await page
+      .waitForFunction((t) => document.querySelector('.tfa-range-v')?.innerText.startsWith(t), { timeout: 20000 }, usd(want105.totals.per_participant_low))
+      .catch(() => {})
+    const s3 = await page.evaluate(() => document.querySelector('.tfa-range-v')?.innerText)
+    check('arrow up on low commits 105%', s3?.startsWith(usd(want105.totals.per_participant_low)), `${s3} vs ${usd(want105.totals.per_participant_low)}`)
+    // Enter commits a typed value without leaving the box.
+    const hi = await page.$('input[aria-label="Range high, percent of Medicare"]')
+    await hi.click({ clickCount: 3 })
+    await hi.type('130')
+    await page.keyboard.press('Enter')
+    const want130 = await getJson(`/api/terms-flow/${NCT}/budget?site_id=${A}&multiplier=1&band_lo=1.05&band_hi=1.3`)
+    await page
+      .waitForFunction((t) => document.querySelector('.tfa-range-v')?.innerText.endsWith(t), { timeout: 20000 }, usd(want130.totals.per_participant_high))
+      .catch(() => {})
+    const s4 = await page.evaluate(() => document.querySelector('.tfa-range-v')?.innerText)
+    check('Enter on high commits 130%', s4?.endsWith(usd(want130.totals.per_participant_high)), `${s4} vs ${usd(want130.totals.per_participant_high)}`)
+    // Public share hover names the CMS files and the locality.
+    await page.hover('.tfa-legend li:first-child button')
+    await sleep(600)
+    const hc = await page.evaluate(() => [...document.querySelectorAll('.hc-card')].map((c) => c.innerText).join('\n'))
+    check('public share hover names PFS file and locality', /Source: CMS PFS 2026/.test(hc) && /locality 01/.test(hc), hc.slice(0, 300))
+    check('public share hover names CLFS file', !bud.clfs_loaded || /CLFS .*RATE column/.test(hc), hc.slice(0, 300))
+    await page.screenshot({ path: path.join(OUT, 'public_share_sources_card_simple-1440-light.png') })
+    // Term sheet at 200% of Medicare, outside the 105%-130% band: one sentence says so.
+    const mult = await page.$('input[aria-label="Percent of Medicare applied to coded items"]')
+    await mult.click({ clickCount: 3 })
+    await mult.type('200')
+    await page.keyboard.press('Tab')
+    const want200 = await getJson(`/api/terms-flow/${NCT}/budget?site_id=${A}&multiplier=2&band_lo=1.05&band_hi=1.3`)
+    await page.waitForFunction((t) => document.querySelector('.tf-payer-value')?.innerText === t, { timeout: 20000 }, usd(want200.totals.per_participant)).catch(() => {})
+    await sleep(400)
+    const s5 = await page.evaluate(() => ({
+      sub: document.querySelector('#tf-step-3 .tf-payer-sponsor .tf-payer-sub')?.innerText ?? '',
+      out: document.querySelector('.tfa-outside')?.innerText ?? '',
+    }))
+    const sentence = `The term sheet’s 200% of Medicare (${usd(want200.totals.per_participant)}) is outside this range`
+    check('payer figure says term sheet is outside the range', s5.sub.includes(sentence), s5.sub)
+    check('range card says term sheet is outside the range', s5.out.includes(sentence), s5.out)
+    await (await page.$('#tf-step-3 .section-row')).screenshot({ path: path.join(OUT, 'mult200_outside_band_simple-1440-light.png') })
+    // Back inside the band: the sentence goes away.
+    await mult.click({ clickCount: 3 })
+    await mult.type('120')
+    await page.keyboard.press('Tab')
+    await sleep(1500)
+    const s6 = await page.evaluate(() => !!document.querySelector('.tfa-outside'))
+    check('outside sentence gone at 120% (inside the band)', !s6)
+    await page.close()
+  }
+
   await browser.close()
   check('no page errors', log.pageerrors.length === 0, log.pageerrors.join(' | '))
   check('no console errors', log.console.length === 0, log.console.join(' | '))
