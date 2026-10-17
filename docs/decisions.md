@@ -55,3 +55,6 @@ Judgment calls made without being able to ask. Newest last. Each says what and w
     following the overlap workstream's own recommendation. Both numbers are in `data/findings/self_overlap.json`.
 14. **Beta interval on the Findings page is labelled as floored at 0**, with the coefficient's own interval
     (-0.297 to +0.111) next to it, so nobody reads "0.00 to 0.30" as excluding zero by construction.
+15. **Robustness grids regenerated** (US-Northeast, Regeneron) with the deterministic solver at beta 0.093 and its
+    CI bounds (0, 0.297) plus the assumed 1.0. They are in-sample model outputs and appear only under Research.
+    Pure coordination with no losers stays at 1.00-1.04x for every data-supported beta in US-Northeast.
