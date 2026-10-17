@@ -14,11 +14,15 @@ now does things that need no forecasting:
   (routine care vs research-only, rule shown, reviewer override), a per-patient budget priced from the
   real CMS 2026 physician fee schedule with Medicare locality, a proposed standard non-procedure schedule,
   and a term sheet with provenance on every line. Decision support, not a fair-market-value legal opinion.
+- **Site scores** (`#site-scores`): each U.S. site's historical lung-trial enrollment score, with every step
+  that forms it (prior, the site's own trials, posterior, low-history cap) and the observed-outcome check
+  that says raw differences are overstated about 3x on the log scale. Historical evidence, not a forecast;
+  the default order is history depth, not score.
 - **Findings** (landing page): the research results that motivate both. The earlier clearing views live
   under **Research**, labelled as in-sample model outputs.
 
 Rule for the whole app: no view shows a predicted speedup, time-to-fill or enrollment rate as a product
-claim.
+claim. Site scores show past per-site rates as evidence, next to their validation, never as a forecast.
 
 ## Layout
 
@@ -37,6 +41,7 @@ backend/concord/
   ratecard/cms.py         loads the real CMS physician fee schedule (RVU + GPCI) and, if supplied, CLFS
   ratecard/medicare.py    rate card, coverage grid, standard schedule, term sheet
   service.py              instance builder (region, date, sponsor); the four allocations; price tags
+  site_scores.py          site score breakdown (replicates the rate fit to keep per-trial allocations), calibration
   api/main.py             FastAPI
 frontend/                 Vite + React + TS
 scripts/pipeline.sh       crawl -> normalize -> build -> congestion test -> CMS rates -> robustness grids
@@ -67,6 +72,9 @@ cd frontend && npm install && npm run dev          # http://localhost:5173, prox
 | `GET /api/overlap?sponsor&as_of&region` | a sponsor's concurrent trials, pairwise shared sites, eligibility overlap, criteria diff |
 | `GET /api/terms-flow/trials` | demo protocols (illustrative, authored from public trial information) |
 | `GET /api/terms-flow/{nct}/protocol, /sites, /budget, /compare, /termsheet.md, /termsheet.html` | schedule of assessments, coverage, site budget, two-site comparison, term sheet export |
+| `GET /api/site-scores?region&state&q&min_trials&sort&limit&offset` | U.S. identifiable sites with at least one fitted trial; default sort fitted trials (desc) |
+| `GET /api/site-scores/summary` | method, prior, history-depth buckets, histogram, validation and calibration blocks |
+| `GET /api/site-scores/{site_id}` | one site's full breakdown: prior, data, posterior, cap, calibrated value, contributing trials |
 | `GET /api/status` | crawl state, counts, model prior, backtest, congestion test |
 | `POST /api/clear` `{region, as_of, sponsor, beta, low_history, universe, ...}` | registered vs best-response vs coordinated allocations (free and no-loser) |
 | `GET /api/robustness?<scenario>` | headline under each congestion elasticity x site-rate rule (precomputed) |

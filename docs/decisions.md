@@ -89,3 +89,11 @@ Judgment calls made without being able to ask. Newest last. Each says what and w
     column when nothing is countable; trial rows say other sponsors' trials at an all-anonymized trial's sites
     can't be counted. Only 4 of 80 sponsors are affected (AstraZeneca 0% identifiable; Novartis, Avistone,
     Hummingbird partly). Sponsors with identifiable sites render exactly as before (browser-checked).
+22. **Site scores tab** (user request: "a tab for the site scoring ... especially if we give a breakdown", 18 Oct).
+    Placed after Protocol to terms. Score = the stored site_model.lam_eff; the backend re-runs the rate fit's loop
+    to keep the final per-trial allocations (tests: posterior arrays equal recruitment.fit; every score equals
+    lam_eff, max difference 0 over 27,434 sites). Calibrated = exp(m + b(log score - m)), m = mean log score over
+    the 8,811 U.S. identifiable fitted sites, b = the industry Phase II/III slope 0.334 [0.164, 0.504]; omitted if
+    the validation file is missing. Default order is fitted trials, not score. Capped sites (3,472, tied at
+    0.0757), unfitted and non-U.S. sites get no percentile. The 3x overstatement is stated on the log scale
+    (10x raw is about 2.2x calibrated). Posterior intervals leave out the split uncertainty, and the view says so.

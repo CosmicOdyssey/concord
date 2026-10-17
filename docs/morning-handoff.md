@@ -110,3 +110,17 @@ Completed trials started 2018+ (n = 1,094; industry Phase II/III n = 390), regis
 Reading: the scores carry real signal on observed enrollment, but predicted differences between site lists are about 3-6x larger than observed ones, so the model's ~1.7x site-selection gains are likely overstated. Script `analysis/selection_validation.py`, output `data/findings/selection_validation.json`. Now on the Findings page, with the calibrated re-score
 (`analysis/selection_calibrated.py`, `data/findings/selection_calibrated.json`) and a unit test
 (`tests/test_selection_validation.py`).
+
+## Added 18 Oct (afternoon)
+
+- **Site scores tab** (`#site-scores`, after Protocol to terms): each U.S. site's historical lung-trial enrollment
+  score with every step that forms it (prior, the site's own trials, posterior, low-history cap, calibrated value)
+  and the observed-outcome check at the top. Default order is history depth, not score; sorting by score shows a
+  not-a-forecast note. Scores equal the stored `site_model.lam_eff` for all 27,434 fitted sites (tested). Capped,
+  unfitted and non-U.S. sites get no percentile. Browser QA: `docs/qa/browser-qa/site_scores.js`, all checks pass.
+  Screens `docs/handoff/screens/05*`.
+- **Overlap**: shared sites that can't be counted (sponsors that anonymize sites on CT.gov: AstraZeneca fully;
+  Novartis, Avistone, Hummingbird partly) now show nothing instead of "sites hidden" or a false 0.
+- **Findings**: the observed-outcome check and the calibrated re-score are on the page; site selection held out is
+  about 1.2x calibrated (post hoc), 1.7x uncalibrated.
+- **Redesign in progress** (not in the app yet): three design directions on a canvas for the user to choose from.
