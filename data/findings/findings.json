@@ -1,12 +1,12 @@
 {
- "generated_at": "2026-10-17T06:56:20+00:00",
+ "generated_at": "2026-10-17T07:27:27+00:00",
  "rule": "No view shows a predicted speedup, time-to-fill or ratio as a product claim. Numbers on this page are research findings, labelled with how they were measured.",
  "findings": [
   {
    "id": "congestion",
    "title": "Competing trials barely slow each other within a site",
-   "status": "provisional",
-   "headline": "Within the same site, the congestion elasticity is about 0.09 (95% CI 0.00 to 0.21), against the 1.0 our original model assumed.",
+   "status": "final",
+   "headline": "Within the same site, the congestion elasticity is about 0.09 (95% CI 0.00 to 0.30), against the 1.0 our original model assumed.",
    "chart": {
     "type": "ci",
     "reference": {
@@ -18,7 +18,7 @@
       "label": "within-site beta (default)",
       "estimate": 0.0925487103635646,
       "lo": 0.0,
-      "hi": 0.21302675906797397
+      "hi": 0.2965946716111516
      }
     ]
    },
@@ -44,21 +44,66 @@
       [
        "Within site, all sites (default)",
        "-0.093",
-       "[-0.213, +0.028]",
-       "0.13",
-       "beta = 0.093 (95% CI 0.000 to 0.213)"
+       "[-0.297, +0.111]",
+       "0.37",
+       "beta = 0.093 (95% CI 0.000 to 0.297)"
       ],
       [
        "Pooled across sites (confounded by site type)",
        "-0.107",
-       "[-0.158, -0.056]",
-       "4.47e-05",
+       "[-0.216, +0.002]",
+       "0.0552",
        ""
       ]
      ],
      "highlight_row": 1,
      "notes": [
-      "Standard errors: clustered by trial."
+      "Standard errors: two-way clustered (trial, site).",
+      "Post hoc, not pre-registered: the pre-registered two-way variance clips negative eigenvalues of the whole coefficient covariance matrix (18 of 41 for the primary), so its se depends partly on how the controls are coded (0.104 as coded, 0.105 to 0.115 under equivalent codings); the coefficient's own two-way variance before clipping does not depend on the coding: se 0.087, 95% CI [-0.262, +0.077], p 0.29."
+     ]
+    },
+    {
+     "id": "subsets",
+     "title": "Subset estimates (not the default)",
+     "columns": [
+      "Subset",
+      "Coefficient",
+      "95% CI",
+      "p",
+      ""
+     ],
+     "rows": [
+      [
+       "Experienced sites (predetermined)",
+       "-0.055",
+       "[-0.339, +0.229]",
+       "0.71",
+       "subset, not the default"
+      ],
+      [
+       "Experienced sites (lifetime count)",
+       "-0.135",
+       "[-0.323, +0.053]",
+       "0.16",
+       "subset, not the default"
+      ],
+      [
+       "Trials with <= 20 sites",
+       "-0.045",
+       "[-0.186, +0.096]",
+       "0.53",
+       "subset, not the default"
+      ],
+      [
+       "High-overlap competitors only (o >= 0.8)",
+       "-0.083",
+       "[-0.285, +0.119]",
+       "0.42",
+       "subset, not the default"
+      ]
+     ],
+     "notes": [
+      "4 subsets were tested, so each subset's within-site CI is also shown at the Bonferroni level (alpha 0.05/4, z = 2.50); at that level the CIs that exclude zero: none; that exclude the full-sample estimate -0.093: none."
      ]
     },
     {
@@ -74,42 +119,37 @@
      "rows": [
       [
        "v0 (b8c576f)",
-       "'Key Exclusion Criteria' headers not recognized (exclusions read as requirements)",
+       "header match is startswith('exclusion criteria'), so 'Key Exclusion Criteria' sections are read as inclusion; no driver-exclusion, never-smoker or resectable rules; population has stage III/IV only",
        "-0.136",
-       "[-0.260, -0.013]",
-       ""
+       "[-0.339, +0.067]",
+       "3"
       ],
       [
        "v1 (c0050f4)",
-       "headers fixed; 646 trials with contradictory criteria (empty eligibility)",
-       "-0.026",
-       "[-0.121, +0.068]",
-       ""
+       "headers fixed; driver-exclusion, never-smoker and resectable rules added; a required driver also fired the broad driver exclusion, so many trials had contradictory criteria and an empty eligibility set",
+       "-0.027",
+       "[-0.121, +0.067] (trial-clustered)",
+       "646"
       ],
       [
        "v2 (4a87d33)",
-       "contradictions fixed (3 empty trials left)",
-       "-0.087",
-       "[-0.208, +0.034]",
-       ""
-      ],
-      [
-       "current (with hand-encoded demo trials)",
-       "v2 parser plus hand-encoded eligibility",
-       "-0.093",
-       "[-0.213, +0.028]",
-       ""
+       "current: a required driver suppresses the driver exclusion and resectable overrides stage III-IV (contradictory criteria removed)",
+       "-0.088",
+       "[-0.291, +0.116]",
+       "3"
       ]
      ],
      "notes": [
-      "recorded runs of the same regression (README section 1); trial-clustered SEs"
+      "re-estimated per parser version, same regression",
+      "v1: two-way variance of the within-site coefficient is negative before clipping, so it is not estimable for this version; the CI and p shown are trial-clustered."
      ]
     }
    ],
    "caveats": [
     "Measured at the resolution of public registry data: trial-level enrollment, registered site lists.",
     "The estimate moved with each fix to the eligibility parser; the parser table shows by how much.",
-    "Across sites, busier sites are slower per trial, but that is confounded with site type."
+    "Across sites, busier sites are slower per trial (pooled -0.107), but with two-way clustered (trial, site) SEs its 95% CI includes 0 (p 0.06), and the comparison is confounded with site type.",
+    "Subset estimates (for example sites with many earlier lung trials) are reported separately and are never used as the default."
    ],
    "sources": [
     {
@@ -119,6 +159,10 @@
     {
      "label": "subset checks",
      "path": "data/robustness/congestion_subsets_maskfix.json"
+    },
+    {
+     "label": "two-way SEs, subsets, parser versions",
+     "path": "data/robustness/congestion_v2.json"
     }
    ]
   },

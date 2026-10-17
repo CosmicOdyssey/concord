@@ -485,6 +485,12 @@ function CongestionCard({ data, error }: { data: CongestionTest | null; error: s
                   {num(prim.p_trial_only, 2)}
                 </div>
               )}
+              {prim.ci95_twoway_unclipped && (
+                <div className="stat-sub tnum muted">
+                  two-way before eigenvalue clipping (post hoc): 95% CI {num(prim.ci95_twoway_unclipped[0], 3)} to{' '}
+                  {num(prim.ci95_twoway_unclipped[1], 3)} · p = {num(prim.p_twoway_unclipped, 2)}
+                </div>
+              )}
             </div>
             <div className="stat">
               <div className="stat-label">Model had assumed</div>
@@ -509,18 +515,23 @@ function CongestionCard({ data, error }: { data: CongestionTest | null; error: s
               {defBeta.note && <span className="muted"> {sentence(defBeta.note)}</span>}
             </p>
           )}
+          {data.se_note && <p className="muted small">{sentence(data.se_note)}</p>}
           <p className="note small">
-            Plain reading: within the same site, at the resolution of public registry data, busy periods with overlapping
-            competitors slow enrollment a little at most. The full-sample estimate is not significant; at sites with ≥ 10
-            lung trials it is about 8.5% per doubling of overlapping load (a subset estimate, not the default).
-            Across sites, busier sites are slower per trial
+            Plain reading: within the same site, at the resolution of public registry data,{' '}
+            {prim.p < 0.05 && prim.coef < 0
+              ? 'busy periods with overlapping competitors measurably slow enrollment'
+              : 'we cannot detect that busy periods with overlapping competitors slow enrollment: the full-sample estimate is not significant'}
+            {outside ? ', and its 95% CI rules out the −1 the model had assumed' : ''}. Subset estimates, such as sites with
+            many earlier lung trials, are listed separately below and never used as the default.
             {pooled && (
               <>
                 {' '}
-                (pooled coefficient {num(pooled.coef, 3)}, 95% CI {num(pooled.ci95[0], 3)} to {num(pooled.ci95[1], 3)})
+                Across sites, busier sites {pooled.coef < 0 ? 'have slower trials' : 'do not have slower trials'} (pooled
+                coefficient {num(pooled.coef, 3)}, 95% CI {num(pooled.ci95[0], 3)} to {num(pooled.ci95[1], 3)}
+                {pooled.ci95[0] <= 0 && pooled.ci95[1] >= 0 ? ', which includes 0' : ''}), but that comparison is
+                confounded with site type.
               </>
             )}
-            , but that comparison is confounded with site type.
           </p>
         </>
       )}
@@ -615,9 +626,13 @@ function CongestionCard({ data, error }: { data: CongestionTest | null; error: s
                           {current && <> (current)</>}
                         </div>
                         <div className="muted small">{ps.description}</div>
+                        {ps.ci_note && <div className="muted small">{sentence(ps.ci_note)}</div>}
                       </td>
                       <td className="num">{num(w?.coef, 3)}</td>
-                      <td className="num nowrap">{w ? `${num(w.ci95[0], 3)} to ${num(w.ci95[1], 3)}` : '—'}</td>
+                      <td className="num nowrap">
+                        {w ? `${num(w.ci95[0], 3)} to ${num(w.ci95[1], 3)}` : '—'}
+                        {w?.twoway_estimable === false && <div className="muted small">trial-clustered</div>}
+                      </td>
                       <td className="num">{num(w?.p, 3)}</td>
                       <td className="num strong">{isNum(w?.coef) ? num(-w.coef, 3) : '—'}</td>
                       <td className="num">{int(ps.empty_masks)}</td>

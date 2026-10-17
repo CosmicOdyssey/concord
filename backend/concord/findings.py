@@ -87,11 +87,15 @@ def congestion(con) -> dict:
         parser_source = "re-estimated per parser version, same regression"
         for v in ps:
             wo = v.get("within_overlap", {})
+            ci = _ci(*wo["ci95"]) if "ci95" in wo else ""
+            if wo.get("twoway_estimable") is False:  # two-way variance negative before clipping
+                ci += " (trial-clustered)"
             parser_rows.append([f"{v.get('parser_version')} ({v.get('commit')})", v.get("description", ""),
-                                f"{wo.get('coef', float('nan')):+.3f}", _ci(*wo["ci95"]) if "ci95" in wo else "",
-                                str(v.get("empty_masks", ""))])
+                                f"{wo.get('coef', float('nan')):+.3f}", ci, str(v.get("empty_masks", ""))])
+        parser_notes = [f"{v['parser_version']}: {v['ci_note']}." for v in ps if v.get("ci_note")]
     else:
         parser_source = "recorded runs of the same regression (README section 1); trial-clustered SEs"
+        parser_notes = []
         for v in RECORDED_PARSER_RUNS:
             parser_rows.append([f"{v['parser_version']} ({v['commit']})", v["description"], f"{v['coef']:+.3f}",
                                 _ci(*v["ci95"]), ""])
@@ -99,7 +103,8 @@ def congestion(con) -> dict:
                             f"{w['coef']:+.3f}", _ci(*w["ci95"]), ""])
     tables = [{"id": "estimates", "title": "Coefficient on log(1 + overlapping competitors at the site)",
                "columns": ["Estimate", "Coefficient", "95% CI", "p", "Implied beta"], "rows": rows,
-               "highlight_row": 1, "notes": [f"Standard errors: {se_method}."]}]
+               "highlight_row": 1,
+               "notes": [f"Standard errors: {se_method}."] + ([test["se_note"]] if test.get("se_note") else [])}]
     if sub_rows:
         mc = test.get("multiple_comparisons", {}).get("note", "")
         tables.append({"id": "subsets", "title": "Subset estimates (not the default)",
@@ -107,7 +112,12 @@ def congestion(con) -> dict:
                        "notes": [mc] if mc else []})
     tables.append({"id": "parser", "title": "Beta under each eligibility-parser version",
                    "columns": ["Parser", "What changed", "Coefficient", "95% CI", "Empty eligibility"],
-                   "rows": parser_rows, "notes": [parser_source]})
+                   "rows": parser_rows, "notes": [parser_source] + parser_notes})
+    pooled_caveat = "Across sites, busier sites are slower per trial, but that is confounded with site type."
+    if p and p["ci95"][0] <= 0 <= p["ci95"][1]:
+        pooled_caveat = (f"Across sites, busier sites are slower per trial (pooled {p['coef']:+.3f}), but with "
+                         f"{se_method} SEs its 95% CI includes 0 (p {p['p']:.2f}), and the comparison is "
+                         "confounded with site type.")
     return {
         "id": "congestion",
         "title": "Competing trials barely slow each other within a site",
@@ -120,10 +130,13 @@ def congestion(con) -> dict:
         "caveats": [
             "Measured at the resolution of public registry data: trial-level enrollment, registered site lists.",
             "The estimate moved with each fix to the eligibility parser; the parser table shows by how much.",
-            "Across sites, busier sites are slower per trial, but that is confounded with site type.",
+            pooled_caveat,
+            "Subset estimates (for example sites with many earlier lung trials) are reported separately and are "
+            "never used as the default.",
         ],
         "sources": [{"label": "analysis/congestion.py (DB meta congestion_test)", "path": "backend/concord/analysis/congestion.py"},
-                    {"label": "subset checks", "path": "data/robustness/congestion_subsets_maskfix.json"}],
+                    {"label": "subset checks", "path": "data/robustness/congestion_subsets_maskfix.json"},
+                    {"label": "two-way SEs, subsets, parser versions", "path": "data/robustness/congestion_v2.json"}],
     }
 
 

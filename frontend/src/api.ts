@@ -255,6 +255,14 @@ export interface RegressionResult {
   se_trial_only?: number
   ci95_trial_only?: [number, number]
   p_trial_only?: number
+  /** Method actually behind se / ci95 / p (two-way, or trial-clustered when the two-way variance is not estimable). */
+  ci_method?: string
+  /** False when this coefficient's two-way variance is negative before clipping (se / ci95 / p are then trial-clustered). */
+  twoway_estimable?: boolean
+  /** Post hoc: the coefficient's own two-way variance before eigenvalue clipping (null when not estimable). */
+  se_twoway_unclipped?: number | null
+  ci95_twoway_unclipped?: [number, number] | null
+  p_twoway_unclipped?: number | null
   pct_per_competitor?: number
   n_rows: number
   clusters?: number
@@ -284,6 +292,8 @@ export interface CongestionTest {
   }
   parser_sensitivity?: ParserSensitivity[]
   default_beta?: { value: number; source: string; ci95: [number, number]; note?: string }
+  /** Post hoc disclosure shown beside the pre-registered two-way numbers. */
+  se_note?: string
 }
 
 export interface SubsetFit {
@@ -308,8 +318,10 @@ export interface ParserSensitivity {
   parser_version: string
   commit: string
   description: string
-  within_overlap: { coef: number; ci95: [number, number]; p: number; clusters?: number }
+  within_overlap: { coef: number; ci95: [number, number]; p: number; clusters?: number; ci_method?: string; twoway_estimable?: boolean }
   empty_masks?: number
+  /** Present when this version's CI is not the two-way one (e.g. two-way variance not estimable). */
+  ci_note?: string
 }
 
 export interface SponsorCount {

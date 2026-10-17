@@ -24,3 +24,9 @@ Judgment calls made without being able to ask. Newest last. Each says what and w
    from registry data doesn't beat sponsors' choices". The findings page states each row as measured.
 7. **Worktrees run their own backend and dev server.** `frontend/vite.config.ts` reads `API_TARGET`
    (default http://localhost:8000) so a worktree's dev server can point at its own backend port.
+8. **Congestion re-estimate merged; default beta is now 0.0925** (two-way CI 0 to 0.297), regenerated on the
+   rebuilt database. The earlier README claim "mainly at experienced sites" is withdrawn: with a predetermined
+   definition the subset is -0.055, p 0.71. The re-estimate's auditor-approved patch (data-driven "plain
+   reading" in the Model view, findings notes) was applied as prepared.
+9. **The final rerun will use beta 0.0925**, the default the congestion regression now writes, as the
+   re-estimate's notes require; not the older 0.087.
