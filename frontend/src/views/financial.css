@@ -42,3 +42,7 @@
 .financial-empty { background: var(--surface-2); padding: 1.3rem; color: var(--text-2); border-radius: 6px; }
 .financial-actions { justify-content: flex-start; }
 @media (max-width: 650px) { .financial section { padding: .8rem; } .financial-provenance { grid-template-columns: 1fr; } .financial-heading { align-items: flex-start; } }
+/* Calm foundation: controls share the app's control radius and outline, and reach 44 px on touch screens. */
+.financial input:not([type=checkbox]), .financial select, .financial button { border-radius: var(--radius-ctl); }
+.financial input:not([type=checkbox]), .financial select { border-color: var(--ctl); }
+@media (pointer: coarse) { .financial input:not([type=checkbox]), .financial select, .financial button { min-height: var(--tap); } }
