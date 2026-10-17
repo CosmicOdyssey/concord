@@ -69,3 +69,69 @@ def test_multi_membership_matches_brute_force():
     assert np.allclose(V, expect, rtol=1e-12, atol=1e-14)
     assert info["clusters_site"] == 4 and info["clusters_trial_site"] == G_ts
     assert np.linalg.eigvalsh(V).min() >= -1e-12
+
+
+# ------------------------------------------------------------------------------ audit fixes
+
+
+def _multi_membership(seed: int = 4, n: int = 120, n_sites: int = 15):
+    """Trial-level data with multi-membership and a categorical control (three 'years')."""
+    rng = np.random.default_rng(seed)
+    year = rng.integers(0, 3, size=n)
+    x = rng.normal(size=n)
+    logn = rng.normal(size=n)
+    y = -0.2 * x + 0.3 * logn + 0.5 * (year == 1) + rng.normal(size=n)
+    member = [rng.choice(n_sites, size=rng.integers(1, 4), replace=False) for _ in range(n)]
+    mo = np.array([i for i in range(n) for _ in member[i]])
+    ms = np.array([f"S{s}" for i in range(n) for s in member[i]])
+    return y, x, logn, year, mo, ms
+
+
+def test_unclipped_coefficient_variance_does_not_depend_on_control_coding():
+    from concord.analysis.congestion import _ols_twoway_full
+
+    y, x, logn, year, mo, ms = _multi_membership()
+    trials = np.array([f"T{i}" for i in range(len(y))])
+    one = np.ones(len(y))
+    codings = [
+        np.column_stack([x, one, logn, year == 1, year == 2]),        # first year as base
+        np.column_stack([x, one, logn, year == 0, year == 1]),        # last year as base
+        np.column_stack([x, one, 0.1 * logn, year == 1, year == 2]),  # rescaled control
+    ]
+    fits = [_ols_twoway_full(y, X.astype(float), trials, mo, ms) for X in codings]
+    b0, _, v0, _ = fits[0]
+    for b, _, v, _ in fits[1:]:
+        assert np.isclose(b[0], b0[0], rtol=0, atol=1e-12)
+        assert np.isclose(v[0], v0[0], rtol=1e-9, atol=0)
+
+
+def test_negative_unclipped_variance_falls_back_to_trial_clustered():
+    from concord.analysis.congestion import CI_METHOD_NOT_ESTIMABLE, SE_METHOD, _combine
+
+    x = np.array([0.0, 1.0])
+    ok = _combine(-0.1, 0.05, 0.04 ** 2, 0.03, 10, 10, x, 20, {"negative_eigenvalues_clipped": 0})
+    assert ok["twoway_estimable"] and ok["ci_method"] == SE_METHOD
+    assert np.isclose(ok["se"], 0.05) and np.isclose(ok["se_twoway_unclipped"], 0.04)
+    bad = _combine(-0.1, 0.05, -0.001, 0.03, 10, 10, x, 20, {"negative_eigenvalues_clipped": 3})
+    assert not bad["twoway_estimable"] and bad["ci_method"] == CI_METHOD_NOT_ESTIMABLE
+    assert np.isclose(bad["se"], 0.03) and bad["ci95"] == bad["ci95_trial_only"] and bad["p"] == bad["p_trial_only"]
+    assert np.isclose(bad["se_twoway_clipped"], 0.05) and bad["se_twoway_unclipped"] is None
+
+
+def test_default_beta_is_what_the_service_serves():
+    import json
+    import sqlite3
+
+    from concord.analysis.congestion import default_beta
+    from concord.service import congestion_beta
+
+    for coef, ci in ((-0.087, [-0.291, 0.117]), (-0.3, [-0.5, -0.1]), (0.05, [-0.02, 0.12])):
+        primary = {"coef": coef, "ci95": ci, "ci_method": "m"}
+        con = sqlite3.connect(":memory:")
+        con.execute("CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT)")
+        con.execute("INSERT INTO meta VALUES ('congestion_test', ?)",
+                    (json.dumps({"results": {"within_overlap": {**primary, "p": 0.5}}}),))
+        served = congestion_beta(con)
+        d = default_beta(primary, "note", [])
+        assert np.isclose(d["value"], served["beta"]) and np.allclose(d["ci95"], served["ci95"])
+        assert min(d["ci95"]) >= 0

@@ -103,6 +103,25 @@ above changes): concord.analysis.congestion_se_diagnostics decomposes the two-wa
 trial-level estimators (unclipped value, CGM components, and a pairs-counted-once alternative), because
 their two-way SEs came out much wider than the trial-only ones with many eigenvalues clipped.
 estimate() takes an optional fit= hook for it; the default is unchanged.
+
+AUDIT FIXES (after the V2 results; bug fixes and disclosures, not tuning; before/after numbers in the commit
+messages "X: fix ..."). The pre-registered se / ci95 / p above are still the primary numbers, except as in 2.
+1. default_beta is now exactly what service.congestion_beta serves: value and ci95 are beta = -coef floored
+   at 0 (before: ci95 = -ci95 of the coefficient, not floored, so the same CI showed two ways on screen).
+   The unfloored values are kept as value_before_floor / ci95_before_floor.
+2. Every coefficient now also reports the unclipped two-way variance of that coefficient
+   (var_twoway_unclipped = [0, 0] of V before clipping). If it is <= 0, the pre-registered clipped se of the
+   coefficient comes entirely from clipping other directions of V and is not a variance estimate of this
+   coefficient: the entry is flagged twoway_estimable = false, se / ci95 / p are the trial-clustered values,
+   ci_method says so, and the clipped numbers stay as se_twoway_clipped / ci95_twoway_clipped /
+   p_twoway_clipped. The list of such entries is out["not_estimable_twoway"] (parser entries also carry a
+   ci_note). In the V2 run this affected the v1 parser line only.
+3. Disclosure: clipping negative eigenvalues of the whole k x k V is not invariant to how the nuisance
+   controls are coded (base start year, units of log_n_sites, centering), so the pre-registered se carries
+   an arbitrary component. Each coefficient therefore also reports se_twoway_unclipped / ci95_ / p_ (the
+   coefficient's own unclipped two-way variance, invariant to those codings; None if <= 0), the primary is
+   re-estimated under three equivalent codings (se_coding_sensitivity), and se_note states this in one
+   sentence beside the pre-registered numbers. Nothing here changes which numbers are primary.
 """
 
 from __future__ import annotations
@@ -122,6 +141,8 @@ from concord.model.recruitment import ENROLL_FRACTION
 from concord.paths import DB_PATH, ROOT
 
 SE_METHOD = "two-way clustered (trial, site)"
+CI_METHOD_NOT_ESTIMABLE = ("trial-clustered: the two-way variance of this coefficient is negative before clipping "
+                           "(not estimable)")
 Z95 = 1.96
 MEASURE_COL = {"start": 2, "avg": 3, "overlap": 4}  # columns of load()'s rows
 # Subsets (V2 section C) and decision rule (section E, thresholds from task F).
@@ -245,16 +266,16 @@ def _cr1_meat(codes: np.ndarray, S: np.ndarray, n: int, k: int) -> tuple[np.ndar
     return G / (G - 1) * (n - 1) / max(n - k, 1) * (agg.T @ agg), G
 
 
-def twoway_vcov(scores: np.ndarray, bread: np.ndarray, trial_of_obs: np.ndarray,
-                member_obs: np.ndarray, member_site: np.ndarray) -> tuple[np.ndarray, dict]:
-    """Two-way (trial, site) cluster-robust variance, CGM (2011), with multi-membership.
+def twoway_vcov_unclipped(scores: np.ndarray, bread: np.ndarray, trial_of_obs: np.ndarray,
+                          member_obs: np.ndarray, member_site: np.ndarray) -> tuple[np.ndarray, dict]:
+    """Two-way (trial, site) cluster-robust variance, CGM (2011), with multi-membership, BEFORE clipping.
 
     scores        (n, k) per-observation scores w_i x_i e_i
     bread         (X'WX)^-1
     trial_of_obs  (n,) trial id of each observation
     member_obs,   incidence pairs: observation member_obs[j] belongs to site member_site[j]. A
     member_site   trial-site row has one pair; a trial-level observation one pair per site.
-    V = V_trial + V_site - V_trial&site, CR1 factor per dimension, negative eigenvalues clipped to 0.
+    V = V_trial + V_site - V_trial&site (symmetrized), CR1 factor per dimension. Not necessarily PSD.
     """
     n, k = scores.shape
     member_obs = np.asarray(member_obs)
@@ -267,22 +288,40 @@ def twoway_vcov(scores: np.ndarray, bread: np.ndarray, trial_of_obs: np.ndarray,
     M_s, G_s = _cr1_meat(s_code, S, n, k)
     M_ts, G_ts = _cr1_meat(t_code[member_obs].astype(np.int64) * (int(s_code.max()) + 1) + s_code, S, n, k)
     V = bread @ (M_t + M_s - M_ts) @ bread
-    V = (V + V.T) / 2
+    return (V + V.T) / 2, {"clusters_site": G_s, "clusters_trial_site": G_ts}
+
+
+def twoway_vcov(scores: np.ndarray, bread: np.ndarray, trial_of_obs: np.ndarray,
+                member_obs: np.ndarray, member_site: np.ndarray) -> tuple[np.ndarray, dict]:
+    """The pre-registered two-way variance: twoway_vcov_unclipped, then negative eigenvalues of the
+    whole k x k matrix clipped to 0 (V2 section A)."""
+    V, info = twoway_vcov_unclipped(scores, bread, trial_of_obs, member_obs, member_site)
     ev, vec = np.linalg.eigh(V)
     V = (vec * np.clip(ev, 0, None)) @ vec.T
-    return V, {"clusters_site": G_s, "clusters_trial_site": G_ts, "negative_eigenvalues_clipped": int((ev < 0).sum())}
+    return V, {**info, "negative_eigenvalues_clipped": int((ev < 0).sum())}
 
 
-def _ols_twoway(y, X, trial_ids, member_obs, member_site, w=None):
-    """Weighted OLS with two-way (trial, site) clustered standard errors (see twoway_vcov)."""
+def _ols_twoway_full(y, X, trial_ids, member_obs, member_site, w=None):
+    """Weighted OLS; (beta, two-way se as pre-registered (clipped), unclipped diagonal of V, info)."""
     w = np.ones(len(y)) if w is None else w
     sw = np.sqrt(w)
     Xw, yw = X * sw[:, None], y * sw
     XtX_inv = np.linalg.pinv(Xw.T @ Xw)
     beta = XtX_inv @ Xw.T @ yw
     u = yw - Xw @ beta
-    V, info = twoway_vcov(Xw * u[:, None], XtX_inv, np.asarray(trial_ids), member_obs, np.asarray(member_site))
-    return beta, np.sqrt(np.clip(np.diag(V), 0, None)), info
+    V_raw, info = twoway_vcov_unclipped(Xw * u[:, None], XtX_inv, np.asarray(trial_ids), member_obs,
+                                        np.asarray(member_site))
+    ev, vec = np.linalg.eigh(V_raw)
+    V = (vec * np.clip(ev, 0, None)) @ vec.T
+    info["negative_eigenvalues_clipped"] = int((ev < 0).sum())
+    info["n_columns"] = int(X.shape[1])
+    return beta, np.sqrt(np.clip(np.diag(V), 0, None)), np.diag(V_raw).copy(), info
+
+
+def _ols_twoway(y, X, trial_ids, member_obs, member_site, w=None):
+    """Weighted OLS with two-way (trial, site) clustered standard errors (see twoway_vcov)."""
+    beta, se, _, info = _ols_twoway_full(y, X, trial_ids, member_obs, member_site, w)
+    return beta, se, info
 
 
 def _demean(M: np.ndarray, groups: np.ndarray, w: np.ndarray) -> np.ndarray:
@@ -300,19 +339,45 @@ def _y(trials: dict, t: str) -> float:
 def _fit(y, X, trial_ids, member_obs, member_site, w, x, n_rows: int, trial_site_rows: int) -> dict:
     """Coefficient on X[:, 0] with two-way (primary) and trial-only (CR1) standard errors."""
     b, se1, G = _ols_cluster(y, X, trial_ids, w)
-    _, se2, info = _ols_twoway(y, X, trial_ids, member_obs, member_site, w)
-    r = _fmt(b[0], se2[0], n_rows, G, x)
-    t = _fmt(b[0], se1[0], n_rows, G, x)
+    _, se2, var_raw, info = _ols_twoway_full(y, X, trial_ids, member_obs, member_site, w)
+    return _combine(float(b[0]), float(se2[0]), float(var_raw[0]), float(se1[0]), n_rows, G, x, trial_site_rows, info)
+
+
+def _combine(b: float, se2: float, var_raw: float, se1: float, n_rows: int, G: int, x: np.ndarray,
+             trial_site_rows: int, info: dict) -> dict:
+    """One coefficient's entry: the pre-registered two-way numbers, the trial-only CR1 numbers, and the
+    audit additions (AUDIT FIXES 2 and 3 in the module docstring):
+      se_twoway_unclipped / ci95_ / p_   the coefficient's own two-way variance before clipping (does not
+                                         depend on how the controls are coded); None if it is <= 0
+      twoway_estimable                   False if that variance is <= 0: the clipped se then comes entirely
+                                         from clipping other directions of V, so se / ci95 / p are replaced
+                                         by the trial-only values and the clipped ones are kept as
+                                         se_twoway_clipped / ci95_twoway_clipped / p_twoway_clipped
+      ci_method                          the method actually behind se / ci95 / p"""
+    r = _fmt(b, se2, n_rows, G, x)
+    t = _fmt(b, se1, n_rows, G, x)
     r.update(se_trial_only=t["se"], ci95_trial_only=t["ci95"], p_trial_only=t["p"],
              trial_site_rows=int(trial_site_rows), **info)
+    r["var_twoway_unclipped"] = var_raw
+    if var_raw > 0:
+        u = _fmt(b, float(np.sqrt(var_raw)), n_rows, G, x)
+        r.update(se_twoway_unclipped=u["se"], ci95_twoway_unclipped=u["ci95"], p_twoway_unclipped=u["p"],
+                 twoway_estimable=True, ci_method=SE_METHOD)
+    else:
+        r.update(se_twoway_clipped=r["se"], ci95_twoway_clipped=r["ci95"], p_twoway_clipped=r["p"],
+                 se=t["se"], ci95=t["ci95"], p=t["p"],
+                 se_twoway_unclipped=None, ci95_twoway_unclipped=None, p_twoway_unclipped=None,
+                 twoway_estimable=False, ci_method=CI_METHOD_NOT_ESTIMABLE)
     return r
 
 
-def estimate(trials: dict, rows: list[tuple[str, str, float]], fit=None) -> dict:
+def estimate(trials: dict, rows: list[tuple[str, str, float]], fit=None, design=None) -> dict:
     """pooled / site_fe / within for one exposure, on (trial, site, exposure) rows.
 
-    fit: same signature as _fit (the default); congestion_se_diagnostics passes its own."""
+    fit: same signature as _fit (the default); congestion_se_diagnostics passes its own.
+    design: same signature as _design (the default); only the post-hoc coding check passes another."""
     _fit_ = fit or _fit
+    _design_ = design or _design
     out: dict = {}
 
     # Pooled, trial level: mean exposure across the trial's (named) sites.
@@ -324,7 +389,7 @@ def estimate(trials: dict, rows: list[tuple[str, str, float]], fit=None) -> dict
     ids = sorted(expo)
     y = np.array([_y(trials, t) for t in ids])
     x = np.array([np.mean(expo[t]) for t in ids])
-    C, _ = _design(trials, ids)
+    C, _ = _design_(trials, ids)
     mo = np.array([i for i, t in enumerate(ids) for _ in sites_of[t]])
     ms = np.array([s for t in ids for s in sites_of[t]])
     out["pooled"] = _fit_(y, np.column_stack([x, np.ones(len(ids)), C]), np.array(ids), mo, ms, None, x,
@@ -341,7 +406,7 @@ def estimate(trials: dict, rows: list[tuple[str, str, float]], fit=None) -> dict
     sub = [r for r, kp in zip(sub, keep) if kp]
     yv = np.array([_y(trials, t) for t in tid])
     xv = np.array([r[2] for r in sub], dtype=float)
-    Cv, _ = _design(trials, list(tid))
+    Cv, _ = _design_(trials, list(tid))
     w = np.array([1.0 / trials[t]["n_sites"] for t in tid])
     M = _demean(np.column_stack([yv, xv, Cv]), sid, w)
     r = _fit_(M[:, 0], M[:, 1:], tid, np.arange(len(tid)), sid, w, xv, len(tid), len(tid))
@@ -360,7 +425,7 @@ def estimate(trials: dict, rows: list[tuple[str, str, float]], fit=None) -> dict
     ids = sorted(dev)
     y = np.array([_y(trials, t) for t in ids])
     x = np.array([np.mean(dev[t]) for t in ids])
-    C, _ = _design(trials, ids)
+    C, _ = _design_(trials, ids)
     mo = np.array([i for i, t in enumerate(ids) for _ in dsites[t]])
     ms = np.array([s for t in ids for s in dsites[t]])
     r = _fit_(y, np.column_stack([x, np.ones(len(ids)), C]), np.array(ids), mo, ms, None, x, len(ids), len(tid))
@@ -479,8 +544,10 @@ def decide(full_within: dict, subsets: dict) -> dict:
 
 
 def _short(c: dict) -> dict:
-    keys = ("coef", "se", "ci95", "p", "clusters", "n_rows", "trial_site_rows", "se_trial_only",
-            "ci95_trial_only", "p_trial_only", "clusters_site")
+    keys = ("coef", "se", "ci95", "p", "ci_method", "clusters", "n_rows", "trial_site_rows", "se_trial_only",
+            "ci95_trial_only", "p_trial_only", "clusters_site", "twoway_estimable", "negative_eigenvalues_clipped",
+            "var_twoway_unclipped", "se_twoway_unclipped", "ci95_twoway_unclipped", "p_twoway_unclipped",
+            "se_twoway_clipped", "ci95_twoway_clipped", "p_twoway_clipped")
     return {k: c[k] for k in keys if k in c}
 
 
@@ -493,8 +560,14 @@ def multiple_comparisons(full_within: dict, subsets: dict) -> dict:
     note = (f"{N_SUBSETS} subsets were tested, so each subset's within-site CI is also shown at the Bonferroni "
             f"level (alpha {ALPHA}/{N_SUBSETS}, z = {Z_BONF:.2f}); at that level the CIs that exclude zero: "
             f"{names(ex0)}; that exclude the full-sample estimate {f:+.3f}: {names(exf)}.")
+    # Post hoc (audit fix 3): the same Bonferroni CIs from each coefficient's unclipped two-way se.
+    bu = {k: ([s["within"]["coef"] - Z_BONF * s["within"]["se_twoway_unclipped"],
+               s["within"]["coef"] + Z_BONF * s["within"]["se_twoway_unclipped"]]
+              if s["within"]["se_twoway_unclipped"] is not None else None) for k, s in subsets.items()}
     return {"method": "Bonferroni", "k": N_SUBSETS, "alpha": ALPHA, "z": Z_BONF, "estimator": "within_overlap",
-            "se_method": SE_METHOD, "note": note, "bonferroni_ci95": b}
+            "se_method": SE_METHOD, "note": note, "bonferroni_ci95": b,
+            "bonferroni_ci95_twoway_unclipped": bu,
+            "bonferroni_ci95_twoway_unclipped_excludes_zero": [k for k, v in bu.items() if v and (v[0] > 0 or v[1] < 0)]}
 
 
 # ------------------------------------------------------------------------------ parser sensitivity
@@ -528,8 +601,12 @@ def parser_sensitivity(con: sqlite3.Connection, production_masks: dict[str, np.n
     for v in pv.VERSIONS:
         mods = pv.load_version(v["commit"])
         masks = pv.compile_masks(con, mods)
-        out.append({**v, "overrides": False, "source_matches_working_tree": pv.source_matches_working_tree(v["commit"]),
-                    **one(masks)})
+        e = {**v, "overrides": False, "source_matches_working_tree": pv.source_matches_working_tree(v["commit"]),
+             **one(masks)}
+        if not e["within_overlap"]["twoway_estimable"]:  # AUDIT FIX 2: say so where the line is shown
+            e["ci_note"] = ("two-way variance of the within-site coefficient is negative before clipping, so it is "
+                            "not estimable for this version; the CI and p shown are trial-clustered")
+        out.append(e)
     cur = pv.VERSIONS[-1]
     masks = pv.compile_masks(con, pv.load_version(cur["commit"]), overrides=OVERRIDES)
     differ = sum(1 for n, m in masks.items() if n not in production_masks or not np.array_equal(m, production_masks[n]))
@@ -540,6 +617,82 @@ def parser_sensitivity(con: sqlite3.Connection, production_masks: dict[str, np.n
            "overrides": True, "n_overrides": len(OVERRIDES),
            "masks_differing_from_trial_model": int(differ), **one(masks)}
     return out, ref
+
+
+# ------------------------------------------------- post hoc (audit): coding of the nuisance controls
+
+def _design_last_year_base(trials: dict, ids: list[str]) -> tuple[np.ndarray, list[str]]:
+    """As _design, but the omitted start year is the LAST year instead of the first."""
+    C, names = _design(trials, ids)
+    years = sorted({trials[t]["year"] for t in ids})
+    if len(years) < 2:
+        return C, names
+    first = np.array([float(trials[t]["year"] == years[0]) for t in ids])
+    # Columns 5.. are year:y for y in years[1:]; swap the last one for the first year.
+    return np.column_stack([C[:, :-1], first]), names[:-1] + [f"year:{years[0]}"]
+
+
+def _design_rescaled(trials: dict, ids: list[str]) -> tuple[np.ndarray, list[str]]:
+    """As _design, with log_n_sites in units of 0.1."""
+    C, names = _design(trials, ids)
+    C = C.copy()
+    C[:, names.index("log_n_sites")] *= 0.1
+    return C, names
+
+
+def _design_centered(trials: dict, ids: list[str]) -> tuple[np.ndarray, list[str]]:
+    """As _design, every control centered at its sample mean."""
+    C, names = _design(trials, ids)
+    return C - C.mean(axis=0), names
+
+
+ALT_CODINGS = {"last_start_year_as_base": _design_last_year_base,
+               "log_n_sites_x0.1": _design_rescaled,
+               "controls_centered": _design_centered}
+
+
+def coding_sensitivity(trials: dict, rows: list, est: str = "within") -> dict:
+    """The same regression with equivalent codings of the controls (same column space, so the same
+    coefficient). The pre-registered clipped se may move; the coefficient's unclipped variance may not."""
+    base = estimate(trials, rows)[est]
+    out = {"as_coded": base}
+    for name, des in ALT_CODINGS.items():
+        c = estimate(trials, rows, design=des)[est]
+        assert abs(c["coef"] - base["coef"]) < 1e-9, (name, c["coef"], base["coef"])
+        assert abs(c["var_twoway_unclipped"] - base["var_twoway_unclipped"]) <= 1e-9 * abs(base["var_twoway_unclipped"]), name
+        out[name] = c
+    keys = ("se", "ci95", "p", "ci_method", "negative_eigenvalues_clipped", "se_twoway_unclipped", "p_twoway_unclipped")
+    return {name: {"coef": c["coef"], **{k: c[k] for k in keys}} for name, c in out.items()}
+
+
+def se_note(primary: dict, coding: dict) -> str:
+    """One-sentence disclosure shown beside the pre-registered numbers (AUDIT FIX 3)."""
+    ses = [c["se"] for k, c in coding.items() if k != "as_coded"]
+    head = (f"Post hoc, not pre-registered: the pre-registered two-way variance clips negative eigenvalues of the whole "
+            f"coefficient covariance matrix ({primary['negative_eigenvalues_clipped']} of {primary['n_columns']} for "
+            f"the primary), so its se depends partly on how the controls are coded ({primary['se']:.3f} as coded, "
+            f"{min(ses):.3f} to {max(ses):.3f} under equivalent codings)")
+    if not primary["twoway_estimable"]:
+        return head + "; the coefficient's own two-way variance is negative before clipping, so the CI shown is trial-clustered."
+    lo, hi = primary["ci95_twoway_unclipped"]
+    return (head + f"; the coefficient's own two-way variance before clipping does not depend on the coding: se "
+            f"{primary['se_twoway_unclipped']:.3f}, 95% CI [{lo:+.3f}, {hi:+.3f}], p {primary['p_twoway_unclipped']:.2f}.")
+
+
+def default_beta(primary: dict, note_se: str, subsets_meeting_rule: list) -> dict:
+    """The default beta exactly as service.congestion_beta serves it: beta = -coef, both the value and the
+    CI floored at 0 (AUDIT FIX 1; before the fix ci95 was -ci95 of the coefficient, not floored)."""
+    lo, hi = primary["ci95"]
+    out = {"value": max(0.0, -primary["coef"]), "source": "full-sample within_overlap",
+           "ci95": [max(0.0, -hi), max(0.0, -lo)],
+           "value_before_floor": -primary["coef"], "ci95_before_floor": [-hi, -lo],
+           "ci95_scale": "beta = -coef, floored at 0 exactly as service.congestion_beta", "se_method": primary["ci_method"],
+           "note": "subset estimates are reported separately and are not used as the default",
+           "se_note": note_se, "subsets_meeting_rule": subsets_meeting_rule}
+    if primary.get("ci95_twoway_unclipped"):
+        ulo, uhi = primary["ci95_twoway_unclipped"]
+        out["ci95_twoway_unclipped"] = [max(0.0, -uhi), max(0.0, -ulo)]
+    return out
 
 
 # ------------------------------------------------------------------------------------------- run
@@ -561,6 +714,7 @@ def run(con: sqlite3.Connection | None = None, with_parser_sensitivity: bool = T
 
     primary = out["results"]["within_overlap"]
     out["primary"] = "within_overlap"
+    out["se_method"] = primary["ci_method"]  # SE_METHOD unless the primary's two-way variance is not estimable
     out["model_implied_coef_overlap"] = -1.0
     out["verdict"] = (
         "negative and significant" if primary["coef"] < 0 and primary["p"] < 0.05 else
@@ -583,14 +737,31 @@ def run(con: sqlite3.Connection | None = None, with_parser_sensitivity: bool = T
     if with_parser_sensitivity:
         out["parser_sensitivity"], out["parser_sensitivity_reference"] = parser_sensitivity(con, production_masks)
 
-    lo, hi = primary["ci95"]
-    out["default_beta"] = {
-        "value": -primary["coef"], "source": "full-sample within_overlap", "ci95": [-hi, -lo],
-        "ci95_scale": "beta = -coef; service.congestion_beta clips both at 0", "se_method": SE_METHOD,
-        "note": "subset estimates are reported separately and are not used as the default",
-        "subsets_meeting_rule": out["subset_decision"]["subsets_meeting_rule"]}
+    # Post hoc (audit), not pre-registered; changes no pre-registered number.
+    coding = coding_sensitivity(trials, [(r[0], r[1], r[MEASURE_COL["overlap"]]) for r in rows])
+    assert coding["as_coded"]["se"] == primary["se"]
+    out["se_coding_sensitivity"] = {
+        "note": "post hoc (audit), not pre-registered: the primary within_overlap under equivalent codings of the "
+                "controls; same coefficient, same unclipped variance, different clipped se",
+        "estimator": "within_overlap", "codings": coding}
+    out["se_note"] = se_note(primary, coding)
+    out["default_beta"] = default_beta(primary, out["se_note"], out["subset_decision"]["subsets_meeting_rule"])
+    out["not_estimable_twoway"] = not_estimable(out)
     out["seconds"] = round(time.time() - t0, 1)
     return out
+
+
+def not_estimable(out: dict) -> list[str]:
+    """Every reported coefficient whose two-way variance is negative before clipping (AUDIT FIX 2)."""
+    hits = [f"results.{k}" for k, c in out["results"].items() if not c["twoway_estimable"]]
+    for key, s in out.get("subsets", {}).items():
+        hits += [f"subsets.{key}.{e}" for e in ("within", "site_fe", "pooled") if not s[e]["twoway_estimable"]]
+    for v in out.get("parser_sensitivity", []) + ([out["parser_sensitivity_reference"]]
+                                                  if out.get("parser_sensitivity_reference") else []):
+        hits += [f"parser_sensitivity.{v['parser_version']}.{e}" for e in ("within_overlap", "site_fe_overlap",
+                                                                            "pooled_overlap")
+                 if not v[e]["twoway_estimable"]]
+    return hits
 
 
 def reproduction_check(new: dict, prev: dict | None) -> dict:
@@ -609,8 +780,10 @@ def reproduction_check(new: dict, prev: dict | None) -> dict:
 
 
 def _line(name: str, c: dict) -> str:
-    ci = lambda v: f"[{v[0]:+.4f}, {v[1]:+.4f}]"  # noqa: E731
-    return (f"{name:16s} {c['coef']:+.4f}  2way {ci(c['ci95'])} p={c['p']:.3f}  "
+    ci = lambda v: f"[{v[0]:+.4f}, {v[1]:+.4f}]" if v else "   not estimable   "  # noqa: E731
+    tag = "2way" if c.get("twoway_estimable", True) else "TRIAL(2way n.e.)"
+    return (f"{name:16s} {c['coef']:+.4f}  {tag} {ci(c['ci95'])} p={c['p']:.3f}  "
+            f"unclipped {ci(c.get('ci95_twoway_unclipped'))}  "
             f"trial-only {ci(c['ci95_trial_only'])} p={c['p_trial_only']:.3f}  "
             f"trials={c['clusters']} sites={c.get('clusters_site')} rows={c.get('trial_site_rows')}")
 
@@ -639,7 +812,9 @@ def main() -> None:
     for v in res.get("parser_sensitivity", []) + [res.get("parser_sensitivity_reference")]:
         if v:
             print(_line(v["parser_version"], v["within_overlap"]), "empty", v["empty_masks"])
-    print(json.dumps({k: res[k] for k in ("multiple_comparisons", "default_beta")}, indent=2))
+    print(json.dumps({k: res[k] for k in ("multiple_comparisons", "default_beta", "se_coding_sensitivity",
+                                          "not_estimable_twoway")}, indent=2))
+    print(res["se_note"])
     print(json.dumps(res["subset_decision"]["action"]), json.dumps(rep["max_abs_diff"]))
     print(f"wrote {a.out} and meta congestion_test of {DB_PATH} in {res['seconds']} s")
 

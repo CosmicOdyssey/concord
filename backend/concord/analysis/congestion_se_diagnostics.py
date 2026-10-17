@@ -24,6 +24,12 @@ on the exposure:
                         pre-registration could use; it is not used anywhere here.
   shared-site summary   share of trial pairs sharing >= 1 site, mean shared sites among them, mean
                         sites per trial.
+  coding                (added after the audit) se_two_way and the unclipped se under the equivalent
+                        codings of the controls in congestion.ALT_CODINGS. The clipped (pre-registered)
+                        se moves with the coding; the coefficient and its unclipped variance do not
+                        (asserted). So the clipped se is not "conservative" in any principled sense: part
+                        of its width is arbitrary. congestion.run() reports the unclipped values beside
+                        the pre-registered ones (AUDIT FIX 3 there).
 """
 
 from __future__ import annotations
@@ -61,7 +67,7 @@ def _fit_diag(y, X, trial_ids, member_obs, member_site, w, x, n_rows: int, trial
     Vt, Vs, Vts = (B @ M @ B for M in (M_t, M_s, M_ts))
     V = Vt + Vs - Vts
     ev = np.linalg.eigvalsh((V + V.T) / 2)
-    d = {"se_two_way": r["se"], "se_trial_only": r["se_trial_only"], "se_two_way_unclipped": _sd(V[0, 0]),
+    d = {"se_two_way": r.get("se_twoway_clipped", r["se"]), "se_trial_only": r["se_trial_only"], "se_two_way_unclipped": _sd(V[0, 0]),
          "sd_v_trial": _sd(Vt[0, 0]), "sd_v_site": _sd(Vs[0, 0]), "sd_v_trial_site": _sd(Vts[0, 0]),
          "negative_eigenvalues": int((ev < 0).sum()), "min_eigenvalue": float(ev.min()),
          "max_eigenvalue": float(ev.max()), "coef": r["coef"], "trials": r["clusters"]}
@@ -89,8 +95,20 @@ def run(con: sqlite3.Connection) -> dict:
     for name, rows in samples.items():
         res = cg.estimate(trials, rows, fit=_fit_diag)
         ref = cg.estimate(trials, rows)
+        alt = {c: cg.estimate(trials, rows, design=des) for c, des in cg.ALT_CODINGS.items()}
         for est in ("pooled", "site_fe", "within"):
-            assert abs(res[est]["diag"]["se_two_way"] - ref[est]["se"]) < 1e-12, (name, est)
+            assert abs(res[est]["diag"]["se_two_way"] - ref[est].get("se_twoway_clipped", ref[est]["se"])) < 1e-12, (name, est)
+            coding = {"as_coded": {"se_two_way": res[est]["diag"]["se_two_way"],
+                                   "se_two_way_unclipped": res[est]["diag"]["se_two_way_unclipped"],
+                                   "negative_eigenvalues": res[est]["diag"]["negative_eigenvalues"]}}
+            for c, a in alt.items():
+                e = a[est]
+                assert abs(e["coef"] - ref[est]["coef"]) < 1e-9, (name, est, c)
+                v0 = ref[est]["var_twoway_unclipped"]
+                assert abs(e["var_twoway_unclipped"] - v0) <= 1e-9 * abs(v0), (name, est, c)
+                coding[c] = {"se_two_way": e.get("se_twoway_clipped", e["se"]), "se_two_way_unclipped": e["se_twoway_unclipped"],
+                             "negative_eigenvalues": e["negative_eigenvalues_clipped"]}
+            res[est]["diag"]["coding"] = coding
         out[name] = {est: res[est]["diag"] for est in ("pooled", "site_fe", "within")}
     return {"note": "post hoc; not part of the pre-registered method; no pre-registered number depends on it",
             "measure": "overlap", "samples": out}
@@ -113,6 +131,12 @@ def main() -> None:
                   f"{f(c.get('se_pairs_once'))}  {f(c['se_trial_only'])} | {f(c['sd_v_trial'])}  {f(c['sd_v_site'])}  "
                   f"{f(c['sd_v_trial_site'])} | {c['negative_eigenvalues']:3d}  {c['min_eigenvalue']:+.2e}  "
                   f"{c['max_eigenvalue']:+.2e}  shared={c.get('mean_shared_sites_among_sharing_pairs')}")
+    print("coding: se_two_way as coded / " + " / ".join(cg.ALT_CODINGS) + "  (unclipped)")
+    for name, ests in res["samples"].items():
+        for est, c in ests.items():
+            cs = c["coding"]
+            print(f"{name:6s} {est:8s} " + "  ".join(f(v["se_two_way"]) for v in cs.values())
+                  + f"  ({f(cs['as_coded']['se_two_way_unclipped'])})")
     print(f"wrote {a.out}")
 
 
