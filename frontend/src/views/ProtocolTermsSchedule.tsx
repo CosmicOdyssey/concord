@@ -6,7 +6,6 @@ import {
   RESEARCH_LEGEND,
   ROUTINE_LEGEND,
   coverageLabel,
-  formulaText,
   type Coverage,
   type Line,
   type NodeState,
@@ -16,6 +15,7 @@ import {
   type Visit,
 } from '../termsFlowApi'
 import { usd } from '../format'
+import { LineBreakdown } from './LineBreakdown'
 
 export function RuleChip({ rule, coverage, title }: { rule: string; coverage: Coverage; title?: string }) {
   return (
@@ -391,9 +391,12 @@ export function NodeDetail({
 export function LinePrice({ line }: { line: Line }) {
   if (line.schedule === 'PFS' && line.formula)
     return (
-      <p className="small tf-formula">
-        Medicare at this site: <strong className="num">{usd(line.medicare_amount)}</strong> = <span className="tf-mono">{formulaText(line.formula)}</span>
-      </p>
+      <div className="small tf-formula">
+        <p>
+          Medicare at this site: <strong className="num">{usd(line.medicare_amount)}</strong>, built step by step:
+        </p>
+        <LineBreakdown nodeId={line.node_id} variant="compact" editable={false} />
+      </div>
     )
   if (line.schedule === 'CLFS')
     return (
