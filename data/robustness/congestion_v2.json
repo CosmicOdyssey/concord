@@ -1,0 +1,1489 @@
+{
+  "task": "congestion test v2: two-way clustered SEs, predetermined subsets, parser sensitivity",
+  "n_trials": 3442,
+  "n_trial_sites": 68474,
+  "se_method": "two-way clustered (trial, site)",
+  "results": {
+    "pooled_start": {
+      "coef": -0.004069234249383656,
+      "se": 0.0017559885603068703,
+      "p": 0.02048485472079036,
+      "ci95": [
+        -0.007510971827585122,
+        -0.0006274966711821901
+      ],
+      "pct_per_competitor": -0.40609661344629433,
+      "n_rows": 3003,
+      "clusters": 3003,
+      "exposure_mean": 8.711922644603023,
+      "exposure_p90": 22.06666666666668,
+      "se_trial_only": 0.0011750447200996363,
+      "ci95_trial_only": [
+        -0.006372321900778943,
+        -0.0017661465979883686
+      ],
+      "p_trial_only": 0.0005340965177812618,
+      "trial_site_rows": 68474,
+      "clusters_site": 23667,
+      "clusters_trial_site": 68474,
+      "negative_eigenvalues_clipped": 17,
+      "n_columns": 41,
+      "var_twoway_unclipped": 1.9720222127935924e-06,
+      "se_twoway_unclipped": 0.0014042870834674768,
+      "ci95_twoway_unclipped": [
+        -0.00682163693297991,
+        -0.0013168315657874014
+      ],
+      "p_twoway_unclipped": 0.003758830345835935,
+      "twoway_estimable": true,
+      "ci_method": "two-way clustered (trial, site)"
+    },
+    "site_fe_start": {
+      "coef": 0.0009108761446651337,
+      "se": 0.0007908327896454999,
+      "p": 0.24940589901624566,
+      "ci95": [
+        -0.0006391561230400461,
+        0.0024609084123703136
+      ],
+      "pct_per_competitor": 0.09112911183275658,
+      "n_rows": 52873,
+      "clusters": 2730,
+      "exposure_mean": 6.5670190834641495,
+      "exposure_p90": 13.0,
+      "se_trial_only": 0.0012271484228388396,
+      "ci95_trial_only": [
+        -0.001494334764098992,
+        0.0033160870534292594
+      ],
+      "p_trial_only": 0.45792342632241667,
+      "trial_site_rows": 52873,
+      "clusters_site": 8066,
+      "clusters_trial_site": 52873,
+      "negative_eigenvalues_clipped": 2,
+      "n_columns": 40,
+      "var_twoway_unclipped": 5.729143422519829e-07,
+      "se_twoway_unclipped": 0.0007569110530650104,
+      "ci95_twoway_unclipped": [
+        -0.0005726695193422867,
+        0.002394421808672554
+      ],
+      "p_twoway_unclipped": 0.22881677292325298,
+      "twoway_estimable": true,
+      "ci_method": "two-way clustered (trial, site)",
+      "sites": 8066
+    },
+    "within_start": {
+      "coef": -0.0005448111604094893,
+      "se": 0.0025164588878020693,
+      "p": 0.8285987030789645,
+      "ci95": [
+        -0.005477070580501546,
+        0.004387448259682567
+      ],
+      "pct_per_competitor": -0.054466277775730085,
+      "n_rows": 2730,
+      "clusters": 2730,
+      "exposure_mean": -1.4700988376955018,
+      "exposure_p90": 6.719802859016262,
+      "se_trial_only": 0.001832022194677392,
+      "ci95_trial_only": [
+        -0.0041355746619771774,
+        0.003045952341158199
+      ],
+      "p_trial_only": 0.7661745776223818,
+      "trial_site_rows": 52873,
+      "clusters_site": 8066,
+      "clusters_trial_site": 52873,
+      "negative_eigenvalues_clipped": 17,
+      "n_columns": 41,
+      "var_twoway_unclipped": 4.645678984306581e-06,
+      "se_twoway_unclipped": 0.002155383720896718,
+      "ci95_twoway_unclipped": [
+        -0.004769363253367057,
+        0.003679740932548078
+      ],
+      "p_twoway_unclipped": 0.8004478097798334,
+      "twoway_estimable": true,
+      "ci_method": "two-way clustered (trial, site)",
+      "sites": 8066
+    },
+    "pooled_overlap": {
+      "coef": -0.10602193476435032,
+      "se": 0.05585872493621108,
+      "p": 0.05769118913980965,
+      "ci95": [
+        -0.21550503563932405,
+        0.003461166110623401
+      ],
+      "pct_per_competitor": -10.05950803754121,
+      "n_rows": 3003,
+      "clusters": 3003,
+      "exposure_mean": 0.9030548881945744,
+      "exposure_p90": 2.0396457206341956,
+      "se_trial_only": 0.02627545278523647,
+      "ci95_trial_only": [
+        -0.1575218222234138,
+        -0.054522047305286835
+      ],
+      "p_trial_only": 5.459802493822772e-05,
+      "trial_site_rows": 68474,
+      "clusters_site": 23667,
+      "clusters_trial_site": 68474,
+      "negative_eigenvalues_clipped": 17,
+      "n_columns": 41,
+      "var_twoway_unclipped": 0.002707130383729961,
+      "se_twoway_unclipped": 0.05203009113705223,
+      "ci95_twoway_unclipped": [
+        -0.2080009133929727,
+        -0.004042956135727943
+      ],
+      "p_twoway_unclipped": 0.041579524819766775,
+      "twoway_estimable": true,
+      "ci_method": "two-way clustered (trial, site)"
+    },
+    "site_fe_overlap": {
+      "coef": 0.014673325812346231,
+      "se": 0.034714813204218826,
+      "p": 0.6725273082810422,
+      "ci95": [
+        -0.05336770806792267,
+        0.08271435969261513
+      ],
+      "pct_per_competitor": 1.4781507538476883,
+      "n_rows": 52873,
+      "clusters": 2730,
+      "exposure_mean": 0.8441720784087005,
+      "exposure_p90": 1.8987313429681,
+      "se_trial_only": 0.037864802664452336,
+      "ci95_trial_only": [
+        -0.05954168740998035,
+        0.08888833903467282
+      ],
+      "p_trial_only": 0.6983721125880166,
+      "trial_site_rows": 52873,
+      "clusters_site": 8066,
+      "clusters_trial_site": 52873,
+      "negative_eigenvalues_clipped": 2,
+      "n_columns": 40,
+      "var_twoway_unclipped": 0.0011846455111642288,
+      "se_twoway_unclipped": 0.03441867968362861,
+      "ci95_twoway_unclipped": [
+        -0.05278728636756584,
+        0.08213393799225831
+      ],
+      "p_twoway_unclipped": 0.6698756539438704,
+      "twoway_estimable": true,
+      "ci_method": "two-way clustered (trial, site)",
+      "sites": 8066
+    },
+    "within_overlap": {
+      "coef": -0.08706127618637184,
+      "se": 0.10418354824454075,
+      "p": 0.4033502429103707,
+      "ci95": [
+        -0.2912610307456717,
+        0.11713847837292803
+      ],
+      "pct_per_competitor": -8.337907312248136,
+      "n_rows": 2730,
+      "clusters": 2730,
+      "exposure_mean": -0.03587163229769198,
+      "exposure_p90": 0.46652354582667527,
+      "se_trial_only": 0.06153326736094534,
+      "ci95_trial_only": [
+        -0.20766648021382472,
+        0.033543927841081025
+      ],
+      "p_trial_only": 0.15710803467553988,
+      "trial_site_rows": 52873,
+      "clusters_site": 8066,
+      "clusters_trial_site": 52873,
+      "negative_eigenvalues_clipped": 18,
+      "n_columns": 41,
+      "var_twoway_unclipped": 0.007475835421311908,
+      "se_twoway_unclipped": 0.0864629135601612,
+      "ci95_twoway_unclipped": [
+        -0.2565285867642878,
+        0.0824060343915441
+      ],
+      "p_twoway_unclipped": 0.31397300180436005,
+      "twoway_estimable": true,
+      "ci_method": "two-way clustered (trial, site)",
+      "sites": 8066
+    },
+    "pooled_avg": {
+      "coef": -0.003452289390247375,
+      "se": 0.0014104154126079209,
+      "p": 0.014376689937809465,
+      "ci95": [
+        -0.0062167035989589,
+        -0.0006878751815358503
+      ],
+      "pct_per_competitor": -0.3446337090887149,
+      "n_rows": 3003,
+      "clusters": 3003,
+      "exposure_mean": 10.626188463450918,
+      "exposure_p90": 26.61199009350829,
+      "se_trial_only": 0.0009608510412820648,
+      "ci95_trial_only": [
+        -0.0053355574311602216,
+        -0.0015690213493345282
+      ],
+      "p_trial_only": 0.0003269558122232406,
+      "trial_site_rows": 68474,
+      "clusters_site": 23667,
+      "clusters_trial_site": 68474,
+      "negative_eigenvalues_clipped": 17,
+      "n_columns": 41,
+      "var_twoway_unclipped": 1.3503471586522922e-06,
+      "se_twoway_unclipped": 0.0011620443875568146,
+      "ci95_twoway_unclipped": [
+        -0.005729896389858732,
+        -0.0011746823906360186
+      ],
+      "p_twoway_unclipped": 0.002969519786240835,
+      "twoway_estimable": true,
+      "ci_method": "two-way clustered (trial, site)"
+    },
+    "site_fe_avg": {
+      "coef": -5.145660493629794e-05,
+      "se": 0.0016209483766704514,
+      "p": 0.9746756055683468,
+      "ci95": [
+        -0.0032285154232103825,
+        0.003125602213337787
+      ],
+      "pct_per_competitor": -0.005145528106790951,
+      "n_rows": 52873,
+      "clusters": 2730,
+      "exposure_mean": 8.303853722009187,
+      "exposure_p90": 15.774672393882154,
+      "se_trial_only": 0.0013047549910337685,
+      "ci95_trial_only": [
+        -0.002608776387362484,
+        0.0025058631774898883
+      ],
+      "p_trial_only": 0.9685413808456635,
+      "trial_site_rows": 52873,
+      "clusters_site": 8066,
+      "clusters_trial_site": 52873,
+      "negative_eigenvalues_clipped": 2,
+      "n_columns": 40,
+      "var_twoway_unclipped": 2.512360468147705e-06,
+      "se_twoway_unclipped": 0.0015850427338553697,
+      "ci95_twoway_unclipped": [
+        -0.0031581403632928223,
+        0.003055227153420227
+      ],
+      "p_twoway_unclipped": 0.9741021366073481,
+      "twoway_estimable": true,
+      "ci_method": "two-way clustered (trial, site)",
+      "sites": 8066
+    },
+    "within_avg": {
+      "coef": -0.0007267915431825492,
+      "se": 0.0029562691469857735,
+      "p": 0.8058002425761954,
+      "ci95": [
+        -0.006521079071274665,
+        0.005067495984909566
+      ],
+      "pct_per_competitor": -0.07265274941823294,
+      "n_rows": 2730,
+      "clusters": 2730,
+      "exposure_mean": -1.8421779179093525,
+      "exposure_p90": 6.3732201205249,
+      "se_trial_only": 0.001799998928686785,
+      "ci95_trial_only": [
+        -0.004254789443408648,
+        0.002801206357043549
+      ],
+      "p_trial_only": 0.686379417606344,
+      "trial_site_rows": 52873,
+      "clusters_site": 8066,
+      "clusters_trial_site": 52873,
+      "negative_eigenvalues_clipped": 17,
+      "n_columns": 41,
+      "var_twoway_unclipped": 7.0494623002969435e-06,
+      "se_twoway_unclipped": 0.002655082352827675,
+      "ci95_twoway_unclipped": [
+        -0.005930752954724792,
+        0.004477169868359694
+      ],
+      "p_twoway_unclipped": 0.784287533108613,
+      "twoway_estimable": true,
+      "ci_method": "two-way clustered (trial, site)",
+      "sites": 8066
+    }
+  },
+  "primary": "within_overlap",
+  "model_implied_coef_overlap": -1.0,
+  "verdict": "not significant",
+  "subsets": {
+    "S1p": {
+      "label": "Experienced sites (predetermined)",
+      "definition": "rows at sites with >= 10 lung trials (any status) whose start date is strictly before the focal trial's start date",
+      "role": "subset, not the default",
+      "is_default": false,
+      "predetermined": true,
+      "within": {
+        "coef": -0.05020126765371867,
+        "se": 0.1454171660410137,
+        "p": 0.7299271562506906,
+        "ci95": [
+          -0.33521891309410556,
+          0.2348163777866682
+        ],
+        "pct_per_competitor": -4.896200794847724,
+        "n_rows": 1860,
+        "clusters": 1860,
+        "exposure_mean": -0.06922854024435833,
+        "exposure_p90": 0.428095602513769,
+        "se_trial_only": 0.06340398171598187,
+        "ci95_trial_only": [
+          -0.17447307181704313,
+          0.0740705365096058
+        ],
+        "p_trial_only": 0.42849574478868324,
+        "trial_site_rows": 16269,
+        "clusters_site": 1600,
+        "clusters_trial_site": 16269,
+        "negative_eigenvalues_clipped": 15,
+        "n_columns": 34,
+        "var_twoway_unclipped": 0.006828035801657884,
+        "se_twoway_unclipped": 0.08263192967405447,
+        "ci95_twoway_unclipped": [
+          -0.2121598498148654,
+          0.11175731450742808
+        ],
+        "p_twoway_unclipped": 0.5435001114363737,
+        "twoway_estimable": true,
+        "ci_method": "two-way clustered (trial, site)",
+        "sites": 1600
+      },
+      "site_fe": {
+        "coef": 0.05350504556601525,
+        "se": 0.05135432736009449,
+        "p": 0.29746732699853895,
+        "ci95": [
+          -0.04714943605976994,
+          0.15415952719180043
+        ],
+        "pct_per_competitor": 5.49623146361649,
+        "n_rows": 16269,
+        "clusters": 1860,
+        "exposure_mean": 1.6192440800733316,
+        "exposure_p90": 2.58947554259021,
+        "se_trial_only": 0.06329182863152065,
+        "ci95_trial_only": [
+          -0.07054693855176522,
+          0.17755702968379572
+        ],
+        "p_trial_only": 0.3979040032913179,
+        "trial_site_rows": 16269,
+        "clusters_site": 1600,
+        "clusters_trial_site": 16269,
+        "negative_eigenvalues_clipped": 0,
+        "n_columns": 33,
+        "var_twoway_unclipped": 0.00263726693860775,
+        "se_twoway_unclipped": 0.051354327360094494,
+        "ci95_twoway_unclipped": [
+          -0.047149436059769956,
+          0.15415952719180046
+        ],
+        "p_twoway_unclipped": 0.2974673269985393,
+        "twoway_estimable": true,
+        "ci_method": "two-way clustered (trial, site)",
+        "sites": 1600
+      },
+      "pooled": {
+        "coef": -0.01774656928700806,
+        "se": 0.06791754747207952,
+        "p": 0.7938644121818479,
+        "ci95": [
+          -0.15086496233228391,
+          0.11537182375826781
+        ],
+        "pct_per_competitor": -1.759002632764086,
+        "n_rows": 1864,
+        "clusters": 1864,
+        "exposure_mean": 1.8733120045678002,
+        "exposure_p90": 2.7273558591107534,
+        "se_trial_only": 0.0370839505601903,
+        "ci95_trial_only": [
+          -0.09043111238498105,
+          0.054937973810964935
+        ],
+        "p_trial_only": 0.6322579373050844,
+        "trial_site_rows": 16578,
+        "clusters_site": 1909,
+        "clusters_trial_site": 16578,
+        "negative_eigenvalues_clipped": 14,
+        "n_columns": 34,
+        "var_twoway_unclipped": 0.0024078192115925125,
+        "se_twoway_unclipped": 0.049069534454613616,
+        "ci95_twoway_unclipped": [
+          -0.11392285681805074,
+          0.07842971824403462
+        ],
+        "p_twoway_unclipped": 0.7176048811249286,
+        "twoway_estimable": true,
+        "ci_method": "two-way clustered (trial, site)"
+      },
+      "bonferroni_ci95_within": [
+        -0.4134105193478918,
+        0.31300798404045443
+      ],
+      "diagnostics": {
+        "rows_kept": 16578,
+        "rows_full": 68474,
+        "trials_with_rows": 1864,
+        "rows_also_in_S1": 16578,
+        "rows_in_S1_not_S1p": 19179
+      },
+      "decision": {
+        "ci_excludes_full_estimate": false,
+        "trials": 1860,
+        "enough_trials": true,
+        "ci_half_width": 0.2850176454403869,
+        "full_ci_half_width": 0.20419975455929987,
+        "half_width_ratio": 1.3957785897221409,
+        "well_powered": true,
+        "meets_rule": false,
+        "bonferroni_ci_excludes_full_estimate": false,
+        "bonferroni_ci_excludes_zero": false,
+        "ci_excludes_zero": false,
+        "direction_vs_full": "less negative or positive",
+        "predetermined": true
+      }
+    },
+    "S1": {
+      "label": "Experienced sites (lifetime count)",
+      "definition": "rows at sites with site_model.n_hist >= 10 lung trials over all time; uses later trials; not predetermined",
+      "role": "subset, not the default",
+      "is_default": false,
+      "predetermined": false,
+      "within": {
+        "coef": -0.1289162155848005,
+        "se": 0.0957681253721507,
+        "p": 0.17826103627666534,
+        "ci95": [
+          -0.31662174131421583,
+          0.05878931014461486
+        ],
+        "pct_per_competitor": -12.09523870495287,
+        "n_rows": 2367,
+        "clusters": 2367,
+        "exposure_mean": -0.04814495205175301,
+        "exposure_p90": 0.5465677982981668,
+        "se_trial_only": 0.056091586395345124,
+        "ci95_trial_only": [
+          -0.23885572491967694,
+          -0.01897670624992405
+        ],
+        "p_trial_only": 0.021543785005101342,
+        "trial_site_rows": 35726,
+        "clusters_site": 2610,
+        "clusters_trial_site": 35726,
+        "negative_eigenvalues_clipped": 19,
+        "n_columns": 40,
+        "var_twoway_unclipped": 0.004330186216917231,
+        "se_twoway_unclipped": 0.06580415045357878,
+        "ci95_twoway_unclipped": [
+          -0.25789235047381487,
+          5.991930421392344e-05
+        ],
+        "p_twoway_unclipped": 0.05010231448625521,
+        "twoway_estimable": true,
+        "ci_method": "two-way clustered (trial, site)",
+        "sites": 2610
+      },
+      "site_fe": {
+        "coef": -0.008305927822208252,
+        "se": 0.03754166812254009,
+        "p": 0.8249012273350161,
+        "ci95": [
+          -0.08188759734238682,
+          0.06527574169797032
+        ],
+        "pct_per_competitor": -0.827152890789787,
+        "n_rows": 35726,
+        "clusters": 2367,
+        "exposure_mean": 1.1070905174512162,
+        "exposure_p90": 2.1026692366252653,
+        "se_trial_only": 0.042410610107271395,
+        "ci95_trial_only": [
+          -0.09143072363246019,
+          0.07481886798804369
+        ],
+        "p_trial_only": 0.8447310831984303,
+        "trial_site_rows": 35726,
+        "clusters_site": 2610,
+        "clusters_trial_site": 35726,
+        "negative_eigenvalues_clipped": 2,
+        "n_columns": 39,
+        "var_twoway_unclipped": 0.0013776867427765169,
+        "se_twoway_unclipped": 0.03711720278760937,
+        "ci95_twoway_unclipped": [
+          -0.08105564528592261,
+          0.06444378964150611
+        ],
+        "p_twoway_unclipped": 0.8229318435692122,
+        "twoway_estimable": true,
+        "ci_method": "two-way clustered (trial, site)",
+        "sites": 2610
+      },
+      "pooled": {
+        "coef": -0.0399529444866352,
+        "se": 0.06720161045404659,
+        "p": 0.5521619513694374,
+        "ci95": [
+          -0.1716681009765665,
+          0.09176221200329612
+        ],
+        "pct_per_competitor": -3.9165349343665077,
+        "n_rows": 2367,
+        "clusters": 2367,
+        "exposure_mean": 1.3952407548381398,
+        "exposure_p90": 2.3899986164632114,
+        "se_trial_only": 0.03032413412721793,
+        "ci95_trial_only": [
+          -0.09938824737598234,
+          0.01948235840271194
+        ],
+        "p_trial_only": 0.18766116397110155,
+        "trial_site_rows": 35757,
+        "clusters_site": 2641,
+        "clusters_trial_site": 35757,
+        "negative_eigenvalues_clipped": 19,
+        "n_columns": 40,
+        "var_twoway_unclipped": 0.003362020114760322,
+        "se_twoway_unclipped": 0.057982929511713376,
+        "ci95_twoway_unclipped": [
+          -0.15359948632959342,
+          0.07369359735632303
+        ],
+        "p_twoway_unclipped": 0.49079389885504787,
+        "twoway_estimable": true,
+        "ci_method": "two-way clustered (trial, site)"
+      },
+      "bonferroni_ci95_within": [
+        -0.36811678660103186,
+        0.11028435543143089
+      ],
+      "diagnostics": {
+        "rows_kept": 35757,
+        "rows_full": 68474,
+        "trials_with_rows": 2367
+      },
+      "decision": {
+        "ci_excludes_full_estimate": false,
+        "trials": 2367,
+        "enough_trials": true,
+        "ci_half_width": 0.18770552572941535,
+        "full_ci_half_width": 0.20419975455929987,
+        "half_width_ratio": 0.9192250310707667,
+        "well_powered": true,
+        "meets_rule": false,
+        "bonferroni_ci_excludes_full_estimate": false,
+        "bonferroni_ci_excludes_zero": false,
+        "ci_excludes_zero": false,
+        "direction_vs_full": "more negative",
+        "predetermined": false
+      }
+    },
+    "S2": {
+      "label": "Trials with <= 20 sites",
+      "definition": "rows of trials with <= 20 registered sites (trials.n_sites)",
+      "role": "subset, not the default",
+      "is_default": false,
+      "predetermined": true,
+      "within": {
+        "coef": -0.03949463214687819,
+        "se": 0.07176360804846794,
+        "p": 0.5820838228307776,
+        "ci95": [
+          -0.18015130392187534,
+          0.10116203962811897
+        ],
+        "pct_per_competitor": -3.872488603962939,
+        "n_rows": 2025,
+        "clusters": 2025,
+        "exposure_mean": -0.051122567917321386,
+        "exposure_p90": 0.4901429804549295,
+        "se_trial_only": 0.06756364049242193,
+        "ci95_trial_only": [
+          -0.1719193675120252,
+          0.09293010321826879
+        ],
+        "p_trial_only": 0.5588472888871234,
+        "trial_site_rows": 6371,
+        "clusters_site": 1261,
+        "clusters_trial_site": 6371,
+        "negative_eigenvalues_clipped": 3,
+        "n_columns": 41,
+        "var_twoway_unclipped": 0.005117750928352808,
+        "se_twoway_unclipped": 0.07153845768782556,
+        "ci95_twoway_unclipped": [
+          -0.1797100092150163,
+          0.10072074492125992
+        ],
+        "p_twoway_unclipped": 0.5808966043593564,
+        "twoway_estimable": true,
+        "ci_method": "two-way clustered (trial, site)",
+        "sites": 1261
+      },
+      "site_fe": {
+        "coef": 0.030838387286166613,
+        "se": 0.041445537042125426,
+        "p": 0.45683403213727525,
+        "ci95": [
+          -0.05039486531639922,
+          0.11207163988873245
+        ],
+        "pct_per_competitor": 3.1318816184748544,
+        "n_rows": 6371,
+        "clusters": 2025,
+        "exposure_mean": 1.2745191123043127,
+        "exposure_p90": 2.678265462253242,
+        "se_trial_only": 0.04662488329412509,
+        "ci95_trial_only": [
+          -0.06054638397031857,
+          0.1222231585426518
+        ],
+        "p_trial_only": 0.5083463450628445,
+        "trial_site_rows": 6371,
+        "clusters_site": 1261,
+        "clusters_trial_site": 6371,
+        "negative_eigenvalues_clipped": 2,
+        "n_columns": 40,
+        "var_twoway_unclipped": 0.0016677966558145611,
+        "se_twoway_unclipped": 0.04083866618554726,
+        "ci95_twoway_unclipped": [
+          -0.049205398437506015,
+          0.11088217300983924
+        ],
+        "p_twoway_unclipped": 0.45017266954508506,
+        "twoway_estimable": true,
+        "ci_method": "two-way clustered (trial, site)",
+        "sites": 1261
+      },
+      "pooled": {
+        "coef": -0.0967770364093316,
+        "se": 0.03550132729665931,
+        "p": 0.0064104710467559915,
+        "ci95": [
+          -0.16635963791078384,
+          -0.02719443490787936
+        ],
+        "pct_per_competitor": -9.224161936063231,
+        "n_rows": 2373,
+        "clusters": 2373,
+        "exposure_mean": 0.9763357213547523,
+        "exposure_p90": 2.1774523142861044,
+        "se_trial_only": 0.027518420392274756,
+        "ci95_trial_only": [
+          -0.1507131403781901,
+          -0.04284093244047307
+        ],
+        "p_trial_only": 0.0004367674773357146,
+        "trial_site_rows": 9932,
+        "clusters_site": 4822,
+        "clusters_trial_site": 9932,
+        "negative_eigenvalues_clipped": 3,
+        "n_columns": 41,
+        "var_twoway_unclipped": 0.0012343068624093222,
+        "se_twoway_unclipped": 0.03513270360233215,
+        "ci95_twoway_unclipped": [
+          -0.1656371354699026,
+          -0.02791693734876058
+        ],
+        "p_twoway_unclipped": 0.005876141910502159,
+        "twoway_estimable": true,
+        "ci_method": "two-way clustered (trial, site)"
+      },
+      "bonferroni_ci95_within": [
+        -0.21873898883312048,
+        0.13974972453936413
+      ],
+      "diagnostics": {
+        "rows_kept": 9932,
+        "rows_full": 68474,
+        "trials_with_rows": 2373
+      },
+      "decision": {
+        "ci_excludes_full_estimate": false,
+        "trials": 2025,
+        "enough_trials": true,
+        "ci_half_width": 0.14065667177499716,
+        "full_ci_half_width": 0.20419975455929987,
+        "half_width_ratio": 0.6888190050892068,
+        "well_powered": true,
+        "meets_rule": false,
+        "bonferroni_ci_excludes_full_estimate": false,
+        "bonferroni_ci_excludes_zero": false,
+        "ci_excludes_zero": false,
+        "direction_vs_full": "less negative or positive",
+        "predetermined": true
+      }
+    },
+    "S3": {
+      "label": "High-overlap competitors only (o >= 0.8)",
+      "definition": "all rows; exposure = log(1 + sum of eligibility overlaps o_tQ >= 0.8)",
+      "role": "subset, not the default",
+      "is_default": false,
+      "predetermined": true,
+      "within": {
+        "coef": -0.07709361031136427,
+        "se": 0.10419793672095173,
+        "p": 0.4593749023919734,
+        "ci95": [
+          -0.28132156628442967,
+          0.12713434566170112
+        ],
+        "pct_per_competitor": -7.419681517438067,
+        "n_rows": 2730,
+        "clusters": 2730,
+        "exposure_mean": -0.05663525171035825,
+        "exposure_p90": 0.5014011050222351,
+        "se_trial_only": 0.04996443968361706,
+        "ci95_trial_only": [
+          -0.1750239120912537,
+          0.020836691468525154
+        ],
+        "p_trial_only": 0.12283815789168304,
+        "trial_site_rows": 52873,
+        "clusters_site": 8066,
+        "clusters_trial_site": 52873,
+        "negative_eigenvalues_clipped": 18,
+        "n_columns": 41,
+        "var_twoway_unclipped": 0.008371695534329116,
+        "se_twoway_unclipped": 0.09149697008277988,
+        "ci95_twoway_unclipped": [
+          -0.2564276716736128,
+          0.10224045105088428
+        ],
+        "p_twoway_unclipped": 0.3994628101890897,
+        "twoway_estimable": true,
+        "ci_method": "two-way clustered (trial, site)",
+        "sites": 8066
+      },
+      "site_fe": {
+        "coef": -0.03395688610876889,
+        "se": 0.03330885262092599,
+        "p": 0.3079868673712578,
+        "ci95": [
+          -0.09924223724578383,
+          0.03132846502824606
+        ],
+        "pct_per_competitor": -3.3386821805427167,
+        "n_rows": 52873,
+        "clusters": 2730,
+        "exposure_mean": 0.5331335214499281,
+        "exposure_p90": 1.5693297088034297,
+        "se_trial_only": 0.03277881572440957,
+        "ci95_trial_only": [
+          -0.09820336492861165,
+          0.03028959271107387
+        ],
+        "p_trial_only": 0.30023013860525005,
+        "trial_site_rows": 52873,
+        "clusters_site": 8066,
+        "clusters_trial_site": 52873,
+        "negative_eigenvalues_clipped": 2,
+        "n_columns": 40,
+        "var_twoway_unclipped": 0.0010801947567842644,
+        "se_twoway_unclipped": 0.03286631644684668,
+        "ci95_twoway_unclipped": [
+          -0.09837486634458838,
+          0.0304610941270506
+        ],
+        "p_twoway_unclipped": 0.30151874123907374,
+        "twoway_estimable": true,
+        "ci_method": "two-way clustered (trial, site)",
+        "sites": 8066
+      },
+      "pooled": {
+        "coef": -0.10165294108937943,
+        "se": 0.06620139244919107,
+        "p": 0.12465845072705964,
+        "ci95": [
+          -0.23140767028979392,
+          0.028101788111035073
+        ],
+        "pct_per_competitor": -9.665698948746675,
+        "n_rows": 3003,
+        "clusters": 3003,
+        "exposure_mean": 0.6171987980093194,
+        "exposure_p90": 1.5889307195313176,
+        "se_trial_only": 0.028802190693452474,
+        "ci95_trial_only": [
+          -0.15810523484854627,
+          -0.04520064733021258
+        ],
+        "p_trial_only": 0.00041658564728163397,
+        "trial_site_rows": 68474,
+        "clusters_site": 23667,
+        "clusters_trial_site": 68474,
+        "negative_eigenvalues_clipped": 17,
+        "n_columns": 41,
+        "var_twoway_unclipped": 0.0033723666981858693,
+        "se_twoway_unclipped": 0.05807208191709567,
+        "ci95_twoway_unclipped": [
+          -0.21547422164688695,
+          0.012168339468128078
+        ],
+        "p_twoway_unclipped": 0.08003871942924426,
+        "twoway_estimable": true,
+        "ci_method": "two-way clustered (trial, site)"
+      },
+      "bonferroni_ci95_within": [
+        -0.33734936728175957,
+        0.183162146659031
+      ],
+      "diagnostics": {
+        "rows_kept": 68474,
+        "rows_full": 68474,
+        "trials_with_rows": 3003,
+        "share_rows_nonzero_exposure": 0.35546338756316265,
+        "share_rows_nonzero_exposure_full": 0.5654847095247831,
+        "rival_pairs": 347567,
+        "rival_pairs_overlap_ge_threshold": 82824,
+        "rebuild_max_abs_diff_no_threshold": 8.881784197001252e-16
+      },
+      "decision": {
+        "ci_excludes_full_estimate": false,
+        "trials": 2730,
+        "enough_trials": true,
+        "ci_half_width": 0.2042279559730654,
+        "full_ci_half_width": 0.20419975455929987,
+        "half_width_ratio": 1.0001381069914916,
+        "well_powered": true,
+        "meets_rule": false,
+        "bonferroni_ci_excludes_full_estimate": false,
+        "bonferroni_ci_excludes_zero": false,
+        "ci_excludes_zero": false,
+        "direction_vs_full": "less negative or positive",
+        "predetermined": true
+      }
+    }
+  },
+  "subset_decision": {
+    "checks": {
+      "S1p": {
+        "ci_excludes_full_estimate": false,
+        "trials": 1860,
+        "enough_trials": true,
+        "ci_half_width": 0.2850176454403869,
+        "full_ci_half_width": 0.20419975455929987,
+        "half_width_ratio": 1.3957785897221409,
+        "well_powered": true,
+        "meets_rule": false,
+        "bonferroni_ci_excludes_full_estimate": false,
+        "bonferroni_ci_excludes_zero": false,
+        "ci_excludes_zero": false,
+        "direction_vs_full": "less negative or positive",
+        "predetermined": true
+      },
+      "S1": {
+        "ci_excludes_full_estimate": false,
+        "trials": 2367,
+        "enough_trials": true,
+        "ci_half_width": 0.18770552572941535,
+        "full_ci_half_width": 0.20419975455929987,
+        "half_width_ratio": 0.9192250310707667,
+        "well_powered": true,
+        "meets_rule": false,
+        "bonferroni_ci_excludes_full_estimate": false,
+        "bonferroni_ci_excludes_zero": false,
+        "ci_excludes_zero": false,
+        "direction_vs_full": "more negative",
+        "predetermined": false
+      },
+      "S2": {
+        "ci_excludes_full_estimate": false,
+        "trials": 2025,
+        "enough_trials": true,
+        "ci_half_width": 0.14065667177499716,
+        "full_ci_half_width": 0.20419975455929987,
+        "half_width_ratio": 0.6888190050892068,
+        "well_powered": true,
+        "meets_rule": false,
+        "bonferroni_ci_excludes_full_estimate": false,
+        "bonferroni_ci_excludes_zero": false,
+        "ci_excludes_zero": false,
+        "direction_vs_full": "less negative or positive",
+        "predetermined": true
+      },
+      "S3": {
+        "ci_excludes_full_estimate": false,
+        "trials": 2730,
+        "enough_trials": true,
+        "ci_half_width": 0.2042279559730654,
+        "full_ci_half_width": 0.20419975455929987,
+        "half_width_ratio": 1.0001381069914916,
+        "well_powered": true,
+        "meets_rule": false,
+        "bonferroni_ci_excludes_full_estimate": false,
+        "bonferroni_ci_excludes_zero": false,
+        "ci_excludes_zero": false,
+        "direction_vs_full": "less negative or positive",
+        "predetermined": true
+      }
+    },
+    "subsets_meeting_rule": [],
+    "default_changed": false,
+    "action": "no subset meets the rule; the default stays the full-sample estimate",
+    "rule": {
+      "ci": "two-way 95% CI of within_overlap excludes the full-sample point estimate",
+      "min_trials": 300,
+      "max_half_width_ratio": 1.5,
+      "z95": 1.96,
+      "z_bonferroni": 2.497705474412374,
+      "k": 4
+    }
+  },
+  "multiple_comparisons": {
+    "method": "Bonferroni",
+    "k": 4,
+    "alpha": 0.05,
+    "z": 2.497705474412374,
+    "estimator": "within_overlap",
+    "se_method": "two-way clustered (trial, site)",
+    "note": "4 subsets were tested, so each subset's within-site CI is also shown at the Bonferroni level (alpha 0.05/4, z = 2.50); at that level the CIs that exclude zero: none; that exclude the full-sample estimate -0.087: none.",
+    "bonferroni_ci95": {
+      "S1p": [
+        -0.4134105193478918,
+        0.31300798404045443
+      ],
+      "S1": [
+        -0.36811678660103186,
+        0.11028435543143089
+      ],
+      "S2": [
+        -0.21873898883312048,
+        0.13974972453936413
+      ],
+      "S3": [
+        -0.33734936728175957,
+        0.183162146659031
+      ]
+    },
+    "bonferroni_ci95_twoway_unclipped": {
+      "S1p": [
+        -0.25659149076186283,
+        0.15618895545442552
+      ],
+      "S1": [
+        -0.2932756024117597,
+        0.03544317124215873
+      ],
+      "S2": [
+        -0.21817662954477807,
+        0.1391873652510217
+      ],
+      "S3": [
+        -0.3056260933792688,
+        0.15143887275654025
+      ]
+    },
+    "bonferroni_ci95_twoway_unclipped_excludes_zero": []
+  },
+  "parser_sensitivity": [
+    {
+      "parser_version": "v0",
+      "commit": "b8c576f",
+      "description": "header match is startswith('exclusion criteria'), so 'Key Exclusion Criteria' sections are read as inclusion; no driver-exclusion, never-smoker or resectable rules; population has stage III/IV only",
+      "overrides": false,
+      "source_matches_working_tree": false,
+      "within_overlap": {
+        "coef": -0.13599465201151437,
+        "se": 0.10353978392559658,
+        "ci95": [
+          -0.3389326285056837,
+          0.06694332448265494
+        ],
+        "p": 0.18903030870089343,
+        "ci_method": "two-way clustered (trial, site)",
+        "clusters": 2730,
+        "n_rows": 2730,
+        "trial_site_rows": 52873,
+        "se_trial_only": 0.06301934757747238,
+        "ci95_trial_only": [
+          -0.25951257326336025,
+          -0.0124767307596685
+        ],
+        "p_trial_only": 0.030929188998976974,
+        "clusters_site": 8066,
+        "twoway_estimable": true,
+        "negative_eigenvalues_clipped": 17,
+        "var_twoway_unclipped": 0.010002541951372096,
+        "se_twoway_unclipped": 0.10001270894927353,
+        "ci95_twoway_unclipped": [
+          -0.33201956155209045,
+          0.06003025752906174
+        ],
+        "p_twoway_unclipped": 0.17390154518694512
+      },
+      "site_fe_overlap": {
+        "coef": -0.0282675380975198,
+        "se": 0.035212200945099616,
+        "ci95": [
+          -0.09728345194991506,
+          0.04074837575487545
+        ],
+        "p": 0.42210375218953544,
+        "ci_method": "two-way clustered (trial, site)",
+        "clusters": 2730,
+        "n_rows": 52873,
+        "trial_site_rows": 52873,
+        "se_trial_only": 0.03744945729680269,
+        "ci95_trial_only": [
+          -0.10166847439925308,
+          0.04513339820421348
+        ],
+        "p_trial_only": 0.45035797353589824,
+        "clusters_site": 8066,
+        "twoway_estimable": true,
+        "negative_eigenvalues_clipped": 2,
+        "var_twoway_unclipped": 0.001221162772158707,
+        "se_twoway_unclipped": 0.034945139464004245,
+        "ci95_twoway_unclipped": [
+          -0.09676001144696811,
+          0.040224935251928516
+        ],
+        "p_twoway_unclipped": 0.4185658409668256
+      },
+      "pooled_overlap": {
+        "coef": -0.11579995483043735,
+        "se": 0.04854332974622784,
+        "ci95": [
+          -0.21094488113304394,
+          -0.020655028527830785
+        ],
+        "p": 0.01705607357469042,
+        "ci_method": "two-way clustered (trial, site)",
+        "clusters": 3003,
+        "n_rows": 3003,
+        "trial_site_rows": 68474,
+        "se_trial_only": 0.025076911376938505,
+        "ci95_trial_only": [
+          -0.16495070112923682,
+          -0.06664920853163789
+        ],
+        "p_trial_only": 3.8784515396045984e-06,
+        "clusters_site": 23667,
+        "twoway_estimable": true,
+        "negative_eigenvalues_clipped": 17,
+        "var_twoway_unclipped": 0.001792049125104899,
+        "se_twoway_unclipped": 0.042332601208818946,
+        "ci95_twoway_unclipped": [
+          -0.1987718531997225,
+          -0.03282805646115222
+        ],
+        "p_twoway_unclipped": 0.006228950163548749
+      },
+      "empty_masks": 3,
+      "empty_masks_analysis_trials": 3,
+      "lung_trials_compiled": 7206
+    },
+    {
+      "parser_version": "v1",
+      "commit": "c0050f4",
+      "description": "headers fixed; driver-exclusion, never-smoker and resectable rules added; a required driver also fired the broad driver exclusion, so many trials had contradictory criteria and an empty eligibility set",
+      "overrides": false,
+      "source_matches_working_tree": false,
+      "within_overlap": {
+        "coef": -0.027303656825526428,
+        "se": 0.047961052513497596,
+        "ci95": [
+          -0.12130731975198172,
+          0.06670000610092885
+        ],
+        "p": 0.5691606360478276,
+        "ci_method": "trial-clustered: the two-way variance of this coefficient is negative before clipping (not estimable)",
+        "clusters": 2730,
+        "n_rows": 2730,
+        "trial_site_rows": 52873,
+        "se_trial_only": 0.047961052513497596,
+        "ci95_trial_only": [
+          -0.12130731975198172,
+          0.06670000610092885
+        ],
+        "p_trial_only": 0.5691606360478276,
+        "clusters_site": 8066,
+        "twoway_estimable": false,
+        "negative_eigenvalues_clipped": 17,
+        "var_twoway_unclipped": -0.004616492821787439,
+        "se_twoway_unclipped": null,
+        "ci95_twoway_unclipped": null,
+        "p_twoway_unclipped": null,
+        "se_twoway_clipped": 0.031426019323075684,
+        "ci95_twoway_clipped": [
+          -0.08889865469875477,
+          0.034291341047701915
+        ],
+        "p_twoway_clipped": 0.38494380398033223
+      },
+      "site_fe_overlap": {
+        "coef": 0.04858998468066783,
+        "se": 0.03242222822981709,
+        "ci95": [
+          -0.014957582649773676,
+          0.11213755201110934
+        ],
+        "p": 0.13396115320922136,
+        "ci_method": "two-way clustered (trial, site)",
+        "clusters": 2730,
+        "n_rows": 52873,
+        "trial_site_rows": 52873,
+        "se_trial_only": 0.03133284728131062,
+        "ci95_trial_only": [
+          -0.01282239599070098,
+          0.11000236535203664
+        ],
+        "p_trial_only": 0.1209572324355627,
+        "clusters_site": 8066,
+        "twoway_estimable": true,
+        "negative_eigenvalues_clipped": 2,
+        "var_twoway_unclipped": 0.0010277264083302846,
+        "se_twoway_unclipped": 0.03205817225498492,
+        "ci95_twoway_unclipped": [
+          -0.014244032939102605,
+          0.11142400230043827
+        ],
+        "p_twoway_unclipped": 0.12959985985705544
+      },
+      "pooled_overlap": {
+        "coef": -0.10965405119683891,
+        "se": 0.03779163123593286,
+        "ci95": [
+          -0.1837256484192673,
+          -0.0355824539744105
+        ],
+        "p": 0.0037132955824924594,
+        "ci_method": "two-way clustered (trial, site)",
+        "clusters": 3003,
+        "n_rows": 3003,
+        "trial_site_rows": 68474,
+        "se_trial_only": 0.0256782427952291,
+        "ci95_trial_only": [
+          -0.15998340707548794,
+          -0.059324695318189874
+        ],
+        "p_trial_only": 1.9520165208940857e-05,
+        "clusters_site": 23667,
+        "twoway_estimable": true,
+        "negative_eigenvalues_clipped": 17,
+        "var_twoway_unclipped": 0.0008944689614477702,
+        "se_twoway_unclipped": 0.029907673955822278,
+        "ci95_twoway_unclipped": [
+          -0.16827309215025057,
+          -0.05103501024342724
+        ],
+        "p_twoway_unclipped": 0.00024597119481529345
+      },
+      "empty_masks": 646,
+      "empty_masks_analysis_trials": 206,
+      "lung_trials_compiled": 7206,
+      "ci_note": "two-way variance of the within-site coefficient is negative before clipping, so it is not estimable for this version; the CI and p shown are trial-clustered"
+    },
+    {
+      "parser_version": "v2",
+      "commit": "4a87d33",
+      "description": "current: a required driver suppresses the driver exclusion and resectable overrides stage III-IV (contradictory criteria removed)",
+      "overrides": false,
+      "source_matches_working_tree": true,
+      "within_overlap": {
+        "coef": -0.08765514037061248,
+        "se": 0.10388670201212576,
+        "ci95": [
+          -0.29127307631437893,
+          0.115962795573154
+        ],
+        "p": 0.3988051636372395,
+        "ci_method": "two-way clustered (trial, site)",
+        "clusters": 2730,
+        "n_rows": 2730,
+        "trial_site_rows": 52873,
+        "se_trial_only": 0.06148079714737624,
+        "ci95_trial_only": [
+          -0.2081575027794699,
+          0.032847222038244944
+        ],
+        "p_trial_only": 0.15394571358280754,
+        "clusters_site": 8066,
+        "twoway_estimable": true,
+        "negative_eigenvalues_clipped": 18,
+        "var_twoway_unclipped": 0.0074137339856151984,
+        "se_twoway_unclipped": 0.08610304283598344,
+        "ci95_twoway_unclipped": [
+          -0.25641710432914,
+          0.08110682358791507
+        ],
+        "p_twoway_unclipped": 0.3086655776799767
+      },
+      "site_fe_overlap": {
+        "coef": 0.014397397046723747,
+        "se": 0.034673308908191765,
+        "ci95": [
+          -0.05356228841333211,
+          0.0823570825067796
+        ],
+        "p": 0.6779735605689952,
+        "ci_method": "two-way clustered (trial, site)",
+        "clusters": 2730,
+        "n_rows": 52873,
+        "trial_site_rows": 52873,
+        "se_trial_only": 0.03783587848808366,
+        "ci95_trial_only": [
+          -0.059760924789920226,
+          0.08855571888336772
+        ],
+        "p_trial_only": 0.7035577160541839,
+        "clusters_site": 8066,
+        "twoway_estimable": true,
+        "negative_eigenvalues_clipped": 2,
+        "var_twoway_unclipped": 0.0011817850372780145,
+        "se_twoway_unclipped": 0.034377100478051,
+        "ci95_twoway_unclipped": [
+          -0.05298171989025622,
+          0.08177651398370371
+        ],
+        "p_twoway_unclipped": 0.6753566203659063
+      },
+      "pooled_overlap": {
+        "coef": -0.10547005407034407,
+        "se": 0.055850793177356924,
+        "ci95": [
+          -0.21493760869796363,
+          0.003997500557275491
+        ],
+        "p": 0.05896886980768286,
+        "ci_method": "two-way clustered (trial, site)",
+        "clusters": 3003,
+        "n_rows": 3003,
+        "trial_site_rows": 68474,
+        "se_trial_only": 0.026262778013613146,
+        "ci95_trial_only": [
+          -0.15694509897702583,
+          -0.05399500916366231
+        ],
+        "p_trial_only": 5.9206323595438736e-05,
+        "clusters_site": 23667,
+        "twoway_estimable": true,
+        "negative_eigenvalues_clipped": 17,
+        "var_twoway_unclipped": 0.0027070465727006216,
+        "se_twoway_unclipped": 0.05202928572160703,
+        "ci95_twoway_unclipped": [
+          -0.20744745408469384,
+          -0.0034926540559942904
+        ],
+        "p_twoway_unclipped": 0.04264926083029319
+      },
+      "empty_masks": 3,
+      "empty_masks_analysis_trials": 3,
+      "lung_trials_compiled": 7206
+    }
+  ],
+  "parser_sensitivity_reference": {
+    "parser_version": "v2+overrides",
+    "commit": "4a87d33",
+    "description": "production: v2 plus the hand-encoded overrides (5 trials); reference, not a parser version",
+    "overrides": true,
+    "n_overrides": 5,
+    "masks_differing_from_trial_model": 0,
+    "within_overlap": {
+      "coef": -0.08706127618637184,
+      "se": 0.10418354824454075,
+      "ci95": [
+        -0.2912610307456717,
+        0.11713847837292803
+      ],
+      "p": 0.4033502429103707,
+      "ci_method": "two-way clustered (trial, site)",
+      "clusters": 2730,
+      "n_rows": 2730,
+      "trial_site_rows": 52873,
+      "se_trial_only": 0.06153326736094534,
+      "ci95_trial_only": [
+        -0.20766648021382472,
+        0.033543927841081025
+      ],
+      "p_trial_only": 0.15710803467553988,
+      "clusters_site": 8066,
+      "twoway_estimable": true,
+      "negative_eigenvalues_clipped": 18,
+      "var_twoway_unclipped": 0.007475835421311908,
+      "se_twoway_unclipped": 0.0864629135601612,
+      "ci95_twoway_unclipped": [
+        -0.2565285867642878,
+        0.0824060343915441
+      ],
+      "p_twoway_unclipped": 0.31397300180436005
+    },
+    "site_fe_overlap": {
+      "coef": 0.014673325812346231,
+      "se": 0.034714813204218826,
+      "ci95": [
+        -0.05336770806792267,
+        0.08271435969261513
+      ],
+      "p": 0.6725273082810422,
+      "ci_method": "two-way clustered (trial, site)",
+      "clusters": 2730,
+      "n_rows": 52873,
+      "trial_site_rows": 52873,
+      "se_trial_only": 0.037864802664452336,
+      "ci95_trial_only": [
+        -0.05954168740998035,
+        0.08888833903467282
+      ],
+      "p_trial_only": 0.6983721125880166,
+      "clusters_site": 8066,
+      "twoway_estimable": true,
+      "negative_eigenvalues_clipped": 2,
+      "var_twoway_unclipped": 0.0011846455111642288,
+      "se_twoway_unclipped": 0.03441867968362861,
+      "ci95_twoway_unclipped": [
+        -0.05278728636756584,
+        0.08213393799225831
+      ],
+      "p_twoway_unclipped": 0.6698756539438704
+    },
+    "pooled_overlap": {
+      "coef": -0.10602193476435032,
+      "se": 0.05585872493621108,
+      "ci95": [
+        -0.21550503563932405,
+        0.003461166110623401
+      ],
+      "p": 0.05769118913980965,
+      "ci_method": "two-way clustered (trial, site)",
+      "clusters": 3003,
+      "n_rows": 3003,
+      "trial_site_rows": 68474,
+      "se_trial_only": 0.02627545278523647,
+      "ci95_trial_only": [
+        -0.1575218222234138,
+        -0.054522047305286835
+      ],
+      "p_trial_only": 5.459802493822772e-05,
+      "clusters_site": 23667,
+      "twoway_estimable": true,
+      "negative_eigenvalues_clipped": 17,
+      "var_twoway_unclipped": 0.002707130383729961,
+      "se_twoway_unclipped": 0.05203009113705223,
+      "ci95_twoway_unclipped": [
+        -0.2080009133929727,
+        -0.004042956135727943
+      ],
+      "p_twoway_unclipped": 0.041579524819766775
+    },
+    "empty_masks": 3,
+    "empty_masks_analysis_trials": 3,
+    "lung_trials_compiled": 7206
+  },
+  "se_coding_sensitivity": {
+    "note": "post hoc (audit), not pre-registered: the primary within_overlap under equivalent codings of the controls; same coefficient, same unclipped variance, different clipped se",
+    "estimator": "within_overlap",
+    "codings": {
+      "as_coded": {
+        "coef": -0.08706127618637184,
+        "se": 0.10418354824454075,
+        "ci95": [
+          -0.2912610307456717,
+          0.11713847837292803
+        ],
+        "p": 0.4033502429103707,
+        "ci_method": "two-way clustered (trial, site)",
+        "negative_eigenvalues_clipped": 18,
+        "se_twoway_unclipped": 0.0864629135601612,
+        "p_twoway_unclipped": 0.31397300180436005
+      },
+      "last_start_year_as_base": {
+        "coef": -0.08706127618638752,
+        "se": 0.11525796822334071,
+        "ci95": [
+          -0.3129668939041353,
+          0.13884434153136027
+        ],
+        "p": 0.4500329167900551,
+        "ci_method": "two-way clustered (trial, site)",
+        "negative_eigenvalues_clipped": 18,
+        "se_twoway_unclipped": 0.0864629135601752,
+        "p_twoway_unclipped": 0.31397300180435117
+      },
+      "log_n_sites_x0.1": {
+        "coef": -0.08706127618637609,
+        "se": 0.11115180109999213,
+        "ci95": [
+          -0.3049188063423607,
+          0.13079625396960848
+        ],
+        "p": 0.4334717193944002,
+        "ci_method": "two-way clustered (trial, site)",
+        "negative_eigenvalues_clipped": 18,
+        "se_twoway_unclipped": 0.08646291356016926,
+        "p_twoway_unclipped": 0.3139730018043816
+      },
+      "controls_centered": {
+        "coef": -0.08706127618638064,
+        "se": 0.10522274911657845,
+        "ci95": [
+          -0.2932978644548744,
+          0.11917531208211311
+        ],
+        "p": 0.408010522923658,
+        "ci_method": "two-way clustered (trial, site)",
+        "negative_eigenvalues_clipped": 18,
+        "se_twoway_unclipped": 0.08646291356018915,
+        "p_twoway_unclipped": 0.3139730018044675
+      }
+    }
+  },
+  "se_note": "Post hoc, not pre-registered: the pre-registered two-way variance clips negative eigenvalues of the whole coefficient covariance matrix (18 of 41 for the primary), so its se depends partly on how the controls are coded (0.104 as coded, 0.105 to 0.115 under equivalent codings); the coefficient's own two-way variance before clipping does not depend on the coding: se 0.086, 95% CI [-0.257, +0.082], p 0.31.",
+  "default_beta": {
+    "value": 0.08706127618637184,
+    "source": "full-sample within_overlap",
+    "ci95": [
+      0.0,
+      0.2912610307456717
+    ],
+    "value_before_floor": 0.08706127618637184,
+    "ci95_before_floor": [
+      -0.11713847837292803,
+      0.2912610307456717
+    ],
+    "ci95_scale": "beta = -coef, floored at 0 exactly as service.congestion_beta",
+    "se_method": "two-way clustered (trial, site)",
+    "note": "subset estimates are reported separately and are not used as the default",
+    "se_note": "Post hoc, not pre-registered: the pre-registered two-way variance clips negative eigenvalues of the whole coefficient covariance matrix (18 of 41 for the primary), so its se depends partly on how the controls are coded (0.104 as coded, 0.105 to 0.115 under equivalent codings); the coefficient's own two-way variance before clipping does not depend on the coding: se 0.086, 95% CI [-0.257, +0.082], p 0.31.",
+    "subsets_meeting_rule": [],
+    "ci95_twoway_unclipped": [
+      0.0,
+      0.2565285867642878
+    ]
+  },
+  "not_estimable_twoway": [
+    "parser_sensitivity.v1.within_overlap"
+  ],
+  "seconds": 184.0,
+  "reproduction_vs_previous_meta": {
+    "compared": true,
+    "estimators": 9,
+    "max_abs_diff": 0.0,
+    "by_estimator": {
+      "pooled_start": 0.0,
+      "site_fe_start": 0.0,
+      "within_start": 0.0,
+      "pooled_overlap": 0.0,
+      "site_fe_overlap": 0.0,
+      "within_overlap": 0.0,
+      "pooled_avg": 0.0,
+      "site_fe_avg": 0.0,
+      "within_avg": 0.0
+    }
+  }
+}

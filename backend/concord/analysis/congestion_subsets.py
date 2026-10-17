@@ -297,13 +297,15 @@ def run(con: sqlite3.Connection) -> dict:
     k = MEASURE_COL["overlap"]
 
     # Full sample: reproduce congestion.run() for all nine estimators.
-    ref = congestion_run(con)["results"]
+    # congestion.run() now reports two-way SEs as "se"; this module's SEs are the trial-clustered
+    # ones, which run() keeps as "se_trial_only".
+    ref = congestion_run(con, with_parser_sensitivity=False)["results"]
     full_all = {m: estimate(trials, [(r[0], r[1], r[c]) for r in rows]) for m, c in MEASURE_COL.items()}
     repro = {}
     for m, res in full_all.items():
         for est, c in res.items():
             rc = ref[f"{est}_{m}"]
-            diff = max(abs(c["coef"] - rc["coef"]), abs(c["se"] - rc["se"]))
+            diff = max(abs(c["coef"] - rc["coef"]), abs(c["se"] - rc.get("se_trial_only", rc["se"])))
             repro[f"{est}_{m}"] = diff
             assert diff < 1e-9 and c["n_rows"] == rc["n_rows"] and c["clusters"] == rc["clusters"], (est, m, diff)
     full = _annotate(full_all["overlap"])

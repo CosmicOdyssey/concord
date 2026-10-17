@@ -1,0 +1,581 @@
+{
+  "note": "post hoc; not part of the pre-registered method; no pre-registered number depends on it",
+  "measure": "overlap",
+  "samples": {
+    "full": {
+      "pooled": {
+        "se_two_way": 0.05585872493621108,
+        "se_trial_only": 0.02627545278523647,
+        "se_two_way_unclipped": 0.05203009113705232,
+        "sd_v_trial": 0.02627545278523647,
+        "sd_v_site": 0.08513471077758437,
+        "sd_v_trial_site": 0.07232695219986918,
+        "negative_eigenvalues": 17,
+        "min_eigenvalue": -0.7895666008573777,
+        "max_eigenvalue": 1.5360246938412656,
+        "coef": -0.10602193476435032,
+        "trials": 3003,
+        "se_pairs_once": 0.031083653444435224,
+        "share_pairs_sharing_a_site": 0.05339408537276625,
+        "mean_shared_sites_among_sharing_pairs": 2.1449138668904824,
+        "mean_sites_per_trial": 22.801864801864802,
+        "coding": {
+          "as_coded": {
+            "se_two_way": 0.05585872493621108,
+            "se_two_way_unclipped": 0.05203009113705232,
+            "negative_eigenvalues": 17
+          },
+          "last_start_year_as_base": {
+            "se_two_way": 0.055746309973157056,
+            "se_two_way_unclipped": 0.05203009113704499,
+            "negative_eigenvalues": 16
+          },
+          "log_n_sites_x0.1": {
+            "se_two_way": 0.05608915863925481,
+            "se_two_way_unclipped": 0.052030091137038506,
+            "negative_eigenvalues": 17
+          },
+          "controls_centered": {
+            "se_two_way": 0.05587653546798964,
+            "se_two_way_unclipped": 0.05203009113704395,
+            "negative_eigenvalues": 17
+          }
+        }
+      },
+      "site_fe": {
+        "se_two_way": 0.034714813204218826,
+        "se_trial_only": 0.037864802664452336,
+        "se_two_way_unclipped": 0.0344186796836286,
+        "sd_v_trial": 0.03786480266445235,
+        "sd_v_site": 0.03146641070279624,
+        "sd_v_trial_site": 0.03520273813456475,
+        "negative_eigenvalues": 2,
+        "min_eigenvalue": -0.0003059987312965671,
+        "max_eigenvalue": 0.455993064835719,
+        "coef": 0.014673325812346231,
+        "trials": 2730,
+        "coding": {
+          "as_coded": {
+            "se_two_way": 0.034714813204218826,
+            "se_two_way_unclipped": 0.0344186796836286,
+            "negative_eigenvalues": 2
+          },
+          "last_start_year_as_base": {
+            "se_two_way": 0.03451110165593519,
+            "se_two_way_unclipped": 0.03441867968362876,
+            "negative_eigenvalues": 2
+          },
+          "log_n_sites_x0.1": {
+            "se_two_way": 0.034744652608575594,
+            "se_two_way_unclipped": 0.03441867968362863,
+            "negative_eigenvalues": 2
+          },
+          "controls_centered": {
+            "se_two_way": 0.034714813204303224,
+            "se_two_way_unclipped": 0.034418679683628585,
+            "negative_eigenvalues": 2
+          }
+        }
+      },
+      "within": {
+        "se_two_way": 0.10418354824454075,
+        "se_trial_only": 0.06153326736094534,
+        "se_two_way_unclipped": 0.08646291356015767,
+        "sd_v_trial": 0.06153326736094542,
+        "sd_v_site": 0.21514099731451417,
+        "sd_v_trial_site": 0.2063883627927846,
+        "negative_eigenvalues": 18,
+        "min_eigenvalue": -1.0309212094060891,
+        "max_eigenvalue": 3.313591510052942,
+        "coef": -0.08706127618637184,
+        "trials": 2730,
+        "se_pairs_once": 0.06286331819995404,
+        "share_pairs_sharing_a_site": 0.06460899549943155,
+        "mean_shared_sites_among_sharing_pairs": 2.1449138668904824,
+        "mean_sites_per_trial": 19.367399267399268,
+        "coding": {
+          "as_coded": {
+            "se_two_way": 0.10418354824454075,
+            "se_two_way_unclipped": 0.08646291356015767,
+            "negative_eigenvalues": 18
+          },
+          "last_start_year_as_base": {
+            "se_two_way": 0.11525796822334071,
+            "se_two_way_unclipped": 0.0864629135601752,
+            "negative_eigenvalues": 18
+          },
+          "log_n_sites_x0.1": {
+            "se_two_way": 0.11115180109999213,
+            "se_two_way_unclipped": 0.08646291356016926,
+            "negative_eigenvalues": 18
+          },
+          "controls_centered": {
+            "se_two_way": 0.10522274911657845,
+            "se_two_way_unclipped": 0.08646291356018915,
+            "negative_eigenvalues": 18
+          }
+        }
+      }
+    },
+    "S1p": {
+      "pooled": {
+        "se_two_way": 0.06791754747207952,
+        "se_trial_only": 0.0370839505601903,
+        "se_two_way_unclipped": 0.04906953445461355,
+        "sd_v_trial": 0.037083950560190315,
+        "sd_v_site": 0.08719415544885985,
+        "sd_v_trial_site": 0.08105689928684708,
+        "negative_eigenvalues": 14,
+        "min_eigenvalue": -1.5099176820669256,
+        "max_eigenvalue": 0.96150150652433,
+        "coef": -0.01774656928700806,
+        "trials": 1864,
+        "se_pairs_once": 0.04144501919857117,
+        "share_pairs_sharing_a_site": 0.10635448846868888,
+        "mean_shared_sites_among_sharing_pairs": 1.5662903094793275,
+        "mean_sites_per_trial": 8.893776824034335,
+        "coding": {
+          "as_coded": {
+            "se_two_way": 0.06791754747207952,
+            "se_two_way_unclipped": 0.04906953445461355,
+            "negative_eigenvalues": 14
+          },
+          "last_start_year_as_base": {
+            "se_two_way": 0.06029938652825646,
+            "se_two_way_unclipped": 0.04906953445461255,
+            "negative_eigenvalues": 14
+          },
+          "log_n_sites_x0.1": {
+            "se_two_way": 0.06885976914076228,
+            "se_two_way_unclipped": 0.0490695344546292,
+            "negative_eigenvalues": 14
+          },
+          "controls_centered": {
+            "se_two_way": 0.06755615227430418,
+            "se_two_way_unclipped": 0.0490695344546159,
+            "negative_eigenvalues": 14
+          }
+        }
+      },
+      "site_fe": {
+        "se_two_way": 0.05135432736009449,
+        "se_trial_only": 0.06329182863152065,
+        "se_two_way_unclipped": 0.051354327360094515,
+        "sd_v_trial": 0.06329182863152064,
+        "sd_v_site": 0.048356694156749584,
+        "sd_v_trial_site": 0.06088479697497104,
+        "negative_eigenvalues": 0,
+        "min_eigenvalue": 0.00026046337593221006,
+        "max_eigenvalue": 0.9638490691682529,
+        "coef": 0.05350504556601525,
+        "trials": 1860,
+        "coding": {
+          "as_coded": {
+            "se_two_way": 0.05135432736009449,
+            "se_two_way_unclipped": 0.051354327360094515,
+            "negative_eigenvalues": 0
+          },
+          "last_start_year_as_base": {
+            "se_two_way": 0.051354327360094765,
+            "se_two_way_unclipped": 0.051354327360094786,
+            "negative_eigenvalues": 0
+          },
+          "log_n_sites_x0.1": {
+            "se_two_way": 0.051354327360095424,
+            "se_two_way_unclipped": 0.051354327360095424,
+            "negative_eigenvalues": 0
+          },
+          "controls_centered": {
+            "se_two_way": 0.05135432736009446,
+            "se_two_way_unclipped": 0.05135432736009446,
+            "negative_eigenvalues": 0
+          }
+        }
+      },
+      "within": {
+        "se_two_way": 0.1454171660410137,
+        "se_trial_only": 0.06340398171598187,
+        "se_two_way_unclipped": 0.08263192967405518,
+        "sd_v_trial": 0.06340398171598187,
+        "sd_v_site": 0.19795252854096068,
+        "sd_v_trial_site": 0.1907281642850432,
+        "negative_eigenvalues": 15,
+        "min_eigenvalue": -2.231697273144519,
+        "max_eigenvalue": 0.703194861812058,
+        "coef": -0.05020126765371867,
+        "trials": 1860,
+        "se_pairs_once": 0.07227888603211778,
+        "share_pairs_sharing_a_site": 0.10681254229641327,
+        "mean_shared_sites_among_sharing_pairs": 1.5662903094793275,
+        "mean_sites_per_trial": 8.746774193548386,
+        "coding": {
+          "as_coded": {
+            "se_two_way": 0.1454171660410137,
+            "se_two_way_unclipped": 0.08263192967405518,
+            "negative_eigenvalues": 15
+          },
+          "last_start_year_as_base": {
+            "se_two_way": 0.12684615929148688,
+            "se_two_way_unclipped": 0.08263192967406797,
+            "negative_eigenvalues": 15
+          },
+          "log_n_sites_x0.1": {
+            "se_two_way": 0.1491481549911885,
+            "se_two_way_unclipped": 0.08263192967406024,
+            "negative_eigenvalues": 15
+          },
+          "controls_centered": {
+            "se_two_way": 0.144573092315323,
+            "se_two_way_unclipped": 0.08263192967404946,
+            "negative_eigenvalues": 15
+          }
+        }
+      }
+    },
+    "S1": {
+      "pooled": {
+        "se_two_way": 0.06720161045404659,
+        "se_trial_only": 0.03032413412721793,
+        "se_two_way_unclipped": 0.057982929511713785,
+        "sd_v_trial": 0.03032413412721793,
+        "sd_v_site": 0.09333469911512719,
+        "sd_v_trial_site": 0.07917637939888675,
+        "negative_eigenvalues": 19,
+        "min_eigenvalue": -1.1889983266467286,
+        "max_eigenvalue": 1.5212435986038713,
+        "coef": -0.0399529444866352,
+        "trials": 2367,
+        "se_pairs_once": 0.032235341457460896,
+        "share_pairs_sharing_a_site": 0.0844351449791637,
+        "mean_shared_sites_among_sharing_pairs": 2.0791009677201058,
+        "mean_sites_per_trial": 15.106463878326997,
+        "coding": {
+          "as_coded": {
+            "se_two_way": 0.06720161045404659,
+            "se_two_way_unclipped": 0.057982929511713785,
+            "negative_eigenvalues": 19
+          },
+          "last_start_year_as_base": {
+            "se_two_way": 0.065372450286968,
+            "se_two_way_unclipped": 0.05798292951169286,
+            "negative_eigenvalues": 19
+          },
+          "log_n_sites_x0.1": {
+            "se_two_way": 0.07150044427990007,
+            "se_two_way_unclipped": 0.05798292951172583,
+            "negative_eigenvalues": 19
+          },
+          "controls_centered": {
+            "se_two_way": 0.06719712443623205,
+            "se_two_way_unclipped": 0.05798292951169071,
+            "negative_eigenvalues": 19
+          }
+        }
+      },
+      "site_fe": {
+        "se_two_way": 0.03754166812254009,
+        "se_trial_only": 0.042410610107271395,
+        "se_two_way_unclipped": 0.037117202787609334,
+        "sd_v_trial": 0.04241061010727138,
+        "sd_v_site": 0.03417422814119025,
+        "sd_v_trial_site": 0.03986039357483309,
+        "negative_eigenvalues": 2,
+        "min_eigenvalue": -0.0004478683469698712,
+        "max_eigenvalue": 0.5249875223817271,
+        "coef": -0.008305927822208252,
+        "trials": 2367,
+        "coding": {
+          "as_coded": {
+            "se_two_way": 0.03754166812254009,
+            "se_two_way_unclipped": 0.037117202787609334,
+            "negative_eigenvalues": 2
+          },
+          "last_start_year_as_base": {
+            "se_two_way": 0.03723846666668531,
+            "se_two_way_unclipped": 0.03711720278760929,
+            "negative_eigenvalues": 2
+          },
+          "log_n_sites_x0.1": {
+            "se_two_way": 0.03760785976296923,
+            "se_two_way_unclipped": 0.03711720278760923,
+            "negative_eigenvalues": 2
+          },
+          "controls_centered": {
+            "se_two_way": 0.037541668122636165,
+            "se_two_way_unclipped": 0.03711720278760924,
+            "negative_eigenvalues": 2
+          }
+        }
+      },
+      "within": {
+        "se_two_way": 0.0957681253721507,
+        "se_trial_only": 0.056091586395345124,
+        "se_two_way_unclipped": 0.06580415045357943,
+        "sd_v_trial": 0.056091586395345124,
+        "sd_v_site": 0.190475689265796,
+        "sd_v_trial_site": 0.1873421149894204,
+        "negative_eigenvalues": 19,
+        "min_eigenvalue": -1.3165444353643105,
+        "max_eigenvalue": 3.229156115508176,
+        "coef": -0.1289162155848005,
+        "trials": 2367,
+        "se_pairs_once": 0.05706604273230442,
+        "share_pairs_sharing_a_site": 0.0844351449791637,
+        "mean_shared_sites_among_sharing_pairs": 2.0791009677201058,
+        "mean_sites_per_trial": 15.093367131389945,
+        "coding": {
+          "as_coded": {
+            "se_two_way": 0.0957681253721507,
+            "se_two_way_unclipped": 0.06580415045357943,
+            "negative_eigenvalues": 19
+          },
+          "last_start_year_as_base": {
+            "se_two_way": 0.1060990714529489,
+            "se_two_way_unclipped": 0.06580415045358384,
+            "negative_eigenvalues": 20
+          },
+          "log_n_sites_x0.1": {
+            "se_two_way": 0.1063938300025743,
+            "se_two_way_unclipped": 0.06580415045358448,
+            "negative_eigenvalues": 19
+          },
+          "controls_centered": {
+            "se_two_way": 0.09708782085835072,
+            "se_two_way_unclipped": 0.06580415045358626,
+            "negative_eigenvalues": 19
+          }
+        }
+      }
+    },
+    "S2": {
+      "pooled": {
+        "se_two_way": 0.03550132729665931,
+        "se_trial_only": 0.027518420392274756,
+        "se_two_way_unclipped": 0.03513270360233212,
+        "sd_v_trial": 0.027518420392274756,
+        "sd_v_site": 0.04305660615157348,
+        "sd_v_trial_site": 0.03710563207611963,
+        "negative_eigenvalues": 3,
+        "min_eigenvalue": -0.05198833122697526,
+        "max_eigenvalue": 1.576281849288851,
+        "coef": -0.0967770364093316,
+        "trials": 2373,
+        "se_pairs_once": 0.03099165355945266,
+        "share_pairs_sharing_a_site": 0.021023117719083932,
+        "mean_shared_sites_among_sharing_pairs": 1.1346020585799517,
+        "mean_sites_per_trial": 4.185419300463548,
+        "coding": {
+          "as_coded": {
+            "se_two_way": 0.03550132729665931,
+            "se_two_way_unclipped": 0.03513270360233212,
+            "negative_eigenvalues": 3
+          },
+          "last_start_year_as_base": {
+            "se_two_way": 0.035310744862810876,
+            "se_two_way_unclipped": 0.03513270360233705,
+            "negative_eigenvalues": 3
+          },
+          "log_n_sites_x0.1": {
+            "se_two_way": 0.0354602222426881,
+            "se_two_way_unclipped": 0.035132703602336654,
+            "negative_eigenvalues": 3
+          },
+          "controls_centered": {
+            "se_two_way": 0.03550566336509619,
+            "se_two_way_unclipped": 0.03513270360233675,
+            "negative_eigenvalues": 3
+          }
+        }
+      },
+      "site_fe": {
+        "se_two_way": 0.041445537042125426,
+        "se_trial_only": 0.04662488329412509,
+        "se_two_way_unclipped": 0.04083866618554722,
+        "sd_v_trial": 0.04662488329412507,
+        "sd_v_site": 0.03890585122146542,
+        "sd_v_trial_site": 0.044941610403311405,
+        "negative_eigenvalues": 2,
+        "min_eigenvalue": -0.0014549560228430507,
+        "max_eigenvalue": 0.5387683357021001,
+        "coef": 0.030838387286166613,
+        "trials": 2025,
+        "coding": {
+          "as_coded": {
+            "se_two_way": 0.041445537042125426,
+            "se_two_way_unclipped": 0.04083866618554722,
+            "negative_eigenvalues": 2
+          },
+          "last_start_year_as_base": {
+            "se_two_way": 0.04101744113898924,
+            "se_two_way_unclipped": 0.040838666185547406,
+            "negative_eigenvalues": 2
+          },
+          "log_n_sites_x0.1": {
+            "se_two_way": 0.04156510791749285,
+            "se_two_way_unclipped": 0.0408386661855474,
+            "negative_eigenvalues": 2
+          },
+          "controls_centered": {
+            "se_two_way": 0.041445537042063205,
+            "se_two_way_unclipped": 0.040838666185547275,
+            "negative_eigenvalues": 2
+          }
+        }
+      },
+      "within": {
+        "se_two_way": 0.07176360804846794,
+        "se_trial_only": 0.06756364049242193,
+        "se_two_way_unclipped": 0.0715384576878255,
+        "sd_v_trial": 0.067563640492422,
+        "sd_v_site": 0.08430633634845913,
+        "sd_v_trial_site": 0.08096081111708285,
+        "negative_eigenvalues": 3,
+        "min_eigenvalue": -0.10582267630020582,
+        "max_eigenvalue": 2.262514809283113,
+        "coef": -0.03949463214687819,
+        "trials": 2025,
+        "se_pairs_once": 0.07053067975568529,
+        "share_pairs_sharing_a_site": 0.02887180988630264,
+        "mean_shared_sites_among_sharing_pairs": 1.1346020585799517,
+        "mean_sites_per_trial": 3.146172839506173,
+        "coding": {
+          "as_coded": {
+            "se_two_way": 0.07176360804846794,
+            "se_two_way_unclipped": 0.0715384576878255,
+            "negative_eigenvalues": 3
+          },
+          "last_start_year_as_base": {
+            "se_two_way": 0.07161391024640845,
+            "se_two_way_unclipped": 0.07153845768782997,
+            "negative_eigenvalues": 2
+          },
+          "log_n_sites_x0.1": {
+            "se_two_way": 0.07190434652026588,
+            "se_two_way_unclipped": 0.07153845768782713,
+            "negative_eigenvalues": 3
+          },
+          "controls_centered": {
+            "se_two_way": 0.07179052992468983,
+            "se_two_way_unclipped": 0.07153845768782877,
+            "negative_eigenvalues": 3
+          }
+        }
+      }
+    },
+    "S3": {
+      "pooled": {
+        "se_two_way": 0.06620139244919107,
+        "se_trial_only": 0.028802190693452474,
+        "se_two_way_unclipped": 0.058072081917095855,
+        "sd_v_trial": 0.02880219069345247,
+        "sd_v_site": 0.09912017792863918,
+        "sd_v_trial_site": 0.08533468909629423,
+        "negative_eigenvalues": 17,
+        "min_eigenvalue": -0.8239797335436415,
+        "max_eigenvalue": 1.5285600694007364,
+        "coef": -0.10165294108937943,
+        "trials": 3003,
+        "se_pairs_once": 0.03451194951940311,
+        "share_pairs_sharing_a_site": 0.05339408537276625,
+        "mean_shared_sites_among_sharing_pairs": 2.1449138668904824,
+        "mean_sites_per_trial": 22.801864801864802,
+        "coding": {
+          "as_coded": {
+            "se_two_way": 0.06620139244919107,
+            "se_two_way_unclipped": 0.058072081917095855,
+            "negative_eigenvalues": 17
+          },
+          "last_start_year_as_base": {
+            "se_two_way": 0.06659865704536354,
+            "se_two_way_unclipped": 0.05807208191709854,
+            "negative_eigenvalues": 18
+          },
+          "log_n_sites_x0.1": {
+            "se_two_way": 0.06646982020780175,
+            "se_two_way_unclipped": 0.05807208191710268,
+            "negative_eigenvalues": 17
+          },
+          "controls_centered": {
+            "se_two_way": 0.0661426778832574,
+            "se_two_way_unclipped": 0.05807208191709089,
+            "negative_eigenvalues": 17
+          }
+        }
+      },
+      "site_fe": {
+        "se_two_way": 0.03330885262092599,
+        "se_trial_only": 0.03277881572440957,
+        "se_two_way_unclipped": 0.032866316446846684,
+        "sd_v_trial": 0.03277881572440958,
+        "sd_v_site": 0.02975235994510316,
+        "sd_v_trial_site": 0.029655672742554918,
+        "negative_eigenvalues": 2,
+        "min_eigenvalue": -0.0003392049484894888,
+        "max_eigenvalue": 0.4039844820517159,
+        "coef": -0.03395688610876889,
+        "trials": 2730,
+        "coding": {
+          "as_coded": {
+            "se_two_way": 0.03330885262092599,
+            "se_two_way_unclipped": 0.032866316446846684,
+            "negative_eigenvalues": 2
+          },
+          "last_start_year_as_base": {
+            "se_two_way": 0.03298178813455335,
+            "se_two_way_unclipped": 0.03286631644684678,
+            "negative_eigenvalues": 2
+          },
+          "log_n_sites_x0.1": {
+            "se_two_way": 0.03345468076712668,
+            "se_two_way_unclipped": 0.032866316446846615,
+            "negative_eigenvalues": 2
+          },
+          "controls_centered": {
+            "se_two_way": 0.03330885262086658,
+            "se_two_way_unclipped": 0.03286631644684667,
+            "negative_eigenvalues": 2
+          }
+        }
+      },
+      "within": {
+        "se_two_way": 0.10419793672095173,
+        "se_trial_only": 0.04996443968361706,
+        "se_two_way_unclipped": 0.09149697008277917,
+        "sd_v_trial": 0.04996443968361711,
+        "sd_v_site": 0.17730081082250546,
+        "sd_v_trial_site": 0.1598759744829932,
+        "negative_eigenvalues": 18,
+        "min_eigenvalue": -0.9154231423647017,
+        "max_eigenvalue": 2.034753328652826,
+        "coef": -0.07709361031136427,
+        "trials": 2730,
+        "se_pairs_once": 0.050354309123412995,
+        "share_pairs_sharing_a_site": 0.06460899549943155,
+        "mean_shared_sites_among_sharing_pairs": 2.1449138668904824,
+        "mean_sites_per_trial": 19.367399267399268,
+        "coding": {
+          "as_coded": {
+            "se_two_way": 0.10419793672095173,
+            "se_two_way_unclipped": 0.09149697008277917,
+            "negative_eigenvalues": 18
+          },
+          "last_start_year_as_base": {
+            "se_two_way": 0.10882608742821004,
+            "se_two_way_unclipped": 0.09149697008274618,
+            "negative_eigenvalues": 19
+          },
+          "log_n_sites_x0.1": {
+            "se_two_way": 0.10575902240818542,
+            "se_two_way_unclipped": 0.09149697008275055,
+            "negative_eigenvalues": 18
+          },
+          "controls_centered": {
+            "se_two_way": 0.10548777284920072,
+            "se_two_way_unclipped": 0.09149697008275674,
+            "negative_eigenvalues": 18
+          }
+        }
+      }
+    }
+  }
+}

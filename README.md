@@ -66,37 +66,81 @@ Interactive docs at `http://localhost:8000/docs`.
 > **Status, 17 Oct.** The clearing results (sections 3-4) are withdrawn as headlines: they were measured
 > in-sample and do not hold out of sample. See "Checks in progress" at the end.
 
-### 1. Does congestion slow enrollment? A little, mainly at experienced sites.
+### 1. Does congestion slow enrollment? Not measurably within a site, and far less than the model assumed.
 
 `analysis/congestion.py`: 3,442 completed lung trials, 68k trial-site rows. Outcome: log per-site-month
 enrollment rate. Exposure: competitors recruiting at the same site when the trial started (fixed in
 advance; counting over the whole window would mechanically penalize slow trials), weighted by
-eligibility overlap. Controls: phase, site count, sponsor type, start year.
+eligibility overlap. Controls: phase, site count, sponsor type, start year. Standard errors are two-way
+clustered by trial and site (pre-registered); the earlier trial-only clustering is shown beside them.
 
-| coef on log(1 + sum of overlaps) | 95% CI | p |
-|---|---|---|
-| model assumption (master doc eq. 2): -1 | | |
-| pooled across sites: -0.106 | [-0.158, -0.055] | <0.001 |
-| **within site, all sites (primary): -0.087** | **[-0.208, +0.034]** | 0.16 |
-| within site, sites with >= 10 lung trials: -0.129 | [-0.239, -0.019] | 0.02 |
-| within site, trials with <= 20 sites: -0.039 | [-0.172, +0.093] | 0.56 |
-| within site, competitor pairs with overlap >= 0.8: -0.077 | [-0.175, +0.021] | 0.12 |
+| coef on log(1 + sum of overlaps) | 95% CI, two-way | p | 95% CI, trial only | p |
+|---|---|---|---|---|
+| model assumption (master doc eq. 2): -1 | | | | |
+| **within site, full sample (primary; the default beta): -0.087** | **[-0.291, +0.117]** | **0.40** | [-0.208, +0.034] | 0.16 |
+| pooled across sites (confounded with site type): -0.106 | [-0.216, +0.003] | 0.058 | [-0.158, -0.055] | <0.001 |
 
-- **What it says.** Within the same site, at the resolution of public registry data, overlapping
-  competitors slow enrollment slightly. At experienced sites a doubling of overlapping load is about
-  8.5% slower (95% CI 1-15%). That is roughly 8x smaller than the master doc's assumption, which every
-  interval rejects. Unweighted competitor counts are null within site.
-- **Default beta = 0.087**, the full-sample estimate. The subset checks (`analysis/congestion_subsets.py`,
-  task F) used a rule fixed in advance: change beta only if a well-powered subset's CI excludes the
-  full estimate. None does.
+Subset estimates, within site. They are reported separately and are never the default. Bonferroni
+adjustment is over the 4 subsets (z = 2.50):
+
+| subset (not the default) | coef | 95% CI, two-way | p | Bonferroni CI | trial only: CI (p) |
+|---|---|---|---|---|---|
+| S1p: sites with >= 10 lung trials started before the focal trial | -0.050 | [-0.335, +0.235] | 0.73 | [-0.413, +0.313] | [-0.174, +0.074] (0.43) |
+| S1: sites with >= 10 lung trials over all time (counts later trials; not predetermined) | -0.129 | [-0.317, +0.059] | 0.18 | [-0.368, +0.110] | [-0.239, -0.019] (0.02) |
+| S2: trials with <= 20 sites | -0.039 | [-0.180, +0.101] | 0.58 | [-0.219, +0.140] | [-0.172, +0.093] (0.56) |
+| S3: competitor pairs with overlap >= 0.8 | -0.077 | [-0.281, +0.127] | 0.46 | [-0.337, +0.183] | [-0.175, +0.021] (0.12) |
+
+Beta under each eligibility-parser version (full-sample within site, no hand-encoded overrides; beta = -coef):
+
+| parser | coef | 95% CI | p | trials with no eligible patient |
+|---|---|---|---|---|
+| v0 `b8c576f`: "Key Exclusion Criteria" read as inclusion | -0.136 | [-0.339, +0.067] | 0.19 | 3 |
+| v1 `c0050f4`: headers fixed, but contradictory criteria | -0.027 | [-0.121, +0.067] (trial only*) | 0.57 | 646 |
+| v2 `4a87d33`: current | -0.088 | [-0.291, +0.116] | 0.40 | 3 |
+
+\* For v1, the two-way variance of this coefficient is negative before clipping, so it can't be
+estimated. The trial-clustered CI is shown instead. The clipped two-way CI, [-0.089, +0.034], was
+narrower than the trial-only one and is not a valid estimate.
+
+- **What it says.** Within the same site, at the resolution of public registry data, the full-sample
+  estimate is a small slowdown: about 6% per doubling of overlapping load. It is not significant under any
+  clustering. Every interval rejects the master doc's -1, so congestion is at most a fraction of what the
+  model assumed. Unweighted competitor counts are null within site.
+- **"Mainly at experienced sites" is withdrawn.** That claim rested on S1, whose ">= 10 lung trials" count
+  included trials that started later. When only trials started before each trial are counted (S1p), the
+  estimate shrinks to -0.050 (p 0.73). S1 itself is not significant with two-way SEs (p 0.18) or after
+  Bonferroni. No subset meets the pre-registered rule: a well-powered subset whose CI excludes the
+  full-sample estimate.
+- **Across sites, busier sites have slower trials** (-0.106). The comparison is confounded with site type,
+  and with two-way SEs its CI includes 0 (p 0.058).
+- **Default beta = 0.087** (95% CI 0 to 0.291, floored at 0 as the app uses it). This is the full-sample
+  estimate. Subset estimates are labelled as subsets wherever they appear and are never used as the default.
+- **Parser dependence.** Across the three parser versions the estimate runs from -0.027 to -0.136, a 5x
+  spread. None is significant with two-way SEs. With trial-only SEs, only v0 was (p 0.03). The hand-encoded
+  overrides move v2 by 0.0006.
+- **Post hoc, not pre-registered: CI width depends partly on a technical choice.** The pre-registered
+  two-way variance clips the negative eigenvalues of the whole coefficient covariance matrix (18 of 41 for
+  the primary). That makes the reported SE depend on how the controls are coded: 0.104 as coded, and
+  0.105-0.115 under equivalent codings. The coefficient's own two-way variance before clipping does not
+  depend on coding: SE 0.086, CI [-0.257, +0.082], p 0.31. On that measure two results look stronger than
+  in the tables:
+  - the cross-site pooled association: [-0.208, -0.004], p 0.042;
+  - S1 with the lifetime count: [-0.258, +0.000], p 0.050. It is still not predetermined and not
+    significant after Bonferroni.
+
+  The primary and S1p stay far from significant (p 0.31 and 0.54). Details:
+  `data/robustness/congestion_v2.json` (`se_note`, `*_twoway_unclipped`) and
+  `congestion_v2_se_diagnostics.json`.
 - **Corrections, in order.** An early run showed -0.136 because "Key Exclusion Criteria" headers weren't
-  recognized. After that fix the estimate was -0.027. Task F's audit then found that 646 of 7,206 trials
-  had contradictory compiled criteria (EGFR required and EGFR excluded; resectable and stage III-IV),
-  which gave them no eligible patients and zero exposure, biasing the estimate toward zero. With the
-  parser fixed (3 such trials remain), the same pre-registered regressions give the table above.
-  Before-fix outputs: `data/robustness/congestion_subsets.json`. After: `..._maskfix.json`.
-- **Caveats.** Standard errors are clustered by trial only. The ">= 10 lung trials" count includes
-  trials that started later.
+  recognized (v0). After that fix the estimate was -0.027 (v1). Task F's audit then found that 646 of
+  7,206 trials had contradictory compiled criteria (EGFR required and EGFR excluded; resectable and stage
+  III-IV). That left them with no eligible patients and zero exposure, which pulled the estimate toward
+  zero. With the parser fixed (v2; 3 such trials remain), the same pre-registered regressions give the
+  tables above. Before-fix outputs: `data/robustness/congestion_subsets.json`. After: `..._maskfix.json`.
+- **Inputs.** These numbers come from the database before task E's hand-encoded eligibility for the 146
+  demo trials entered `trial_model`. Rerunning `analysis/congestion.py` on the rebuilt database (139 masks
+  differ) gives a primary of about -0.092 (two-way p 0.37; default beta about 0.092). No conclusion above
+  changes.
 
 ### 2. Site-rate model and backtest
 
