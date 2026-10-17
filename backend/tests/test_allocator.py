@@ -53,3 +53,42 @@ def test_independent_piles_onto_best_site():
     inst = tiny(k=(2, 1, 2))
     x = core.independent(inst)
     assert x[0].all()  # both trials pick the famous site
+
+
+def _random(seed=3, S=40, P=10, beta=1.0):
+    rng = np.random.default_rng(seed)
+    o = rng.uniform(0.1, 0.9, (P, P))
+    return core.Instance(lam=rng.gamma(0.8, 1.0, S), a=np.zeros(S), k=rng.integers(1, 3, S),
+                         f=rng.uniform(0.3, 1.5, P), N=rng.uniform(10, 60, P), n_max=np.full(P, 4), w=np.ones(P),
+                         o=(o + o.T) / 2, feasible=np.ones((S, P), dtype=bool), beta=beta)
+
+
+@pytest.mark.parametrize("beta", [1.0, 0.14])
+def test_no_loser_caps_hold_and_still_improve(beta):
+    inst = _random(beta=beta)
+    x_ind = core.independent(inst)
+    T_ind = core.evaluate(inst, x_ind)
+    x, stats = core.coordinate(inst.replace(caps=T_ind), x0=x_ind, time_limit=2)
+    T = core.evaluate(inst, x)
+    assert (T <= T_ind + 1e-6).all()
+    assert T.sum() <= T_ind.sum() + 1e-9
+
+
+def test_background_trials_do_not_move():
+    inst = _random()
+    x0 = core.independent(inst)
+    movable = np.ones(inst.P, dtype=bool)
+    movable[:3] = False
+    bg = x0.copy()
+    bg[:, movable] = False
+    x, _ = core.coordinate(inst.replace(movable=movable), x0=bg, time_limit=1)
+    assert (x[:, ~movable] == x0[:, ~movable]).all()
+
+
+def test_no_loser_matches_exhaustive_on_tiny():
+    inst = tiny(0.8, (2, 1, 2))
+    x_ind = core.independent(inst)
+    capped = inst.replace(caps=core.evaluate(inst, x_ind))
+    _, best = core.exhaustive(capped)
+    _, stats = core.coordinate(capped, x0=x_ind, time_limit=2)
+    assert stats["objective"] == pytest.approx(best, rel=1e-6)

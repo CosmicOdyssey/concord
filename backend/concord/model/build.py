@@ -18,6 +18,7 @@ import time
 import numpy as np
 
 from concord.compiler.eligibility import eligible_fraction, extract_criteria
+from concord.compiler.overrides import OVERRIDES
 from concord.compiler.population import synthetic_population
 from concord.model import recruitment
 from concord.paths import DB_PATH
@@ -30,7 +31,7 @@ def compile_trials(con: sqlite3.Connection, pop: dict) -> dict[str, float]:
     out = []
     fs = {}
     for nct, text in rows:
-        crit = extract_criteria(text or "")
+        crit = OVERRIDES.get(nct) or extract_criteria(text or "")
         fs[nct] = eligible_fraction(crit, pop)
         out.append((nct, fs[nct], json.dumps([c.to_dict() for c in crit])))
     f_ref = float(np.median(list(fs.values())))
@@ -76,14 +77,17 @@ def build(db_path=DB_PATH) -> dict:
         "SELECT site_id, COUNT(*) FROM trial_sites JOIN trials USING(nct_id) WHERE is_lung=1 GROUP BY site_id"))
 
     con.execute("DROP TABLE IF EXISTS site_model")
-    con.execute("""CREATE TABLE site_model (site_id TEXT PRIMARY KEY, lam REAL, lam_mean REAL, shape REAL,
-                   rate REAL, n_hist INTEGER, n_hist_industry INTEGER, k_hist INTEGER, fitted INTEGER)""")
+    con.execute("""CREATE TABLE site_model (site_id TEXT PRIMARY KEY, lam REAL, lam_mean REAL, lam_eff REAL,
+                   shape REAL, rate REAL, n_hist INTEGER, n_hist_industry INTEGER, k_hist INTEGER, fitted INTEGER)""")
+    hist_n = np.bincount([l[1] for l in hist.links], minlength=len(rates.site_ids))
+    lam_eff, unseen = recruitment.effective_rates(rates, hist_n)
+    eff = dict(zip(rates.site_ids, lam_eff))
     rows = []
     for sid in [r[0] for r in con.execute("SELECT site_id FROM sites")]:
         shape, rate, med = lk.get(sid, (rates.alpha, rates.beta, prior_median))
-        rows.append((sid, float(med), shape / rate, shape, rate, all_hist.get(sid, 0), n_hist.get(sid, 0),
-                     max(1, peak_concurrency(win.get(sid, []))), int(sid in lk)))
-    con.executemany("INSERT INTO site_model VALUES (?,?,?,?,?,?,?,?,?)", rows)
+        rows.append((sid, float(med), shape / rate, float(eff.get(sid, unseen)), shape, rate, all_hist.get(sid, 0),
+                     n_hist.get(sid, 0), max(1, peak_concurrency(win.get(sid, []))), int(sid in lk)))
+    con.executemany("INSERT INTO site_model VALUES (?,?,?,?,?,?,?,?,?,?)", rows)
 
     bt = recruitment.backtest(con)
     meta = {

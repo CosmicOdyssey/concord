@@ -5,9 +5,15 @@ lag a[s] and concurrent-trial capacity k[s]. Trial P has relative eligible
 fraction f[P], target N[P], max sites n_max[P], weight w[P]. o[P, Q] is the
 overlap Pr[e_Q | e_P] with o[P, P] ignored.
 
-    rate[s, P] = lam[s] f[P] / (1 + sum_{Q != P} x[s, Q] o[P, Q])        (2)
+    rate[s, P] = lam[s] f[P] / (1 + sum_{Q != P} x[s, Q] o[P, Q])^beta   (2')
     T_P(x)     = mean_{s: x[s,P]} a[s] + N[P] / sum_s x[s, P] rate[s, P]  (3)
     min_x sum_P w[P] T_P(x)  s.t. feasibility, k, n_max                   (4)-(6)
+                             and T_P(x) <= caps[P]   (optional no-loser constraint)
+
+beta is the congestion elasticity. The master doc's eq. (2) is beta = 1; the data
+(concord.analysis.congestion, within-site) says about 0.14, so the service sets beta
+from that estimate. Trials with movable[P] = False are background: their sites are held
+fixed but their congestion still counts.
 
 The solver is greedy by marginal gain plus swap local search (§4.6), with all
 deltas computed incrementally: toggling (s, P) only changes rates at site s.
@@ -37,11 +43,31 @@ class Instance:
     feasible: np.ndarray  # (S, P) bool: capability + quality screen
     site_ids: list[str] = field(default_factory=list)
     trial_ids: list[str] = field(default_factory=list)
+    beta: float = 1.0
+    movable: np.ndarray | None = None  # (P,) bool; None = all trials movable
+    caps: np.ndarray | None = None  # (P,) max allowed T; None = unconstrained
 
     def __post_init__(self) -> None:
         self.o = np.array(self.o, dtype=float)
         np.fill_diagonal(self.o, 0.0)
         self.base = np.outer(self.lam, self.f)  # (S, P) uncongested rate
+        if self.movable is None:
+            self.movable = np.ones(len(self.f), dtype=bool)
+        if self.caps is None:
+            self.caps = np.full(len(self.f), np.inf)
+        finite = np.where(np.isfinite(self.caps), np.abs(self.caps), 0.0)
+        self.slack = self.caps + 1e-9 * (1.0 + finite)
+
+    def g(self, load):
+        """Congestion multiplier on the uncongested rate."""
+        return (1.0 + load) ** (-self.beta)
+
+    def replace(self, **kw) -> "Instance":
+        fields = dict(lam=self.lam, a=self.a, k=self.k, f=self.f, N=self.N, n_max=self.n_max, w=self.w, o=self.o,
+                      feasible=self.feasible, site_ids=self.site_ids, trial_ids=self.trial_ids, beta=self.beta,
+                      movable=self.movable, caps=self.caps)
+        fields.update(kw)
+        return Instance(**fields)
 
     @property
     def S(self) -> int:
@@ -73,7 +99,7 @@ class State:
         self.T = self._T_all()
 
     def rate_matrix(self) -> np.ndarray:
-        return self.inst.base / (1.0 + self.load)
+        return self.inst.base * self.inst.g(self.load)
 
     def _T(self, R: np.ndarray, asum: np.ndarray, cnt: np.ndarray, N: np.ndarray) -> np.ndarray:
         with np.errstate(divide="ignore", invalid="ignore"):
@@ -86,8 +112,10 @@ class State:
     def objective(self) -> float:
         return float(self.inst.w @ self.T)
 
-    def delta_toggle(self, s: int, p: int) -> float:
-        """Objective change if x[s, p] were flipped, without mutating state."""
+    def delta_toggle(self, s: int, p: int, check_caps: bool = True) -> float:
+        """Objective change if x[s, p] were flipped, without mutating state. With check_caps,
+        +inf if afterwards p is above its cap or another trial is pushed further above its cap
+        (no-loser constraint). Compound moves check only their final step."""
         inst, sign = self.inst, (-1.0 if self.x[s, p] else 1.0)
         others = np.flatnonzero(self.x[s])
         others = others[others != p]
@@ -95,21 +123,28 @@ class State:
         if len(others):
             old_load = self.load[s, others]
             new_load = old_load + sign * inst.o[others, p]
-            dR = inst.base[s, others] * (1.0 / (1.0 + new_load) - 1.0 / (1.0 + old_load))
+            dR = inst.base[s, others] * (inst.g(new_load) - inst.g(old_load))
             T_new = self._T(self.R[others] + dR, self.asum[others], self.cnt[others], inst.N[others])
+            if check_caps and ((T_new > inst.slack[others]) & (T_new > self.T[others])).any():
+                return np.inf
             d += float(inst.w[others] @ (T_new - self.T[others]))
-        r = inst.base[s, p] / (1.0 + self.load[s, p])
+        r = inst.base[s, p] * inst.g(self.load[s, p])
         T_p = self._T(np.array([self.R[p] + sign * r]), np.array([self.asum[p] + sign * inst.a[s]]),
                       np.array([self.cnt[p] + int(sign)]), inst.N[p:p + 1])[0]
+        if check_caps and T_p > inst.slack[p]:
+            return np.inf
         return d + float(inst.w[p] * (T_p - self.T[p]))
+
+    def feasible_caps(self) -> bool:
+        return bool((self.T <= self.inst.slack).all())
 
     def toggle(self, s: int, p: int) -> None:
         inst, sign = self.inst, (-1.0 if self.x[s, p] else 1.0)
-        rate_before = inst.base[s] / (1.0 + self.load[s])
+        rate_before = inst.base[s] * inst.g(self.load[s])
         on_site = self.x[s].copy()
         on_site[p] = False
         self.load[s] += sign * inst.o[:, p]
-        rate_after = inst.base[s] / (1.0 + self.load[s])
+        rate_after = inst.base[s] * inst.g(self.load[s])
         self.R[on_site] += rate_after[on_site] - rate_before[on_site]
         self.R[p] += sign * rate_before[p]  # p's own load is unaffected by its own toggle
         self.asum[p] += sign * inst.a[s]
@@ -124,7 +159,8 @@ class State:
 
     def can_add(self, s: int, p: int) -> bool:
         i = self.inst
-        return (not self.x[s, p]) and i.feasible[s, p] and self.site_cnt[s] < i.k[s] and self.cnt[p] < i.n_max[p]
+        return bool(i.movable[p] and not self.x[s, p] and i.feasible[s, p] and self.site_cnt[s] < i.k[s]
+                    and self.cnt[p] < i.n_max[p])
 
 
 def evaluate(inst: Instance, x: np.ndarray) -> np.ndarray:
@@ -153,13 +189,19 @@ def _open(st: "State", cands: np.ndarray, p: int, K: int, skip: int = -1):
                 return
 
 
-def independent(inst: Instance, order: list[int] | None = None, respect_capacity: bool = True) -> np.ndarray:
+def independent(inst: Instance, order: list[int] | None = None, respect_capacity: bool = True,
+                background: np.ndarray | None = None) -> np.ndarray:
     """Status quo (§4.4): each trial takes its top n_max feasible sites by lam*f, ignoring
     everyone else. With respect_capacity, trials claim sites first-come in `order` and a
-    full site is skipped, which is a conservative (generous-to-status-quo) baseline."""
+    full site is skipped, which is a conservative (generous-to-status-quo) baseline.
+    Non-movable trials keep their columns from `background`."""
     x = np.zeros((inst.S, inst.P), dtype=bool)
-    used = np.zeros(inst.S, dtype=int)
+    if background is not None:
+        x[:, ~inst.movable] = background[:, ~inst.movable]
+    used = x.sum(axis=1)
     for p in order if order is not None else range(inst.P):
+        if not inst.movable[p]:
+            continue
         feas = np.flatnonzero(inst.feasible[:, p])
         taken = 0
         for s in feas[np.argsort(-inst.base[feas, p])]:
@@ -179,7 +221,7 @@ def _greedy(st: State, cands: list[np.ndarray], K: int, deadline: float) -> None
     while time.monotonic() < deadline:
         best = (0.0, -1, -1)
         for p in np.argsort(-(inst.w * st.T)):
-            if st.cnt[p] >= inst.n_max[p]:
+            if st.cnt[p] >= inst.n_max[p] or not inst.movable[p]:
                 continue
             for s in _open(st, cands[p], p, K):
                 d = st.delta_toggle(s, p)
@@ -199,17 +241,19 @@ def _local_search(st: State, cands: list[np.ndarray], K: int, deadline: float, r
     while time.monotonic() < deadline and (max_passes is None or passes < max_passes):
         passes += 1
         improved_pass = False
-        for p in rng.permutation(inst.P):
+        for p in rng.permutation(np.flatnonzero(inst.movable)):
             for s in np.flatnonzero(st.x[:, p]):
                 d_drop = st.delta_toggle(s, p)
                 if d_drop < -1e-9 and st.cnt[p] > 1:
                     st.toggle(s, p); improved += 1; improved_pass = True
                     continue
+                # Swap: the drop alone may break p's cap; only the state after the add must hold.
+                d_raw = d_drop if np.isfinite(d_drop) else st.delta_toggle(s, p, check_caps=False)
                 st.toggle(s, p)
                 best_d, best_s = d_drop, -1
                 for s2 in _open(st, cands[p], p, K, skip=s):
                     moves += 1
-                    d = d_drop + st.delta_toggle(s2, p)
+                    d = d_raw + st.delta_toggle(s2, p)
                     if d < best_d - 1e-9 and d < -1e-9:
                         best_d, best_s = d, s2
                 st.toggle(best_s if best_s >= 0 else s, p)
@@ -220,6 +264,36 @@ def _local_search(st: State, cands: list[np.ndarray], K: int, deadline: float, r
         if not improved_pass:
             break
     return moves, improved
+
+
+def _exchange(st: State, deadline: float, partners: int = 12) -> tuple[int, int]:
+    """Two trials trade sites (p: s -> s2, q: s2 -> s). Single-trial moves cannot find these
+    when every trial sits at its no-loser cap, since each half alone makes someone worse off.
+    Partners are the trials p overlaps most with (where relief from congestion is largest)."""
+    inst, tries, done = st.inst, 0, 0
+    mv = np.flatnonzero(inst.movable)
+    for p in mv:
+        qs = [q for q in np.argsort(-inst.o[p]) if inst.movable[q] and q != p][:partners]
+        for s in np.flatnonzero(st.x[:, p]):
+            for q in qs:
+                if st.x[s, q] or not inst.feasible[s, q]:
+                    continue
+                for s2 in np.flatnonzero(st.x[:, q] & ~st.x[:, p] & inst.feasible[:, p]):
+                    if not st.x[s, p] or st.x[s, q]:
+                        break  # an earlier exchange already moved p or q
+                    tries += 1
+                    before = st.objective()
+                    steps = [(s, p), (s2, q), (s2, p), (s, q)]
+                    for a, b in steps:
+                        st.toggle(a, b)
+                    if st.feasible_caps() and st.objective() < before - 1e-9:
+                        done += 1
+                        break
+                    for a, b in reversed(steps):
+                        st.toggle(a, b)
+            if time.monotonic() >= deadline:
+                return tries, done
+    return tries, done
 
 
 def coordinate(inst: Instance, x0: np.ndarray | None = None, K: int = 60, time_limit: float = 10.0,
@@ -234,27 +308,35 @@ def coordinate(inst: Instance, x0: np.ndarray | None = None, K: int = 60, time_l
     rng = np.random.default_rng(seed)
     cands = candidate_lists(inst)
     st = State(inst, x0)
+    if not st.feasible_caps():
+        raise ValueError("start allocation violates caps; start from the baseline the caps came from")
     _greedy(st, cands, K, deadline)
     greedy_obj = st.objective()
     moves, improved = _local_search(st, cands, K, deadline, rng, max_passes)
+    ex_tries, ex_done = (0, 0) if max_passes is not None else _exchange(st, deadline)
+    if ex_done:
+        m, i = _local_search(st, cands, K, deadline, rng, max_passes)
+        moves += m; improved += i
     best_x, best_obj = st.x.copy(), st.objective()
 
     kicks = stale = 0
     while time.monotonic() < deadline and stale < patience:
         trial = State(inst, best_x)
-        on = np.argwhere(trial.x)
+        on = np.argwhere(trial.x & inst.movable[None, :])
+        if not len(on):
+            break
         n_out = max(1, int(round(kick * len(on))))
         for s, p in on[rng.choice(len(on), size=min(n_out, len(on)), replace=False)]:
             trial.toggle(s, p)
         # Force one random addition so greedy does not simply rebuild the same state.
-        p = int(rng.integers(inst.P))
+        p = int(rng.choice(np.flatnonzero(inst.movable)))
         opts = [s for s in _open(trial, cands[p], p, K)]
         if opts:
             trial.toggle(int(rng.choice(opts)), p)
         _greedy(trial, cands, K, deadline)
         m, i = _local_search(trial, cands, K, deadline, rng)
         moves += m; kicks += 1
-        if trial.objective() < best_obj - 1e-9:
+        if trial.objective() < best_obj - 1e-9 and trial.feasible_caps():
             best_x, best_obj, stale = trial.x.copy(), trial.objective(), 0
             improved += i + 1
         else:
@@ -265,6 +347,8 @@ def coordinate(inst: Instance, x0: np.ndarray | None = None, K: int = 60, time_l
         "moves_evaluated": moves,
         "improvements": improved,
         "kicks": kicks,
+        "exchanges_tried": ex_tries,
+        "exchanges_made": ex_done,
         "seconds": round(time.monotonic() - t0, 3),
         "hit_time_limit": time.monotonic() >= deadline,
     }
@@ -280,7 +364,10 @@ def exhaustive(inst: Instance) -> tuple[np.ndarray, float]:
             x[s, p] = bool(b)
         if (x.sum(axis=1) > inst.k).any() or (x.sum(axis=0) > inst.n_max).any():
             continue
-        obj = float(inst.w @ evaluate(inst, x))
+        T = evaluate(inst, x)
+        if (T > inst.slack).any():
+            continue
+        obj = float(inst.w @ T)
         if obj < best:
             best, best_x = obj, x
     return best_x, best

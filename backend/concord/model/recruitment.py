@@ -164,38 +164,72 @@ def predict_months(N: float, lam_sum: float) -> float:
     return N / lam_sum if lam_sum > 0 else float("inf")
 
 
+LOW_HISTORY_N = 3  # sites with fewer lung trials than this are "low history"
+LOW_HISTORY_Q = 0.25  # ...and get at most this quantile of the prior
+
+
+def effective_rates(rates: SiteRates, n_hist: np.ndarray) -> tuple[np.ndarray, float]:
+    """Posterior mean, except low-history sites are capped at the prior's 25th percentile, which is
+    also the rate for unseen sites. On the backtest this cut industry Phase II/III error from 1.09 to
+    0.67 and the bias from -0.92 to -0.09: the raw model's optimism came from sites it barely knew."""
+    floor = float(gamma_dist.ppf(LOW_HISTORY_Q, rates.alpha, scale=1.0 / rates.beta))
+    lam = np.where(n_hist < LOW_HISTORY_N, np.minimum(rates.mean, floor), rates.mean)
+    return lam, floor
+
+
 def backtest(con: sqlite3.Connection, cutoff: str = "2018-01-01", f_lookup: dict[str, float] | None = None) -> dict:
     """Fit on trials that started before `cutoff`; predict enrollment duration for trials that
-    started after it. Baseline: median per-site-month rate x number of sites."""
+    started after it. Model: effective_rates (posterior mean, low-history sites capped). Variant
+    "raw": posterior mean with the prior for unseen sites. Baseline: median per-site-month rate."""
     train = load_history(con, f_lookup, before=cutoff)
     rates = fit(train)
     test = load_history(con, f_lookup, after=cutoff)
-    lk = dict(zip(rates.site_ids, rates.median))
-    prior_mean = float(gamma_dist.ppf(0.5, rates.alpha, scale=1.0 / rates.beta))
+    n_hist = np.bincount([l[1] for l in train.links], minlength=len(train.site_ids))
+    lam_eff, unseen = effective_rates(rates, n_hist)
+    models = {
+        "model": (dict(zip(rates.site_ids, lam_eff)), unseen),
+        "raw": (dict(zip(rates.site_ids, rates.mean)), rates.alpha / rates.beta),
+    }
 
     per_trial_e: dict[int, list[tuple[int, float]]] = {}
     for ti, si, e in test.links:
         per_trial_e.setdefault(ti, []).append((si, e))
-    exposure = np.array([sum(e for _, e in per_trial_e.get(i, [])) for i in range(len(test.N))])
     train_exposure = np.bincount([l[0] for l in train.links], weights=[l[2] for l in train.links],
                                  minlength=len(train.N))
     naive_rate = float(np.median(train.N[train_exposure > 0] / train_exposure[train_exposure > 0]))
+    kind = {n: (c == "INDUSTRY" and ("PHASE2" in ph or "PHASE3" in ph), "PHASE3" in ph) for n, c, ph in
+            con.execute("SELECT nct_id, sponsor_class, phases FROM trials")}
 
-    errs_model, errs_naive, known_share = [], [], []
+    # bias[name][subset] = list of log(pred / actual); > 0 means predicted too slow.
+    bias = {m: {"all": [], "industry_p23": [], "industry_p3": []} for m in (*models, "naive")}
+    pred_log_rate, true_log_rate, known_share = [], [], []
     for i in range(len(test.N)):
         sites = per_trial_e.get(i, [])
         if not sites:
             continue
-        # Rate per enrollment-month: sum of site flows x (exposure / tau) congestion+eligibility scaling.
         scale = [(e / test.tau[i]) for _, e in sites]
-        lam_sum = sum(lk.get(test.site_ids[si], prior_mean) * sc for (si, _), sc in zip(sites, scale))
-        naive_sum = naive_rate * sum(scale)
         truth = test.tau[i]
-        errs_model.append(abs(np.log(predict_months(test.N[i], lam_sum) / truth)))
-        errs_naive.append(abs(np.log(predict_months(test.N[i], naive_sum) / truth)))
-        known_share.append(np.mean([test.site_ids[si] in lk for si, _ in sites]))
+        ind23, p3 = kind.get(test.trial_ids[i], (False, False))
+        known_share.append(np.mean([test.site_ids[si] in models["model"][0] for si, _ in sites]))
+        sums = {name: sum(lk.get(test.site_ids[si], dflt) * sc for (si, _), sc in zip(sites, scale))
+                for name, (lk, dflt) in models.items()}
+        sums["naive"] = naive_rate * sum(scale)
+        for name, lam_sum in sums.items():
+            b = float(np.log(predict_months(test.N[i], lam_sum) / truth))
+            bias[name]["all"].append(b)
+            if ind23:
+                bias[name]["industry_p23"].append(b)
+                if p3:
+                    bias[name]["industry_p3"].append(b)
+        if ind23:
+            pred_log_rate.append(np.log(sums["model"] / sum(scale)))
+            true_log_rate.append(np.log(test.N[i] / truth / sum(scale)))
 
-    em, en = np.array(errs_model), np.array(errs_naive)
+    def summ(name: str) -> dict:
+        return {sub: {"median_abs_log_error": float(np.median(np.abs(v))), "median_signed_log_bias": float(np.median(v)),
+                      "n": len(v)} for sub, v in bias[name].items() if v}
+
+    em, en = np.abs(bias["model"]["all"]), np.abs(bias["naive"]["all"])
     return {
         "cutoff": cutoff,
         "train_trials": len(train.N),
@@ -204,8 +238,25 @@ def backtest(con: sqlite3.Connection, cutoff: str = "2018-01-01", f_lookup: dict
         "median_abs_log_error_naive": float(np.median(en)),
         "model_beats_naive_share": float(np.mean(em < en)),
         "median_share_of_test_sites_seen_in_train": float(np.median(known_share)),
+        "by_model": {name: summ(name) for name in bias},
+        # Slope of log actual on log predicted per-site rate (industry Ph II/III). Below 1 would mean
+        # predicted differences between site mixes are exaggerated (selection optimism).
+        "calibration_slope_industry_p23": _slope(pred_log_rate, true_log_rate),
+        "level_log_bias_industry_p23": float(np.median(bias["model"]["industry_p23"])),
+        "low_history_rule": {"n_below": LOW_HISTORY_N, "prior_quantile": LOW_HISTORY_Q, "rate": unseen},
         "note": "abs log error of predicted vs actual enrollment duration; exp(0.69)=2x off",
     }
+
+
+def _slope(x: list[float], y: list[float]) -> dict:
+    x, y = np.asarray(x), np.asarray(y)
+    if len(x) < 10:
+        return {"slope": 1.0, "n": int(len(x))}
+    xc = x - x.mean()
+    b = float(xc @ (y - y.mean()) / (xc @ xc))
+    resid = y - y.mean() - b * xc
+    se = float(np.sqrt(resid @ resid / (len(x) - 2) / (xc @ xc)))
+    return {"slope": b, "se": se, "n": int(len(x)), "mean_log_pred": float(x.mean())}
 
 
 def to_json(rates: SiteRates) -> str:

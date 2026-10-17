@@ -63,10 +63,18 @@ RULES: list[tuple] = [
      "prior_io", "==", True, "No prior checkpoint inhibitor"),
     ("no_ild", "exclusion", r"(interstitial lung disease|pneumonitis)", "ild_history", "==", True, "No ILD / pneumonitis"),
     ("no_autoimmune", "exclusion", r"active autoimmune", "autoimmune", "==", True, "No active autoimmune disease"),
+    # Driver-positive tumors excluded (typical of first-line immunotherapy trials).
+    ("no_egfr", "exclusion", r"\bEGFR\b|epidermal growth factor receptor", "egfr", "==", True, "No EGFR mutation"),
+    ("no_alk", "exclusion", r"\bALK\b|anaplastic lymphoma kinase", "alk", "==", True, "No ALK translocation"),
+    ("no_ros1", "exclusion", r"\bROS-?1\b", "ros1", "==", True, "No ROS1 fusion"),
+    ("no_never_smoker", "exclusion", r"never smoked|never[- ]smoker", "never_smoker", "==", True, "Never-smokers excluded"),
+    ("resectable", "inclusion", r"(?<!un)(?<!not )\bresectable\b", "stage", "==", "early",
+     "Resectable (early stage)"),
 ]
 
-# When two rules on the same feature both fire, keep the stricter one.
-SUPERSEDES = {"pdl1_high": "pdl1_pos", "stage_iv": "stage_iii", "ecog_01": "ecog_02"}
+# When two rules on the same feature both fire, keep the one that wins. "Stage IIIB/C ... or stage IV"
+# fires both stage rules and means III or IV, so stage_iii wins.
+SUPERSEDES = {"pdl1_high": "pdl1_pos", "stage_iii": "stage_iv", "ecog_01": "ecog_02", "resectable": "stage_iv"}
 
 
 def _split(text: str) -> list[tuple[str, str]]:
@@ -77,11 +85,10 @@ def _split(text: str) -> list[tuple[str, str]]:
         if not line:
             continue
         low = line.lower()
-        if low.startswith("exclusion criteria"):
-            section = "exclusion"
-            continue
-        if low.startswith("inclusion criteria"):
-            section = "inclusion"
+        # Headers vary: "Exclusion Criteria:", "Key Exclusion Criteria", "EXCLUSION CRITERIA (part 1)".
+        header = re.match(r"^(key |main |major )?(inclusion|exclusion) criteria\b", low)
+        if header and len(low) < 60:
+            section = header.group(2)
             continue
         out.append((section, line))
     return out

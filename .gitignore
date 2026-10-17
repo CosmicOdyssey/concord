@@ -19,3 +19,6 @@ dist/
 .DS_Store
 Thumbs.db
 .env
+
+# Built from CMS files by scripts/pipeline.sh
+data/ratecard.json

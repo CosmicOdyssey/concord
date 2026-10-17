@@ -11,7 +11,9 @@ import numpy as np
 
 PREVALENCE = {
     "nonsquamous": 0.75,
-    "stage_iv_given_advanced": 0.75,
+    "stage": {"early": 0.25, "III": 0.20, "IV": 0.55},  # stage when first seen at a trial site
+    "never_smoker": 0.12,
+    "never_smoker_given_driver": 0.50,  # EGFR / ALK / ROS1
     "egfr_in_nonsq": 0.15,
     "alk_in_nonsq": 0.05,
     "ros1_in_nonsq": 0.015,
@@ -35,7 +37,8 @@ def synthetic_population(n: int = 50_000, seed: int = 7, prev: dict | None = Non
     rng = np.random.default_rng(seed)
     nonsq = rng.random(n) < p["nonsquamous"]
     histology = np.where(nonsq, "nonsquamous", "squamous")
-    stage = np.where(rng.random(n) < p["stage_iv_given_advanced"], "IV", "III")
+    stages = list(p["stage"])
+    stage = np.array(stages)[rng.choice(len(stages), size=n, p=[p["stage"][k] for k in stages])]
 
     # Driver alterations are (approximately) mutually exclusive: draw one category.
     drivers = ["egfr", "alk", "ros1", "kras_g12c", "met", "her2"]
@@ -44,6 +47,8 @@ def synthetic_population(n: int = 50_000, seed: int = 7, prev: dict | None = Non
     pop: dict[str, np.ndarray] = {d: (cat == i) & nonsq for i, d in enumerate(drivers)}
     # Squamous tumors rarely carry targetable drivers; a small residual rate keeps overlaps nonzero.
     pop["egfr"] |= (~nonsq) & (rng.random(n) < 0.02)
+    driver = pop["egfr"] | pop["alk"] | pop["ros1"]
+    pop["never_smoker"] = rng.random(n) < np.where(driver, p["never_smoker_given_driver"], p["never_smoker"])
 
     u = rng.random(n)
     pdl1 = np.where(u < p["pdl1_ge50"], rng.integers(50, 101, n),

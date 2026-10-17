@@ -1,6 +1,9 @@
 """Concord HTTP API.
 
     uvicorn concord.api.main:app --reload --port 8000
+
+Every analysis endpoint takes the same scenario parameters (service.Params) either as a
+JSON body (POST /api/clear) or as query parameters (GET endpoints).
 """
 
 from __future__ import annotations
@@ -8,27 +11,51 @@ from __future__ import annotations
 import json
 import sqlite3
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from concord import service
+from concord.analysis.robustness import path_for
 from concord.compiler.eligibility import eligible_fraction, extract_criteria
 from concord.compiler.protocol import demo_protocol
 from concord.paths import DB_PATH, RAW_DIR
 from concord.ratecard import medicare
 
-app = FastAPI(title="Concord", version="0.1.0",
+app = FastAPI(title="Concord", version="0.2.0",
               description="Clearing mechanism for clinical-trial enrollment capacity (HackHarvard 2026)")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
-def _params(region: str, activation_lag: float, overlap_scale: float, capacity_scale: float,
-            max_trials: int | None) -> service.Params:
-    if region not in service.REGIONS:
-        raise HTTPException(400, f"unknown region {region}; one of {list(service.REGIONS)}")
-    return service.Params(region=region, activation_lag=activation_lag, overlap_scale=overlap_scale,
-                          capacity_scale=capacity_scale, max_trials=max_trials)
+class Scenario(BaseModel):
+    region: str = "US-Northeast"
+    as_of: str | None = None
+    sponsor: str | None = None
+    beta: float | None = None
+    low_history: str = "model"
+    universe: str = "registered"
+    activation_lag: float = 0.0
+    overlap_scale: float = 1.0
+    capacity_scale: float = 1.0
+    max_trials: int | None = None
+
+    def params(self) -> service.Params:
+        if self.region not in service.REGIONS:
+            raise HTTPException(400, f"unknown region {self.region}; one of {list(service.REGIONS)}")
+        if self.low_history not in ("model", "prior", "exclude"):
+            raise HTTPException(400, "low_history must be model | prior | exclude")
+        if self.universe not in ("registered", "history"):
+            raise HTTPException(400, "universe must be registered | history")
+        return service.Params(**self.model_dump())
+
+
+def scenario_q(region: str = "US-Northeast", as_of: str | None = None, sponsor: str | None = None,
+               beta: float | None = None, low_history: str = "model", universe: str = "registered",
+               activation_lag: float = 0.0, overlap_scale: float = 1.0, capacity_scale: float = 1.0,
+               max_trials: int | None = None) -> Scenario:
+    return Scenario(region=region, as_of=as_of, sponsor=sponsor, beta=beta, low_history=low_history,
+                    universe=universe, activation_lag=activation_lag, overlap_scale=overlap_scale,
+                    capacity_scale=capacity_scale, max_trials=max_trials)
 
 
 def _clear(p: service.Params) -> dict:
@@ -36,14 +63,18 @@ def _clear(p: service.Params) -> dict:
         return service.clear(p)
     except FileNotFoundError as e:
         raise HTTPException(503, str(e))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
 
 
-class ClearRequest(BaseModel):
-    region: str = "US-Northeast"
-    activation_lag: float = 6.0
-    overlap_scale: float = 1.0
-    capacity_scale: float = 1.0
-    max_trials: int | None = None
+def _meta() -> dict:
+    con = sqlite3.connect(DB_PATH)
+    try:
+        return {k: json.loads(v) for k, v in con.execute("SELECT key, value FROM meta")}
+    except sqlite3.OperationalError:
+        return {}
+    finally:
+        con.close()
 
 
 @app.get("/api/health")
@@ -53,7 +84,7 @@ def health() -> dict:
 
 @app.get("/api/status")
 def status() -> dict:
-    """Crawl and model build status, plus the backtest."""
+    """Crawl and model build status, backtest, congestion test."""
     crawls = {}
     for d in RAW_DIR.glob("*/_state.json") if RAW_DIR.exists() else []:
         crawls[d.parent.name] = json.loads(d.read_text())
@@ -62,12 +93,18 @@ def status() -> dict:
         con = sqlite3.connect(DB_PATH)
         out["counts"] = {t: con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
                          for t in ("trials", "sites", "trial_sites")}
-        try:
-            out["model"] = {k: json.loads(v) for k, v in con.execute("SELECT key, value FROM meta")}
-        except sqlite3.OperationalError:
-            out["model"] = None
         con.close()
+        out["model"] = _meta()
     return out
+
+
+@app.get("/api/congestion-test")
+def congestion_test() -> dict:
+    """Does competition at the same sites slow enrollment? (concord.analysis.congestion)"""
+    m = _meta().get("congestion_test")
+    if not m:
+        raise HTTPException(503, "run python -m concord.analysis.congestion")
+    return m
 
 
 @app.get("/api/regions")
@@ -75,27 +112,52 @@ def regions() -> list[str]:
     return list(service.REGIONS)
 
 
+@app.get("/api/sponsors")
+def sponsors(region: str = "US", as_of: str | None = None, min_trials: int = 2) -> list[dict]:
+    """Sponsors with several concurrent industry Phase II/III lung trials (portfolio-clearing candidates)."""
+    con = sqlite3.connect(DB_PATH)
+    when = ("t.start_date <= ? AND COALESCE(t.primary_completion_date, '2100-01-01') > ?" if as_of
+            else "t.status='RECRUITING'")
+    rows = con.execute(f"""SELECT t.sponsor, COUNT(DISTINCT t.nct_id) FROM trials t WHERE {service.BASE_FILTER}
+                           AND {when} GROUP BY t.sponsor HAVING COUNT(DISTINCT t.nct_id) >= ?
+                           ORDER BY 2 DESC LIMIT 40""", ([as_of, as_of] if as_of else []) + [min_trials]).fetchall()
+    con.close()
+    return [{"sponsor": s, "trials": n} for s, n in rows]
+
+
 @app.post("/api/clear")
-def clear(req: ClearRequest) -> dict:
-    """Run actual vs independent vs coordinated allocation for a region."""
-    p = _params(req.region, req.activation_lag, req.overlap_scale, req.capacity_scale, req.max_trials)
-    return _clear(p)["result"]
+def clear(req: Scenario) -> dict:
+    """Registered vs independent vs coordinated (free and no-loser) allocations."""
+    return _clear(req.params())["result"]
+
+
+@app.get("/api/robustness")
+def robustness(sc: Scenario = Depends(scenario_q), compute: bool = False) -> dict:
+    """Headline under each congestion elasticity x site-rate rule. Served from the precomputed file
+    (python -m concord.analysis.robustness); compute=true runs it now (minutes)."""
+    p = sc.params()
+    path = path_for(p)
+    if path.exists() and not compute:
+        return json.loads(path.read_text())
+    if not compute:
+        raise HTTPException(404, f"not precomputed; run python -m concord.analysis.robustness --region {p.region}"
+                                 + (f" --sponsor '{p.sponsor}'" if p.sponsor else "")
+                                 + (f" --as-of {p.as_of}" if p.as_of else "") + " or pass compute=true")
+    return service.robustness(p)
 
 
 @app.get("/api/trials/{nct_id}/price-tags")
-def price_tags(nct_id: str, region: str = "US-Northeast", activation_lag: float = 6.0, overlap_scale: float = 1.0,
-               capacity_scale: float = 1.0, max_trials: int | None = None) -> dict:
-    p = _params(region, activation_lag, overlap_scale, capacity_scale, max_trials)
+def price_tags(nct_id: str, sc: Scenario = Depends(scenario_q)) -> dict:
+    p = sc.params()
     run = _clear(p)
     if nct_id not in run["built"].inst.trial_ids:
-        raise HTTPException(404, f"{nct_id} is not in the {region} instance")
+        raise HTTPException(404, f"{nct_id} is not in this instance")
     return service.price_tags(p, nct_id)
 
 
 @app.get("/api/slot-values")
-def slot_values(region: str = "US-Northeast", activation_lag: float = 6.0, overlap_scale: float = 1.0,
-                capacity_scale: float = 1.0, max_trials: int | None = None, top: int = Query(12, le=40)) -> list[dict]:
-    p = _params(region, activation_lag, overlap_scale, capacity_scale, max_trials)
+def slot_values(sc: Scenario = Depends(scenario_q), top: int = Query(12, le=40)) -> list[dict]:
+    p = sc.params()
     _clear(p)
     return service.slot_values(p, top=top)
 
@@ -107,11 +169,10 @@ def protocol() -> dict:
 
 
 @app.get("/api/termsheet")
-def termsheet(site_id: str, nct_id: str | None = None, region: str = "US-Northeast", multiplier: float = 1.0,
-              activation_lag: float = 6.0, overlap_scale: float = 1.0, capacity_scale: float = 1.0,
-              max_trials: int | None = None) -> dict:
+def termsheet(site_id: str, nct_id: str | None = None, multiplier: float = 1.0,
+              sc: Scenario = Depends(scenario_q)) -> dict:
     """Pre-cleared terms for a (demo protocol, site) match. If nct_id is given, expected patients
-    come from that trial's cleared allocation at the site."""
+    come from that trial's share of enrollment at the site in the headline (no-loser) allocation."""
     con = sqlite3.connect(DB_PATH)
     con.row_factory = sqlite3.Row
     row = con.execute("SELECT * FROM sites WHERE site_id=?", (site_id,)).fetchone()
@@ -121,17 +182,17 @@ def termsheet(site_id: str, nct_id: str | None = None, region: str = "US-Northea
     site = dict(row)
     expected, expected_source = 10.0, "placeholder: no cleared match given"
     if nct_id:
-        run = _clear(_params(region, activation_lag, overlap_scale, capacity_scale, max_trials))
-        inst, x = run["built"].inst, run["x_coord"]
+        run = _clear(sc.params())
+        inst, x = run["built"].inst, run["x"]["coord"]
         if nct_id in inst.trial_ids and site_id in inst.site_ids:
             s, p = inst.site_ids.index(site_id), inst.trial_ids.index(nct_id)
             if x[s, p]:
                 from concord.allocator.core import State
                 st = State(inst, x)
-                share = (inst.base[s, p] / (1 + st.load[s, p])) / max(st.R[p], 1e-12)
-                expected, expected_source = float(inst.N[p] * share), "cleared allocation"
+                share = inst.base[s, p] * inst.g(st.load[s, p]) / max(st.R[p], 1e-12)
+                expected, expected_source = float(inst.N[p] * share), "headline allocation"
             else:
-                expected_source = "placeholder: pair not in the cleared allocation"
+                expected_source = "placeholder: pair not in the headline allocation"
     return {**medicare.term_sheet(demo_protocol(), site, expected, multiplier), "expected_source": expected_source}
 
 

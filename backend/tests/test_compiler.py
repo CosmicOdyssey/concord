@@ -32,8 +32,10 @@ def test_driver_requirements_are_or_combined():
 
 def test_demo_protocol_budget_only_prices_research_nodes():
     proto = demo_protocol()
-    b = per_patient_budget(proto, "Massachusetts", "United States")
+    b = per_patient_budget(proto, "Massachusetts", "United States", city="Boston")
     assert b["procedure_lines"] and all(n.coverage == "research" for n in proto.nodes
                                         if n.id in {l["node"] for l in b["procedure_lines"]})
-    assert b["locality_factor"] > 1.0
+    if b["conversion_factor"]:  # real CMS PFS loaded (data/ratecard.json)
+        assert b["locality"] == "METROPOLITAN BOSTON"
+        assert any(l["schedule"] == "PFS" and l["verified"] and l["amount"] > l["national"] for l in b["procedure_lines"])
     assert not b["unpriced_codes"]
