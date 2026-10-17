@@ -78,11 +78,37 @@ class Instance:
         return len(self.f)
 
 
+class Budget:
+    """Deterministic work budget for the solver: counts objective evaluations (delta_toggle calls;
+    an exchange attempt counts 4). The search stops when the count reaches `evals`, so the result
+    depends only on the instance, the seed and the budget, not on CPU load. A wall-clock cap is kept
+    only as a safety net; if it is ever hit, the solve is reported as non-deterministic."""
+
+    def __init__(self, evals: int | None = None, seconds: float = 600.0):
+        self.limit = evals
+        self.n = 0
+        self.t0 = time.monotonic()
+        self.deadline = self.t0 + seconds
+        self.hit_time = False
+
+    def spend(self, k: int = 1) -> None:
+        self.n += k
+
+    def done(self) -> bool:
+        if self.limit is not None and self.n >= self.limit:
+            return True
+        if time.monotonic() >= self.deadline:
+            self.hit_time = True
+            return True
+        return False
+
+
 class State:
     """Assignment x with incrementally maintained loads, rates and T."""
 
-    def __init__(self, inst: Instance, x: np.ndarray | None = None):
+    def __init__(self, inst: Instance, x: np.ndarray | None = None, budget: Budget | None = None):
         self.inst = inst
+        self.budget = budget
         self.x = np.zeros((inst.S, inst.P), dtype=bool)
         self.load = np.zeros((inst.S, inst.P))
         self.R = np.zeros(inst.P)
@@ -116,6 +142,8 @@ class State:
         """Objective change if x[s, p] were flipped, without mutating state. With check_caps,
         +inf if afterwards p is above its cap or another trial is pushed further above its cap
         (no-loser constraint). Compound moves check only their final step."""
+        if self.budget is not None:
+            self.budget.spend()
         inst, sign = self.inst, (-1.0 if self.x[s, p] else 1.0)
         others = np.flatnonzero(self.x[s])
         others = others[others != p]
@@ -215,10 +243,10 @@ def independent(inst: Instance, order: list[int] | None = None, respect_capacity
     return x
 
 
-def _greedy(st: State, cands: list[np.ndarray], K: int, deadline: float) -> None:
+def _greedy(st: State, cands: list[np.ndarray], K: int, budget: Budget) -> None:
     """Worst-off trial takes the site with the best marginal objective gain, until no gain."""
     inst = st.inst
-    while time.monotonic() < deadline:
+    while not budget.done():
         best = (0.0, -1, -1)
         for p in np.argsort(-(inst.w * st.T)):
             if st.cnt[p] >= inst.n_max[p] or not inst.movable[p]:
@@ -234,11 +262,11 @@ def _greedy(st: State, cands: list[np.ndarray], K: int, deadline: float) -> None
         st.toggle(best[1], best[2])
 
 
-def _local_search(st: State, cands: list[np.ndarray], K: int, deadline: float, rng,
+def _local_search(st: State, cands: list[np.ndarray], K: int, budget: Budget, rng,
                   max_passes: int | None = None) -> tuple[int, int]:
     """First-improvement moves: drop a site that only adds congestion, or move it elsewhere."""
     inst, moves, improved, passes = st.inst, 0, 0, 0
-    while time.monotonic() < deadline and (max_passes is None or passes < max_passes):
+    while not budget.done() and (max_passes is None or passes < max_passes):
         passes += 1
         improved_pass = False
         for p in rng.permutation(np.flatnonzero(inst.movable)):
@@ -259,14 +287,14 @@ def _local_search(st: State, cands: list[np.ndarray], K: int, deadline: float, r
                 st.toggle(best_s if best_s >= 0 else s, p)
                 if best_s >= 0:
                     improved += 1; improved_pass = True
-            if time.monotonic() >= deadline:
+            if budget.done():
                 break
         if not improved_pass:
             break
     return moves, improved
 
 
-def _exchange(st: State, deadline: float, partners: int = 12) -> tuple[int, int]:
+def _exchange(st: State, budget: Budget, partners: int = 12) -> tuple[int, int]:
     """Two trials trade sites (p: s -> s2, q: s2 -> s). Single-trial moves cannot find these
     when every trial sits at its no-loser cap, since each half alone makes someone worse off.
     Partners are the trials p overlaps most with (where relief from congestion is largest)."""
@@ -282,6 +310,7 @@ def _exchange(st: State, deadline: float, partners: int = 12) -> tuple[int, int]
                     if not st.x[s, p] or st.x[s, q]:
                         break  # an earlier exchange already moved p or q
                     tries += 1
+                    budget.spend(4)
                     before = st.objective()
                     steps = [(s, p), (s2, q), (s2, p), (s, q)]
                     for a, b in steps:
@@ -291,37 +320,37 @@ def _exchange(st: State, deadline: float, partners: int = 12) -> tuple[int, int]
                         break
                     for a, b in reversed(steps):
                         st.toggle(a, b)
-            if time.monotonic() >= deadline:
+            if budget.done():
                 return tries, done
     return tries, done
 
 
-def coordinate(inst: Instance, x0: np.ndarray | None = None, K: int = 60, time_limit: float = 10.0,
-               seed: int = 0, patience: int = 40, kick: float = 0.2,
+def coordinate(inst: Instance, x0: np.ndarray | None = None, K: int = 60, eval_budget: int | None = None,
+               time_limit: float = 600.0, seed: int = 0, patience: int = 40, kick: float = 0.2,
                max_passes: int | None = None) -> tuple[np.ndarray, dict]:
-    """Greedy + local search, then iterated local search: knock out a random `kick` share of
-    assignments, repair greedily, re-run local search, keep the result if it is better.
-    Stops at `time_limit` or after `patience` kicks without improvement. For counterfactual
-    comparisons pass max_passes and patience=0 so the result does not depend on wall-clock time."""
-    t0 = time.monotonic()
-    deadline = t0 + time_limit
+    """Greedy + local search + pairwise exchanges, then iterated local search: knock out a random
+    `kick` share of assignments, repair greedily, re-run local search, keep the result if it is
+    better. Stops after `patience` kicks without improvement or when `eval_budget` objective
+    evaluations are spent (see Budget), so the result is deterministic for a given seed and budget.
+    `time_limit` is only a safety cap; "deterministic" in the stats says whether it was hit."""
+    budget = Budget(eval_budget, time_limit)
     rng = np.random.default_rng(seed)
     cands = candidate_lists(inst)
-    st = State(inst, x0)
+    st = State(inst, x0, budget)
     if not st.feasible_caps():
         raise ValueError("start allocation violates caps; start from the baseline the caps came from")
-    _greedy(st, cands, K, deadline)
+    _greedy(st, cands, K, budget)
     greedy_obj = st.objective()
-    moves, improved = _local_search(st, cands, K, deadline, rng, max_passes)
-    ex_tries, ex_done = (0, 0) if max_passes is not None else _exchange(st, deadline)
+    moves, improved = _local_search(st, cands, K, budget, rng, max_passes)
+    ex_tries, ex_done = (0, 0) if max_passes is not None else _exchange(st, budget)
     if ex_done:
-        m, i = _local_search(st, cands, K, deadline, rng, max_passes)
+        m, i = _local_search(st, cands, K, budget, rng, max_passes)
         moves += m; improved += i
     best_x, best_obj = st.x.copy(), st.objective()
 
     kicks = stale = 0
-    while time.monotonic() < deadline and stale < patience:
-        trial = State(inst, best_x)
+    while not budget.done() and stale < patience:
+        trial = State(inst, best_x, budget)
         on = np.argwhere(trial.x & inst.movable[None, :])
         if not len(on):
             break
@@ -333,8 +362,8 @@ def coordinate(inst: Instance, x0: np.ndarray | None = None, K: int = 60, time_l
         opts = [s for s in _open(trial, cands[p], p, K)]
         if opts:
             trial.toggle(int(rng.choice(opts)), p)
-        _greedy(trial, cands, K, deadline)
-        m, i = _local_search(trial, cands, K, deadline, rng)
+        _greedy(trial, cands, K, budget)
+        m, i = _local_search(trial, cands, K, budget, rng)
         moves += m; kicks += 1
         if trial.objective() < best_obj - 1e-9 and trial.feasible_caps():
             best_x, best_obj, stale = trial.x.copy(), trial.objective(), 0
@@ -349,8 +378,12 @@ def coordinate(inst: Instance, x0: np.ndarray | None = None, K: int = 60, time_l
         "kicks": kicks,
         "exchanges_tried": ex_tries,
         "exchanges_made": ex_done,
-        "seconds": round(time.monotonic() - t0, 3),
-        "hit_time_limit": time.monotonic() >= deadline,
+        "evals": budget.n,
+        "eval_budget": eval_budget,
+        "hit_eval_budget": eval_budget is not None and budget.n >= eval_budget,
+        "seconds": round(time.monotonic() - budget.t0, 3),
+        "hit_time_limit": budget.hit_time,
+        "deterministic": not budget.hit_time,
     }
 
 
