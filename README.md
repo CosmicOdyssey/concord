@@ -197,13 +197,16 @@ sponsor's trials held fixed. Eligibility is hand-encoded (`compiler/overrides.py
 
 ## Known issues
 
-- **Eligibility parsing.** It is rule-based; only the Regeneron portfolio is hand-encoded. Basket and
-  cohort trials are parsed as if every cohort applied to everyone.
+- **Eligibility parsing.** Rule-based for history trials. The 146 US-Northeast demo trials and Regeneron's
+  5 are hand-encoded (`compiler/overrides_demo.json`, `compiler/overrides.py`). 34 demo trials need a
+  biomarker the synthetic population cannot represent (e.g. KRAS G12D, RET, MTAP loss); those requirements
+  are listed per trial, not modeled.
 - **Price tags and slot values are local.** They are warm-start re-solves, compared against the same
   procedure on the unchanged market.
 - **Today's snapshot runs long.** It over-represents slow trials (length-biased sampling), so its
   absolute times are high (median 41 months). Past-date snapshots are the calibration check.
-- **Academic-center flag.** The regex misses some centers (e.g. Dartmouth-Hitchcock).
+- **Academic-center flag.** Widened to NCI-designated and university centers (404 more U.S. sites,
+  including Dartmouth-Hitchcock). It also matches satellites carrying a center's name, as before.
 
 ## Next
 
@@ -215,20 +218,45 @@ sponsor's trials held fixed. Eligibility is hand-encoded (`compiler/overrides.py
 ## Checks in progress (17 Oct)
 
 Pre-registered checks running in parallel worktrees, each committing its method before its results,
-with adversarial audits. A result enters this README only after its audit.
+with adversarial audits. Numbers below are provisional until the final rerun (last row).
 
 | task | status | result so far |
 |---|---|---|
 | A. optimizer's curse holdout (choose with half the history, score with the other) | audit found issues; being fixed | the held-out number becomes the headline |
-| B. where the joint optimum comes from (capacity settings, beta = 0) | fixed after audit; re-audit running | |
-| C. transfer surplus of the joint optimum | waits for B | |
+| B. where the joint optimum comes from (capacity settings, beta = 0) | merged; one audit gap left (time split not run by B) | see below |
+| C. transfer surplus of the joint optimum | running | |
 | D. browser QA | merged | 2,576 of 2,580 on-screen numbers match the API; the other 4 were backend inconsistencies, now fixed. 7 label and layout defects fixed. No phone-width breakage. Report: `docs/qa/2026-10-17-browser-qa.md` |
-| E. hand-encoded eligibility for the 146 demo trials, basket and cohort labels, academic flag | encoding and verification done; integration next | basket and multi-cohort trials will be held out of headline numbers |
+| E. hand-encoded eligibility, design labels, academic flag | merged | 146 demo trials: 63 single population, 62 basket, 21 multi-cohort. Basket and multi-cohort trials are held out of headline numbers: US-Northeast keeps 47 movable trials (was 103) |
 | F. attenuation check of beta | merged | see section 1 |
+| Congestion re-estimate: predetermined "experienced site", two-way clustered SEs, beta by parser version | running | |
+| UI: ">= 1 month" threshold for share faster; beta labels | running | |
+| Deterministic solver | done (`allocator/core.py` Budget); default budget being calibrated by objective convergence | |
+| Final rerun of sections 3-4 at the current beta, deterministic solver, both splits | after A, B and the congestion re-estimate | held-out numbers become the headline |
+
+### B. Where the joint optimum's gain comes from (provisional)
+
+US-Northeast, old beta 0.026, B's own fixed-effort solver, before E's design exclusions. Held-out =
+geometric mean of both directions. The time-split column comes from B's auditor running B's code.
+
+| | in-sample | held-out, alternating split | held-out, time split |
+|---|---|---|---|
+| joint optimum vs best response | 1.57x (42% slower) | 1.38x (44% slower) | **0.98x** |
+| same, unlimited capacity | 1.02x | 0.96x | 0.77x |
+| same, beta = 0 | 1.56x | 1.42x | |
+| no-loser vs registered | 1.27x | 1.13x (22% of trials slower) | 1.03x |
+
+- **Capacity, not congestion.** The joint optimum's gain is about allocating scarce slots at sites
+  with long track records. It disappears with unlimited capacity and barely moves at beta = 0.
+- **Fragile.** About 240 extra slots at 59 high-capacity sites cut the held-out gain from 1.38x to 1.05x.
+- **It doesn't hold over time.** Choosing with older trials and scoring with newer ones gives 0.98x.
+- **"No loser" doesn't hold out of sample.** Scored with held-out rates, 22% of trials end up slower
+  than with their registered sites.
+- **More search helps in-sample only.** More solver effort raised the in-sample headline but lowered the
+  held-out one: the optimizer's curse acting through search.
 
 Two findings from D that the final numbers must handle:
 
-- **Solver budget.** The solver stops at a 6 s limit, so the in-sample headline depends on CPU load:
-  1.32x live vs 1.28x in the grid for US-Northeast.
+- **Solver budget.** The solver stopped at a 6 s limit, so the in-sample headline depended on CPU load:
+  1.32x live vs 1.28x in the grid for US-Northeast. Fixed: the solver now runs to a fixed evaluation budget.
 - **Near-ties.** "Share faster" counted near-ties. The API now also reports a material threshold
   (>= 1 month): "91% faster" is 62% at >= 1 month.
