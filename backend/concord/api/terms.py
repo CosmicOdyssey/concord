@@ -6,6 +6,8 @@ Every pricing endpoint takes the same query parameters:
   multiplier   fraction of Medicare applied to coded items (1.0 = 100%)
   overrides    JSON object {node_id: "routine" | "research"} (reviewer overrides)
   standard     JSON object {item_id: amount} (edits to the proposed standard schedule; overhead as a fraction)
+budget and compare also take band_lo / band_hi (fractions of Medicare, default 1.0 / 1.5; an assumption): the
+low-high range on coded lines and totals (concord.anchoring).
 """
 
 from __future__ import annotations
@@ -61,18 +63,18 @@ def sites(nct: str) -> dict:
 
 @router.get("/{nct}/budget")
 def budget(nct: str, site_id: str, multiplier: float = 1.0, overrides: str | None = None,
-           standard: str | None = None) -> dict:
-    """Per-visit payments at one site, every line with provenance."""
+           standard: str | None = None, band_lo: float = 1.0, band_hi: float = 1.5) -> dict:
+    """Per-visit payments at one site, every line with provenance, anchoring and a low-high band."""
     return _call(terms.budget, nct.upper(), site_id, multiplier, _json_map(overrides, "overrides"),
-                 _json_map(standard, "standard"))
+                 _json_map(standard, "standard"), band_lo, band_hi)
 
 
 @router.get("/{nct}/compare")
 def compare(nct: str, site_a: str, site_b: str, multiplier: float = 1.0, overrides: str | None = None,
-            standard: str | None = None) -> dict:
+            standard: str | None = None, band_lo: float = 1.0, band_hi: float = 1.5) -> dict:
     """The same protocol at two sites; every difference decomposed into GPCI differences."""
     return _call(terms.compare, nct.upper(), site_a, site_b, multiplier, _json_map(overrides, "overrides"),
-                 _json_map(standard, "standard"))
+                 _json_map(standard, "standard"), band_lo, band_hi)
 
 
 def _sheet(nct: str, site_id: str, multiplier: float, overrides: str | None, standard: str | None,
