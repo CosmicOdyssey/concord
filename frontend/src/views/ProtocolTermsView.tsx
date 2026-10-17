@@ -728,7 +728,7 @@ function Step({
 
 // ====================================================================== 1. protocol
 
-/** "two first-line NSCLC chemo-immunotherapy trials …, and one outside lung cancer (geographic atrophy (eye))". */
+/** "two first-line NSCLC chemo-immunotherapy trials …, and one outside lung cancer, for geographic atrophy (eye)". */
 function trialPickerText(list: TrialCard[]): string {
   const lung = list.filter((t) => !t.area)
   const other = list.filter((t) => !!t.area)
@@ -736,7 +736,7 @@ function trialPickerText(list: TrialCard[]): string {
   if (lung.length) parts.push(`${countWord(lung.length)} first-line NSCLC chemo-immunotherapy trials with every-3-week dosing in the registry`)
   if (other.length) {
     const conds = other.map((t) => (t.condition ?? '').toLowerCase()).filter(Boolean)
-    parts.push(`${countWord(other.length)} outside lung cancer${conds.length ? ` (${conds.join(', ')})` : ''}`)
+    parts.push(`${countWord(other.length)} outside lung cancer${conds.length ? `, for ${conds.join(', ')}` : ''}`)
   }
   return parts.join(', and ')
 }
