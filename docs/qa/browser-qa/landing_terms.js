@@ -199,6 +199,13 @@ async function settle(page) {
         active: document.querySelector('nav.tabs [aria-selected="true"] .tab-label')?.innerText.trim(),
       }))
       check('primary action opens Protocol to terms', /^#terms-flow\b/.test(app.hash) && app.active === 'Protocol to terms', app)
+      // Protocol to terms shows one step at a time (tabs): the landing link opens step 1, Protocol.
+      await page.waitForSelector('#tf-tab-protocol', { timeout: 60000 })
+      const steps = await page.evaluate(() => ({
+        selected: document.querySelector('nav.tf-flow [aria-selected="true"]')?.id,
+        shown: [...document.querySelectorAll('.tf [role=tabpanel]')].filter((p) => !p.hidden).map((p) => p.id),
+      }))
+      check('landing link opens Terms at step 1 (Protocol tab)', steps.selected === 'tf-tab-protocol' && steps.shown.join() === 'tf-step-1', steps)
       check('app tab order', JSON.stringify(app.tabs) === JSON.stringify(TABS), app.tabs)
       check('Financial stays out of the main navigation', !app.tabs.some((t) => /Financial/i.test(t)), app.tabs)
       check('no page or console errors (interactions)', page.__errors.length === 0, page.__errors.slice(0, 3))

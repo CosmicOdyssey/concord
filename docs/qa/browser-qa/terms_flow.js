@@ -7,7 +7,7 @@
 // Usage (NODE_PATH must reach puppeteer-core): node terms_flow.js [baseUrl] [outDir]
 const fs = require('fs')
 const path = require('path')
-const { launch, sleep, layoutCheck } = require('./lib')
+const { launch, sleep, layoutCheck, showStep } = require('./lib')
 
 const BASE = process.argv[2] || 'http://localhost:5213'
 const OUT = process.argv[3] || 'C:/Users/micha/Projects/concord/data/work/R/terms'
@@ -106,7 +106,24 @@ async function ready(page) {
           DISCLAIMER,
           ILLUSTRATIVE,
         )
-        const lay = await layoutCheck(page)
+        // One step at a time (tabs): choose each step in the step nav; read its text, check its layout, capture it. The
+        // grid (step 2) and the standard schedule (step 3) are measured while their step is on show.
+        const shownVisible = (sel) =>
+          page.evaluate((sel) => {
+            const el = document.querySelector(sel)
+            return !!el && !el.closest('details:not([open])') && el.getBoundingClientRect().height > 0
+          }, sel)
+        r.main = ''
+        const lays = []
+        for (let n = 1; n <= 6; n++) {
+          await showStep(page, n)
+          r.main += ' ' + (await page.evaluate(() => document.querySelector('main')?.innerText ?? ''))
+          lays.push(await layoutCheck(page))
+          if (n === 2) r.gridVisible = await shownVisible('.tf-grid')
+          if (n === 3) r.stdVisible = await shownVisible('.tf-std')
+          if (n > 1) await page.screenshot({ path: path.join(OUT, `terms_${name}_step${n}.png`), fullPage: true })
+        }
+        const lay = { overflow: lays.some((l) => l.overflow), offenders: lays.flatMap((l) => l.offenders) }
         log.runs[name] = { ...r, main: undefined, overflow: lay.overflow, offenders: lay.offenders.slice(0, 5) }
         check(`${name} density`, r.density === density, r.density)
         check(`${name} theme`, r.theme === theme, r.theme)
@@ -156,6 +173,7 @@ async function ready(page) {
     const page = await open('hover', 1440, { density: 'simple' })
     const openCard = () => page.evaluate(() => [...document.querySelectorAll('.hc-card')].find((c) => !c.hidden)?.innerText ?? '')
     // hover a visit column: its line items
+    await showStep(page, 3)
     const col = await page.$('#tf-step-3 .tf-vcol:nth-child(8)')
     await col.hover()
     await sleep(500)
@@ -164,6 +182,7 @@ async function ready(page) {
     await page.mouse.move(5, 5)
     await sleep(600)
     // keyboard focus a rule title in the coverage step
+    await showStep(page, 2)
     await page.evaluate(() => document.querySelector('#tf-step-2 .tf-rules .hc-trigger')?.scrollIntoView({ block: 'center' }))
     // A key press first, so the focus that follows counts as keyboard focus (:focus-visible).
     await page.keyboard.press('Shift')
@@ -179,6 +198,7 @@ async function ready(page) {
   }
   {
     const page = await open('tap', 390, { density: 'simple', touch: true })
+    await showStep(page, 3)
     const btn = await page.$('#tf-step-3 .tf-locline .hc-info')
     await btn.evaluate((b) => b.scrollIntoView({ block: 'center' }))
     await sleep(300)
@@ -192,13 +212,20 @@ async function ready(page) {
     // terms) are exempt; the "i" buttons have a 44 px hit area of their own (::after).
     await page.evaluate(() => document.querySelectorAll('.tf details').forEach((d) => (d.open = true)))
     await sleep(300)
-    const targets = await page.evaluate(() => ({
-      coarse: matchMedia('(pointer: coarse)').matches,
-      small: [...document.querySelectorAll('.tf button, .tf a.btn, .tf select, .tf input:not([type="checkbox"]), .tf .tf-check, .tf summary')]
-        .filter((e) => e.getBoundingClientRect().height > 0)
-        .map((e) => ({ e: `${e.tagName}.${e.className}`.slice(0, 40), h: Math.round(e.getBoundingClientRect().height) }))
-        .filter((x) => x.h < 44 && !/hc-trigger|hc-info/.test(x.e)),
-    }))
+    // Every step in turn (one is on show at a time).
+    const targets = { coarse: false, small: [] }
+    for (let n = 1; n <= 6; n++) {
+      await showStep(page, n)
+      const t = await page.evaluate(() => ({
+        coarse: matchMedia('(pointer: coarse)').matches,
+        small: [...document.querySelectorAll('.tf button, .tf a.btn, .tf select, .tf input:not([type="checkbox"]), .tf .tf-check, .tf summary')]
+          .filter((e) => e.getBoundingClientRect().height > 0)
+          .map((e) => ({ e: `${e.tagName}.${e.className}`.slice(0, 40), h: Math.round(e.getBoundingClientRect().height) }))
+          .filter((x) => x.h < 44 && !/hc-trigger|hc-info/.test(x.e)),
+      }))
+      targets.coarse = t.coarse
+      targets.small.push(...t.small.map((x) => ({ ...x, step: n })))
+    }
     log.targets = { coarse: targets.coarse, small: targets.small.slice(0, 10) }
     if (targets.coarse) check('touch targets >= 44 px', targets.small.length === 0, JSON.stringify(targets.small.slice(0, 5)))
     await page.close()
@@ -210,6 +237,7 @@ async function ready(page) {
     const perParticipant = () => page.evaluate(() => document.querySelector('.tf-payer-sponsor .tf-payer-value')?.textContent)
     const before = await perParticipant()
     // reviewer override: open "Schedule grid and reviewer overrides", flip the week-18 CT chest to routine
+    await showStep(page, 2)
     await page.evaluate(() => {
       const d = document.querySelector('#tf-step-2 details.section-disclosure')
       d.open = true
@@ -226,6 +254,7 @@ async function ready(page) {
     // the featured line follows the selected item
     const featured = await page.evaluate(() => document.querySelector('.tf-featured')?.innerText ?? '')
     // multiplier 120%
+    await showStep(page, 3)
     const input = await page.$('.tf-mult-input input')
     await input.click({ clickCount: 3 })
     await input.type('120')
@@ -236,6 +265,7 @@ async function ready(page) {
     const mdHref = await page.evaluate(() => document.querySelector('.tf-sheet-actions a[download]')?.getAttribute('href'))
     const md = await (await fetch(BASE + mdHref)).text()
     // presets change both sites
+    await showStep(page, 4)
     const presetText = await page.evaluate(() => {
       const b = [...document.querySelectorAll('.tf-preset')][1]
       b?.click()
@@ -261,6 +291,7 @@ async function ready(page) {
     const page = await open('detailed-edit', 1440, { density: 'detailed' })
     const total = () => page.evaluate(() => document.querySelector('.tf-payer-sponsor .tf-payer-value')?.textContent)
     const before = await total()
+    await showStep(page, 3)
     const coord = await page.$('input[aria-label^="Coordinator time and data entry amount"]')
     await coord.click({ clickCount: 3 })
     await coord.type('200')
@@ -277,6 +308,7 @@ async function ready(page) {
     const lines = await page.evaluate(() => document.querySelectorAll('.tf-lines tbody tr').length)
     const formula = await page.evaluate(() => document.querySelector('.tf-cmp-tbl .tf-lines-row')?.innerText ?? '')
     await (await page.$('#tf-step-3')).screenshot({ path: path.join(OUT, 'terms_detailed_budget_1440.png') })
+    await showStep(page, 4)
     await (await page.$('#tf-step-4')).screenshot({ path: path.join(OUT, 'terms_detailed_compare_1440.png') })
     log.detailed = { before, after, reset, lines, formula: formula.slice(0, 160) }
     check('standard schedule edit changes the total', after !== before, `${before} -> ${after}`)
@@ -292,12 +324,28 @@ async function ready(page) {
     const sel = await page.evaluate(() => document.querySelector('.tf-trial-on a')?.textContent ?? '')
     check('deep link selects the trial', sel === NCT2, sel)
     await page.screenshot({ path: path.join(OUT, `terms_${NCT2}_1440.png`), fullPage: true })
-    // the step nav scrolls to a step and moves focus to its heading
+    // the step nav is a tab list: a click shows step 4 alone; Enter on its tab moves focus to the step's heading
     await page.evaluate(() => [...document.querySelectorAll('.tf-flow-btn')][3]?.click())
-    await sleep(1200)
-    const nav = await page.evaluate(() => ({ focus: document.activeElement?.closest('section')?.id, top: Math.round(document.getElementById('tf-step-4').getBoundingClientRect().top) }))
-    check('step nav focuses step 4', nav.focus === 'tf-step-4', JSON.stringify(nav))
-    check('step 4 clears the sticky header', nav.top >= 40 && nav.top < 140, JSON.stringify(nav))
+    await sleep(500)
+    const navClick = await page.evaluate(() => ({
+      shown: [...document.querySelectorAll('.tf [role=tabpanel]')].filter((p) => !p.hidden).map((p) => p.id),
+      selected: document.querySelector('nav.tf-flow [aria-selected="true"]')?.id,
+      hash: location.hash,
+    }))
+    check('step nav shows step 4 alone', navClick.shown.join() === 'tf-step-4' && navClick.selected === 'tf-tab-compare', JSON.stringify(navClick))
+    check('step nav writes the step in the hash', navClick.hash === `#terms-flow/${NCT2}/compare`, navClick.hash)
+    await page.keyboard.press('Shift')
+    await page.focus('#tf-tab-compare')
+    await page.keyboard.press('Enter')
+    await sleep(400)
+    const nav = await page.evaluate(() => ({
+      focus: document.activeElement?.closest('section')?.id,
+      tag: document.activeElement?.tagName,
+      top: Math.round(document.getElementById('tf-step-4').getBoundingClientRect().top),
+      navBottom: Math.round(document.querySelector('nav.tf-flow').getBoundingClientRect().bottom),
+    }))
+    check('step nav (Enter) focuses step 4 heading', nav.focus === 'tf-step-4' && nav.tag === 'H2', JSON.stringify(nav))
+    check('step 4 clears the sticky header and step nav', nav.top >= nav.navBottom && nav.top < 400, JSON.stringify(nav))
     // leaving the tab and coming back keeps the trial; the address bar carries it
     const tab = (label) =>
       page.evaluate((l) => {

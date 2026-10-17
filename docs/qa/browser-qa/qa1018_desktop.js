@@ -285,6 +285,9 @@ async function waitFor(page, fn, arg, timeout = 60000) {
     await Q.settle(page, 800)
     report.steps.c = { hash: await page.evaluate(() => location.hash) }
     await Q.snap(browser, page, '03-terms-top', { fullPage: false })
+    // One step at a time (tabs): choose each step in the step nav before it is read or captured. The schedule grid
+    // and the coverage list are step 2, budget 3, compare 4, term sheet 6 (the seven-step numbering is gone).
+    await Q.showStep(page, 2)
     await Q.snap(browser, await page.$('#tf-step-2'), '03a-terms-schedule-grid', { element: true })
 
     // One reviewer override: the C7 CT chest (rule R4, research) flipped to routine from the coverage list.
@@ -297,7 +300,7 @@ async function waitFor(page, fn, arg, timeout = 60000) {
       return before
     })
     report.steps.c.overrideChipBefore = flipped
-    await waitFor(page, () => /1 reviewer override/.test(document.querySelector('#tf-step-3 .tf-step-badge')?.innerText ?? ''))
+    await waitFor(page, () => /1 reviewer override/.test(document.querySelector('#tf-step-2 .tf-ovcount')?.innerText ?? ''))
     await waitFor(page, () => {
       const li = [...document.querySelectorAll('.tf-sheet-list li')].find((l) => l.innerText.startsWith('Reviewer overrides'))
       return li && /Reviewer overrides: 1/.test(li.innerText) && !document.querySelector('.tf-stale')
@@ -310,22 +313,25 @@ async function waitFor(page, fn, arg, timeout = 60000) {
     report.steps.c.overrideChipAfter = chipAfter
     ck('override chip flipped', 'C7 · insurance ✎', chipAfter)
     // Scroll the coverage step so the overridden row is in the shot; the full step is tall.
-    await Q.snap(browser, await page.$('#tf-step-3'), '04-terms-coverage-override', { element: true, maxH: 2600 })
+    await Q.snap(browser, await page.$('#tf-step-2'), '04-terms-coverage-override', { element: true, maxH: 2600 })
     // Grid cell shows the override too.
     await page.evaluate(() => document.querySelector('#tf-step-2').scrollIntoView({ block: 'start' }))
     const gridOv = await page.evaluate(() => [...document.querySelectorAll('.tf-grid button.tf-cell')].filter((b) => b.querySelector('.tf-ov-mark')).map((b) => b.title))
     report.steps.c.gridOverrides = gridOv
     ck('grid shows one override', 1, gridOv.length)
-    await Q.snap(browser, await page.$('#tf-step-4'), '05-terms-budget-site', { element: true, maxH: 2600 })
-    await Q.snap(browser, await page.$('#tf-step-6'), '06-terms-compare-two-sites', { element: true, maxH: 2600 })
-    await Q.snap(browser, await page.$('#tf-step-7'), '07-terms-termsheet', { element: true })
+    await Q.showStep(page, 3)
+    await Q.snap(browser, await page.$('#tf-step-3'), '05-terms-budget-site', { element: true, maxH: 2600 })
+    await Q.showStep(page, 4)
+    await Q.snap(browser, await page.$('#tf-step-4'), '06-terms-compare-two-sites', { element: true, maxH: 2600 })
+    await Q.showStep(page, 6)
+    await Q.snap(browser, await page.$('#tf-step-6'), '07-terms-termsheet', { element: true })
 
     const screen = await page.evaluate(() => {
       const t = (el) => (el ? el.innerText.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim() : null)
       const s2 = document.querySelector('#tf-step-2')
-      const s4 = document.querySelector('#tf-step-4')
-      const s6 = document.querySelector('#tf-step-6')
-      const s7 = document.querySelector('#tf-step-7')
+      const s4 = document.querySelector('#tf-step-3')
+      const s6 = document.querySelector('#tf-step-4')
+      const s7 = document.querySelector('#tf-step-6')
       return {
         trialCards: [...document.querySelectorAll('.tf-trial')].map(t),
         scheduleSub: t(s2.querySelector('.tf-step-sub')),
@@ -445,7 +451,7 @@ async function waitFor(page, fn, arg, timeout = 60000) {
     for (const f of fs.readdirSync(dl)) fs.unlinkSync(path.join(dl, f))
     const cdp = await page.createCDPSession()
     await cdp.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: dl.replace(/\//g, '\\') })
-    await page.click('#tf-step-7 a[download]')
+    await page.click('#tf-step-6 a[download]')
     let mdFile = null
     for (let i = 0; i < 60 && !mdFile; i++) {
       await Q.sleep(500)
@@ -474,7 +480,7 @@ async function waitFor(page, fn, arg, timeout = 60000) {
     // Print view (opens in a new tab).
     const [newTarget] = await Promise.all([
       browser.waitForTarget((t) => t.url().includes('termsheet.html'), { timeout: 30000 }),
-      page.click('#tf-step-7 a[target="_blank"]'),
+      page.click('#tf-step-6 a[target="_blank"]'),
     ])
     const pv = await newTarget.page()
     await pv.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 })

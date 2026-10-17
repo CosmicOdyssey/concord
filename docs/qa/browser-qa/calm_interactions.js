@@ -134,6 +134,9 @@ async function fresh(browser, { width = 1440, height = 900, touch = false } = {}
         ['#overlap/regeneron', 'Portfolio overlap'],
         ['#terms-flow', 'Protocol to terms'],
         ['#terms-flow/NCT05800015', 'Protocol to terms'],
+        // A step deep link opens Protocol to terms on that step (tabs, termsSteps.tsx).
+        ['#terms-flow/NCT05800015/compare', 'Protocol to terms', 'tf-tab-compare'],
+        ['#terms-flow/NCT05800015/term-sheet', 'Protocol to terms', 'tf-tab-term-sheet'],
         ['#site-scores', 'Site scores'],
         // Sponsor budget is out of the main navigation (no tab is selected) but #financial still opens it.
         ['#financial', 'hidden:Sponsor budget'],
@@ -145,10 +148,12 @@ async function fresh(browser, { width = 1440, height = 900, touch = false } = {}
         ['#nonsense', 'Findings'],
       ]
       const got = []
-      for (const [hash, want] of routes) {
+      for (const [hash, want, step] of routes) {
         await page.goto(`${BASE}/${hash}`, { waitUntil: 'domcontentloaded' })
         await sleep(900)
+        if (step) await page.waitForSelector(`#${step}`, { timeout: 30000 }).catch(() => {})
         const r = await page.evaluate(() => ({
+          step: document.querySelector('nav.tf-flow [aria-selected="true"]')?.id ?? null,
           landing: !!document.querySelector('.lp'),
           tab: document.querySelector('nav.tabs [aria-selected="true"] .tab-label')?.innerText ?? null,
           sub: document.querySelector('.rs-tabs [aria-selected="true"]')?.innerText ?? null,
@@ -162,7 +167,7 @@ async function fresh(browser, { width = 1440, height = 900, touch = false } = {}
               ? r.h1 === 'Component check'
               : want.startsWith('hidden:')
                 ? r.tab === null && r.h1 === want.slice(7) && !r.navLabels.includes(want.slice(7))
-                : r.tab === want
+                : r.tab === want && (!step || r.step === step)
         got.push({ hash, want, ...r, ok })
       }
       check('every route and deep link opens the right page', got.every((g) => g.ok), got.filter((g) => !g.ok).length ? got.filter((g) => !g.ok) : `${got.length} routes`)

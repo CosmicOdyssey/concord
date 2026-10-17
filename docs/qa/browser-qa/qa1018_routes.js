@@ -66,7 +66,9 @@ const wait = (page, fn, arg, timeout = 60000) => page.waitForFunction(fn, { time
     await wait(page, () => document.querySelector('.tf-trial-on') && document.querySelector('.tf-grid') && document.querySelectorAll('.tf-stats .stat-value').length >= 4, null, 90000)
     const on = await page.$eval('.tf-trial-on', (e) => e.innerText)
     const s = await state(page)
-    const sheet = await page.$eval('#tf-step-7', (e) => e.innerText).catch(() => '')
+    // One step at a time (tabs): the term sheet is step 6, chosen in the step nav.
+    await Q.showStep(page, 6).catch(() => {})
+    const sheet = await page.$eval('#tf-step-6', (e) => e.innerText).catch(() => '')
     rec(`#terms-flow/${nct} selects that trial`, s.tab === 'Protocol to terms' && on.includes(nct) && s.hash === `#terms-flow/${nct}`, { ...s, on: on.slice(0, 60) })
     await page.close()
   }
