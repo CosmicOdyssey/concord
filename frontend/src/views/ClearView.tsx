@@ -369,7 +369,7 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
             <h2>Where the gain comes from</h2>
             <p className="muted small">
               Five comparisons over the same {int(s.coord_vs_actual.trials)} trials. Ratio = total trial-months, baseline ÷
-              alternative. If “pure coordination” is near 1×, the headline gain comes from better site selection, which a
+              alternative. If “pure coordination” is near 1×, the in-sample gain comes from better site selection, which a
               single sponsor could make alone.
             </p>
             <DecompositionTable r={r} />
@@ -378,7 +378,8 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
                 {int(s.background_trials)} background trials are held at their registered sites and excluded from every number.
                 Under the joint optimum with losers allowed, {int(backgroundSlowerMaterial(r))} of them would be slower by{' '}
                 {atLeast(materialMonths(s.coord_free_vs_actual), true)} ({int(s.background_worse_under_coord_free)} by any
-                amount); the headline allocation caps every trial, background included, at its registered time.
+                amount); the capped allocation holds every trial, background included, at its registered time under the
+                same rates (in-sample only).
               </p>
             )}
           </div>

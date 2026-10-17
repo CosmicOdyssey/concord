@@ -65,7 +65,7 @@ export const ALLOC_LABEL: Record<AllocKey, string> = {
 export const ALLOC_HINT: Record<AllocKey, string> = {
   actual: 'The site lists sponsors registered on ClinicalTrials.gov',
   indep: 'Each trial picks its best sites, ignoring the others',
-  coord: 'Joint optimum with no trial slower than its registered sites (headline)',
+  coord: 'Joint optimum capped at registered times under the same rates (in-sample; not a guarantee)',
   coord_free: 'Joint optimum with no participation constraint: some trials may be slower',
   coord_nl_indep: 'Joint optimum with no trial slower than its own best response',
 }

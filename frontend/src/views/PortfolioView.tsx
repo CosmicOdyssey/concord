@@ -159,7 +159,8 @@ export default function PortfolioView({ clear, regions, form, setForm, onOpenTri
                   optimum with losers allowed, <strong>{int(backgroundSlowerMaterial(r))}</strong> of them would enroll more
                   slowly by {atLeast(materialMonths(r.summary.coord_free_vs_actual), true)} (
                   {int(r.summary.background_worse_under_coord_free)} by any amount) because this portfolio moves onto their
-                  sites. The headline allocation caps every trial, background included, at its registered time.
+                  sites. The capped allocation holds every trial, background included, at its registered time under the
+                  same rates (in-sample only).
                 </p>
               </div>
 

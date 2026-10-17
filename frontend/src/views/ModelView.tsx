@@ -510,7 +510,9 @@ function CongestionCard({ data, error }: { data: CongestionTest | null; error: s
             </p>
           )}
           <p className="note small">
-            Plain reading: within the same site, busy periods with overlapping competitors don’t measurably slow enrollment.
+            Plain reading: within the same site, at the resolution of public registry data, busy periods with overlapping
+            competitors slow enrollment a little at most. The full-sample estimate is not significant; at sites with ≥ 10
+            lung trials it is about 8.5% per doubling of overlapping load (a subset estimate, not the default).
             Across sites, busier sites are slower per trial
             {pooled && (
               <>

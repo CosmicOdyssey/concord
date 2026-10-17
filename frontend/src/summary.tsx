@@ -1,6 +1,6 @@
 import type { Assumptions, BetaInfo, CalibrationCheck, ClearResult, Comparison, ComparisonKey } from './api'
 import { Badge, Caveat, Stat } from './components'
-import { int, isNum, money, num, pct, times } from './format'
+import { int, isNum, num, pct, times } from './format'
 
 /** Material threshold (months) for "faster/slower": the API reports it per comparison block (1.0). */
 const MATERIAL_MONTHS = 1
@@ -39,9 +39,9 @@ export function backgroundSlowerMaterial(r: ClearResult): number {
 export const COMPARISONS: { key: ComparisonKey; label: string; detail: string; headline?: boolean }[] = [
   {
     key: 'coord_vs_actual',
-    label: 'Headline: coordinated, no trial worse off (vs registered)',
-    detail: 'Joint optimum, constrained so no trial is slower than at the sites its sponsor registered.',
-    headline: true,
+    label: 'Capped at registered times (vs registered; in-sample)',
+    detail:
+      'Joint optimum constrained so no trial is slower than registered under the same rates used to choose it. Out of sample the cap does not hold.',
   },
   {
     key: 'indep_vs_actual',
@@ -87,15 +87,17 @@ export function HeadlineBlock({ r }: { r: ClearResult }) {
   return (
     <div className="headline card">
       <div className="headline-title">
-        <h2>No trial worse off vs what sponsors registered</h2>
+        <h2>In-sample model result (not a claim)</h2>
         <span className="muted small">
           {int(h.trials)} trials compared · {int(s.background_trials)} held fixed as background (not in these numbers)
         </span>
       </div>
+      <Caveat>
+        <strong>Does not hold out of sample.</strong> These numbers are in-sample: the allocation is chosen and scored with the same site rates. They do not hold out of sample. Choosing with older trials and scoring with newer ones, the joint optimum is 0.98× its best-response baseline, and under held-out rates 22% of trials are slower than at their registered sites. They are shown for transparency, not as a claim.
+      </Caveat>
       <div className="stats">
         <Stat
-          emphasis
-          label="Enrollment-time ratio"
+          label="Enrollment-time ratio (in-sample)"
           value={times(h.ratio)}
           sub={<>Total trial-months, registered ÷ coordinated</>}
         />
@@ -106,12 +108,12 @@ export function HeadlineBlock({ r }: { r: ClearResult }) {
           sub={
             <>
               {pct(h.share_faster)} any change · slower by {atLeast(materialMonths(h))}: {pct(h.share_slower_material)} (
-              {pct(h.share_slower)} any change; {worst(h)}) by construction
+              {pct(h.share_slower)} any change; {worst(h)}) in-sample only, by construction
             </>
           }
         />
         <Stat
-          label="Coordination dividend"
+          label="Trial-months (in-sample)"
           value={
             <>
               {int(h.dividend_trial_months)} <span className="unit">trial-months</span>
@@ -123,19 +125,7 @@ export function HeadlineBlock({ r }: { r: ClearResult }) {
             </>
           }
         />
-        <Stat
-          label="Dollar conversion"
-          value={money(s.dollars_direct)}
-          sub={
-            <>
-              direct cost · {money(s.dollars_lost_sales)} lost-sales equivalent · {int(s.dividend_days)} trial-days
-            </>
-          }
-        />
       </div>
-      <Caveat>
-        <strong>Dollar caveat:</strong> {s.dollars_note}
-      </Caveat>
     </div>
   )
 }

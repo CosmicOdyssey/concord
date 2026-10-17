@@ -156,9 +156,9 @@ export default function RobustnessView({ clear }: { clear: ClearState }) {
                   )}
                 </li>
                 <li>
-                  <strong>Headline</strong> (no trial worse off vs registered sites): <span className="tnum strong">{summary.headData}</span>{' '}
+                  <strong>Capped at registered times</strong> (in-sample; does not hold out of sample): <span className="tnum strong">{summary.headData}</span>{' '}
                   across data-based rows. <strong>Site selection alone</strong> (best response vs registered):{' '}
-                  <span className="tnum strong">{summary.selData}</span>. With pure coordination near 1×, the headline gain
+                  <span className="tnum strong">{summary.selData}</span>. With pure coordination near 1×, the in-sample gain
                   comes from moving trials to faster sites, not from relieving congestion between them.
                 </li>
               </ul>
@@ -189,10 +189,10 @@ export default function RobustnessView({ clear }: { clear: ClearState }) {
                     <th>β</th>
                     <th>Site-rate rule</th>
                     <th>Universe</th>
-                    <th className="num" title="No trial worse off vs registered: ratio (median per-trial speedup)">
-                      Headline ratio (median)
+                    <th className="num" title="Capped at registered times, vs registered, in-sample: ratio (median per-trial speedup)">
+                      Capped vs registered (median)
                     </th>
-                    <th className="num" title="Joint allocation vs each trial's best response, no trial worse off">
+                    <th className="num" title="Joint allocation vs each trial's best response, capped at best-response times (in-sample)">
                       Pure coordination
                     </th>
                     <th className="num" title="Joint optimum with losers allowed, vs registered">

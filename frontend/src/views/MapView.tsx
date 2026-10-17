@@ -108,7 +108,7 @@ export default function MapView({ clear }: { clear: ClearState }) {
           st.indep.top10Share,
         )} under each trial’s best response, ${pct(st.coord_free.top10Share)} under the joint optimum and ${pct(
           st.coord.top10Share,
-        )} under the no-loser headline allocation.${
+        )} under the allocation capped at registered times.${
           r.params.beta === null && (st.coord_free.top10Share ?? 0) > (st.actual.top10Share ?? 0)
             ? ' With the congestion elasticity estimated from data (near zero), piling onto the strongest sites costs little, so the optimizers concentrate demand rather than spread it.'
             : ''
