@@ -120,6 +120,8 @@ function HeadControls() {
 /** "U.S. " when the preview counts U.S. sites only ("registered U.S. sites"), else nothing. */
 const regionWord = (crop: Crop) => (crop.regionLabel.includes('U.S.') ? 'U.S. ' : '')
 
+const possessive = (name: string) => (name.endsWith('s') ? `${name}'` : `${name}'s`)
+
 const shortName = (sponsor: string) => sponsor.replace(/ (LLC|Inc\.?|Pharmaceuticals)$/, '')
 
 /** "Recruiting on September 1, 2024 (estimated)" or, on the snapshot date, a registry fact. */
@@ -705,7 +707,7 @@ export default function LandingView({ focus }: { focus: { id: string | null; n: 
                 {detailed && <PairCriteria crop={crop} />}
               </div>
               <figcaption className="lp-figcap">
-                {crop.sponsor}'s <span className="num">{crop.trials.length}</span> NSCLC trials recruiting on {asOfText(crop)}, from public ClinicalTrials.gov records
+                {possessive(crop.sponsor)} <span className="num">{crop.trials.length}</span> NSCLC trials recruiting on {asOfText(crop)}, from public ClinicalTrials.gov records
                 (snapshot {calDate(crop.snapshot)}). Number: registered {region}sites both trials list, not sites confirmed enrolling. Shade: the larger share of one
                 trial's eligible patients who also qualify for the other, on a synthetic population of {crop.population.toLocaleString('en-US')} simulated patients.
                 {detailed && " † marks an upper bound: a trial has a restriction the synthetic population can't represent, so the share is a ceiling."}

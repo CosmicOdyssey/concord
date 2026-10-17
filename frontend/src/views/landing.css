@@ -883,10 +883,10 @@ a.lp-open:hover {
 
 /* ---------- phone ---------- */
 @media (max-width: 640px) {
-  .lp-head-ctl {
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    row-gap: 0.5rem;
+  /* Phones: wordmark and controls on one row, the section links below; the hero's primary button, first on the
+     page, carries the action (the header copy would add a third row). */
+  .lp-head .lp-demo {
+    display: none;
   }
   .lp-mrow {
     grid-template-columns: 5.75rem repeat(var(--lp-cols, 6), 2.5rem);

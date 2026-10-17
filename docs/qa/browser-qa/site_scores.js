@@ -171,8 +171,12 @@ async function tabTo(page, sel) {
 
     const tabs = await texts(page, 'nav.tabs .tab-label')
     const at = tabs.indexOf('Site scores')
-    // Other tabs may sit between Site scores and Research (Financial Coordination, from PR #1).
-    check('tab order: Site scores after Protocol to terms, before Research', at > 0 && tabs[at - 1] === 'Protocol to terms' && tabs.indexOf('Research') > at, tabs)
+    // Protocol to terms leads; Site scores follows Findings and comes before Research.
+    check(
+      'tab order: Protocol to terms first; Site scores after Findings, before Research',
+      tabs[0] === 'Protocol to terms' && at > 0 && tabs[at - 1] === 'Findings' && tabs.indexOf('Research') > at,
+      tabs,
+    )
     const title = await text(page, '.ss-bd-title')
     check('preset opens the richest-history Dana-Farber / MSK site', /dana|sloan/i.test(title), title)
     const head = await text(page, '.ss-bd-head .small.muted')
