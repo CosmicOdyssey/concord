@@ -1,0 +1,112 @@
+{
+  "campaign": "CONCORD-INDEPENDENT-ACCEPTANCE",
+  "base_commit": "59f0c33d52d7928fd136b3c58c4db87b87c0836c",
+  "code_commit": "555f3f86efaa338de1eff45570af3f4d0a1c38d9",
+  "fleet_task": "concord-independent-acceptance",
+  "dispatch": "unavailable; direct Codex",
+  "assignments": [
+    {
+      "id": "repository",
+      "owner": "codex",
+      "paths": [
+        "docs/acceptance/original-state.json"
+      ],
+      "depends_on": [],
+      "status": "complete"
+    },
+    {
+      "id": "math",
+      "owner": "codex",
+      "paths": [
+        "backend/tests/acceptance_reference.py",
+        "backend/tests/test_acceptance_independent.py"
+      ],
+      "depends_on": [
+        "repository"
+      ],
+      "status": "complete",
+      "limitation": "bounded heuristic gap documented"
+    },
+    {
+      "id": "financial",
+      "owner": "codex",
+      "paths": [
+        "backend/tests/acceptance_financial.py",
+        "FINANCIAL-INTEGRITY.md"
+      ],
+      "depends_on": [
+        "repository"
+      ],
+      "status": "complete"
+    },
+    {
+      "id": "causality",
+      "owner": "codex",
+      "paths": [
+        "RECRUITMENT-CAUSALITY.md"
+      ],
+      "depends_on": [
+        "math",
+        "financial"
+      ],
+      "status": "complete",
+      "historical": "UNVERIFIED"
+    },
+    {
+      "id": "browser",
+      "owner": "codex",
+      "paths": [
+        "docs/acceptance/browser-*.txt",
+        "docs/acceptance/browser-*.png",
+        "docs/acceptance/delivery-verification.json"
+      ],
+      "depends_on": [
+        "math",
+        "financial"
+      ],
+      "status": "limited",
+      "blocker": "browser organization policy blocks downloads"
+    },
+    {
+      "id": "acceptance",
+      "owner": "codex",
+      "paths": [
+        "ACCEPTANCE-AUDIT.md",
+        "DEMO-EVIDENCE.md"
+      ],
+      "depends_on": [
+        "repository",
+        "math",
+        "financial",
+        "causality",
+        "browser"
+      ],
+      "status": "limited",
+      "ci": "NOT_CONFIGURED"
+    }
+  ],
+  "failures": [
+    "original omitted-horizon timing truncated",
+    "original artifact identity ignored non-key params",
+    "original saved replay mislabeled live",
+    "original historical tables not all UNVERIFIED",
+    "heuristic plateau 12 vs 4 months",
+    "browser download blocked by organization",
+    "historical dataset unavailable",
+    "managed worktree ref invalid in unrelated chat repo; recovered explicit Concord Git worktree"
+  ],
+  "remediation_commits": [
+    "2e89334a4008e9d3706278c8215a631e9ee771d9",
+    "63ffadfca23b24e0c649ec2e9fe64d0023e64313",
+    "555f3f86efaa338de1eff45570af3f4d0a1c38d9"
+  ],
+  "prohibitions_preserved": [
+    "no merge",
+    "no push",
+    "no deployment",
+    "no premium provider calls",
+    "no Claude/Astra",
+    "original findings/robustness data unchanged",
+    "original allocator unchanged"
+  ]
+}

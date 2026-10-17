@@ -1,0 +1,617 @@
+Browser tab: 1783081691, Title: "Concord", URL: "http://127.0.0.1:5177/#findings".
+1 AXWebArea Concord, URL: 127.0.0.1:5177/#findings
+	2 container root
+		3 container
+			4 text Concord NSCLC trial portfolios on public ClinicalTrials.gov data
+		5 tab group Views
+			6 tab (selected, settable, boolean) 1 Findings, Value: 1
+			7 tab (selectable, settable, boolean) 2 Portfolio overlap, Value: 0
+			8 tab (selectable, settable, boolean) 3 Protocol to terms, Value: 0
+			9 tab (selectable, settable, boolean) 4 Site scores, Value: 0
+			10 tab (selectable, settable, boolean) 5 Financial Coordination, Value: 0
+			11 tab (selectable, settable, boolean) 6 Portfolio Command, Value: 0
+			12 tab (selectable, settable, boolean) 7 Research, Value: 0
+		615 container
+			616 heading Findings, Value: 1
+				617 text Findings
+			618 text Research on public ClinicalTrials.gov data for non-small cell lung cancer (NSCLC) trials. Each finding lists the analysis outputs it comes from. Generated  Oct 17, 2026, 15:04 UTC . No view shows a predicted speedup, time-to-fill or ratio as a product claim. Numbers on this page are research findings, labelled with how they were measured.
+			619 container Findings on this page
+				620 button Competing trials barely slow each other within a site Final
+					621 text Competing trials barely slow each other within a site
+					622 text Final
+				623 button Historical allocation performance remains unverified Provisional
+					624 text Historical allocation performance remains unverified
+					625 text Provisional
+				626 button Site-level enrollment data is the binding constraint Provisional
+					627 text Site-level enrollment data is the binding constraint
+					628 text Provisional
+			629 container Related: portfolio overlap
+				630 text RELATED: PORTFOLIO OVERLAP
+				631 link Description: Open the overlap audit →, Value: 127.0.0.1:5177/#overlap
+				632 container
+					633 text 21 same-sponsor pairs where both trials' eligibility was hand-encoded and reviewed, across 10 sponsors: concurrent, sharing at least 10 registered sites, with at least 80% of one trial’s eligible patients also eligible for the other. For 19 of them the eligibility overlap is an upper bound (criteria the synthetic population does not model).
+				634 button (collapsed) How the pairs are counted, Secondary Actions: Expand
+					635 text How the pairs are counted
+			636 container Competing trials barely slow each other within a site, ID: finding-congestion
+				637 container
+					638 heading Competing trials barely slow each other within a site, Value: 2, ID: finding-congestion-title
+						639 text Competing trials barely slow each other within a site
+					640 text Final
+				641 text Within the same site, the congestion elasticity is about 0.09 (95% CI 0.00 to 0.30), against the 1.0 our original model assumed. The interval's lower end is floored at 0: the coefficient's own interval (-0.297 to +0.111) crosses zero.
+				642 container
+					643 container Estimate with interval, against the reference value within-site beta (default): estimate 0.09, interval 0.00 to 0.30. Reference line: assumed in original model, 1.0., Help: within-site beta (default): estimate 0.09, interval 0.00 to 0.30. Reference line: assumed in original model, 1.0.
+					644 text estimate and interval assumed in original model
+				645 heading Coefficient on log(1 + overlapping competitors at the site), Value: 3
+					646 text Coefficient on log(1 + overlapping competitors at the site)
+				647 table
+					648 row
+						649 cell
+							650 text Estimate
+						651 cell
+							652 text Coefficient
+						653 cell
+							654 text 95% CI
+						655 cell
+							656 text p
+						657 cell
+							658 text Implied beta
+					659 row
+						660 cell
+							661 text Assumed in the original model
+						662 cell
+							663 text -1
+						664 cell
+							665 container none
+								666 text —
+						667 cell
+							668 container none
+								669 text —
+						670 cell
+							671 text beta = 1.0
+					672 row
+						673 cell
+							674 text Within site, all sites (default)
+						675 cell
+							676 text -0.093
+						677 cell
+							678 text [-0.297, +0.111]
+						679 cell
+							680 text 0.37
+						681 cell
+							682 text beta = 0.093 (95% CI 0.000 to 0.297)
+					683 row
+						684 cell
+							685 text Pooled across sites (confounded by site type)
+						686 cell
+							687 text -0.107
+						688 cell
+							689 text [-0.216, +0.002]
+						690 cell
+							691 text 0.0552
+						692 cell
+							693 container none
+								694 text —
+				695 content list
+					696 container
+						697 AXListMarker •
+						698 text Standard errors: two-way clustered (trial, site).
+					699 container
+						700 AXListMarker •
+						701 text Post hoc, not pre-registered: the pre-registered two-way variance clips negative eigenvalues of the whole coefficient covariance matrix (18 of 41 for the primary), so its se depends partly on how the controls are coded (0.104 as coded, 0.105 to 0.115 under equivalent codings); the coefficient's own two-way variance before clipping does not depend on the coding: se 0.087, 95% CI [-0.262, +0.077], p 0.29.
+				702 heading Subset estimates (not the default), Value: 3
+					703 text Subset estimates (not the default)
+				704 table
+					705 row
+						706 cell
+							707 text Subset
+						708 cell
+							709 text Coefficient
+						710 cell
+							711 text 95% CI
+						712 cell
+							713 text p
+					714 row
+						715 cell
+							716 text Experienced sites (predetermined)
+						717 cell
+							718 text -0.055
+						719 cell
+							720 text [-0.339, +0.229]
+						721 cell
+							722 text 0.71
+						723 cell
+							724 text subset, not the default
+					725 row
+						726 cell
+							727 text Experienced sites (lifetime count)
+						728 cell
+							729 text -0.135
+						730 cell
+							731 text [-0.323, +0.053]
+						732 cell
+							733 text 0.16
+						734 cell
+							735 text subset, not the default
+					736 row
+						737 cell
+							738 text Trials with <= 20 sites
+						739 cell
+							740 text -0.045
+						741 cell
+							742 text [-0.186, +0.096]
+						743 cell
+							744 text 0.53
+						745 cell
+							746 text subset, not the default
+					747 row
+						748 cell
+							749 text High-overlap competitors only (o >= 0.8)
+						750 cell
+							751 text -0.083
+						752 cell
+							753 text [-0.285, +0.119]
+						754 cell
+							755 text 0.42
+						756 cell
+							757 text subset, not the default
+				758 content list
+					759 container
+						760 AXListMarker •
+						761 text 4 subsets were tested, so each subset's within-site CI is also shown at the Bonferroni level (alpha 0.05/4, z = 2.50); at that level the CIs that exclude zero: none; that exclude the full-sample estimate -0.093: none.
+				762 heading Beta under each eligibility-parser version, Value: 3
+					763 text Beta under each eligibility-parser version
+				764 table
+					765 row
+						766 cell
+							767 text Parser
+						768 cell
+							769 text What changed
+						770 cell
+							771 text Coefficient
+						772 cell
+							773 text 95% CI
+						774 cell
+							775 text Empty eligibility
+					776 row
+						777 cell
+							778 text v0 (b8c576f)
+						779 cell
+							780 text header match is startswith('exclusion criteria'), so 'Key Exclusion Criteria' sections are read as inclusion; no driver-exclusion, never-smoker or resectable rules; population has stage III/IV only
+						781 cell
+							782 text -0.136
+						783 cell
+							784 text [-0.339, +0.067]
+						785 cell
+							786 text 3
+					787 row
+						788 cell
+							789 text v1 (c0050f4)
+						790 cell
+							791 text headers fixed; driver-exclusion, never-smoker and resectable rules added; a required driver also fired the broad driver exclusion, so many trials had contradictory criteria and an empty eligibility set
+						792 cell
+							793 text -0.027
+						794 cell
+							795 text [-0.121, +0.067] (trial-clustered)
+						796 cell
+							797 text 646
+					798 row
+						799 cell
+							800 text v2 (4a87d33)
+						801 cell
+							802 text current: a required driver suppresses the driver exclusion and resectable overrides stage III-IV (contradictory criteria removed)
+						803 cell
+							804 text -0.088
+						805 cell
+							806 text [-0.291, +0.116]
+						807 cell
+							808 text 3
+				809 content list
+					810 container
+						811 AXListMarker •
+						812 text re-estimated per parser version, same regression
+					813 container
+						814 AXListMarker •
+						815 text v1: two-way variance of the within-site coefficient is negative before clipping, so it is not estimable for this version; the CI and p shown are trial-clustered.
+				816 heading CAVEATS, Value: 3
+					817 text CAVEATS
+				818 content list
+					819 container
+						820 AXListMarker •
+						821 text Measured at the resolution of public registry data: trial-level enrollment, registered site lists.
+					822 container
+						823 AXListMarker •
+						824 text The estimate moved with each fix to the eligibility parser; the parser table shows by how much.
+					825 container
+						826 AXListMarker •
+						827 text Across sites, busier sites are slower per trial (pooled -0.107), but with two-way clustered (trial, site) SEs its 95% CI includes 0 (p 0.06), and the comparison is confounded with site type.
+					828 container
+						829 AXListMarker •
+						830 text Subset estimates (for example sites with many earlier lung trials) are reported separately and are never used as the default.
+				831 heading SOURCES, Value: 3
+					832 text SOURCES
+				833 content list
+					834 container
+						835 AXListMarker •
+						836 link Description: analysis/congestion.py (DB meta congestion_test), Value: 127.0.0.1:5177/api/findings/source?path=backend%2Fconcord%2Fanalysis%2Fcongestion.py
+						837 text backend/concord/analysis/congestion.py
+					838 container
+						839 AXListMarker •
+						840 link Description: subset checks, Value: 127.0.0.1:5177/api/findings/source?path=data%2Frobustness%2Fcongestion_subsets_maskfix.json
+						841 text data/robustness/congestion_subsets_maskfix.json
+					842 container
+						843 AXListMarker •
+						844 link Description: two-way SEs, subsets, parser versions, Value: 127.0.0.1:5177/api/findings/source?path=data%2Frobustness%2Fcongestion_v2.json
+						845 text data/robustness/congestion_v2.json
+			846 container Historical allocation performance remains unverified, ID: finding-allocation
+				847 container
+					848 heading Historical allocation performance remains unverified, Value: 2, ID: finding-allocation-title
+						849 text Historical allocation performance remains unverified
+					850 text Provisional
+				851 text UNVERIFIED: historical training uses a start-date cutoff without proving outcomes were available by that date. Archived model speedups do not establish predictive performance or trial acceleration.
+				852 heading Archived / UNVERIFIED: US-Northeast (46 trials), Value: 3
+					853 text Archived / UNVERIFIED: US-Northeast (46 trials)
+				854 table
+					855 row
+						856 cell
+							857 text Comparison
+						858 cell
+							859 text In-sample (all history)
+						860 cell
+							861 text Alternating split: in-sample
+						862 cell
+							863 text Alternating split: held-out (by direction)
+						864 cell
+							865 text Time split: in-sample
+						866 cell
+							867 text Time split: held-out (by direction)
+						868 cell
+							869 text Time split: share slower held-out
+					870 row
+						871 cell
+							872 text Site selection alone (each trial's best response vs its registered sites)
+						873 cell
+							874 text 1.76x
+						875 cell
+							876 text 1.59x
+						877 cell
+							878 text 1.73x (1.52x / 1.97x)
+						879 cell
+							880 text 1.72x
+						881 cell
+							882 text 1.70x (1.88x / 1.54x)
+						883 cell
+							884 text 13%
+					885 row
+						886 cell
+							887 text Coordination (joint optimum vs each trial's best response (losers allowed))
+						888 cell
+							889 text 1.42x
+						890 cell
+							891 text 1.44x
+						892 cell
+							893 text 1.05x (1.11x / 0.99x)
+						894 cell
+							895 text 1.37x
+						896 cell
+							897 text 1.05x (1.10x / 1.00x)
+						898 cell
+							899 text 51%
+					900 row
+						901 cell
+							902 text Coordination capped at registered times (vs registered sites)
+						903 cell
+							904 text 1.60x
+						905 cell
+							906 text 1.57x
+						907 cell
+							908 text 1.37x (1.25x / 1.49x)
+						909 cell
+							910 text 1.67x
+						911 cell
+							912 text 1.23x (1.31x / 1.15x)
+						913 cell
+							914 text 31%
+					915 row
+						916 cell
+							917 text Coordination capped at best-response times (vs each trial's best response)
+						918 cell
+							919 text 1.00x
+						920 cell
+							921 text 1.00x
+						922 cell
+							923 text 1.00x (1.01x / 1.00x)
+						924 cell
+							925 text 1.01x
+						926 cell
+							927 text 0.99x (0.98x / 1.00x)
+						928 cell
+							929 text 16%
+				930 content list
+					931 container
+						932 AXListMarker •
+						933 text Ratio = total trial-months, baseline / alternative, under the model.
+				934 heading Archived / UNVERIFIED: US Regeneron 2024-09-01 (5 trials), Value: 3
+					935 text Archived / UNVERIFIED: US Regeneron 2024-09-01 (5 trials)
+				936 table
+					937 row
+						938 cell
+							939 text Comparison
+						940 cell
+							941 text In-sample (all history)
+						942 cell
+							943 text Alternating split: in-sample
+						944 cell
+							945 text Alternating split: held-out (by direction)
+						946 cell
+							947 text Time split: in-sample
+						948 cell
+							949 text Time split: held-out (by direction)
+						950 cell
+							951 text Time split: share slower held-out
+					952 row
+						953 cell
+							954 text Site selection alone (each trial's best response vs its registered sites)
+						955 cell
+							956 text 2.04x
+						957 cell
+							958 text 1.90x
+						959 cell
+							960 text 1.69x (1.60x / 1.77x)
+						961 cell
+							962 text 1.90x
+						963 cell
+							964 text 1.42x (1.63x / 1.23x)
+						965 cell
+							966 text 10%
+					967 row
+						968 cell
+							969 text Coordination (joint optimum vs each trial's best response (losers allowed))
+						970 cell
+							971 text 1.01x
+						972 cell
+							973 text 1.00x
+						974 cell
+							975 text 0.99x (1.00x / 0.98x)
+						976 cell
+							977 text 1.00x
+						978 cell
+							979 text 1.03x (0.97x / 1.09x)
+						980 cell
+							981 text 50%
+					982 row
+						983 cell
+							984 text Coordination capped at registered times (vs registered sites)
+						985 cell
+							986 text 1.27x
+						987 cell
+							988 text 1.23x
+						989 cell
+							990 text 1.20x (1.15x / 1.25x)
+						991 cell
+							992 text 1.22x
+						993 cell
+							994 text 1.12x (1.13x / 1.10x)
+						995 cell
+							996 text 30%
+					997 row
+						998 cell
+							999 text Coordination capped at best-response times (vs each trial's best response)
+						1000 cell
+							1001 text 1.00x
+						1002 cell
+							1003 text 1.00x
+						1004 cell
+							1005 text 0.99x (1.00x / 0.99x)
+						1006 cell
+							1007 text 1.00x
+						1008 cell
+							1009 text 0.99x (0.97x / 1.00x)
+						1010 cell
+							1011 text 40%
+				1012 content list
+					1013 container
+						1014 AXListMarker •
+						1015 text Ratio = total trial-months, baseline / alternative, under the model.
+				1016 heading Archived / UNVERIFIED: Observed-outcome check of the site scores, Value: 3
+					1017 text Archived / UNVERIFIED: Observed-outcome check of the site scores
+				1018 table
+					1019 row
+						1020 cell
+							1021 text Completed trials started 2018 or later
+						1022 cell
+							1023 text Slope
+						1024 cell
+							1025 text 95% CI
+						1026 cell
+							1027 text p
+						1028 cell
+							1029 text Trials
+					1030 row
+						1031 cell
+							1032 text all completed lung trials started 2018 or later
+						1033 cell
+							1034 text 0.16
+						1035 cell
+							1036 text [+0.07, +0.24]
+						1037 cell
+							1038 text 0.00029
+						1039 cell
+							1040 text 1,094
+					1041 row
+						1042 cell
+							1043 text industry Phase II/III subset
+						1044 cell
+							1045 text 0.33
+						1046 cell
+							1047 text [+0.16, +0.50]
+						1048 cell
+							1049 text 0.00012
+						1050 cell
+							1051 text 390
+				1052 content list
+					1053 container
+						1054 AXListMarker •
+						1055 text Actual log per-site enrollment rate regressed on the log mean score of each trial's registered sites (rates fit on pre-2018 trials), with phase, log site count and start-year controls. Slope 1 = scores calibrated; 0 = no signal.
+				1056 heading Archived / UNVERIFIED: US-Northeast, re-scored with calibrated site rates (post hoc), Value: 3
+					1057 text Archived / UNVERIFIED: US-Northeast, re-scored with calibrated site rates (post hoc)
+				1058 table
+					1059 row
+						1060 cell
+							1061 text Comparison and calibration
+						1062 cell
+							1063 text In-sample (all history)
+						1064 cell
+							1065 text Alternating: held-out
+						1066 cell
+							1067 text Time: held-out
+					1068 row
+						1069 cell
+							1070 text Site selection alone, b = 1.00 (uncalibrated)
+						1071 cell
+							1072 text 1.76x
+						1073 cell
+							1074 text 1.73x
+						1075 cell
+							1076 text 1.70x
+					1077 row
+						1078 cell
+							1079 text Coordination, b = 1.00 (uncalibrated)
+						1080 cell
+							1081 text 1.42x
+						1082 cell
+							1083 text 1.05x
+						1084 cell
+							1085 text 1.05x
+					1086 row
+						1087 cell
+							1088 text Site selection alone, b = 0.33 (industry Phase II/III slope)
+						1089 cell
+							1090 text 1.22x
+						1091 cell
+							1092 text 1.18x
+						1093 cell
+							1094 text 1.17x
+					1095 row
+						1096 cell
+							1097 text Coordination, b = 0.33 (industry Phase II/III slope)
+						1098 cell
+							1099 text 1.12x
+						1100 cell
+							1101 text 1.03x
+						1102 cell
+							1103 text 1.03x
+					1104 row
+						1105 cell
+							1106 text Site selection alone, b = 0.16 (all-trials slope)
+						1107 cell
+							1108 text 1.09x
+						1109 cell
+							1110 text 1.07x
+						1111 cell
+							1112 text 1.06x
+					1113 row
+						1114 cell
+							1115 text Coordination, b = 0.16 (all-trials slope)
+						1116 cell
+							1117 text 1.06x
+						1118 cell
+							1119 text 1.03x
+						1120 cell
+							1121 text 1.02x
+				1122 content list
+					1123 container
+						1124 AXListMarker •
+						1125 text Same allocations as above, not re-solved. Each site's log rate shrunk toward the U.S. mean by b, the observed-outcome slope; b = 1 reproduces the table above exactly. Post hoc, not pre-registered.
+				1126 heading CAVEATS, Value: 3
+					1127 text CAVEATS
+				1128 content list
+					1129 container
+						1130 AXListMarker •
+						1131 text Historical predictive performance is UNVERIFIED pending an as-of-data evaluation. Archived figures below are replayed research artifacts, not corrected results.
+					1132 container
+						1133 AXListMarker •
+						1134 text Final rerun of task A's pre-registered script at the current beta: beta 0.0925 (two-way CI 0 to 0.297), database rebuilt with hand-encoded eligibility for 151 trials (basket and multi-cohort trials held out), deterministic solver (500k evaluations), run unchanged from task A's script on 17 Oct.
+					1135 container
+						1136 AXListMarker •
+						1137 text Held-out means: allocations chosen with site rates fit on one half of history, scored with rates fit on the other half. Scores still come from our enrollment model, not observed enrollment.
+					1138 container
+						1139 AXListMarker •
+						1140 text Ratios above are research results. No product view in this app shows a predicted speedup.
+					1141 container
+						1142 AXListMarker •
+						1143 text The calibrated re-score is post hoc and assumes the trial-level overstatement applies equally to each site.
+				1144 heading SOURCES, Value: 3
+					1145 text SOURCES
+				1146 content list
+					1147 container
+						1148 AXListMarker •
+						1149 link Description: task A holdout output, Value: 127.0.0.1:5177/api/findings/source?path=data%2Ffindings%2Fsources%2Fholdout_final.json
+						1150 text data/findings/sources/holdout_final.json
+					1151 container
+						1152 AXListMarker •
+						1153 link Description: task A script, Value: 127.0.0.1:5177/api/findings/source?path=backend%2Fconcord%2Fanalysis%2Fselection_holdout.py
+						1154 text backend/concord/analysis/selection_holdout.py
+					1155 container
+						1156 AXListMarker •
+						1157 link Description: observed-outcome check, Value: 127.0.0.1:5177/api/findings/source?path=data%2Ffindings%2Fselection_validation.json
+						1158 text data/findings/selection_validation.json
+					1159 container
+						1160 AXListMarker •
+						1161 link Description: calibrated re-score, Value: 127.0.0.1:5177/api/findings/source?path=data%2Ffindings%2Fselection_calibrated.json
+						1162 text data/findings/selection_calibrated.json
+			1163 container Site-level enrollment data is the binding constraint, ID: finding-implication
+				1164 container
+					1165 heading Site-level enrollment data is the binding constraint, Value: 2, ID: finding-implication-title
+						1166 text Site-level enrollment data is the binding constraint
+					1167 text Provisional
+				1168 text UNVERIFIED historical prediction errors: the archived backtest does not prove outcomes were available at its training cutoff. Optimizing site selection needs site-level enrollment data, which is private today. Public registry data identifies site performance only weakly.
+				1169 heading Archived / UNVERIFIED: What public data supports, Value: 3
+					1170 text Archived / UNVERIFIED: What public data supports
+				1171 table
+					1172 row
+						1173 cell
+							1174 text Measure
+						1175 cell
+							1176 text Value
+						1177 cell
+							1178 text Context
+					1179 row
+						1180 cell
+							1181 text Typical miss predicting a held-out trial's enrollment time (industry Phase II/III)
+						1182 cell
+							1183 text 1.9x (site model)
+						1184 cell
+							1185 text 2.8x (naive median rate)
+					1186 row
+						1187 cell
+							1188 text U.S. sites with fewer than 3 lung trials of history
+						1189 cell
+							1190 text 7,486 of 11,710
+						1191 cell
+							1192 text 64%
+					1193 row
+						1194 cell
+							1195 text Site-level enrollment counts in the public registry
+						1196 cell
+							1197 text 0
+						1198 cell
+							1199 text registry reports enrollment per trial only
+				1200 heading CAVEATS, Value: 3
+					1201 text CAVEATS
+				1202 content list
+					1203 container
+						1204 AXListMarker •
+						1205 text Historical predictive performance is UNVERIFIED pending an as-of-data evaluation. Archived figures below are replayed research artifacts, not corrected results.
+					1206 container
+						1207 AXListMarker •
+						1208 text Typical miss = exp(median absolute log error) on held-out trials (fit before 2018, predict after).
+				1209 heading SOURCES, Value: 3
+					1210 text SOURCES
+				1211 content list
+					1212 container
+						1213 AXListMarker •
+						1214 link Description: model/recruitment.py backtest (DB meta backtest), Value: 127.0.0.1:5177/api/findings/source?path=backend%2Fconcord%2Fmodel%2Frecruitment.py
+						1215 text backend/concord/model/recruitment.py
+		614 text Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates; Financial Coordination uses explicitly synthetic scenarios. Decision support only, not clinical, legal or coverage advice.
+
+The focused UI element is 6 tab (selected, settable, boolean) 1 Findings, Value: 1

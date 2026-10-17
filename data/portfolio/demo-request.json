@@ -1,0 +1,188 @@
+{
+  "budget": 3000000.0,
+  "objective": "weighted_makespan",
+  "horizon": 36.0,
+  "seed": 7,
+  "draws": 128,
+  "spread": 0.25,
+  "savings_realized": false,
+  "admin_reduction": 0.25,
+  "extra_support": 300.0,
+  "support_rate_effect": 0.0,
+  "operations_rate_effect": 0.15,
+  "operations_cost": 25000.0,
+  "no_loser": true,
+  "hospital_floor": 0.0,
+  "trials": [
+    {
+      "id": "NCT05800015",
+      "title": "A Trial to Learn How the Combination of Fianlimab With Cemiplimab and Chemotherapy Works Compared With Cemiplimab and Chemotherapy for Treating Adult Patients With Advanced Non-small Cell Lung Cancer",
+      "sponsor": "Regeneron Pharmaceuticals",
+      "target": 40,
+      "enrolled": 0,
+      "progress_basis": "SIMULATED",
+      "priority": 1.2,
+      "deadline": 24.0,
+      "financial_template": "NCT05800015",
+      "admin": 150000.0,
+      "support": 500.0
+    },
+    {
+      "id": "NCT05785767",
+      "title": "A Study to Learn if a Combination of Fianlimab and Cemiplimab Versus Cemiplimab Alone is More Effective for Adult Participants With Advanced Non-Small Cell Lung Cancer (NSCLC)",
+      "sponsor": "Regeneron Pharmaceuticals",
+      "target": 40,
+      "enrolled": 0,
+      "progress_basis": "SIMULATED",
+      "priority": 1.0,
+      "deadline": 20.0,
+      "financial_template": "NCT05800015",
+      "admin": 150000.0,
+      "support": 500.0
+    }
+  ],
+  "sites": [
+    {
+      "id": "SYN-A",
+      "name": "Synthetic hospital A",
+      "capacity": 3.0,
+      "capacity_basis": "ASSUMED",
+      "slots": 2
+    },
+    {
+      "id": "SYN-B",
+      "name": "Synthetic hospital B",
+      "capacity": 3.0,
+      "capacity_basis": "ASSUMED",
+      "slots": 2
+    },
+    {
+      "id": "SYN-C",
+      "name": "Synthetic hospital C",
+      "capacity": 4.0,
+      "capacity_basis": "ASSUMED",
+      "slots": 2
+    },
+    {
+      "id": "SYN-D",
+      "name": "Synthetic hospital D",
+      "capacity": 2.0,
+      "capacity_basis": "ASSUMED",
+      "slots": 2
+    }
+  ],
+  "edges": [
+    {
+      "trial": "NCT05800015",
+      "site": "SYN-A",
+      "baseline": true,
+      "feasibility": "ASSUMED_FEASIBLE",
+      "rate_basis": "ASSUMED",
+      "rate": 2.3,
+      "lag": 0.0,
+      "activation": 30000.0,
+      "operating": 1000.0,
+      "monitoring": 300.0,
+      "participant": 1800.0,
+      "screening": 200.0
+    },
+    {
+      "trial": "NCT05800015",
+      "site": "SYN-B",
+      "baseline": true,
+      "feasibility": "ASSUMED_FEASIBLE",
+      "rate_basis": "ASSUMED",
+      "rate": 1.7,
+      "lag": 0.0,
+      "activation": 30000.0,
+      "operating": 1000.0,
+      "monitoring": 300.0,
+      "participant": 1800.0,
+      "screening": 200.0
+    },
+    {
+      "trial": "NCT05800015",
+      "site": "SYN-C",
+      "baseline": false,
+      "feasibility": "ASSUMED_FEASIBLE",
+      "rate_basis": "ASSUMED",
+      "rate": 2.6,
+      "lag": 3.0,
+      "activation": 30000.0,
+      "operating": 1000.0,
+      "monitoring": 300.0,
+      "participant": 1800.0,
+      "screening": 200.0
+    },
+    {
+      "trial": "NCT05800015",
+      "site": "SYN-D",
+      "baseline": false,
+      "feasibility": "ASSUMED_FEASIBLE",
+      "rate_basis": "ASSUMED",
+      "rate": 0.8,
+      "lag": 3.0,
+      "activation": 50000.0,
+      "operating": 1000.0,
+      "monitoring": 300.0,
+      "participant": 1800.0,
+      "screening": 200.0
+    },
+    {
+      "trial": "NCT05785767",
+      "site": "SYN-A",
+      "baseline": true,
+      "feasibility": "ASSUMED_FEASIBLE",
+      "rate_basis": "ASSUMED",
+      "rate": 1.9549999999999998,
+      "lag": 0.0,
+      "activation": 30000.0,
+      "operating": 1000.0,
+      "monitoring": 300.0,
+      "participant": 1800.0,
+      "screening": 200.0
+    },
+    {
+      "trial": "NCT05785767",
+      "site": "SYN-B",
+      "baseline": true,
+      "feasibility": "ASSUMED_FEASIBLE",
+      "rate_basis": "ASSUMED",
+      "rate": 1.4449999999999998,
+      "lag": 0.0,
+      "activation": 30000.0,
+      "operating": 1000.0,
+      "monitoring": 300.0,
+      "participant": 1800.0,
+      "screening": 200.0
+    },
+    {
+      "trial": "NCT05785767",
+      "site": "SYN-C",
+      "baseline": false,
+      "feasibility": "ASSUMED_FEASIBLE",
+      "rate_basis": "ASSUMED",
+      "rate": 2.21,
+      "lag": 3.0,
+      "activation": 30000.0,
+      "operating": 1000.0,
+      "monitoring": 300.0,
+      "participant": 1800.0,
+      "screening": 200.0
+    },
+    {
+      "trial": "NCT05785767",
+      "site": "SYN-D",
+      "baseline": false,
+      "feasibility": "ASSUMED_FEASIBLE",
+      "rate_basis": "ASSUMED",
+      "rate": 0.68,
+      "lag": 3.0,
+      "activation": 50000.0,
+      "operating": 1000.0,
+      "monitoring": 300.0,
+      "participant": 1800.0,
+      "screening": 200.0
+    }
+  ]
+}

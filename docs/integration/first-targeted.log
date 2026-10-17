@@ -1,0 +1,99 @@
+.....F......................................F.....F..                    [100%]
+=================================== FAILURES ===================================
+___________ test_financial_transfer_conservation_no_double_counting ____________
+
+result = {'schema_version': 1, 'request': {'budget': 3000000.0, 'objective': 'weighted_makespan', 'horizon': 36.0, 'seed': 7, ...._operations_registry_context', 'input_sha256': '987942729827465ed391da3716803cb5a5354f75afbfd9ab2c29eaadbfa9d672', ...}
+
+    def test_financial_transfer_conservation_no_double_counting(result):
+        for s in result['scenarios']:
+            ledger = s['ledger']
+            assert ledger['transfer_balance'] == pytest.approx(0,abs=.01)
+            assert ledger['cash_expenditure']+ledger['contingency'] == pytest.approx(ledger['expected_commitment'],abs=.02)
+            assert ledger['budget_remaining']+ledger['budget_commitment'] == pytest.approx(result['request']['budget'],abs=.01)
+            assert ledger['expected_commitment'] <= ledger['budget_commitment']+.02
+            for t in ledger['trials']:
+                assert sum(t['breakdown'].values()) == pytest.approx(t['expected_commitment'],abs=.03)
+                econ=t['economics']
+                assert econ['hospital']['revenue']-econ['hospital']['resource_cost'] == pytest.approx(econ['hospital']['net_contribution'],abs=.01)
+                assert econ['hospital']['net_contribution'] >= 0
+                # Transfers cancel; they are not added to the resource total.
+>               assert econ['consolidated_resource_cost'] == pytest.approx(econ['hospital']['resource_cost']+t['breakdown']['administration']+econ['insurer']['administration']+t['breakdown']['support'],abs=.02)
+E               assert 610009.13 == 510009.13 ± 0.02
+E                 
+E                 comparison failed
+E                 Obtained: 610009.13
+E                 Expected: 510009.13 ± 0.02
+
+backend/tests/test_portfolio.py:100: AssertionError
+_______________ test_coverage_and_transfer_resource_conservation _______________
+
+    def test_coverage_and_transfer_resource_conservation():
+        from concord import financial as f
+        req=f.FinanceRequest(target=10,draws=100)
+        cov=f.coverage(req)
+        assert all(sum(item[k] for k in ['sponsor_per_participant','payer_per_participant','patient_per_participant','reserve_per_participant'])==pytest.approx(item['unit_rate'],abs=.011) for item in cov['items'])
+        plan={'breakdown':dict(activation=10000,operating=2000,site_variable=3000,procedures=(cov['totals']['sponsor']+cov['totals']['reserve'])*10,support=5000,administration=1000)}
+        plan['sponsor_total']=sum(plan['breakdown'].values())
+>       econ=f.economics(req,plan,cov)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+backend/tests/test_acceptance_independent.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+req = FinanceRequest(trial_id='NCT05800015', budget=1500000, target=10, budget_period_months=24, admin_cost=120000, admin_re..._active=False, feasible=True, activation_cost=50000.0, monthly_cost=2200.0, per_participant_cost=2800.0, capacity=60)])
+plan = {'breakdown': {'activation': 10000, 'operating': 2000, 'site_variable': 3000, 'procedures': 55833.3, ...}, 'sponsor_total': 76833.3}
+cov = {'items': [{'id': 'SCR:em_new', 'label': 'New-patient oncology visit, high complexity', 'code': '99205', 'trial_id': '... and Medicare amounts can still inform the rate negotiated for research items (benchmark x sponsor_rate_multiplier).']}
+
+    def economics(req, plan, cov):
+>       if not plan['costed']:
+               ^^^^^^^^^^^^^^
+E       KeyError: 'costed'
+
+backend/concord/financial.py:264: KeyError
+_________________ test_financial_cost_shifting_counterfactuals _________________
+
+    def test_financial_cost_shifting_counterfactuals():
+        from .acceptance_financial import run
+>       assert len(run())==3
+                   ^^^^^
+
+backend/tests/test_acceptance_independent.py:139: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def run():
+        request=f.FinanceRequest(target=10,draws=100)
+        base=f.coverage(request)
+        line=next(i for i in base['items'] if i['status']=='POTENTIALLY_PAYER_COVERED')
+        rows={}
+        for name,status in [('sponsor_pays',f.Responsibility.SPONSOR),('patient_pays',f.Responsibility.PATIENT),('unknown_reserve',f.Responsibility.UNKNOWN)]:
+            r=f.compare(request.model_copy(update={'coverage_overrides':{line['id']:status}}))
+            rows[name]={'coverage':r['coverage']['totals'],'baseline':r['scenarios'][0]['economics']}
+        sponsor=rows['sponsor_pays']['baseline']; patient=rows['patient_pays']['baseline']
+        assert patient['sponsor']['expenditure']<sponsor['sponsor']['expenditure']
+        assert patient['patient']['cost_sharing']>sponsor['patient']['cost_sharing']
+        assert patient['consolidated_resource_cost']==sponsor['consolidated_resource_cost']
+        higher=f.compare(request.model_copy(update={'payer_fraction':1}))['scenarios'][0]['economics']
+        normal=f.compare(request)['scenarios'][0]['economics']
+        assert higher['insurer']['payments']>normal['insurer']['payments'] and higher['sponsor']==normal['sponsor']
+>       req=f.FinanceRequest(target=10,admin_cost=500000,admin_reduction=.8,draws=100,sites=[f.Site(id='A',name='Synthetic A',baseline_active=True,rate=1,capacity=30,monthly_cost=100,activation_lag_months=0),f.Site(id='B',name='Synthetic B',rate=5,capacity=30,activation_cost=100000,monthly_cost=500,activation_lag_months=1)])
+                                                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for Site
+E       rate
+E         Extra inputs are not permitted [type=extra_forbidden, input_value=1, input_type=int]
+E           For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden
+E       activation_lag_months
+E         Extra inputs are not permitted [type=extra_forbidden, input_value=0, input_type=int]
+E           For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden
+
+backend/tests/acceptance_financial.py:22: ValidationError
+=============================== warnings summary ===============================
+backend/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /Users/sadius/concord-portfolio-command/backend/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED backend/tests/test_portfolio.py::test_financial_transfer_conservation_no_double_counting
+FAILED backend/tests/test_acceptance_independent.py::test_coverage_and_transfer_resource_conservation
+FAILED backend/tests/test_acceptance_independent.py::test_financial_cost_shifting_counterfactuals
+3 failed, 50 passed, 1 warning in 7.57s

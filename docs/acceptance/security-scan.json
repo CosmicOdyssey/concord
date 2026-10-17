@@ -1,0 +1,6 @@
+{
+  "method": "bounded regex scan of tracked readable files <=5 MB; filenames only, no secret values emitted",
+  "patterns": "private keys, GitHub token shapes, AWS access IDs, OpenAI key shapes",
+  "matching_paths": [],
+  "limitations": "Not a full entropy scan or credential-history audit. No production authentication, network, or penetration certification."
+}

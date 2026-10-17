@@ -1,0 +1,14 @@
+{
+  "routes": {},
+  "economicExecutors": [],
+  "providers": [
+    {
+      "id": "codex-existing",
+      "capabilities": [
+        "coding"
+      ],
+      "routingSupport": "manual",
+      "enabled": true
+    }
+  ]
+}

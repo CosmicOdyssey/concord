@@ -1,0 +1,732 @@
+{
+  "source_commit": "ac0204603eb906c8d2dafff0900c0f214392c6de",
+  "request": {
+    "budget": 1000000.0,
+    "objective": "weighted_makespan",
+    "horizon": 36.0,
+    "seed": 7,
+    "draws": 32,
+    "spread": 0.0,
+    "savings_realized": false,
+    "admin_reduction": 0.25,
+    "extra_support": 300.0,
+    "support_rate_effect": 0.0,
+    "operations_rate_effect": 0.0,
+    "operations_cost": 25000.0,
+    "no_loser": true,
+    "hospital_floor": 0.0,
+    "trials": [
+      {
+        "id": "T0",
+        "title": "Independent synthetic audit",
+        "sponsor": "Hypothetical sponsor",
+        "target": 12,
+        "enrolled": 0,
+        "progress_basis": "SIMULATED",
+        "priority": 1.0,
+        "deadline": 12.0,
+        "financial_template": "NCT05800015",
+        "admin": 1000.0,
+        "support": 200.0
+      },
+      {
+        "id": "T1",
+        "title": "Independent synthetic audit",
+        "sponsor": "Hypothetical sponsor",
+        "target": 12,
+        "enrolled": 0,
+        "progress_basis": "SIMULATED",
+        "priority": 1.0,
+        "deadline": 12.0,
+        "financial_template": "NCT05800015",
+        "admin": 1000.0,
+        "support": 200.0
+      },
+      {
+        "id": "T2",
+        "title": "Independent synthetic audit",
+        "sponsor": "Hypothetical sponsor",
+        "target": 12,
+        "enrolled": 0,
+        "progress_basis": "SIMULATED",
+        "priority": 1.0,
+        "deadline": 12.0,
+        "financial_template": "NCT05800015",
+        "admin": 1000.0,
+        "support": 200.0
+      },
+      {
+        "id": "T3",
+        "title": "Independent synthetic audit",
+        "sponsor": "Hypothetical sponsor",
+        "target": 12,
+        "enrolled": 0,
+        "progress_basis": "SIMULATED",
+        "priority": 1.0,
+        "deadline": 12.0,
+        "financial_template": "NCT05800015",
+        "admin": 1000.0,
+        "support": 200.0
+      }
+    ],
+    "sites": [
+      {
+        "id": "A",
+        "name": "Independent synthetic hospital",
+        "capacity": 100.0,
+        "capacity_basis": "ASSUMED",
+        "slots": 4
+      },
+      {
+        "id": "B",
+        "name": "Independent synthetic hospital",
+        "capacity": 100.0,
+        "capacity_basis": "ASSUMED",
+        "slots": 4
+      },
+      {
+        "id": "C",
+        "name": "Independent synthetic hospital",
+        "capacity": 100.0,
+        "capacity_basis": "ASSUMED",
+        "slots": 4
+      }
+    ],
+    "edges": [
+      {
+        "trial": "T0",
+        "site": "A",
+        "baseline": true,
+        "feasibility": "ASSUMED_FEASIBLE",
+        "rate_basis": "ASSUMED",
+        "rate": 1.0,
+        "lag": 0.0,
+        "activation": 1000.0,
+        "operating": 100.0,
+        "monitoring": 20.0,
+        "participant": 50.0,
+        "screening": 10.0
+      },
+      {
+        "trial": "T0",
+        "site": "B",
+        "baseline": false,
+        "feasibility": "ASSUMED_FEASIBLE",
+        "rate_basis": "ASSUMED",
+        "rate": 1.0,
+        "lag": 0.0,
+        "activation": 1000.0,
+        "operating": 100.0,
+        "monitoring": 20.0,
+        "participant": 50.0,
+        "screening": 10.0
+      },
+      {
+        "trial": "T0",
+        "site": "C",
+        "baseline": false,
+        "feasibility": "ASSUMED_FEASIBLE",
+        "rate_basis": "ASSUMED",
+        "rate": 1.0,
+        "lag": 0.0,
+        "activation": 1000.0,
+        "operating": 100.0,
+        "monitoring": 20.0,
+        "participant": 50.0,
+        "screening": 10.0
+      },
+      {
+        "trial": "T1",
+        "site": "A",
+        "baseline": true,
+        "feasibility": "ASSUMED_FEASIBLE",
+        "rate_basis": "ASSUMED",
+        "rate": 1.0,
+        "lag": 0.0,
+        "activation": 1000.0,
+        "operating": 100.0,
+        "monitoring": 20.0,
+        "participant": 50.0,
+        "screening": 10.0
+      },
+      {
+        "trial": "T1",
+        "site": "B",
+        "baseline": false,
+        "feasibility": "ASSUMED_FEASIBLE",
+        "rate_basis": "ASSUMED",
+        "rate": 1.0,
+        "lag": 0.0,
+        "activation": 1000.0,
+        "operating": 100.0,
+        "monitoring": 20.0,
+        "participant": 50.0,
+        "screening": 10.0
+      },
+      {
+        "trial": "T1",
+        "site": "C",
+        "baseline": false,
+        "feasibility": "ASSUMED_FEASIBLE",
+        "rate_basis": "ASSUMED",
+        "rate": 1.0,
+        "lag": 0.0,
+        "activation": 1000.0,
+        "operating": 100.0,
+        "monitoring": 20.0,
+        "participant": 50.0,
+        "screening": 10.0
+      },
+      {
+        "trial": "T2",
+        "site": "A",
+        "baseline": true,
+        "feasibility": "ASSUMED_FEASIBLE",
+        "rate_basis": "ASSUMED",
+        "rate": 1.0,
+        "lag": 0.0,
+        "activation": 1000.0,
+        "operating": 100.0,
+        "monitoring": 20.0,
+        "participant": 50.0,
+        "screening": 10.0
+      },
+      {
+        "trial": "T2",
+        "site": "B",
+        "baseline": false,
+        "feasibility": "ASSUMED_FEASIBLE",
+        "rate_basis": "ASSUMED",
+        "rate": 1.0,
+        "lag": 0.0,
+        "activation": 1000.0,
+        "operating": 100.0,
+        "monitoring": 20.0,
+        "participant": 50.0,
+        "screening": 10.0
+      },
+      {
+        "trial": "T2",
+        "site": "C",
+        "baseline": false,
+        "feasibility": "ASSUMED_FEASIBLE",
+        "rate_basis": "ASSUMED",
+        "rate": 1.0,
+        "lag": 0.0,
+        "activation": 1000.0,
+        "operating": 100.0,
+        "monitoring": 20.0,
+        "participant": 50.0,
+        "screening": 10.0
+      },
+      {
+        "trial": "T3",
+        "site": "A",
+        "baseline": true,
+        "feasibility": "ASSUMED_FEASIBLE",
+        "rate_basis": "ASSUMED",
+        "rate": 1.0,
+        "lag": 0.0,
+        "activation": 1000.0,
+        "operating": 100.0,
+        "monitoring": 20.0,
+        "participant": 50.0,
+        "screening": 10.0
+      },
+      {
+        "trial": "T3",
+        "site": "B",
+        "baseline": false,
+        "feasibility": "ASSUMED_FEASIBLE",
+        "rate_basis": "ASSUMED",
+        "rate": 1.0,
+        "lag": 0.0,
+        "activation": 1000.0,
+        "operating": 100.0,
+        "monitoring": 20.0,
+        "participant": 50.0,
+        "screening": 10.0
+      },
+      {
+        "trial": "T3",
+        "site": "C",
+        "baseline": false,
+        "feasibility": "ASSUMED_FEASIBLE",
+        "rate_basis": "ASSUMED",
+        "rate": 1.0,
+        "lag": 0.0,
+        "activation": 1000.0,
+        "operating": 100.0,
+        "monitoring": 20.0,
+        "participant": 50.0,
+        "screening": 10.0
+      }
+    ]
+  },
+  "concord": {
+    "id": "E",
+    "label": "Better allocation",
+    "feasible": true,
+    "violations": [],
+    "selected_edges": [
+      0,
+      3,
+      6,
+      9
+    ],
+    "ledger": {
+      "expected_commitment": 290239.84,
+      "budget_commitment": 301759.84,
+      "budget_remaining": 698240.16,
+      "trials": [
+        {
+          "trial": "T0",
+          "breakdown": {
+            "activation": 0.0,
+            "operating": 1440.0,
+            "site_variable": 720.0,
+            "procedures": 66999.96,
+            "support": 2400.0,
+            "administration": 1000.0
+          },
+          "budget_commitment": 75439.96,
+          "expected_commitment": 72559.96,
+          "economics": {
+            "sponsor": {
+              "expenditure": 42559.96,
+              "contingency_reserve": 30000.0,
+              "budget_commitment": 72559.96
+            },
+            "hospital": {
+              "revenue": 108561.96,
+              "resource_cost": 106209.24,
+              "net_contribution": 2352.72
+            },
+            "insurer": {
+              "payments": 55522.32,
+              "administration": 360.0,
+              "total": 55882.32,
+              "downstream_clinical_cost": null
+            },
+            "patient": {
+              "cost_sharing": 13879.68,
+              "access_support": 2400.0,
+              "net_cash_exposure": 11479.68,
+              "unresolved_exposure": null
+            },
+            "transfers": [
+              {
+                "from": "Sponsor",
+                "to": "Hospital",
+                "amount": 39159.96
+              },
+              {
+                "from": "Sponsor",
+                "to": "Participant",
+                "amount": 2400.0
+              },
+              {
+                "from": "Insurer",
+                "to": "Hospital",
+                "amount": 55522.32
+              },
+              {
+                "from": "Participant",
+                "to": "Hospital",
+                "amount": 13879.68
+              }
+            ],
+            "party_transfer_balances": {
+              "Sponsor": -41559.96,
+              "Hospital": 108561.96,
+              "Insurer": -55522.32,
+              "Participant": -11479.68
+            },
+            "transfer_balance": 0.0,
+            "consolidated_resource_cost": 109969.24,
+            "resource_assumptions": [
+              "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.",
+              "Procedure delivery resource costs = 70% of benchmark, regardless of payer; drug reserve used as an unverified supply-resource proxy.",
+              "Sponsor and insurer administration treated as resource consumption. Access payments assumed fully consumed on transport/support resources.",
+              "Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known."
+            ]
+          }
+        },
+        {
+          "trial": "T1",
+          "breakdown": {
+            "activation": 0.0,
+            "operating": 1440.0,
+            "site_variable": 720.0,
+            "procedures": 66999.96,
+            "support": 2400.0,
+            "administration": 1000.0
+          },
+          "budget_commitment": 75439.96,
+          "expected_commitment": 72559.96,
+          "economics": {
+            "sponsor": {
+              "expenditure": 42559.96,
+              "contingency_reserve": 30000.0,
+              "budget_commitment": 72559.96
+            },
+            "hospital": {
+              "revenue": 108561.96,
+              "resource_cost": 106209.24,
+              "net_contribution": 2352.72
+            },
+            "insurer": {
+              "payments": 55522.32,
+              "administration": 360.0,
+              "total": 55882.32,
+              "downstream_clinical_cost": null
+            },
+            "patient": {
+              "cost_sharing": 13879.68,
+              "access_support": 2400.0,
+              "net_cash_exposure": 11479.68,
+              "unresolved_exposure": null
+            },
+            "transfers": [
+              {
+                "from": "Sponsor",
+                "to": "Hospital",
+                "amount": 39159.96
+              },
+              {
+                "from": "Sponsor",
+                "to": "Participant",
+                "amount": 2400.0
+              },
+              {
+                "from": "Insurer",
+                "to": "Hospital",
+                "amount": 55522.32
+              },
+              {
+                "from": "Participant",
+                "to": "Hospital",
+                "amount": 13879.68
+              }
+            ],
+            "party_transfer_balances": {
+              "Sponsor": -41559.96,
+              "Hospital": 108561.96,
+              "Insurer": -55522.32,
+              "Participant": -11479.68
+            },
+            "transfer_balance": 0.0,
+            "consolidated_resource_cost": 109969.24,
+            "resource_assumptions": [
+              "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.",
+              "Procedure delivery resource costs = 70% of benchmark, regardless of payer; drug reserve used as an unverified supply-resource proxy.",
+              "Sponsor and insurer administration treated as resource consumption. Access payments assumed fully consumed on transport/support resources.",
+              "Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known."
+            ]
+          }
+        },
+        {
+          "trial": "T2",
+          "breakdown": {
+            "activation": 0.0,
+            "operating": 1440.0,
+            "site_variable": 720.0,
+            "procedures": 66999.96,
+            "support": 2400.0,
+            "administration": 1000.0
+          },
+          "budget_commitment": 75439.96,
+          "expected_commitment": 72559.96,
+          "economics": {
+            "sponsor": {
+              "expenditure": 42559.96,
+              "contingency_reserve": 30000.0,
+              "budget_commitment": 72559.96
+            },
+            "hospital": {
+              "revenue": 108561.96,
+              "resource_cost": 106209.24,
+              "net_contribution": 2352.72
+            },
+            "insurer": {
+              "payments": 55522.32,
+              "administration": 360.0,
+              "total": 55882.32,
+              "downstream_clinical_cost": null
+            },
+            "patient": {
+              "cost_sharing": 13879.68,
+              "access_support": 2400.0,
+              "net_cash_exposure": 11479.68,
+              "unresolved_exposure": null
+            },
+            "transfers": [
+              {
+                "from": "Sponsor",
+                "to": "Hospital",
+                "amount": 39159.96
+              },
+              {
+                "from": "Sponsor",
+                "to": "Participant",
+                "amount": 2400.0
+              },
+              {
+                "from": "Insurer",
+                "to": "Hospital",
+                "amount": 55522.32
+              },
+              {
+                "from": "Participant",
+                "to": "Hospital",
+                "amount": 13879.68
+              }
+            ],
+            "party_transfer_balances": {
+              "Sponsor": -41559.96,
+              "Hospital": 108561.96,
+              "Insurer": -55522.32,
+              "Participant": -11479.68
+            },
+            "transfer_balance": 0.0,
+            "consolidated_resource_cost": 109969.24,
+            "resource_assumptions": [
+              "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.",
+              "Procedure delivery resource costs = 70% of benchmark, regardless of payer; drug reserve used as an unverified supply-resource proxy.",
+              "Sponsor and insurer administration treated as resource consumption. Access payments assumed fully consumed on transport/support resources.",
+              "Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known."
+            ]
+          }
+        },
+        {
+          "trial": "T3",
+          "breakdown": {
+            "activation": 0.0,
+            "operating": 1440.0,
+            "site_variable": 720.0,
+            "procedures": 66999.96,
+            "support": 2400.0,
+            "administration": 1000.0
+          },
+          "budget_commitment": 75439.96,
+          "expected_commitment": 72559.96,
+          "economics": {
+            "sponsor": {
+              "expenditure": 42559.96,
+              "contingency_reserve": 30000.0,
+              "budget_commitment": 72559.96
+            },
+            "hospital": {
+              "revenue": 108561.96,
+              "resource_cost": 106209.24,
+              "net_contribution": 2352.72
+            },
+            "insurer": {
+              "payments": 55522.32,
+              "administration": 360.0,
+              "total": 55882.32,
+              "downstream_clinical_cost": null
+            },
+            "patient": {
+              "cost_sharing": 13879.68,
+              "access_support": 2400.0,
+              "net_cash_exposure": 11479.68,
+              "unresolved_exposure": null
+            },
+            "transfers": [
+              {
+                "from": "Sponsor",
+                "to": "Hospital",
+                "amount": 39159.96
+              },
+              {
+                "from": "Sponsor",
+                "to": "Participant",
+                "amount": 2400.0
+              },
+              {
+                "from": "Insurer",
+                "to": "Hospital",
+                "amount": 55522.32
+              },
+              {
+                "from": "Participant",
+                "to": "Hospital",
+                "amount": 13879.68
+              }
+            ],
+            "party_transfer_balances": {
+              "Sponsor": -41559.96,
+              "Hospital": 108561.96,
+              "Insurer": -55522.32,
+              "Participant": -11479.68
+            },
+            "transfer_balance": 0.0,
+            "consolidated_resource_cost": 109969.24,
+            "resource_assumptions": [
+              "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.",
+              "Procedure delivery resource costs = 70% of benchmark, regardless of payer; drug reserve used as an unverified supply-resource proxy.",
+              "Sponsor and insurer administration treated as resource consumption. Access payments assumed fully consumed on transport/support resources.",
+              "Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known."
+            ]
+          }
+        }
+      ],
+      "transfer_balance": 0.0,
+      "resource_cost": 439876.96,
+      "cash_expenditure": 170239.84,
+      "contingency": 120000.0
+    },
+    "policy": {
+      "administrative_efficiency": false,
+      "additional_support": false,
+      "operations_investment": false
+    },
+    "objective_value": 12.0,
+    "expected_makespan": 12.0,
+    "weighted_makespan": 12.0,
+    "weighted_sum_duration": 48.0,
+    "interval": [
+      12.0,
+      12.0,
+      12.0
+    ],
+    "censored_draws": 0,
+    "paired_months_saved": 0.0,
+    "paired_savings_interval": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trials": [
+      {
+        "id": "T0",
+        "remaining": 12,
+        "expected_months": 12.0,
+        "interval": [
+          12.0,
+          12.0,
+          12.0
+        ],
+        "deadline_draw_fraction": 1.0,
+        "critical_path_draw_fraction": 1.0,
+        "expected_enrolled": 12.0
+      },
+      {
+        "id": "T1",
+        "remaining": 12,
+        "expected_months": 12.0,
+        "interval": [
+          12.0,
+          12.0,
+          12.0
+        ],
+        "deadline_draw_fraction": 1.0,
+        "critical_path_draw_fraction": 0.0,
+        "expected_enrolled": 12.0
+      },
+      {
+        "id": "T2",
+        "remaining": 12,
+        "expected_months": 12.0,
+        "interval": [
+          12.0,
+          12.0,
+          12.0
+        ],
+        "deadline_draw_fraction": 1.0,
+        "critical_path_draw_fraction": 0.0,
+        "expected_enrolled": 12.0
+      },
+      {
+        "id": "T3",
+        "remaining": 12,
+        "expected_months": 12.0,
+        "interval": [
+          12.0,
+          12.0,
+          12.0
+        ],
+        "deadline_draw_fraction": 1.0,
+        "critical_path_draw_fraction": 0.0,
+        "expected_enrolled": 12.0
+      }
+    ],
+    "sites": [
+      {
+        "id": "A",
+        "peak_rate": 4.0,
+        "capacity": 100.0,
+        "reserved_slots": 4
+      },
+      {
+        "id": "B",
+        "peak_rate": 0.0,
+        "capacity": 100.0,
+        "reserved_slots": 0
+      },
+      {
+        "id": "C",
+        "peak_rate": 0.0,
+        "capacity": 100.0,
+        "reserved_slots": 0
+      }
+    ],
+    "edge_flows": [
+      {
+        "edge": 0,
+        "expected_enrolled": 12.0,
+        "expected_active_months": 12.0,
+        "activation_cost": 0.0,
+        "expected_site_payments": 2160.0
+      },
+      {
+        "edge": 3,
+        "expected_enrolled": 12.0,
+        "expected_active_months": 12.0,
+        "activation_cost": 0.0,
+        "expected_site_payments": 2160.0
+      },
+      {
+        "edge": 6,
+        "expected_enrolled": 12.0,
+        "expected_active_months": 12.0,
+        "activation_cost": 0.0,
+        "expected_site_payments": 2160.0
+      },
+      {
+        "edge": 9,
+        "expected_enrolled": 12.0,
+        "expected_active_months": 12.0,
+        "activation_cost": 0.0,
+        "expected_site_payments": 2160.0
+      }
+    ],
+    "expected_cost_per_required_participant": 6046.66
+  },
+  "independent_optimum": {
+    "selected": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "score": 4.0,
+    "expected_cost": 298239.83999999997,
+    "committed": 344319.83999999997,
+    "times": {
+      "T0": 4.0,
+      "T1": 4.0,
+      "T2": 4.0,
+      "T3": 4.0
+    }
+  }
+}
