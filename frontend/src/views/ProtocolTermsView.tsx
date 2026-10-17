@@ -278,9 +278,12 @@ export default function ProtocolTermsView() {
     return Object.fromEntries(Object.entries(overrides).filter(([k, v]) => ids.has(k) && (v === 'routine' || v === 'research'))) as Overrides
   }, [proto, overrides])
   const multiplier = Math.min(500, Math.max(10, Number.isFinite(multPct) ? multPct : 100)) / 100
-  const params: PriceParams = useMemo(
-    () => ({ multiplier, overrides: validOverrides, standard, band: [band[0] / 100, band[1] / 100] as [number, number] }),
-    [multiplier, validOverrides, standard, band],
+  // ver: an added trial's schedule version (import.updated). It changes with the new protocol and its filtered
+  // overrides, so every price fetch fires once, after the new schedule is in (never with the old override ids).
+  const schedVer = proto?.import?.updated ?? ''
+  const params: PriceParams & { ver: string } = useMemo(
+    () => ({ multiplier, overrides: validOverrides, standard, band: [band[0] / 100, band[1] / 100] as [number, number], ver: schedVer }),
+    [multiplier, validOverrides, standard, band, schedVer],
   )
   const dparams = useDebounced(params, 250)
   const pkey = JSON.stringify(dparams)
@@ -327,14 +330,11 @@ export default function ProtocolTermsView() {
     el.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true })
   }
 
-  // A trial added by NCT ID can get a new schedule (CSV upload): refetch everything that depends on it.
-  const [rev, setRev] = useState(0)
+  // A trial added by NCT ID can get a new schedule (CSV upload, back to the draft): reload it; the prices follow
+  // through params.ver once it is in.
   const onScheduleChanged = () => {
-    setRev((r) => r + 1)
     retryTrials()
     retryProtocol()
-    retryBudget()
-    retryCmp()
   }
 
   const selNode = proto && selected ? (proto.nodes.find((n) => n.id === selected) ?? null) : null
@@ -383,11 +383,19 @@ export default function ProtocolTermsView() {
         n={1}
         title="Protocol"
         info={
-          <>
-            <span className="hc-title">How a schedule is authored</span>
-            Concord authors each schedule from the trial’s ClinicalTrials.gov record. Where the registry is silent, it uses standard practice for the
-            condition and lists the assumption. The sponsors’ own protocols are not public.
-          </>
+          proto?.import ? (
+            <>
+              <span className="hc-title">Where this schedule comes from</span>
+              A trial added by NCT ID: its schedule is {proto.import.source === 'csv' ? 'the CSV you uploaded' : 'a draft from its ClinicalTrials.gov record'},
+              not the sponsor’s protocol. Where the registry is silent, the draft leaves the item out or unpriced.
+            </>
+          ) : (
+            <>
+              <span className="hc-title">How a schedule is authored</span>
+              Concord authors each schedule from the trial’s ClinicalTrials.gov record. Where the registry is silent, it uses standard practice for the
+              condition and lists the assumption. The sponsors’ own protocols are not public.
+            </>
+          )
         }
         lede={
           <>
@@ -398,7 +406,13 @@ export default function ProtocolTermsView() {
         quals={
           proto && (
             <Qualifier tone="muted">
-              Authored {dateText(proto.authored, true)} from the registry record: {proto.sources.length} registry facts, {proto.assumptions.length} assumptions
+              {proto.import ? (
+                `${proto.import.source === 'csv' ? 'Uploaded schedule (CSV), not checked against the protocol' : 'Drafted from the registry record'}: ${sourceCount(proto)}`
+              ) : (
+                <>
+                  Authored {dateText(proto.authored, true)} from the registry record: {proto.sources.length} registry facts, {proto.assumptions.length} assumptions
+                </>
+              )}
             </Qualifier>
           )
         }
@@ -412,7 +426,13 @@ export default function ProtocolTermsView() {
           )
         }
         details={proto && <AuthoredNotes proto={proto} />}
-        detailsLabel={proto ? `How this schedule was authored (${proto.sources.length} registry facts, ${proto.assumptions.length} assumptions)` : 'Details'}
+        detailsLabel={
+          !proto
+            ? 'Details'
+            : proto.import
+              ? `Where this schedule comes from (${sourceCount(proto)})`
+              : `How this schedule was authored (${proto.sources.length} registry facts, ${proto.assumptions.length} assumptions)`
+        }
       >
         {trials.status === 'loading' && <Loading label="Loading trials…" />}
         {trials.status === 'error' && <ErrorBox error={trials.error} onRetry={retryTrials} />}
@@ -435,7 +455,7 @@ export default function ProtocolTermsView() {
         {protocol.status === 'error' && <ErrorBox error={protocol.error} onRetry={retryProtocol} />}
         {!proto && protocol.status !== 'error' && <Loading label="Loading the schedule of assessments…" />}
         {proto && <VisitTimeline protocol={proto} />}
-        {proto?.import && <AddedTrialSchedule key={`${nct}:${rev}`} proto={proto} onChanged={onScheduleChanged} />}
+        {proto?.import && <AddedTrialSchedule key={nct} proto={proto} onChanged={onScheduleChanged} />}
       </Step>
 
       {proto && (
@@ -679,7 +699,7 @@ export default function ProtocolTermsView() {
             details={cmpData && <CompareDetails c={cmpData} />}
             detailsLabel="Locality factors and every sponsor-paid item, site by site"
           >
-            {siteOk && <TermsSpread key={`${nct}:${rev}`} nct={nct} siteA={siteA} siteB={cmpOk ? siteB : null} overrides={dparams.overrides} standard={dparams.standard} />}
+            {siteOk && <TermsSpread key={`${nct}:${dparams.ver}`} nct={nct} siteA={siteA} siteB={cmpOk ? siteB : null} overrides={dparams.overrides} standard={dparams.standard} />}
           </Step>
 
           {/* 5. Site proposal (TermsProposalCheck.tsx) */}
@@ -696,7 +716,7 @@ export default function ProtocolTermsView() {
             }
             lede="Paste or upload a site’s price list. Each line is matched to this protocol at the site picked in step 3 and checked against the published fee schedules, or flagged for itemized justification."
           >
-            {siteOk ? <TermsProposalCheck key={`${nct}:${rev}`} nct={nct} siteId={siteA} params={params} /> : <Loading label="Loading sites…" />}
+            {siteOk ? <TermsProposalCheck key={`${nct}:${params.ver}`} nct={nct} siteId={siteA} params={params} /> : <Loading label="Loading sites…" />}
           </Step>
 
           {/* 6. Term sheet */}
@@ -904,17 +924,35 @@ function TrialCardView({ t, on, detailed, onPick }: { t: TrialCard; on: boolean;
   )
 }
 
+/** "3 sources, 1 assumption" (an added trial's schedule). */
+function sourceCount(proto: Protocol): string {
+  const s = proto.sources.length
+  const a = proto.assumptions.length
+  return `${s} source${s === 1 ? '' : 's'}, ${a} assumption${a === 1 ? '' : 's'}`
+}
+
 function AuthoredNotes({ proto }: { proto: Protocol }) {
   // In Simple the disclosure's summary names this block; in Detailed it needs a heading of its own.
   const detailed = useDensity().density === 'detailed'
+  // A trial added by NCT ID: its schedule is a registry draft or the user's CSV, not authored by Concord.
+  const added = !!proto.import
   return (
     <div className="tf-notes">
-      {detailed && <h3>How this schedule was authored</h3>}
+      {detailed && <h3>{added ? 'Where this schedule comes from' : 'How this schedule was authored'}</h3>}
       <p className="small">
-        Authored {dateText(proto.authored)} from the ClinicalTrials.gov record of {proto.nct_id}. Where the registry is silent we used {proto.practice_basis ?? 'standard NSCLC practice'}.{' '}
+        {added ? (
+          <>
+            {proto.why_chosen} {proto.import?.label}.
+          </>
+        ) : (
+          <>
+            Authored {dateText(proto.authored)} from the ClinicalTrials.gov record of {proto.nct_id}. Where the registry is silent we used{' '}
+            {proto.practice_basis ?? 'standard NSCLC practice'}.
+          </>
+        )}{' '}
         {proto.quote_note}
       </p>
-      <h3>Registry facts used</h3>
+      <h3>{added ? 'Sources used' : 'Registry facts used'}</h3>
       <ul className="tf-src-list small">
         {proto.sources.map((s, i) => (
           <li key={i}>

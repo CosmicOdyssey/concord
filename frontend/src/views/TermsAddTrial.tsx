@@ -154,7 +154,14 @@ export function AddedTrialSchedule({ proto, onChanged }: { proto: Protocol; onCh
       <div className="ta-kfs">
         <KeyFigure value={imp.n_visits} label={draft ? 'visits inferred' : 'visits'} />
         <KeyFigure value={imp.n_items} label={draft ? 'items inferred' : 'scheduled items'} />
-        <KeyFigure value={imp.n_unpriced_procedures} label="items unpriced" sub="listed, never counted as zero" />
+        <KeyFigure
+          value={
+            imp.n_unpriced_items ??
+            proto.nodes.filter((n) => proto.procedures.find((p) => p.id === n.procedure)?.pricing === 'unpriced').length
+          }
+          label="items unpriced"
+          sub={`${imp.n_unpriced_procedures} procedure${imp.n_unpriced_procedures === 1 ? '' : 's'}, listed, never counted as zero`}
+        />
       </div>
       <p className="ta-lede">
         {draft ? (
@@ -194,7 +201,8 @@ export function AddedTrialSchedule({ proto, onChanged }: { proto: Protocol; onCh
           />
           <p id={`${ids}-csvhint`} className="ta-hint">
             One row per procedure at a visit. A header row, blank visit cells (carried down), $ signs and weeks (W4, Week 4) are fine. code is optional:
-            a CPT/HCPCS code, <code>standard:&lt;item&gt;</code> for a proposed standard fee, or blank. repeats: how many times the visit happens.
+            a CPT/HCPCS code, <code>standard:&lt;item&gt;</code> for a proposed standard fee, <code>no-charge</code>, or blank. repeats: how many times the
+            visit happens.
           </p>
         </div>
         <div className="ta-actions">

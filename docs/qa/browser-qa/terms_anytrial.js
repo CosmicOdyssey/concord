@@ -2,7 +2,9 @@
 // non-lung oncology Phase 3), an unknown NCT ID (clear error), the schedule-source panel, a SoA CSV paste and the way
 // back to the registry draft; then screenshots in Simple and Detailed, light and dark, 1440 and 390 px; page and
 // console errors; horizontal page scroll; on-screen per-participant total equal to the API; downstream steps
-// (compare, spreads, proposal check, term sheet) present. Writes report.json with the numbers per trial.
+// (compare, spreads, proposal check, term sheet) present. Also: a trial with no U.S. sites is refused; reviewer
+// overrides, then the unmodified CSV template uploaded and back to the draft, with zero failed requests; authored
+// trials without a synthetic sample load with no 404. Writes report.json with the numbers per trial.
 // Usage (NODE_PATH must reach puppeteer-core): node terms_anytrial.js [baseUrl] [outDir]
 const fs = require('fs')
 const path = require('path')
@@ -39,25 +41,19 @@ async function ready(page) {
 
 ;(async () => {
   const browser = await launch()
-  // Known and pre-existing (proposal track, also for SIENNA and NCT06627647): GET /proposal-sample answers 404 for a
-  // trial without a synthetic sample, the client reads that as "no sample", and Chrome logs the 404 as a console
-  // error. Counted separately; everything else counts as a failure.
-  const log = { console: [], pageerrors: [], failed: [], preexisting404: 0, runs: {}, trials: {} }
+  // Every failed /api request counts (GET /proposal-sample answers null, not 404, for a trial without a sample);
+  // only the add form's deliberate errors (unknown ID, no U.S. sites) are expected.
+  const log = { console: [], pageerrors: [], failed: [], runs: {}, trials: {} }
   const watch = (page, name, allowAdd404 = false) => {
     const pending = []
     page.on('response', (r) => {
       if (!r.url().includes('/api/') || r.status() < 400) return
-      if (r.status() === 404 && r.url().endsWith('/proposal-sample')) {
-        log.preexisting404 += 1
-        pending.push(1)
-        return
-      }
       if (allowAdd404 && r.url().includes('add-trial')) return pending.push(1)
       log.failed.push(`${name}: ${r.status()} ${r.url()}`)
     })
     page.on('console', (m) => {
       if (m.type() !== 'error' && m.type() !== 'warning') return
-      if (/Failed to load resource: the server responded with a status of 404/.test(m.text()) && pending.length) {
+      if (/Failed to load resource: the server responded with a status of 40[04]/.test(m.text()) && pending.length) {
         pending.pop()
         return
       }
@@ -107,6 +103,18 @@ async function ready(page) {
     const err = await page.$eval('.ta-add .ta-error', (e) => e.innerText)
     check('unknown NCT ID error', /no study NCT00000000/.test(err), err)
     log.unknownError = err
+    // a trial with no registered U.S. sites (hepatocellular carcinoma, China only): refused with a reason
+    await page.click('.ta-add input', { clickCount: 3 })
+    await page.type('.ta-add input', 'NCT04560894')
+    await page.keyboard.press('Enter')
+    await page.waitForFunction(() => /U\.S\. sites/.test(document.querySelector('.ta-add .ta-error')?.innerText ?? ''), {
+      timeout: 90000,
+      polling: 300,
+    })
+    log.noUsSitesError = await page.$eval('.ta-add .ta-error', (e) => e.innerText)
+    check('no-US-sites trial refused', /no registered U\.S\. sites/.test(log.noUsSitesError), log.noUsSitesError)
+    const listed = await getJson('/api/terms-flow/trials')
+    check('no-US-sites trial not listed', !listed.some((t) => t.nct_id === 'NCT04560894'))
     await page.click('.ta-add input', { clickCount: 3 })
     await page.type('.ta-add input', 'hello')
     await page.keyboard.press('Enter')
@@ -138,11 +146,18 @@ async function ready(page) {
     check(`${t.nct} every node RA`, proto.nodes.every((n) => n.rule === 'RA' && n.coverage === 'research'))
     check(`${t.nct} term sheet labels`, md.includes(DRAFT) && md.includes(DISCLAIMER))
     check(`${t.nct} no forbidden words`, !FORBIDDEN.some((w) => md.toLowerCase().includes(w)))
+    const unpricedInBudget = bud.totals.unpriced_sponsor_items.reduce((s, i) => s + i.per_participant, 0)
+    check(`${t.nct} panel unpriced items equal the budget's`, proto.import.n_unpriced_items === unpricedInBudget, `${proto.import.n_unpriced_items} vs ${unpricedInBudget}`)
+    check(`${t.nct} rules are RA only`, proto.rules.map((r) => r.id).join() === 'RA')
+    check(`${t.nct} term sheet has no lung example`, !md.includes('R4 (research)') && !md.includes('CT every 6 weeks'))
     log.trials[t.nct] = {
       area: t.area,
       title: proto.short_title,
       visits_inferred: proto.import.n_visits,
+      horizon_points: proto.visits.filter((v) => v.horizon).map((v) => v.label),
       items_inferred: proto.import.n_items,
+      items_unpriced: proto.import.n_unpriced_items,
+      unpriced_in_budget: unpricedInBudget,
       procedures: proto.procedures.map((p) => `${p.label} [${p.code ?? p.pricing}]`),
       unpriced_procedures: proto.procedures.filter((p) => p.pricing === 'unpriced').map((p) => p.label),
       unmapped: proto.import.unmapped,
@@ -164,24 +179,92 @@ async function ready(page) {
     }
   }
 
-  // 3. CSV route in the UI on the diabetes trial: paste, use, check the panel and total, then back to the draft.
+  // 3. CSV route in the UI on the diabetes trial with three reviewer overrides in place: upload the unmodified
+  // template (no warnings, citations are file lines), then back to the registry draft. No request may carry the old
+  // schedule's override ids (every /api response must succeed), and the totals must follow each schedule.
   {
     const nct = 'NCT07564414'
-    const page = await open('csv', 1440, { hash: `#terms-flow/${nct}` })
+    const ov = { 'D1:anthro': 'routine', 'W72:anthro': 'routine', 'D1:lipids': 'routine' }
+    const page = await browser.newPage()
+    watch(page, 'csv')
+    const failedHere = []
+    page.on('response', (r) => {
+      if (r.url().includes('/api/') && r.status() >= 400) failedHere.push(`${r.status()} ${r.url()}`)
+    })
+    await page.evaluateOnNewDocument(
+      (nct, ov) => {
+        try {
+          localStorage.clear()
+          localStorage.setItem(`tf:overrides:${nct}`, JSON.stringify(ov))
+        } catch {
+          /* ignore */
+        }
+      },
+      nct,
+      ov,
+    )
+    await page.setViewport({ width: 1440, height: 900 })
+    await page.goto(`${BASE}/#terms-flow/${nct}`, { waitUntil: 'domcontentloaded' })
     await ready(page)
-    const csv = 'Visit,Week,Procedure,Code,Repeats\nScreening,-2,Office visit new patient,99204,\n,,HbA1c,,\nRandomisation,0,ECG,93000,\nDosing visit,W4 ±3,SC injection,96372,17\nEnd of treatment,72,HbA1c,83036,\n'
-    await page.type('.ta-csv-text', csv)
+    const sites = await getJson(`/api/terms-flow/${nct}/sites`)
+    const A = sites.default_pair[0]
+    const budAt = async (o) =>
+      getJson(`/api/terms-flow/${nct}/budget?site_id=${A}&multiplier=1${o ? `&overrides=${encodeURIComponent(JSON.stringify(o))}` : ''}`)
+    const payerIs = async (want) => {
+      try {
+        await page.waitForFunction((w) => (document.querySelector('.tf-payer-value')?.innerText ?? '').includes(w), { timeout: 30000, polling: 250 }, want)
+        return true
+      } catch {
+        return false
+      }
+    }
+    const draftOv = await budAt(ov)
+    const draftPlain = await budAt(null)
+    check('csv: overrides applied on the draft', await payerIs(usd(draftOv.totals.per_participant)), usd(draftOv.totals.per_participant))
+    const tpl = await (await fetch(`${BASE}/api/terms-flow/soa-template.csv`)).text()
+    await page.$eval('.ta-csv-text', (el) => el.focus())
+    await page.type('.ta-csv-text', tpl)
     await page.evaluate(() => [...document.querySelectorAll('.ta-actions button')].find((b) => b.innerText.includes('Use this schedule')).click())
     await page.waitForFunction(() => document.querySelector('.ta-panel .badge')?.innerText.includes('Uploaded'), { timeout: 60000, polling: 300 })
-    await sleep(2500)
-    const sites = await getJson(`/api/terms-flow/${nct}/sites`)
-    const bud = await getJson(`/api/terms-flow/${nct}/budget?site_id=${sites.default_pair[0]}&multiplier=1`)
-    const onScreen = await page.$eval('.tf-payer-value', (e) => e.innerText)
-    check('csv: on-screen total equals API', onScreen.includes(usd(bud.totals.per_participant)), `${onScreen} vs ${usd(bud.totals.per_participant)}`)
-    log.csvRoute = { per_participant: bud.totals.per_participant, onScreen, visits: bud.visits.map((v) => `${v.label} x${v.occurrences ?? 1}`) }
+    const csvBud = await budAt(null)
+    check('csv: on-screen total equals API', await payerIs(usd(csvBud.totals.per_participant)), usd(csvBud.totals.per_participant))
+    await sleep(1500)
+    const panel = await page.evaluate(() => ({
+      warnings: document.querySelector('.ta-panel .ta-warn')?.innerText ?? '',
+      text: document.querySelector('.ta-panel')?.textContent ?? '',
+      kfs: document.querySelector('.ta-kfs')?.innerText ?? '',
+      qual: [...document.querySelectorAll('#tf-step-1 .qualifier, #tf-step-1 [class*="qual"]')].map((e) => e.innerText).join(' | '),
+      step1: document.querySelector('#tf-step-1')?.textContent ?? '',
+    }))
+    check('csv: template uploads with no warnings', !panel.warnings, panel.warnings)
+    check('csv: citations are file lines (Screening is line 5)', panel.text.includes('from your CSV, row 5'))
+    check('csv: step 1 credits the uploaded CSV', panel.step1.includes('Uploaded schedule (CSV), not checked against the protocol'))
+    check('csv: no "Authored ... from the registry record" for the CSV', !panel.step1.includes('from the registry record:'))
+    const csvProto = await getJson(`/api/terms-flow/${nct}/protocol`)
+    log.csvRoute = {
+      per_participant: csvBud.totals.per_participant,
+      unpriced_text: csvBud.totals.unpriced_text,
+      kfs: panel.kfs,
+      qualifier: panel.qual,
+      visits: csvBud.visits.map((v) => `${v.label} x${v.occurrences ?? 1}`),
+      unpriced_items: csvProto.import.n_unpriced_items,
+    }
     await (await page.$('.ta-panel')).screenshot({ path: path.join(OUT, 'anytrial_csv_panel_simple-1440-light.png') })
     await page.evaluate(() => [...document.querySelectorAll('.ta-actions button')].find((b) => b.innerText.includes('Back to the registry draft')).click())
     await page.waitForFunction(() => document.querySelector('.ta-panel .badge')?.innerText.includes('Draft'), { timeout: 60000, polling: 300 })
+    check('csv: back on the draft, the overrides apply again', await payerIs(usd(draftOv.totals.per_participant)), usd(draftOv.totals.per_participant))
+    await sleep(1500)
+    check('csv: zero failed requests through override, upload and back', failedHere.length === 0, failedHere.join('; '))
+    log.csvRoute.draft_with_overrides = draftOv.totals.per_participant
+    log.csvRoute.draft_plain = draftPlain.totals.per_participant
+    await page.close()
+  }
+
+  // 3b. Authored trials without a synthetic sample (SIENNA, NCT06627647): no 404, no console error.
+  for (const nct of ['NCT06541704', 'NCT06627647']) {
+    const page = await open(`authored-${nct}`, 1440, { hash: `#terms-flow/${nct}` })
+    await page.waitForFunction(() => document.querySelector('.tf-payer-value'), { timeout: 90000, polling: 300 })
+    await sleep(2500)
     await page.close()
   }
 
@@ -231,11 +314,11 @@ async function ready(page) {
   fs.writeFileSync(path.join(OUT, 'report.json'), JSON.stringify(log, null, 1))
   console.log(
     JSON.stringify(
-      { fails, console: log.console, pageerrors: log.pageerrors, failed: log.failed, preexisting404: log.preexisting404, csvRoute: log.csvRoute, unknown: log.unknownError, bad: log.badFormatError },
+      { fails, console: log.console, pageerrors: log.pageerrors, failed: log.failed, csvRoute: log.csvRoute, unknown: log.unknownError, bad: log.badFormatError, noUsSites: log.noUsSitesError },
       null,
       1,
     ),
   )
   for (const [k, v] of Object.entries(log.trials))
-    console.log(k, v.area, '| visits', v.visits_inferred, 'items', v.items_inferred, '| unpriced', v.unpriced_procedures.length, '| site', v.site_a, '| per participant', v.per_participant, '| shares', JSON.stringify(v.shares))
+    console.log(k, v.area, '| visits', v.visits_inferred, '(horizons', v.horizon_points.length + ')', 'items', v.items_inferred, '| unpriced items', v.items_unpriced, '(budget', v.unpriced_in_budget + ')', 'procedures', v.unpriced_procedures.length, '| site', v.site_a, '| per participant', v.per_participant, '| screen failure', v.screen_failure, '| shares', JSON.stringify(v.shares))
 })()

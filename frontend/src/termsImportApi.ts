@@ -13,6 +13,10 @@ export interface ImportInfo {
   n_items: number
   n_procedures: number
   n_unpriced_procedures: number
+  /** Scheduled items whose procedure is unpriced (what the budget leaves out); absent in older cached files. */
+  n_unpriced_items?: number
+  /** When this schedule was written (ISO time): its version; a new one refetches the prices. */
+  updated?: string
   /** Registry fields (or CSV items) that no table entry maps: listed, left unpriced. */
   unmapped: { field: string; quote: string; why: string }[]
   warnings: string[]
@@ -40,7 +44,8 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     } catch {
       /* non-JSON error body */
     }
-    throw new Error(res.status === 404 ? detail : `${res.status} ${detail}`)
+    // A 4xx detail is a sentence for the user (unknown ID, no U.S. sites, a CSV problem); keep the code for the rest.
+    throw new Error(res.status < 500 ? detail : `${res.status} ${detail}`)
   }
   return (await res.json()) as T
 }
