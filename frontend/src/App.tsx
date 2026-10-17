@@ -20,11 +20,12 @@ const DevComponentsView = lazy(() => import('./views/DevComponentsView'))
 // Financial Coordination (PR #1) is hidden while its time/speed model is removed: it projected faster trials from budget
 // and coverage levers, which the product does not claim. The view and API stay in the repo.
 
-// Labels, sub-labels (always visible) and tooltips: copy deck B1.
+// Labels, sub-labels (always visible) and tooltips: copy deck B1. Protocol to terms is the product, so it leads; Portfolio
+// overlap is the second tool. Financial Coordination stays out of the main navigation.
 const TABS = [
-  { id: 'findings', label: 'Findings', hint: 'What we tested, including results that weakened the original idea.' },
-  { id: 'overlap', label: 'Portfolio overlap', hint: "Where one sponsor's trials share registered sites and eligible patients." },
   { id: 'terms-flow', label: 'Protocol to terms', hint: 'A schedule of assessments, turned into a coverage grid, a budget and a term sheet.' },
+  { id: 'overlap', label: 'Portfolio overlap', hint: "Where one sponsor's trials share registered sites and eligible patients." },
+  { id: 'findings', label: 'Findings', hint: 'What we tested, including results that weakened the original idea.' },
   {
     id: 'site-scores',
     label: 'Site scores',

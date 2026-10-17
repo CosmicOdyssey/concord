@@ -168,7 +168,7 @@ a.lp-open:hover {
 }
 .lp-mrow {
   display: grid;
-  grid-template-columns: 8.75rem repeat(6, 4.625rem);
+  grid-template-columns: 8.75rem repeat(var(--lp-cols, 6), 4.625rem);
   gap: 4px;
 }
 .lp-mrow + .lp-mrow {
@@ -840,10 +840,56 @@ a.lp-open:hover {
   margin: 0 0 0.375rem;
 }
 
+/* ---------- Protocol to terms first, Portfolio overlap second ---------- */
+.lp-section-first {
+  padding-top: clamp(4rem, 9vw, 7rem);
+}
+.lp-terms-simple .lp-terms-main {
+  flex-basis: 100%;
+}
+.lp-terms-lead .hc-info,
+.lp-tbl th .hc-info {
+  vertical-align: -0.125em;
+}
+.lp-src {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  max-width: 26rem;
+}
+.lp-ov-fig {
+  margin: clamp(3rem, 6vw, 4.5rem) 0 0;
+}
+.lp-gloss {
+  margin: 0.625rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.lp-gloss li + li {
+  margin-top: 0.25rem;
+}
+.lp-crit-pad {
+  margin: 0;
+  padding: 0 clamp(1.25rem, 3vw, 2.5rem) clamp(1.25rem, 3vw, 2.5rem);
+}
+.lp-crit-none {
+  margin: 0;
+  font-size: var(--fs-md);
+  color: var(--muted);
+}
+
 /* ---------- phone ---------- */
 @media (max-width: 640px) {
+  .lp-head-ctl {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 0.5rem;
+  }
   .lp-mrow {
-    grid-template-columns: 5rem repeat(6, 2.25rem);
+    grid-template-columns: 5.75rem repeat(var(--lp-cols, 6), 2.5rem);
     gap: 3px;
   }
   .lp-mrow + .lp-mrow {
