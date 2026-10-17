@@ -4,7 +4,10 @@
 Date: October 17, 2026. Repository `CosmicOdyssey/concord`; branch
 `codex/concord-hackharvard-demo`, isolated checkout. Base `main` independently
 read from GitHub and cloned at `06ec129f88af468af8dd70c42a07d3515f69806e`.
-No existing Concord or Fleet checkout was modified. No merge or deployment.
+Main advanced during work. The unpublished demo commits were rebased onto
+`e0bd6c7bd1484c3ba6646d7e6a23d95743671641`, preserving the new Terms-first
+navigation and all upstream changes. Acceptance below was repeated on integrated
+source. No existing Concord or Fleet checkout was modified. No PR merge or deployment.
 
 ## Existing capabilities audited before use
 
@@ -37,10 +40,10 @@ routine lines, receipt/resource reconciliation and unchanged supply classificati
 invariants. No production arithmetic was changed and no test was skipped to pass.
 
 Full configured Fleet verification after implementation and saved-evidence tests:
-**PASS**, receipt `684bfe33-f087-4088-bf16-a36d6c97d3d8`, 54.965 seconds,
+**PASS**, receipt `043a1e9b-7e0c-437f-ada1-b7a4e1d5d2ef`, 55.888 seconds,
 dirty working-tree verification (not falsely called commit-bound):
 
-- Backend: **512 passed, 57 skipped**, one inherited Starlette/httpx deprecation warning.
+- Backend: **549 passed, 85 skipped**, one inherited Starlette/httpx deprecation warning.
 - Frontend: **29 passed** (15 financial + 6 portfolio + 8 demo).
 - Separate typecheck: pass.
 - Build: pass.
@@ -60,6 +63,12 @@ oracle**, unavailable/altered saved evidence and explicit replay. Socket creatio
 is blocked in the no-outbound-backend test. Browser checks use the real backend,
 not mocked response interception.
 
+One interim verification (`12bd9b6d-1c91-427a-a6a1-ed5c525e5b05`) overlapped
+source synchronization during the unpublished rebase and correctly failed with
+28 source-change-fence failures. It was **not** accepted. Source was then frozen,
+the runtime restarted, and full verification repeated successfully. The source
+guard was not weakened. Raw invalidated output is preserved locally.
+
 ## Real browser acceptance
 
 Connected browser at **1440 × 900**; actual locally built application and loopback
@@ -68,12 +77,12 @@ HTTP API. Runner: `scripts/demo-browser-acceptance.mjs`; raw scene observations:
 
 | Rehearsal | Server compute | Main clicks | Automated journey |
 |---|---:|---:|---:|
-| 1 | 363.5 ms | 4 | 1,659 ms |
-| 2 | 360.7 ms | 4 | 1,600 ms |
-| 3 | 361.7 ms | 4 | 1,617 ms |
+| 1 | 356.0 ms | 4 | 1,637 ms |
+| 2 | 384.8 ms | 4 | 1,613 ms |
+| 3 | 367.0 ms | 4 | 1,619 ms |
 
 All three completed consecutively with **distinct real computation timestamps**,
-the same deterministic run ID `553f35a1268c310f35db133f840eb13e`, exact-model
+the same deterministic run ID `516465c380548233a0419d0408018d76`, exact-model
 `OPTIMAL`, 678 cached candidate/policy evaluations, and the expected comparison.
 These are automated action/observation times, **not three spoken 180-second talks**.
 Each includes one setup Reset outside the four main clicks. Optional report makes
@@ -99,17 +108,17 @@ Additional real checks:
   browser exposed visibility/viewport, not a screen-recording capability.
 
 Raw downloaded live result: `evidence/browser-result.json`; its genuine receipt
-says code checkpoint `ede0e2c2a7a799cf86801963416928e55618cf30`, dirty=true.
+says code checkpoint `e13cc8bf5e84be79b2ea117a74a4e6d29daca71e`, dirty=true.
 That is intentional provenance, not rewritten to the later documentation commit.
 Fallback snapshot `frontend/public/demo/saved-result.json` was separately generated
 from that **clean** code checkpoint (dirty=false), run
-`2d632b9c1d59b88ee8e1ae94e0502bff`, at 307.831 ms. Live and saved identities are
+`4b9207c1b4b89f27a853ff68cb56fa42`, at 334.829 ms. Live and saved identities are
 not conflated. Neither result is a hand-authored outcome.
 
 ## Startup and spoken-script timing
 
-Fresh owned-process startup through first baseline response: **633.488 ms**;
-baseline computation: **3.062 ms**. Dependencies and the frontend were already
+Fresh owned-process startup through first baseline response: **439.448 ms**;
+baseline computation: **3.099 ms**. Dependencies and the frontend were already
 installed/built; this is not a claim about installation time or every laptop.
 
 The 180-second script has **319 whitespace-counted words**; at 135 words/minute

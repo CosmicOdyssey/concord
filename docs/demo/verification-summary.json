@@ -1,19 +1,19 @@
 {
   "schemaVersion": 1,
-  "id": "684bfe33-f087-4088-bf16-a36d6c97d3d8",
+  "id": "043a1e9b-7e0c-437f-ada1-b7a4e1d5d2ef",
   "branch": "codex/concord-hackharvard-demo",
-  "commit": "ede0e2c2a7a799cf86801963416928e55618cf30",
+  "commit": "e13cc8bf5e84be79b2ea117a74a4e6d29daca71e",
   "repositoryDirty": true,
   "commitBinding": "dirty-working-tree",
-  "startedAt": "2026-10-17T21:29:36.053Z",
-  "endedAt": "2026-10-17T21:30:31.018Z",
-  "durationMs": 54965,
+  "startedAt": "2026-10-17T21:40:52.019Z",
+  "endedAt": "2026-10-17T21:41:47.907Z",
+  "durationMs": 55888,
   "status": "passed",
   "checks": [
     {
       "id": "backend",
       "status": "passed",
-      "durationMs": 17189,
+      "durationMs": 35542,
       "exitCode": 0,
       "timedOut": false,
       "truncated": false
@@ -21,7 +21,7 @@
     {
       "id": "frontend-tests",
       "status": "passed",
-      "durationMs": 244,
+      "durationMs": 346,
       "exitCode": 0,
       "timedOut": false,
       "truncated": false
@@ -29,7 +29,7 @@
     {
       "id": "portfolio-client",
       "status": "passed",
-      "durationMs": 193,
+      "durationMs": 246,
       "exitCode": 0,
       "timedOut": false,
       "truncated": false
@@ -37,7 +37,7 @@
     {
       "id": "demo-client",
       "status": "passed",
-      "durationMs": 197,
+      "durationMs": 234,
       "exitCode": 0,
       "timedOut": false,
       "truncated": false
@@ -45,7 +45,7 @@
     {
       "id": "typecheck",
       "status": "passed",
-      "durationMs": 2234,
+      "durationMs": 12088,
       "exitCode": 0,
       "timedOut": false,
       "truncated": false
@@ -53,7 +53,7 @@
     {
       "id": "frontend-build",
       "status": "passed",
-      "durationMs": 34636,
+      "durationMs": 7019,
       "exitCode": 0,
       "timedOut": false,
       "truncated": false
@@ -61,16 +61,15 @@
     {
       "id": "frontend-lint",
       "status": "passed",
-      "durationMs": 271,
+      "durationMs": 411,
       "exitCode": 0,
       "timedOut": false,
       "truncated": false
     }
   ],
   "counts": {
-    "backend_passed": 512,
-    "backend_skipped": 57,
+    "backend_passed": 549,
+    "backend_skipped": 85,
     "frontend_passed": 29
-  },
-  "raw_record": "Ignored .fleet/state/acceptance/fleet-evidence.json; not a fabricated clean-commit receipt"
+  }
 }

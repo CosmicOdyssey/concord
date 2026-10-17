@@ -3,7 +3,7 @@
 Entry: **`http://127.0.0.1:18080/#demo`**. Desktop target: **1440 × 900**, browser zoom 100%.
 Use the existing Calm theme control; dark and light are supported. No deployment is necessary.
 
-## Reproduce (macOS/Linux, Node 22.18+ and Python 3.11+)
+## Reproduce (macOS/Linux, Node 22.18+; verified Node 26.11.1 / Python 3.14.7)
 
 ```sh
 uv venv backend/.venv
@@ -123,7 +123,7 @@ node "$FLEET_CLI" verify --json
 `FLEET_CLI` is the installed existing Engineering Fleet `dist/cli.js`; on the
 acceptance machine it is `/Users/sadius/engineering-fleet-hackharvard/dist/cli.js`.
 The tracked `.fleet/config.json` runs every deterministic check. Fleet campaign:
-**CONCORD-HACKHARVARD-DEMO**, local task `concord-demo-implementation`. It never
+**CONCORD-HACKHARVARD-DEMO**, local tasks `concord-demo-implementation` and continuation `concord-demo-integrated`. It never
 creates a remote execution authority, consumes a previous mission approval or
 modifies the Fleet daemon/supervisor. See `ACCEPTANCE.md` for actual fresh results.
 

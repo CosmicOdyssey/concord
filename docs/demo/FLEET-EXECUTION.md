@@ -5,7 +5,8 @@
   version has no campaign subcommand; no imaginary daemon campaign is claimed.
 - Fleet version: 0.4.0, inspected checkout commit
   `d8e867159038df4e72877b1b5141a05d2908e703`.
-- Target base: `06ec129f88af468af8dd70c42a07d3515f69806e`; branch
+- Initial base: `06ec129f88af468af8dd70c42a07d3515f69806e`. Integrated acceptance
+  base: `e0bd6c7bd1484c3ba6646d7e6a23d95743671641`; branch
   `codex/concord-hackharvard-demo`. Current repository only; no supervisor changes.
 - Executor/final gate: Codex. Local task moved draft → ready → assigned → in-progress.
   The task records verification, browser acceptance, source checks, commits and PR.
@@ -32,3 +33,10 @@
   Those are not concealed by the bounded local-demo PASS.
 - Delivery: authorized branch push and **draft** PR only. No merge/deploy. No
   Vercel, Supabase, production credential, shared daemon or research-repository write.
+
+Upstream advanced while working. Continuation task `concord-demo-integrated`
+was created while HEAD was the newly fetched main, giving it the correct immutable
+review base and complete fixture scope. It continues the same campaign; original
+task and invalidated verification history are retained. No approval was reused.
+Only unpublished feature commits were rebased; upstream/published work was not
+rewritten. The continuation receives final commit-bound verification.

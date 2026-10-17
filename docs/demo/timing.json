@@ -1,10 +1,10 @@
 {
   "startup": {
     "scope": "Fresh owned uvicorn process through first successful baseline HTTP response; dependencies/build already installed",
-    "startup_ms": 633.488,
-    "baseline_compute_ms": 3.062,
+    "startup_ms": 439.448,
+    "baseline_compute_ms": 3.099,
     "port": 18081,
-    "pid": 26589,
+    "pid": 33156,
     "external_credentials_forwarded": false
   },
   "scripts": {
