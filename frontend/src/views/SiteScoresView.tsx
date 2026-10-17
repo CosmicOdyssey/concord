@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Banner, Details, ErrorBox, Gloss, InfoTip, KeyFigure, Loading, PageHead, Qualifier, Section } from '../components'
 import { useDensity } from '../density'
+import { useTabActive } from '../tabActive'
 import { ctgovUrl, int, phaseLabel } from '../format'
 import {
   fixed,
@@ -182,8 +183,10 @@ export default function SiteScoresView() {
   const scrollOnLoad = useRef(siteFromHash() !== null)
   const loadedId = detail.status === 'ok' ? detail.data.site.site_id : null
   const ready = summary.status === 'ok' // the breakdown window exists only once the summary has loaded
+  // Kept mounted behind another tab, the view waits until it is shown to scroll.
+  const active = useTabActive()
   useEffect(() => {
-    if (!scrollOnLoad.current || !ready || loadedId === null || loadedId !== selected) return
+    if (!scrollOnLoad.current || !ready || !active || loadedId === null || loadedId !== selected) return
     const el = breakdownRef.current
     if (!el) return
     scrollOnLoad.current = false
@@ -205,7 +208,7 @@ export default function SiteScoresView() {
       window.removeEventListener('touchstart', cancel)
       window.removeEventListener('keydown', cancel)
     }
-  }, [loadedId, selected, ready])
+  }, [loadedId, selected, ready, active])
   useEffect(() => {
     const on = () => {
       const id = siteFromHash()

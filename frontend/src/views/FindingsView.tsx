@@ -7,6 +7,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
 import { ErrorBox, Gloss, KeyFigure, Loading, PageHead, Qualifier, Section } from '../components'
 import { useDensity } from '../density'
+import { useTabActive } from '../tabActive'
 import { GLOSSARY } from '../glossary'
 import {
   allocationModel,
@@ -1010,8 +1011,10 @@ export default function FindingsView({ focus }: { focus?: { id: string | null; n
   const focusId = focus?.id ?? null
   const focusN = focus?.n ?? 0
   const settled = doc !== null && overlap.status !== 'loading'
+  // A deep link that arrives while this view is kept hidden (another tab on show) waits until it is shown.
+  const active = useTabActive()
   useEffect(() => {
-    if (!settled || !focusId) return
+    if (!settled || !focusId || !active) return
     let live = true
     const go = () => {
       if (live) scrollToBlock(focusId, false)
@@ -1023,7 +1026,7 @@ export default function FindingsView({ focus }: { focus?: { id: string | null; n
     return () => {
       live = false
     }
-  }, [settled, focusId, focusN])
+  }, [settled, focusId, focusN, active])
 
   // On-page index: real links (#findings/<id>), so each one can be copied; a click scrolls without a reload.
   const onIndex = (e: MouseEvent<HTMLAnchorElement>, id: string) => {

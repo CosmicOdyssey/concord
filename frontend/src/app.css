@@ -250,6 +250,45 @@
   }
 }
 
+/* ---------- views (App.tsx) ---------- */
+/* A visited view stays mounted; the others carry the hidden attribute (.app sets display, so it is restated here).
+   The app shell itself is hidden, not removed, on the landing page. */
+.app[hidden],
+.app-pane[hidden] {
+  display: none;
+}
+/* At least a screen tall: content that arrives after a view shows (its data, a Loading box) grows it downward, below
+   the fold, instead of pulling the footer up into view and pushing it out again. */
+.app-pane,
+.app-loading {
+  min-height: 100vh;
+}
+/* The view just shown fades in: opacity and a 6 px rise, 180 ms, like the Protocol to terms steps. The hidden
+   attribute takes a view out of display, so the animation replays each time it is shown, including the first view
+   after the landing page. No fade-out: the old view goes at once, leaving no gap. No fill mode, so nothing (no
+   transform) stays on the view afterwards. */
+@media (prefers-reduced-motion: no-preference) {
+  .app-pane:not([hidden]) {
+    animation: app-pane-in 180ms ease-out;
+  }
+  /* Showing a view restarts the animations inside it too: the Terms step on show would replay its own fade on top of
+     the view's (opacity squared, a 12 px rise). App.tsx marks the view for the length of its fade; a 0 s duration ends
+     the inner one at once, and when the mark goes the inner animation is already past its end, so it stays done. */
+  .app-pane[data-entering] .tf-step[role='tabpanel'] {
+    animation-duration: 0s;
+  }
+}
+@keyframes app-pane-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ---------- run status (Research) ---------- */
 .run-status:not(:empty) {
   margin: 0 0 var(--sp-4);

@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { CircleMarker, MapContainer, TileLayer, Tooltip, useMap } from 'react-leaflet'
 import type { LatLngBoundsExpression } from 'leaflet'
 import type { AllocKey, ClearResult, Site } from '../api'
 import type { ClearState } from '../App'
 import { Badge, Details, ErrorBox, Loading, NeedsClear, RunLine } from '../components'
 import { useDensity } from '../density'
+import { useTabActive } from '../tabActive'
 import { ALLOC_HINT, ALLOC_LABEL, int, isNum, loadOf, pct } from '../format'
 import { DEFAULT_SCENARIO } from '../api'
 import { useTheme } from '../theme'
@@ -22,10 +23,19 @@ function radius(n: number): number {
 
 function FitBounds({ bounds }: { bounds: LatLngBoundsExpression | null }) {
   const map = useMap()
+  // The Research tab stays mounted behind other tabs (display: none): the map measures 0 x 0 there. When the tab is
+  // shown again, re-read the size, and fit a result that arrived while it was hidden.
+  const active = useTabActive()
+  const fitted = useRef<LatLngBoundsExpression | null>(null)
   useEffect(() => {
-    if (bounds) map.fitBounds(bounds, { padding: [24, 24] })
+    if (!active) return
+    map.invalidateSize()
+    if (bounds && fitted.current !== bounds) {
+      fitted.current = bounds
+      map.fitBounds(bounds, { padding: [24, 24] })
+    }
     // bounds is memoized per clear result, so toggling the allocation does not refit.
-  }, [bounds, map])
+  }, [bounds, map, active])
   return null
 }
 
