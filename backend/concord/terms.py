@@ -30,6 +30,7 @@ from pathlib import Path
 
 from concord import anchoring
 from concord.paths import DB_PATH
+from concord import terms_registry
 from concord.ratecard import medicare
 from concord.ratecard.cms import STATE_ABBR
 
@@ -56,8 +57,8 @@ class NotFound(TermsError):
 
 RULES: dict[str, dict] = {
     "R1": {"coverage": "research", "title": "Investigational product and its administration",
-           "text": "The investigational agent (or its blinded placebo), its preparation and the infusion that "
-                   "delivers it are paid by the sponsor."},
+           "text": "The investigational agent (or its blinded placebo), its preparation and the infusion or injection "
+                   "that delivers it are paid by the sponsor."},
     "R2": {"coverage": "research", "title": "Protocol-only test or activity",
            "text": "Items that exist only because of the protocol: PK and anti-drug-antibody samples, central "
                    "confirmation, protocol ECGs, eligibility-only serology, questionnaires, central scan upload, "
@@ -73,6 +74,16 @@ RULES: dict[str, dict] = {
            "text": f"Administration of approved standard therapy given in every arm is routine under {NCD}. "
                    "Drug supplied free by the sponsor is never billed."},
 }
+# Worked examples inside RULES texts (lung). A protocol may replace one with its own ("rule_examples").
+_RULE_EXAMPLES = {"R4": "CT every 6 weeks against a 9-week reference: one scan in three"}
+
+
+def _rules(p: dict) -> dict[str, dict]:
+    """RULES with this protocol's worked examples, so a non-lung protocol never shows the lung example."""
+    own = p.get("rule_examples") or {}
+    return {k: ({**v, "text": v["text"].replace(_RULE_EXAMPLES[k], own[k])} if k in own and k in _RULE_EXAMPLES else v)
+            for k, v in RULES.items()}
+
 
 # The reference R3 and R4 compare against. Authored, not a coverage determination.
 STANDARD_CARE_REFERENCE = [
@@ -198,16 +209,17 @@ def _edges(visits: list[dict]) -> list[dict]:
 
 
 def _trial_facts(nct: str) -> dict:
-    """Descriptive registry facts from the database (no enrollment figures)."""
+    """Descriptive registry facts from the database (no enrollment figures); for a trial outside the database,
+    from its static registry snapshot (terms_registry)."""
     if not DB_PATH.exists():
-        return {}
+        return terms_registry.trial_facts(nct)
     con = sqlite3.connect(DB_PATH)
     con.row_factory = sqlite3.Row
     try:
         r = con.execute("SELECT nct_id, title, acronym, status, phases, sponsor, sponsor_class, start_date, n_sites "
                         "FROM trials WHERE nct_id=?", (nct,)).fetchone()
         if r is None:
-            return {}
+            return terms_registry.trial_facts(nct)
         us, us_wd = con.execute("SELECT COUNT(*), COALESCE(SUM(ts.site_status='WITHDRAWN'), 0) FROM trial_sites ts "
                                 "JOIN sites s USING(site_id) WHERE ts.nct_id=? AND s.country='United States'",
                                 (nct,)).fetchone()
@@ -239,8 +251,11 @@ def protocol_view(nct: str) -> dict:
         "why_chosen": p["why_chosen"], "arms": p["arms"], "dosing": p["dosing"], "masking": p["masking"],
         "registry_notes": p.get("registry_notes", []), "sources": p["sources"], "assumptions": p["assumptions"],
         "visits": p["visits"], "procedures": p["procedures"], "nodes": p["nodes"], "edges": _edges(p["visits"]),
-        "rules": [{"id": k, **v, "nodes": counts.get(k, 0)} for k, v in RULES.items()],
-        "standard_care_reference": STANDARD_CARE_REFERENCE, "standard_care_source": STANDARD_CARE_SOURCE,
+        "rules": [{"id": k, **v, "nodes": counts.get(k, 0)} for k, v in _rules(p).items()],
+        "standard_care_reference": p.get("standard_care_reference", STANDARD_CARE_REFERENCE),
+        "standard_care_source": p.get("standard_care_source", STANDARD_CARE_SOURCE),
+        "area": p.get("area"), "condition": p.get("condition"),
+        "practice_basis": p.get("practice_basis", "standard NSCLC practice"),
         "trial": _trial_facts(nct), "design": _design(nct), "disclaimer": DISCLAIMER, "quote_note": QUOTE_NOTE,
     }
 
@@ -252,6 +267,7 @@ def trials() -> list[dict]:
         out.append({"nct_id": nct, "short_title": p["short_title"], "why_chosen": p["why_chosen"],
                     "arms": p["arms"], "dosing": p["dosing"], "masking": p["masking"],
                     "registry_notes": p.get("registry_notes", []), "label": p["label"],
+                    "area": p.get("area"), "condition": p.get("condition"),
                     "trial": _trial_facts(nct), "design": _design(nct)})
     # Regeneron first: it is the reference case of the demo.
     out.sort(key=lambda t: (0 if (t["trial"].get("sponsor") or "").startswith("Regeneron") else 1, t["nct_id"]))
@@ -347,9 +363,11 @@ def _localities() -> list[dict]:
     return medicare._cms().get("pfs", {}).get("localities", [])  # noqa: SLF001 - same package
 
 
-def resolve_locality(state: str | None, city: str | None, country: str | None) -> dict | None:
+def resolve_locality(state: str | None, city: str | None, country: str | None,
+                     name_match: bool = True) -> dict | None:
     """Medicare PFS locality of a site, with how it was matched. None for non-U.S. sites or when the
-    CMS GPCI file is not loaded (national amounts are used and the line says so)."""
+    CMS GPCI file is not loaded (national amounts are used and the line says so). name_match=False never
+    falls back to a city-name match: an uncrosswalked county in a multi-locality state stays None."""
     if country not in (None, "United States") or not state:
         return None
     locs = _localities()
@@ -372,6 +390,8 @@ def resolve_locality(state: str | None, city: str | None, country: str | None) -
             method, verified = f"{c} is in {county}; CMS assigns {county} to this locality", True
     if row is None and len(in_state) == 1 and abbr not in ("VA", "MD"):
         row, method, verified = in_state[0], "the whole state is one Medicare locality", True
+    if row is None and not name_match:
+        return None
     if row is None:
         row = medicare._locality(state, city)  # noqa: SLF001 - same package
         if row is None:
@@ -391,6 +411,8 @@ def _gpci_source() -> str:
 
 def _site_rows(nct: str) -> list[dict]:
     if not DB_PATH.exists():
+        if terms_registry.snapshot(nct):
+            return terms_registry.site_rows(nct)
         raise NotFound("database not built")
     con = sqlite3.connect(DB_PATH)
     con.row_factory = sqlite3.Row
@@ -401,17 +423,25 @@ def _site_rows(nct: str) -> list[dict]:
                            (nct,)).fetchall()
     finally:
         con.close()
+    if not rows:  # not in the (lung-only) database: the trial's static registry snapshot, if it has one
+        return terms_registry.site_rows(nct)
     return [dict(r) for r in rows]
 
 
 def _site_out(r: dict) -> dict:
-    loc = resolve_locality(r["state"], r["city"], r["country"])
+    snap = bool(r.get("from_snapshot"))
+    loc = resolve_locality(r["state"], r["city"], r["country"], name_match=not snap)
     anon = bool(r["anonymized"])
     name = "Research site (name withheld by sponsor)" if anon else r["facility"]
     abbr = STATE_ABBR.get(r["state"] or "", r["state"] or "")
-    return {"site_id": r["site_id"], "facility": name, "city": r["city"], "state": r["state"], "state_abbr": abbr,
-            "zip": r["zip"], "anonymized": anon, "status": r["site_status"], "locality": loc,
-            "label": f"{name}, {r['city']}, {abbr}"}
+    out = {"site_id": r["site_id"], "facility": name, "city": r["city"], "state": r["state"], "state_abbr": abbr,
+           "zip": r["zip"], "anonymized": anon, "status": r["site_status"], "locality": loc,
+           "label": f"{name}, {r['city']}, {abbr}"}
+    if snap:
+        out["source"] = "registry snapshot"
+        if loc is None:
+            out["locality_note"] = terms_registry.unresolved_note(r["city"], abbr)
+    return out
 
 
 def sites(nct: str) -> dict:
@@ -533,6 +563,48 @@ def _r2(x: float) -> float:
     return round(x + 0.0, 2)
 
 
+UNPRICED_NOTE = "No published Medicare amount; research item left unpriced, to be negotiated (never counted as zero)"
+
+
+def _unpriced_items(visits_out: list[dict], procs: dict[str, dict]) -> list[dict]:
+    """Sponsor (research) lines with no published amount, by procedure: left out of every total, listed instead."""
+    out: dict[str, dict] = {}
+    for v in visits_out:
+        open_ended = v["kind"] == "repeat" and not v["occurrences"]
+        for l in v["lines"]:
+            if not l["unpriced"]:
+                continue
+            it = out.setdefault(l["procedure_id"], {
+                "procedure_id": l["procedure_id"], "label": l["label"], "code": l["code"],
+                "short_label": procs[l["procedure_id"]].get("short_label") or l["label"], "visits": [],
+                "per_participant": 0, "per_occurrence": False})
+            it["visits"].append(v["visit_id"])
+            if open_ended:
+                it["per_occurrence"] = True
+            else:
+                it["per_participant"] += v["occurrences"] or 1
+    return list(out.values())
+
+
+def unpriced_text(t: dict) -> str | None:
+    """One sentence for the totals: which research items have no amount and are therefore not in them."""
+    items = t.get("unpriced_sponsor_items") or []
+    if not items:
+        return None
+    n = sum(i["per_participant"] for i in items)
+    parts = []
+    for i in items:
+        bits = [i["code"]] if i["code"] else []
+        if i["per_participant"] > 1:
+            bits.append(f"{i['per_participant']} visits")
+        if i["per_occurrence"]:
+            bits.append("each per-occurrence visit")
+        parts.append(i["short_label"] + (f" ({', '.join(bits)})" if bits else ""))
+    listing = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
+    head = (f"Excludes {n} research item{'' if n == 1 else 's'}" if n else "Per-occurrence payments exclude research items")
+    return f"{head} with no published Medicare amount, to be negotiated: {listing}."
+
+
 def budget(nct: str, site_id: str, multiplier: float = 1.0, overrides: dict[str, str] | None = None,
            standard: dict[str, float] | None = None, band_lo: float = anchoring.BAND_DEFAULT[0],
            band_hi: float = anchoring.BAND_DEFAULT[1]) -> dict:
@@ -590,10 +662,15 @@ def budget(nct: str, site_id: str, multiplier: float = 1.0, overrides: dict[str,
                              "standard_unit": it["unit_label"], "edited": it["edited"]})
                 if c["coverage"] == "research":
                     line["unit_amount"] = _r2(it["amount"])
+            elif pricing == "unpriced":  # a negotiable item with no published amount (not "no site charge")
+                line["note"] = proc.get("note") or UNPRICED_NOTE
             else:  # no site charge
                 line["schedule"] = "None"
             if c["coverage"] == "research" and line["unit_amount"] is not None:
                 line["amount"] = _r2(line["unit_amount"] * line["count"])
+            # A sponsor item without an amount is left out of every total, and the totals say so.
+            line["unpriced"] = (line["payer"] == "Sponsor" and line["amount"] is None
+                                and (pricing == "unpriced" or (pricing == "cpt" and line["medicare_amount"] is None)))
             lines.append(line)
         research = _r2(sum(l["amount"] for l in lines if l["amount"] is not None))
         coord = std["coordinator"]["amount"] if v.get("coordinator", True) else 0.0
@@ -605,28 +682,40 @@ def budget(nct: str, site_id: str, multiplier: float = 1.0, overrides: dict[str,
             "repeat": v.get("repeat"), "lines": lines, "research_subtotal": research, "coordinator": coord,
             "overhead": overhead, "visit_total": _r2(research + coord + overhead), "insurance_medicare": routine,
             "placeholder_amount": _r2(sum(l["amount"] for l in lines if l["amount"] is not None and l["placeholder"])),
+            # A repeating visit whose number per participant the schedule fixes counts in the per-participant amount
+            # that many times; an open-ended one (cycles until progression) is priced per occurrence only.
+            "occurrences": v.get("occurrences") if v["kind"] == "repeat" else None,
         })
-    fixed = [v for v in visits_out if v["kind"] != "repeat"]
+    fixed = [(v, v["occurrences"] or 1) for v in visits_out if v["kind"] != "repeat" or v["occurrences"]]
     per_site_items = [it for it in std.values() if it["unit"] == "per_site"]
     scr = next(v for v in visits_out if v["kind"] == "screening")
     all_lines = [l for v in visits_out for l in v["lines"]]
     totals = {
-        "per_participant": _r2(sum(v["visit_total"] for v in fixed)),
-        "per_participant_scope": "screening through cycle 8, end of treatment and safety follow-up",
-        "per_participant_research_items": _r2(sum(v["research_subtotal"] for v in fixed)),
-        "per_participant_coordinator": _r2(sum(v["coordinator"] for v in fixed)),
-        "per_participant_overhead": _r2(sum(v["overhead"] for v in fixed)),
-        "per_participant_insurance_medicare": _r2(sum(v["insurance_medicare"] for v in fixed)),
-        "per_participant_placeholder": _r2(sum(v["placeholder_amount"] for v in fixed)),
+        "per_participant": _r2(sum(v["visit_total"] * n for v, n in fixed)),
+        "per_participant_scope": p.get("per_participant_scope",
+                                       "screening through cycle 8, end of treatment and safety follow-up"),
+        "per_participant_research_items": _r2(sum(v["research_subtotal"] * n for v, n in fixed)),
+        "per_participant_coordinator": _r2(sum(v["coordinator"] * n for v, n in fixed)),
+        "per_participant_overhead": _r2(sum(v["overhead"] * n for v, n in fixed)),
+        "per_participant_insurance_medicare": _r2(sum(v["insurance_medicare"] * n for v, n in fixed)),
+        "per_participant_placeholder": _r2(sum(v["placeholder_amount"] * n for v, n in fixed)),
+        "per_participant_repeats": [{"visit_id": v["visit_id"], "label": v["label"], "repeat": v["repeat"],
+                                     "count": n, "amount": v["visit_total"], "subtotal": _r2(v["visit_total"] * n)}
+                                    for v, n in fixed if v["kind"] == "repeat"],
         "per_occurrence": [{"visit_id": v["visit_id"], "label": v["label"], "repeat": v["repeat"],
-                            "amount": v["visit_total"]} for v in visits_out if v["kind"] == "repeat"],
+                            "amount": v["visit_total"]} for v in visits_out
+                           if v["kind"] == "repeat" and not v["occurrences"]],
+        "unpriced_sponsor_items": _unpriced_items(visits_out, procs),
         "screen_failure": scr["visit_total"],
+        "screen_failure_unpriced": sum(1 for l in scr["lines"] if l["unpriced"]),
         "per_site_one_time": _r2(sum(it["amount"] for it in per_site_items)),
         "n_sponsor_lines": sum(1 for l in all_lines if l["payer"] == "Sponsor"),
         "n_insurance_lines": sum(1 for l in all_lines if l["payer"] == "Insurance"),
         "n_overrides": sum(1 for l in all_lines if l["override"]),
         "n_placeholder_lines": sum(1 for l in all_lines if l["placeholder"] and l["payer"] == "Sponsor"),
+        "n_unpriced_sponsor_lines": sum(1 for l in all_lines if l["unpriced"]),
     }
+    totals["unpriced_text"] = unpriced_text(totals)
     pfs = medicare._cms().get("pfs", {})  # noqa: SLF001
     return anchoring.annotate({
         "nct_id": nct, "short_title": p["short_title"], "label": p["label"], "disclaimer": DISCLAIMER,
@@ -636,11 +725,17 @@ def budget(nct: str, site_id: str, multiplier: float = 1.0, overrides: dict[str,
         "visits": visits_out, "totals": totals, "standard_schedule": list(std.values()),
         "overrides": [{"node_id": l["node_id"], "visit": l["visit_id"], "procedure": l["label"], "rule": l["rule"],
                        "coverage": l["coverage"], "basis": l["basis"]} for l in all_lines if l["override"]],
-        "rules": [{"id": k, **v} for k, v in RULES.items()], "ncd": NCD,
+        "rules": [{"id": k, **v} for k, v in _rules(p).items()], "ncd": NCD,
     }, band_lo, band_hi)
 
 
 # ---------------------------------------------------------------- two-site comparison
+
+def _sites_word(keys: list[str]) -> str:
+    """['b'] -> 'Site B'; ['a', 'b'] -> 'Sites A and B'."""
+    up = [k.upper() for k in keys]
+    return f"Site {up[0]}" if len(up) == 1 else "Sites " + " and ".join(up)
+
 
 def compare(nct: str, site_a: str, site_b: str, multiplier: float = 1.0, overrides: dict[str, str] | None = None,
             standard: dict[str, float] | None = None, band_lo: float = anchoring.BAND_DEFAULT[0],
@@ -656,6 +751,7 @@ def compare(nct: str, site_a: str, site_b: str, multiplier: float = 1.0, overrid
     la = {l["node_id"]: l for v in A["visits"] for l in v["lines"]}
     lb = {l["node_id"]: l for v in B["visits"] for l in v["lines"]}
     kinds = {v["visit_id"]: v["kind"] for v in A["visits"]}
+    occ = {v["visit_id"]: v.get("occurrences") for v in A["visits"]}
     groups: dict[str, dict] = {}
     for nid, a in la.items():
         b = lb[nid]
@@ -665,19 +761,29 @@ def compare(nct: str, site_a: str, site_b: str, multiplier: float = 1.0, overrid
             "procedure_id": a["procedure_id"], "label": a["label"], "code": a["code"], "schedule": a["schedule"],
             "placeholder": a["placeholder"], "unit_a": a["unit_amount"], "unit_b": b["unit_amount"],
             "formula_a": a["formula"], "formula_b": b["formula"], "rvu": a["rvu"], "visits_fixed": [],
-            "visits_repeat": []})
-        (g["visits_repeat"] if kinds[a["visit_id"]] == "repeat" else g["visits_fixed"]).append(a["visit_id"])
+            "visits_repeat": [], "visits_counted": []})
+        vid = a["visit_id"]
+        if kinds[vid] != "repeat":
+            g["visits_fixed"].append(vid)
+        elif occ[vid]:  # a fixed number per participant: inside the per-participant amount
+            g["visits_counted"].append({"visit_id": vid, "count": occ[vid]})
+        else:
+            g["visits_repeat"].append(vid)
     ga = A["locality"] or {"gpci_work": 1, "gpci_pe": 1, "gpci_mp": 1}
     gb = B["locality"] or {"gpci_work": 1, "gpci_pe": 1, "gpci_mp": 1}
     dg = {k: gb[f"gpci_{k}"] - ga[f"gpci_{k}"] for k in ("work", "pe", "mp")}
+    # A site without a resolved locality is priced at national amounts (GPCIs of 1): an assumption, not its
+    # published locality price, so its differences are never presented as published GPCI differences.
+    fallback = [k for k, X in (("a", A), ("b", B)) if X["locality"] is None]
     rows = []
     tw = tpe = tmp = 0.0
     for g in groups.values():
         d_unit = _r2(g["unit_b"] - g["unit_a"])
-        n = len(g["visits_fixed"])
+        n = len(g["visits_fixed"]) + sum(x["count"] for x in g["visits_counted"])
         if g["rvu"]:
             parts = {k: g["rvu"][k] * dg[k] * cf * multiplier for k in ("work", "pe", "mp")}
-            why = "published GPCI difference"
+            why = (f"national amounts at {_sites_word(fallback)}: locality not resolved (assumption)" if fallback
+                   else "published GPCI difference")
         else:
             parts = {"work": 0.0, "pe": 0.0, "mp": 0.0}
             why = ("not geographically adjusted (lab fee schedule is national)" if g["schedule"] == "CLFS"
@@ -702,6 +808,7 @@ def compare(nct: str, site_a: str, site_b: str, multiplier: float = 1.0, overrid
         "b": {"site": B["site"], "locality": B["locality"], "totals": tb},
         "gpci_delta": dg, "rows": rows,
         "summary": {
+            "national_fallback": fallback,
             "delta_per_participant": d_total, "delta_research_items": d_items, "delta_overhead": d_over,
             "from_work": round(tw, 2), "from_pe": round(tpe, 2), "from_mp": round(tmp, 2),
             "overhead_rate": A["standard_schedule"][[s["id"] for s in A["standard_schedule"]].index("overhead")][
@@ -772,6 +879,12 @@ def _std_prov(b: dict, iid: str) -> str:
 CMP_NOTE = ("Times per participant counts the fixed schedule (screening through cycle 8, end of treatment and "
             "safety follow-up); '+' means the item also recurs in a per-occurrence visit (see Visits), priced "
             "each time at the same unit amounts.")
+
+
+def _cmp_note(scope: str) -> str:
+    return CMP_NOTE.replace("screening through cycle 8, end of treatment and safety follow-up", scope)
+
+
 CMP_FORMULA = ("Per line: amount = (work RVU x work GPCI + PE RVU x PE GPCI + MP RVU x MP GPCI) x conversion "
                "factor x multiplier. RVUs and the conversion factor are national, so the difference B - A = "
                "conversion factor x multiplier x (work RVU x work GPCI difference + PE RVU x PE GPCI difference + "
@@ -782,7 +895,8 @@ def _cmp_cells(r: dict, c: dict) -> dict[str, str]:
     """Plain-text cells of one comparison row (shared by the markdown and HTML exports)."""
     pct = f"{c['multiplier'] * 100:.0f}%"
     times = f"{r['n_fixed']}{'+' if r['visits_repeat'] else ''}"
-    visits = ", ".join(r["visits_fixed"] + [f"{v} (each occurrence)" for v in r["visits_repeat"]])
+    visits = ", ".join(r["visits_fixed"] + [f"{x['visit_id']} ({x['count']} times)" for x in r.get("visits_counted", [])]
+                       + [f"{v} (each occurrence)" for v in r["visits_repeat"]])
     if r["rvu"]:
         parts = [_money(r["delta_work"]), _money(r["delta_pe"]), _money(r["delta_mp"]), _money(r["rounding"])]
         fa = f"{r['formula_a']} x {pct} = {_money(r['unit_a'])}"
@@ -802,6 +916,51 @@ def _gpci_delta_text(c: dict) -> str:
             f"factor {c['conversion_factor']} at both sites; multiplier {c['multiplier'] * 100:.0f}% at both sites")
 
 
+def _visit_head(v: dict) -> str:
+    head = f"{v['label']} (window: {v['window']})"
+    if v["kind"] == "repeat":
+        head += f": priced per occurrence, {v['repeat']}"
+        if v.get("occurrences"):
+            head += f"; all {v['occurrences']} are in the per-participant amount"
+    return head
+
+
+def _per_participant_text(t: dict) -> tuple[str, str]:
+    """(lead, detail) of the per-participant total line; the amount goes between them."""
+    lead = f"Per participant, {t['per_participant_scope']}: "
+    detail = (f" (research items {_money(t['per_participant_research_items'])}, coordinator time "
+              f"{_money(t['per_participant_coordinator'])}, overhead {_money(t['per_participant_overhead'])}; "
+              f"of which lab placeholders {_money(t['per_participant_placeholder'])})")
+    for x in t.get("per_participant_repeats", []):
+        detail += (f"; includes {x['label'].lower()}: {x['count']} x {_money(x['amount'])} = "
+                   f"{_money(x['subtotal'])}")
+    if t.get("unpriced_text"):
+        detail += f". {t['unpriced_text']}"
+    return lead, detail
+
+
+def _screen_fail_text(t: dict) -> str:
+    k = t.get("screen_failure_unpriced") or 0
+    extra = f"; excludes the {k} unpriced research item{'' if k == 1 else 's'} at screening" if k else ""
+    return f"Screen failure, as incurred: {_money(t['screen_failure'])} (the screening visit payment{extra})"
+
+
+def _cmp_diff_text(c: dict) -> str:
+    """The section 7 difference line. With a site at national amounts, it says so first: an assumption."""
+    sm = c["summary"]
+    parts = (f"work GPCI {_money(sm['from_work'])} + practice-expense GPCI {_money(sm['from_pe'])} + malpractice GPCI "
+             f"{_money(sm['from_mp'])} + overhead on those {_money(sm['delta_overhead'])} + rounding "
+             f"{_money(sm['rounding'])}")
+    fb = sm.get("national_fallback") or []
+    if not fb:
+        return f"Difference (B - A) per participant: **{_money(sm['delta_per_participant'])}** = {parts}"
+    notes = " ".join(f"Site {k.upper()}: " + (c[k]["site"].get("locality_note")
+                                              or "Medicare locality not resolved; coded lines use national amounts.")
+                     for k in fb)
+    return (f"{notes} On that assumption (GPCIs of 1.000 at {_sites_word(fb)}, not a published locality price), the "
+            f"difference (B - A) per participant is **{_money(sm['delta_per_participant'])}** = {parts}")
+
+
 def termsheet(nct: str, site_id: str, multiplier: float = 1.0, overrides: dict[str, str] | None = None,
               standard: dict[str, float] | None = None, compare_site: str | None = None) -> dict:
     b = budget(nct, site_id, multiplier, overrides, standard)
@@ -809,6 +968,7 @@ def termsheet(nct: str, site_id: str, multiplier: float = 1.0, overrides: dict[s
     cmp_ = compare(nct, site_id, compare_site, multiplier, overrides, standard) if compare_site else None
     return {"budget": b, "compare": cmp_, "protocol": {k: p[k] for k in ("short_title", "sources", "assumptions",
                                                                          "arms", "dosing", "masking")},
+            "registry_source": _trial_facts(nct).get("source"),
             "generated": date.today().isoformat(), "filename": f"term-sheet_{nct}_{site_id}.md"}
 
 
@@ -829,7 +989,7 @@ def termsheet_markdown(ts: dict) -> str:
     w(f"- Dosing (registry): {p['dosing']}")
     w(f"- Masking (registry): {p['masking']}")
     w(f"- Site: {s['label']}" + (f" {s['zip']}" if s.get("zip") else "") + f" (registry status: {s['status'] or 'not reported'})")
-    w(f"- Medicare locality: {_loc_text(b['locality'])}")
+    w(f"- Medicare locality: {_loc_text(b['locality'])}" + (f". {s['locality_note']}" if s.get("locality_note") else ""))
     w(f"- Physician fee schedule: {b['pfs_source'] or 'not loaded'}; conversion factor {b['conversion_factor']}")
     w(f"- Multiplier on coded items: {b['multiplier'] * 100:.0f}% of Medicare")
     w(f"- Lab (CLFS) codes: {'CMS CLFS file' if b['clfs_loaded'] else 'approximate national amounts, ' + CLFS_NOTE}")
@@ -840,10 +1000,7 @@ def termsheet_markdown(ts: dict) -> str:
     w("")
     for v in b["visits"]:
         spons = [l for l in v["lines"] if l["payer"] == "Sponsor"]
-        head = f"### {v['label']} (window: {v['window']})"
-        if v["kind"] == "repeat":
-            head += f": priced per occurrence, {v['repeat']}"
-        w(head)
+        w(f"### {_visit_head(v)}")
         w("")
         w("| Code | Item | Schedule | Coverage basis | Medicare at locality | Sponsor amount | Provenance |")
         w("|---|---|---|---|---:|---:|---|")
@@ -862,13 +1019,11 @@ def termsheet_markdown(ts: dict) -> str:
     t = b["totals"]
     w("## 3. Totals")
     w("")
-    w(f"- Per participant, {t['per_participant_scope']}: **{_money(t['per_participant'])}** "
-      f"(research items {_money(t['per_participant_research_items'])}, coordinator time "
-      f"{_money(t['per_participant_coordinator'])}, overhead {_money(t['per_participant_overhead'])}; "
-      f"of which lab placeholders {_money(t['per_participant_placeholder'])})")
+    lead, detail = _per_participant_text(t)
+    w(f"- {lead}**{_money(t['per_participant'])}**{detail}")
     for x in t["per_occurrence"]:
         w(f"- {x['label']}, {x['repeat']}: {_money(x['amount'])} each, invoiced as completed")
-    w(f"- Screen failure, as incurred: {_money(t['screen_failure'])} (the screening visit payment)")
+    w(f"- {_screen_fail_text(t)}")
     w(f"- Per site, one time: {_money(t['per_site_one_time'])}")
     w(f"- Routine care billed to insurance per participant (Medicare amounts at this locality, for reference): "
       f"{_money(t['per_participant_insurance_medicare'])}")
@@ -919,10 +1074,7 @@ def termsheet_markdown(ts: dict) -> str:
             w(f"- Site {k.upper()}: {c[k]['site']['label']}; {_loc_text(c[k]['locality'])}; per participant "
               f"{_money(c[k]['totals']['per_participant'])}")
         sm = c["summary"]
-        w(f"- Difference (B - A) per participant: **{_money(sm['delta_per_participant'])}** = work GPCI "
-          f"{_money(sm['from_work'])} + practice-expense GPCI {_money(sm['from_pe'])} + malpractice GPCI "
-          f"{_money(sm['from_mp'])} + overhead on those {_money(sm['delta_overhead'])} + rounding "
-          f"{_money(sm['rounding'])}")
+        w(f"- {_cmp_diff_text(c)}")
         for x in sm["per_occurrence"]:
             w(f"- {x['label']}, per occurrence: A {_money(x['a'])}, B {_money(x['b'])} (difference {_money(x['delta'])})")
         w(f"- Screen failure: A {_money(sm['screen_failure']['a'])}, B {_money(sm['screen_failure']['b'])} "
@@ -939,7 +1091,7 @@ def termsheet_markdown(ts: dict) -> str:
             w(f"| {x['code']} | {x['label']} | {x['times']} | {x['a']} | {x['b']} | {x['d']} | {x['dw']} | "
               f"{x['dpe']} | {x['dmp']} | {x['rnd']} | {x['dfix']} | {x['fa']} | {x['fb']} | {x['visits']} |")
         w("")
-        w(f"\\* {CMP_NOTE} Routine items billed to insurance differ by the same factors but are not the sponsor's "
+        w(f"\\* {_cmp_note(b['totals']['per_participant_scope'])} Routine items billed to insurance differ by the same factors but are not the sponsor's "
           f"to pay.")
         w("")
     w("## Sources and assumptions")
@@ -948,6 +1100,8 @@ def termsheet_markdown(ts: dict) -> str:
     w("")
     for src in p["sources"]:
         w(f"- Registry {src['field']}: \"{src['quote']}\" (used for: {src['used_for']})")
+    if ts.get("registry_source"):
+        w(f"- Trial facts and registered sites: {ts['registry_source']}")
     for a in p["assumptions"]:
         w(f"- Assumption: {a}")
     w("- Codes are shown with Concord's own short labels, not AMA CPT descriptors.")
@@ -1008,7 +1162,8 @@ def termsheet_html(ts: dict) -> str:
                f"Masking (registry): {p['masking']}",
                f"Site: {s['label']}{(' ' + s['zip']) if s.get('zip') else ''} (registry status: "
                f"{s['status'] or 'not reported'})",
-               f"Medicare locality: {_loc_text(b['locality'])}",
+               f"Medicare locality: {_loc_text(b['locality'])}"
+               + (f". {s['locality_note']}" if s.get("locality_note") else ""),
                f"Physician fee schedule: {b['pfs_source'] or 'not loaded'}; conversion factor {b['conversion_factor']}",
                f"Multiplier on coded items: {b['multiplier'] * 100:.0f}% of Medicare",
                f"Lab (CLFS) codes: {'CMS CLFS file' if b['clfs_loaded'] else 'approximate national amounts, ' + CLFS_NOTE}",
@@ -1017,9 +1172,7 @@ def termsheet_html(ts: dict) -> str:
         w(f"<li>{e(li)}</li>")
     w("</ul><h2>2. Per-visit payments (paid by the sponsor)</h2>")
     for v in b["visits"]:
-        head = f"{v['label']} (window: {v['window']})" + (f": priced per occurrence, {v['repeat']}" if v["kind"] == "repeat"
-                                                   else "")
-        w(f"<h3>{e(head)}</h3><div class='tw'><table><thead><tr><th>Code</th><th>Item</th><th>Schedule</th>"
+        w(f"<h3>{e(_visit_head(v))}</h3><div class='tw'><table><thead><tr><th>Code</th><th>Item</th><th>Schedule</th>"
           "<th>Coverage basis</th><th class='n'>Medicare at locality</th><th class='n'>Sponsor amount</th>"
           "<th>Provenance</th></tr></thead><tbody>")
         for l in v["lines"]:
@@ -1040,13 +1193,11 @@ def termsheet_html(ts: dict) -> str:
         w(f"<tr class='total'><td></td><td>Visit payment</td><td></td><td></td><td></td>"
           f"<td class='n'>{_money(v['visit_total'])}</td><td></td></tr></tbody></table></div>")
     w("<h2>3. Totals</h2><ul>")
-    w(f"<li>Per participant, {e(t['per_participant_scope'])}: <b>{_money(t['per_participant'])}</b> (research items "
-      f"{_money(t['per_participant_research_items'])}, coordinator time {_money(t['per_participant_coordinator'])}, "
-      f"overhead {_money(t['per_participant_overhead'])}; of which lab placeholders "
-      f"{_money(t['per_participant_placeholder'])})</li>")
+    lead, detail = _per_participant_text(t)
+    w(f"<li>{e(lead)}<b>{_money(t['per_participant'])}</b>{e(detail)}</li>")
     for x in t["per_occurrence"]:
         w(f"<li>{e(x['label'])}, {e(x['repeat'])}: {_money(x['amount'])} each, invoiced as completed</li>")
-    w(f"<li>Screen failure, as incurred: {_money(t['screen_failure'])} (the screening visit payment)</li>")
+    w(f"<li>{e(_screen_fail_text(t))}</li>")
     w(f"<li>Per site, one time: {_money(t['per_site_one_time'])}</li>")
     w(f"<li>Routine care billed to insurance per participant (Medicare amounts at this locality, for reference): "
       f"{_money(t['per_participant_insurance_medicare'])}</li></ul>")
@@ -1085,10 +1236,8 @@ def termsheet_html(ts: dict) -> str:
         for k in ("a", "b"):
             w(f"<li>Site {k.upper()}: {e(c[k]['site']['label'])}; {e(_loc_text(c[k]['locality']))}; per participant "
               f"{_money(c[k]['totals']['per_participant'])}</li>")
-        w(f"<li>Difference (B - A) per participant: <b>{_money(sm['delta_per_participant'])}</b> = work GPCI "
-          f"{_money(sm['from_work'])} + practice-expense GPCI {_money(sm['from_pe'])} + malpractice GPCI "
-          f"{_money(sm['from_mp'])} + overhead on those {_money(sm['delta_overhead'])} + rounding "
-          f"{_money(sm['rounding'])}</li>")
+        diff = e(_cmp_diff_text(c)).split("**")
+        w("<li>" + "".join(f"<b>{x}</b>" if i % 2 else x for i, x in enumerate(diff)) + "</li>")
         for x in sm["per_occurrence"]:
             w(f"<li>{e(x['label'])}, per occurrence: A {_money(x['a'])}, B {_money(x['b'])} (difference "
               f"{_money(x['delta'])})</li>")
@@ -1109,12 +1258,14 @@ def termsheet_html(ts: dict) -> str:
                         if r["rvu"] else e(x["fa"]))
             w(f"<tr class='sub'><td></td><td colspan='10' class='prov'>{formulas}<br>Visits: {e(x['visits'])}"
               f"</td></tr>")
-        w(f"</tbody></table></div><p class='prov'>* {e(CMP_NOTE)} Routine items billed to insurance differ by the "
+        w(f"</tbody></table></div><p class='prov'>* {e(_cmp_note(b['totals']['per_participant_scope']))} Routine items billed to insurance differ by the "
           f"same factors but are not the sponsor's to pay.</p>")
     w("<h2>Sources and assumptions</h2>")
     w(f"<p class='prov'>{e(QUOTE_NOTE)}</p><ul>")
     for src in p["sources"]:
         w(f"<li>Registry {e(src['field'])}: &ldquo;{e(src['quote'])}&rdquo; (used for: {e(src['used_for'])})</li>")
+    if ts.get("registry_source"):
+        w(f"<li>Trial facts and registered sites: {e(ts['registry_source'])}</li>")
     for a in p["assumptions"]:
         w(f"<li>Assumption: {e(a)}</li>")
     w("<li>Codes are shown with Concord's own short labels, not AMA CPT descriptors.</li>")

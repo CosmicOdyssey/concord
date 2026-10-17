@@ -118,6 +118,7 @@
 /* Long qualifiers wrap (the shared mark is nowrap, made for short words). */
 .tf-quals .qual,
 .tf-ovcount .qual,
+.tf-payer .qual,
 .tf-step .section-quals > .qual {
   white-space: normal;
 }
@@ -1406,4 +1407,10 @@
   .tf-two td {
     min-width: 6.5rem;
   }
+}
+
+/* Area label on a trial outside lung cancer (picker card): may wrap on a phone. */
+.tf-trial-area {
+  white-space: normal;
+  margin-left: 0.375rem;
 }

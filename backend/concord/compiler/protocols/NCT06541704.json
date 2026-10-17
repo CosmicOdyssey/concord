@@ -1,0 +1,150 @@
+{
+  "schema": "concord.protocol/v1",
+  "nct_id": "NCT06541704",
+  "label": "Illustrative, authored from public trial information",
+  "authored": "2026-10-17",
+  "short_title": "Pozelimab + cemdisiran, cemdisiran alone, or placebo by subcutaneous injection, geographic atrophy secondary to AMD (SIENNA)",
+  "area": "Outside lung cancer",
+  "condition": "Geographic atrophy (eye)",
+  "practice_basis": "standard follow-up of geographic atrophy not treated with intravitreal therapy",
+  "per_participant_scope": "all 28 visits from screening through week 104, the double-masked period, including the 20 other dosing visits",
+  "why_chosen": "A recruiting Regeneron-led Phase 3 outside oncology with the most registered U.S. sites among Regeneron's currently recruiting non-oncology Phase 3s (158 at fetch, 2026-10-17). Its registry entry names concrete, codable procedures (fundus autofluorescence, visual acuity, a screening throat culture for meningococcal carriage, HbA1c, required meningococcal and pneumococcal vaccination) and fixed endpoint weeks (52 and 104).",
+  "arms": [
+    {"label": "Arm 1 (experimental)", "text": "Pozelimab + cemdisiran, subcutaneous injection"},
+    {"label": "Arm 2 (experimental)", "text": "Cemdisiran alone, subcutaneous injection"},
+    {"label": "Arm 3 (placebo comparator)", "text": "Placebo, subcutaneous injection"}
+  ],
+  "dosing": "All study drugs by subcutaneous injection (registry); the interval is not in the registry, every 4 weeks is an assumption",
+  "masking": "Double-masked, placebo-controlled (registry masking: QUADRUPLE)",
+  "registry_notes": [
+    "Registry adverse-event time frames run to weeks 140 and 296 (a later period); only the double-masked period to week 104 is scheduled here."
+  ],
+  "standard_care_reference": [
+    "Eye exam with OCT and fundus autofluorescence about every 6 months for geographic atrophy that is not treated with intravitreal therapy (the registry excludes recent intravitreal treatment)",
+    "Visual acuity is part of the eye exam; no protocol refraction, low-contrast acuity or contrast-sensitivity testing",
+    "Fluorescein angiography only when new neovascularization is suspected, not routinely",
+    "No routine blood tests, throat cultures or vaccinations because of geographic atrophy",
+    "No systemic drug administration for geographic atrophy"
+  ],
+  "rule_examples": {"R4": "eye exams every 4 weeks against a 6-month reference: the 5 six-monthly exams stay routine, the other 23 are research"},
+  "standard_care_source": "Authored reference for monitoring untreated geographic atrophy; the 6-month interval is an authoring assumption, not a published guideline value. Used only to apply rules R3 and R4. Not a coverage determination.",
+  "sources": [
+    {"field": "armsInterventionsModule.armGroups[].description", "quote": "Randomized 1:1:1", "used_for": "Three arms; blinded study drug at every dosing visit in every arm (rule R1)"},
+    {"field": "armsInterventionsModule.interventions[Pozelimab, Cemdisiran, Placebo].description", "quote": "Subcutaneous (SC) injection / SC injection / SC injection", "used_for": "Study drug given by subcutaneous injection (code 96372, rule R1)"},
+    {"field": "designModule.designInfo.maskingInfo", "quote": "QUADRUPLE / PARTICIPANT, CARE_PROVIDER, INVESTIGATOR, OUTCOMES_ASSESSOR", "used_for": "Study drug prepared blinded by the pharmacy"},
+    {"field": "outcomesModule.primaryOutcomes[0].measure and .timeFrame", "quote": "Growth rate (slope) of total GA lesion area (mm^2 /year) from baseline, measured by Fundus Autofluorescence (FAF) / To week 52", "used_for": "Fundus autofluorescence imaging at baseline and through week 52 (code 92250)"},
+    {"field": "outcomesModule.secondaryOutcomes[].measure and .timeFrame", "quote": "Growth rate (slope) of total GA lesion area (mm^2 /year) from baseline measured by FAF / To week 104", "used_for": "Fundus autofluorescence imaging continues to week 104"},
+    {"field": "outcomesModule.secondaryOutcomes[].measure and .timeFrame", "quote": "Loss of Best Corrected Visual Acuity (BCVA) ≥15 letters [Early Treatment Diabetic Retinopathy Study (ETDRS)] from baseline / … Low-Contrast quantitative Visual Acuity (LC-qVA) / … Low-Luminance Low-Contrast quantitative Visual Acuity (LL-LC-qVA) / … quantitative Contrast Sensitivity Function (qCSF) / At week 52 and week 104", "used_for": "Protocol visual-function testing at baseline, week 52 and week 104 (rule R2; no CPT code)"},
+    {"field": "outcomesModule.secondaryOutcomes[].measure", "quote": "Concentrations of total pozelimab in serum / Concentrations of total cemdisiran in plasma / Change from baseline in concentration of total Complement component 5 (C5) / Incidence of Antidrug antibody (ADA) to pozelimab / Incidence of Neutralizing Antibody (NAb) to pozelimab", "used_for": "PK, C5, ADA and NAb samples (rule R2)"},
+    {"field": "outcomesModule.secondaryOutcomes[].timeFrame", "quote": "Through week 52 and through week 104 / Through week 52, 104, 140 and week 296", "used_for": "Sample visits through week 104; the period after week 104 is not scheduled"},
+    {"field": "eligibilityModule.eligibilityCriteria (Key Inclusion Criteria 2 and 3)", "quote": "Total GA area in the study eye measuring between ≥2.5 mm\\^2 and ≤17.5 mm\\^2 as described in the protocol / BCVA of 55 letters or better using ETDRS charts …", "used_for": "Screening imaging and visual acuity"},
+    {"field": "eligibilityModule.eligibilityCriteria (Key Inclusion Criteria 5)", "quote": "… completion of the full series of meningococcal vaccinations and pneumococcal vaccination required per protocol", "used_for": "Vaccinations at screening (rule R2)"},
+    {"field": "eligibilityModule.eligibilityCriteria (Key Exclusion Criteria 2)", "quote": "History or current evidence of Macular Neovascularization (MNV) and/or exudation or Peripapillary Choroidal Neovascularization (PPCNV) in either eye as described in the protocol", "used_for": "Fluorescein angiography at screening to exclude neovascularization (rule R2)"},
+    {"field": "eligibilityModule.eligibilityCriteria (Key Exclusion Criteria 12)", "quote": "Carrier of Neisseria meningitidis based on culture collected during screening", "used_for": "Screening throat culture (code 87081, rule R2)"},
+    {"field": "eligibilityModule.eligibilityCriteria (Key Exclusion Criteria 13)", "quote": "Has a hemoglobin A1C ≥ 8.0% during screening …", "used_for": "Screening HbA1c (code 83036, rule R2)"}
+  ],
+  "assumptions": [
+    "The registry does not publish a schedule of assessments. Visit weeks, windows, the dosing interval and the lab panel are authored, not copied from the protocol.",
+    "Dosing every 4 weeks from Day 1 to week 100 (26 dosing visits). The registry gives the route (subcutaneous) but not the interval.",
+    "Double-dummy masking: every participant receives two blinded injections per dosing visit (pozelimab-or-placebo and cemdisiran-or-placebo), so all three arms look alike. The registry says only that masking is quadruple.",
+    "Study drugs are supplied by the sponsor and never billed; only their administration (96372) appears.",
+    "Imaging (fundus autofluorescence and OCT) and a comprehensive eye exam at screening and weeks 24, 52, 76 and 104, about every 6 months. The registry names FAF to weeks 52 and 104 but not the imaging visits in between.",
+    "An intermediate eye exam (92012) at each dosing visit that has no comprehensive exam (Day 1, weeks 4 and 12, and the 20 other dosing visits: 23 per participant) as an ocular safety check. These are research (R4): the standard-care reference gives one exam about every 6 months, which the comprehensive exams at screening and weeks 24, 52, 76 and 104 already count.",
+    "Images are sent to a central reading center for lesion measurement (common in geographic atrophy trials; the registry does not name one).",
+    "Safety labs (blood count, chemistry) at screening and weeks 12, 24, 52, 76 and 104. Not in the registry.",
+    "Vaccinations: one MenACWY dose, one MenB dose and one pneumococcal dose at screening. The registry requires 'the full series'; later doses are not modelled. Vaccine products have no CMS PFS or CLFS amount in the loaded rate card and are shown unpriced; only the administration is priced (90471 for the first vaccine, one 90472 for each of the other two).",
+    "Pneumococcal vaccination is labelled research (R2) because the protocol requires it; a reviewer may relabel it routine for participants for whom it is routinely recommended.",
+    "Visual-function tests (ETDRS BCVA, LC-qVA, LL-LC-qVA, qCSF) have no CPT code and no published Medicare amount; they are listed unpriced as research items to be negotiated, not given a number. Unpriced research items are left out of the per-participant and screen-failure amounts, and each total says so.",
+    "The period after week 104 (adverse events to weeks 140 and 296) is not scheduled, and there is no separate early-termination visit."
+  ],
+  "visits": [
+    {"id": "SCR", "label": "Screening and vaccination", "short": "Scr", "kind": "screening", "day": -42, "day_end": -1, "window": "Day -42 to -1"},
+    {"id": "D1", "label": "Day 1: randomization, first dose", "short": "D1", "kind": "treatment", "day": 1, "minus": 0, "plus": 0, "window": "Day 1"},
+    {"id": "W4", "label": "Week 4", "short": "W4", "kind": "treatment", "day": 29, "minus": 7, "plus": 7, "window": "Day 29 ±7"},
+    {"id": "W12", "label": "Week 12", "short": "W12", "kind": "treatment", "day": 85, "minus": 7, "plus": 7, "window": "Day 85 ±7"},
+    {"id": "W24", "label": "Week 24: imaging", "short": "W24", "kind": "treatment", "day": 169, "minus": 7, "plus": 7, "window": "Day 169 ±7"},
+    {"id": "W52", "label": "Week 52: primary endpoint", "short": "W52", "kind": "treatment", "day": 365, "minus": 7, "plus": 7, "window": "Day 365 ±7"},
+    {"id": "W76", "label": "Week 76: imaging", "short": "W76", "kind": "treatment", "day": 533, "minus": 7, "plus": 7, "window": "Day 533 ±7"},
+    {"id": "W104", "label": "Week 104: end of double-masked period", "short": "W104", "kind": "treatment", "day": 729, "minus": 7, "plus": 7, "window": "Day 729 ±7, no dose"},
+    {"id": "DX", "label": "Each other dosing visit (weeks 8 to 100)", "short": "Dose", "short_window": "q4w", "kind": "repeat", "day": 57, "repeat": "every 4 weeks (±7 days) on weeks without a listed visit: 20 visits (weeks 8, 16, 20, 28 to 48, 56 to 72, 80 to 100)", "occurrences": 20, "window": "every 4 weeks ±7 days"}
+  ],
+  "procedures": [
+    {"id": "eye_new", "label": "Comprehensive eye exam, new patient", "code": "92004", "category": "Eye exams"},
+    {"id": "eye_comp", "label": "Comprehensive eye exam, established patient", "code": "92014", "category": "Eye exams"},
+    {"id": "eye_int", "label": "Intermediate eye exam (ocular safety check)", "code": "92012", "category": "Eye exams"},
+    {"id": "vfx", "label": "Visual-function tests: ETDRS BCVA, LC-qVA, LL-LC-qVA, qCSF", "short_label": "visual-function tests", "pricing": "unpriced", "note": "No CPT code describes these protocol tests and there is no published Medicare amount; research item left unpriced, to be negotiated (never counted as zero).", "category": "Eye exams"},
+    {"id": "faf", "label": "Fundus autofluorescence imaging", "code": "92250", "category": "Imaging"},
+    {"id": "oct", "label": "OCT of the retina", "code": "92134", "category": "Imaging"},
+    {"id": "fa", "label": "Fluorescein angiography", "code": "92235", "category": "Imaging"},
+    {"id": "img_upload", "label": "Image upload to the central reading center", "pricing": "standard:image_upload", "category": "Imaging"},
+    {"id": "a1c", "label": "Hemoglobin A1c", "code": "83036", "category": "Labs"},
+    {"id": "cbc", "label": "Blood count with differential", "code": "85025", "category": "Labs"},
+    {"id": "cmp", "label": "Comprehensive chemistry panel", "code": "80053", "category": "Labs"},
+    {"id": "nm_cx", "label": "Throat culture for meningococcal carriage", "code": "87081", "category": "Labs"},
+    {"id": "vax_admin", "label": "Vaccine administration, first", "code": "90471", "category": "Vaccination"},
+    {"id": "vax_admin_menb", "label": "Vaccine administration, additional: MenB", "code": "90472", "category": "Vaccination"},
+    {"id": "vax_admin_pcv", "label": "Vaccine administration, additional: pneumococcal", "code": "90472", "category": "Vaccination"},
+    {"id": "vax_acwy", "label": "Meningococcal ACWY vaccine (product)", "short_label": "MenACWY vaccine product", "code": "90734", "category": "Vaccination"},
+    {"id": "vax_b", "label": "Meningococcal B vaccine (product)", "short_label": "MenB vaccine product", "code": "90620", "category": "Vaccination"},
+    {"id": "vax_pcv", "label": "Pneumococcal conjugate vaccine (product)", "short_label": "pneumococcal vaccine product", "code": "90677", "category": "Vaccination"},
+    {"id": "inj_poz", "label": "SC injection: pozelimab or placebo (blinded)", "code": "96372", "category": "Treatment"},
+    {"id": "inj_cem", "label": "SC injection: cemdisiran or placebo (blinded)", "code": "96372", "category": "Treatment"},
+    {"id": "ip_disp", "label": "Blinded study drug preparation and dispensing", "pricing": "standard:ip_dispense", "category": "Treatment"},
+    {"id": "pk", "label": "PK, C5, ADA and NAb samples: process and ship", "pricing": "standard:sample_kit", "category": "Research samples"}
+  ],
+  "schedule": [
+    {"proc": "eye_new", "at": [
+      {"visits": ["SCR"], "rule": "R3", "reason": "A comprehensive eye exam is standard care for a patient with geographic atrophy (the standard-care reference gives one about every 6 months)."}]},
+    {"proc": "eye_comp", "at": [
+      {"visits": ["W24", "W52", "W76", "W104"], "rule": "R3", "reason": "Exams about every 6 months match the standard-care reference for untreated geographic atrophy."}]},
+    {"proc": "eye_int", "at": [
+      {"visits": ["D1", "W4", "W12", "DX"], "rule": "R4", "reason": "The protocol examines the eye at every 4-weekly dosing visit; the standard-care reference gives about one exam every 6 months, already counted at screening and weeks 24, 52, 76 and 104. These extra exams are research."}]},
+    {"proc": "vfx", "at": [
+      {"visits": ["SCR", "W52", "W104"], "rule": "R2", "reason": "ETDRS BCVA, low-contrast and low-luminance acuity and contrast sensitivity are registry endpoints at baseline, week 52 and week 104; standard care does not test them."}]},
+    {"proc": "faf", "at": [
+      {"visits": ["SCR", "W24", "W52", "W76", "W104"], "rule": "R3", "reason": "Fundus autofluorescence about every 6 months matches the standard-care reference for monitoring geographic atrophy."}]},
+    {"proc": "oct", "at": [
+      {"visits": ["SCR", "W24", "W52", "W76", "W104"], "rule": "R3", "reason": "OCT about every 6 months matches the standard-care reference (it also checks for new neovascularization)."}]},
+    {"proc": "fa", "at": [
+      {"visits": ["SCR"], "rule": "R2", "reason": "Angiography to exclude neovascularization for eligibility (registry exclusion 2); standard care does not do it routinely."}]},
+    {"proc": "img_upload", "at": [
+      {"visits": ["SCR", "W24", "W52", "W76", "W104"], "rule": "R2", "reason": "Sending images to a central reading center exists only for the trial's lesion-growth endpoint."}]},
+    {"proc": "a1c", "at": [
+      {"visits": ["SCR"], "rule": "R2", "reason": "HbA1c to check eligibility (registry exclusion 13); not part of geographic atrophy care."}]},
+    {"proc": "cbc", "at": [
+      {"visits": ["SCR", "W12", "W24", "W52", "W76", "W104"], "rule": "R2", "reason": "Safety labs exist because of the investigational complement inhibitor; untreated geographic atrophy needs no blood tests."}]},
+    {"proc": "cmp", "at": [
+      {"visits": ["SCR", "W12", "W24", "W52", "W76", "W104"], "rule": "R2", "reason": "Safety labs exist because of the investigational complement inhibitor; untreated geographic atrophy needs no blood tests."}]},
+    {"proc": "nm_cx", "at": [
+      {"visits": ["SCR"], "rule": "R2", "reason": "Meningococcal carriage culture is a registry exclusion test (exclusion 12), needed only because the study drugs block complement."}]},
+    {"proc": "vax_admin", "at": [
+      {"visits": ["SCR"], "rule": "R2", "reason": "Vaccinations required by the protocol before complement inhibition (registry inclusion 5)."}]},
+    {"proc": "vax_admin_menb", "at": [
+      {"visits": ["SCR"], "rule": "R2", "reason": "Vaccinations required by the protocol before complement inhibition (registry inclusion 5). Second vaccine of the screening visit: one add-on administration code."}]},
+    {"proc": "vax_admin_pcv", "at": [
+      {"visits": ["SCR"], "rule": "R2", "reason": "Vaccinations required by the protocol before complement inhibition (registry inclusion 5). Third vaccine of the screening visit: one add-on administration code."}]},
+    {"proc": "vax_acwy", "at": [
+      {"visits": ["SCR"], "rule": "R2", "reason": "Meningococcal vaccination required by the protocol (registry inclusion 5)."}]},
+    {"proc": "vax_b", "at": [
+      {"visits": ["SCR"], "rule": "R2", "reason": "Meningococcal vaccination required by the protocol (registry inclusion 5)."}]},
+    {"proc": "vax_pcv", "at": [
+      {"visits": ["SCR"], "rule": "R2", "reason": "Pneumococcal vaccination required by the protocol (registry inclusion 5). A reviewer may relabel it routine where it is routinely recommended."}]},
+    {"proc": "inj_poz", "at": [
+      {"visits": ["D1", "W4", "W12", "W24", "W52", "W76", "DX"], "rule": "R1", "reason": "Double-masked: pozelimab (investigational) or its placebo. Administering the investigational product is paid by the sponsor."}]},
+    {"proc": "inj_cem", "at": [
+      {"visits": ["D1", "W4", "W12", "W24", "W52", "W76", "DX"], "rule": "R1", "reason": "Double-masked: cemdisiran (investigational) or its placebo. Administering the investigational product is paid by the sponsor."}]},
+    {"proc": "ip_disp", "at": [
+      {"visits": ["D1", "W4", "W12", "W24", "W52", "W76", "DX"], "rule": "R1", "reason": "Preparing blinded investigational product is research pharmacy work."}]},
+    {"proc": "pk", "at": [
+      {"visits": ["D1", "W4", "W12", "W24", "W52", "W76", "W104"], "rule": "R2", "reason": "Registry outcomes include pozelimab and cemdisiran concentrations, total C5 and anti-drug antibodies through week 104."}]}
+  ],
+  "compare_default": [
+    {"facility": "Retina Associates of New York", "city": "New York"},
+    {"facility": "Mississippi Retina Associates", "city": "Madison"}
+  ],
+  "compare_presets": [
+    {"label": "Manhattan vs Mississippi", "sites": [{"facility": "Retina Associates of New York", "city": "New York"}, {"facility": "Mississippi Retina Associates", "city": "Madison"}]},
+    {"label": "San Francisco vs Sacramento, California", "sites": [{"facility": "West Coast Retina", "city": "San Francisco"}, {"facility": "UC Davis", "city": "Sacramento"}]},
+    {"label": "D.C. suburbs (Fairfax) vs Baltimore", "sites": [{"facility": "Retina Group of Washington", "city": "Fairfax"}, {"facility": "Retina Care Center", "city": "Baltimore"}]}
+  ]
+}

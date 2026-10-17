@@ -18,11 +18,17 @@ export interface TrialFacts {
   n_sites?: number
   n_us_sites?: number
   n_us_sites_withdrawn?: number
+  /** Set when the facts come from a static registry snapshot (trial not in the database). */
+  source?: string
+  conditions?: string[]
 }
 
 export interface TrialCard {
   nct_id: string
   short_title: string
+  /** e.g. "Outside lung cancer"; absent for the lung trials. */
+  area?: string | null
+  condition?: string | null
   why_chosen: string
   arms: { label: string; text: string }[]
   dosing: string
@@ -96,6 +102,10 @@ export interface Protocol {
   rules: Rule[]
   standard_care_reference: string[]
   standard_care_source: string
+  area?: string | null
+  condition?: string | null
+  /** What the authors used where the registry is silent (e.g. "standard NSCLC practice"). */
+  practice_basis?: string
   trial: TrialFacts
   design: { design: string; confidence: string | null } | null
   disclaimer: string
@@ -127,6 +137,9 @@ export interface SiteOpt {
   status: string | null
   locality: Locality | null
   label: string
+  /** Why no locality was resolved (registry-snapshot sites are never matched by city name). */
+  locality_note?: string
+  source?: string
 }
 
 export interface SitesResp {
@@ -177,6 +190,8 @@ export interface Line {
   banded?: boolean
   low?: number | null
   high?: number | null
+  /** A sponsor item with no published amount: left out of every total and listed under them. */
+  unpriced?: boolean
 }
 
 export type AnchorId = 'public' | 'standard' | 'open'
@@ -197,6 +212,18 @@ export interface VisitBudget {
   placeholder_amount: number
   visit_low?: number
   visit_high?: number
+  /** A repeating visit whose number per participant the schedule fixes; it counts that many times per participant. */
+  occurrences?: number | null
+}
+
+export interface UnpricedItem {
+  procedure_id: string
+  label: string
+  short_label: string
+  code: string | null
+  visits: string[]
+  per_participant: number
+  per_occurrence: boolean
 }
 
 export interface StandardItem {
@@ -223,6 +250,13 @@ export interface Totals {
   per_participant_insurance_medicare: number
   per_participant_placeholder: number
   per_occurrence: { visit_id: string; label: string; repeat: string; amount: number; low?: number; high?: number }[]
+  /** Repeating visits with a fixed count, inside the per-participant amount. */
+  per_participant_repeats?: { visit_id: string; label: string; repeat: string; count: number; amount: number; subtotal: number }[]
+  unpriced_sponsor_items?: UnpricedItem[]
+  /** "Excludes 6 research items with no published Medicare amount, to be negotiated: …" (null when none). */
+  unpriced_text?: string | null
+  n_unpriced_sponsor_lines?: number
+  screen_failure_unpriced?: number
   screen_failure: number
   per_participant_low?: number
   per_participant_high?: number
@@ -334,6 +368,7 @@ export interface CompareRow {
   rvu: { work: number; pe: number; mp: number } | null
   visits_fixed: string[]
   visits_repeat: string[]
+  visits_counted?: { visit_id: string; count: number }[]
   n_fixed: number
   delta_unit: number
   delta_fixed: number
@@ -364,6 +399,8 @@ export interface Compare {
   gpci_delta: { work: number; pe: number; mp: number }
   rows: CompareRow[]
   summary: {
+    /** Sites priced at national amounts because no locality was resolved: an assumption, not a published GPCI. */
+    national_fallback?: ('a' | 'b')[]
     delta_per_participant: number
     delta_research_items: number
     delta_overhead: number

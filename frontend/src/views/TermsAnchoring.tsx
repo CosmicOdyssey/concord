@@ -576,6 +576,20 @@ export function CompareWhy({ c }: { c: Compare }) {
         physician fees by locality, and here the adjustments are the same. {constant}
       </>
     )
+  // A site without a resolved locality is priced at national amounts: an assumption, not a published GPCI difference.
+  const fallback = (['a', 'b'] as const).filter((k) => !c[k].locality)
+  if (fallback.length > 0)
+    return (
+      <>
+        {fallback.map((k) => (
+          <span key={k}>
+            Site {k.toUpperCase()}: {c[k].site.locality_note ?? 'Medicare locality not resolved. Coded lines use national amounts (an assumption).'}{' '}
+          </span>
+        ))}
+        On that assumption the sponsor budgets differ by <span className="tnum strong">{usd(Math.abs(d))}</span> per participant. It is not a
+        published locality difference. {constant}
+      </>
+    )
   const parts = (['pe', 'work', 'mp'] as const)
     .map((k) => ({ k, v: k === 'work' ? sm.from_work : k === 'pe' ? sm.from_pe : sm.from_mp }))
     .sort((x, y) => Math.abs(y.v) - Math.abs(x.v))
