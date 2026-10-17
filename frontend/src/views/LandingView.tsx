@@ -715,6 +715,7 @@ export default function LandingView({ focus }: { focus: { id: string | null; n: 
                 <a className="btn btn-primary btn-big lp-cta" href={TERMS_HREF}>
                   {TERMS_CTA}
                 </a>
+                <a href="#demo" className="lp-quiet">HackHarvard · 180-second planning demo</a>
                 <SectionLink to="tested" className="lp-quiet">
                   Read what we tested
                 </SectionLink>

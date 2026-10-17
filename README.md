@@ -357,3 +357,12 @@ coordination, paired sensitivity and immutable evidence exports is available at
 inputs; ClinicalTrials.gov supplies registry context only. See
 [reproduction and assumptions](docs/portfolio/README.md) and
 [verification evidence](docs/portfolio/VERIFICATION.md).
+
+## Isolated HackHarvard planning demo
+
+Open **`#demo`** for the deterministic 180-second, explicitly synthetic portfolio
+planning demonstration. It is separate from the current product/research views;
+modeled completion changes are **not clinical forecasts or product claims**.
+Local/offline setup, four-click walkthrough, provenance and saved-result fallback:
+[`docs/demo/README.md`](docs/demo/README.md). Spoken scripts:
+[`docs/demo/HACKHARVARD-180-SECOND-SCRIPT.md`](docs/demo/HACKHARVARD-180-SECOND-SCRIPT.md).

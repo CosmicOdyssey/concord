@@ -1,9 +1,11 @@
 {
   "schemaVersion": 1,
   "project": {
-    "name": "CONCORD-INDEPENDENT-ACCEPTANCE",
+    "name": "CONCORD-HACKHARVARD-DEMO",
     "languages": [],
-    "metadata": {}
+    "metadata": {
+      "campaign": "CONCORD-HACKHARVARD-DEMO"
+    }
   },
   "repository": {
     "provider": "github"
@@ -46,6 +48,28 @@
         "args": [
           "run",
           "test:portfolio"
+        ],
+        "cwd": "frontend",
+        "required": true
+      },
+      {
+        "id": "demo-client",
+        "label": "Demo scene and integrity contracts",
+        "command": "npm",
+        "args": [
+          "run",
+          "test:demo"
+        ],
+        "cwd": "frontend",
+        "required": true
+      },
+      {
+        "id": "typecheck",
+        "label": "Typecheck",
+        "command": "npm",
+        "args": [
+          "run",
+          "typecheck"
         ],
         "cwd": "frontend",
         "required": true
