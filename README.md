@@ -78,6 +78,9 @@ dividing out regex-parsed eligibility, and de-congesting historical rates (`recr
 | trimmed PoA (106 trials with plausible times) | 1.59 |
 | sites used, independent → coordinated | 332 → 488 |
 
+Other regions are consistent: median speedup 1.29x (West), 1.41x (South), 1.31x (Midwest); 70–78% of
+trials faster; trimmed PoA 1.40–1.59. Each clears in ~10 s.
+
 40 trials are flagged (model time over 120 months), mostly from the eligibility parser producing a very
 small eligible fraction. Their raw contribution dominates the untrimmed PoA, so the UI leads with the
 robust numbers. Absolute times run high (median 56 months for the registered allocation): calibration
@@ -93,6 +96,16 @@ is the next modeling task.
 - The independent baseline respects capacity first-come by start date, which is generous to the status quo.
 - Synthetic population prevalences: `compiler/population.py`. Rate card amounts are **placeholders**
   (`verified=False`) until the CMS PFS/CLFS/GPCI files are loaded.
+
+## Known issues
+
+- Price tags and slot values re-solve deterministically (fixed passes, no kicks) against the same
+  procedure on the unchanged market. They are local (warm-start) effects, not global re-optimizations.
+- "Screen failure" ($500) is billed as incurred and is not in the expected site total.
+- Coverage-grid Medicare amounts are national; budget lines are locality-adjusted.
+- Sites with one big historical trial can get a narrow, high rate interval (e.g. Dartmouth-Hitchcock,
+  n_hist = 1). The interval ignores uncertainty in how a trial's enrollment splits across its sites.
+- The academic-center regex misses some academic centers (e.g. Dartmouth-Hitchcock).
 
 ## Next (maps to the master doc's H10–H24 milestones)
 

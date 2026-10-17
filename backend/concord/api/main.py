@@ -107,7 +107,9 @@ def protocol() -> dict:
 
 
 @app.get("/api/termsheet")
-def termsheet(site_id: str, nct_id: str | None = None, region: str = "US-Northeast", multiplier: float = 1.0) -> dict:
+def termsheet(site_id: str, nct_id: str | None = None, region: str = "US-Northeast", multiplier: float = 1.0,
+              activation_lag: float = 6.0, overlap_scale: float = 1.0, capacity_scale: float = 1.0,
+              max_trials: int | None = None) -> dict:
     """Pre-cleared terms for a (demo protocol, site) match. If nct_id is given, expected patients
     come from that trial's cleared allocation at the site."""
     con = sqlite3.connect(DB_PATH)
@@ -117,9 +119,9 @@ def termsheet(site_id: str, nct_id: str | None = None, region: str = "US-Northea
     if row is None:
         raise HTTPException(404, "unknown site")
     site = dict(row)
-    expected = 10.0
+    expected, expected_source = 10.0, "placeholder: no cleared match given"
     if nct_id:
-        run = _clear(service.Params(region=region))
+        run = _clear(_params(region, activation_lag, overlap_scale, capacity_scale, max_trials))
         inst, x = run["built"].inst, run["x_coord"]
         if nct_id in inst.trial_ids and site_id in inst.site_ids:
             s, p = inst.site_ids.index(site_id), inst.trial_ids.index(nct_id)
@@ -127,8 +129,10 @@ def termsheet(site_id: str, nct_id: str | None = None, region: str = "US-Northea
                 from concord.allocator.core import State
                 st = State(inst, x)
                 share = (inst.base[s, p] / (1 + st.load[s, p])) / max(st.R[p], 1e-12)
-                expected = float(inst.N[p] * share)
-    return medicare.term_sheet(demo_protocol(), site, expected, multiplier)
+                expected, expected_source = float(inst.N[p] * share), "cleared allocation"
+            else:
+                expected_source = "placeholder: pair not in the cleared allocation"
+    return {**medicare.term_sheet(demo_protocol(), site, expected, multiplier), "expected_source": expected_source}
 
 
 class EligibilityText(BaseModel):
@@ -140,5 +144,6 @@ def compile_eligibility(body: EligibilityText) -> dict:
     """Free-text criteria -> predicates with provenance (rule-based MVP; review required)."""
     crit = extract_criteria(body.text)
     pop = service.population()
-    return {"criteria": [c.to_dict() for c in crit], "eligible_fraction": eligible_fraction(crit, pop),
+    return {"criteria": [c.to_dict() for c in crit],
+            "eligible_fraction": eligible_fraction(crit, pop) if crit else None,  # unknown is never 100%
             "parser": "rule-based v0", "review_required": True}

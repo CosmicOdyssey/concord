@@ -192,10 +192,12 @@ def _greedy(st: State, cands: list[np.ndarray], K: int, deadline: float) -> None
         st.toggle(best[1], best[2])
 
 
-def _local_search(st: State, cands: list[np.ndarray], K: int, deadline: float, rng) -> tuple[int, int]:
+def _local_search(st: State, cands: list[np.ndarray], K: int, deadline: float, rng,
+                  max_passes: int | None = None) -> tuple[int, int]:
     """First-improvement moves: drop a site that only adds congestion, or move it elsewhere."""
-    inst, moves, improved = st.inst, 0, 0
-    while time.monotonic() < deadline:
+    inst, moves, improved, passes = st.inst, 0, 0, 0
+    while time.monotonic() < deadline and (max_passes is None or passes < max_passes):
+        passes += 1
         improved_pass = False
         for p in rng.permutation(inst.P):
             for s in np.flatnonzero(st.x[:, p]):
@@ -221,10 +223,12 @@ def _local_search(st: State, cands: list[np.ndarray], K: int, deadline: float, r
 
 
 def coordinate(inst: Instance, x0: np.ndarray | None = None, K: int = 60, time_limit: float = 10.0,
-               seed: int = 0, patience: int = 40, kick: float = 0.2) -> tuple[np.ndarray, dict]:
+               seed: int = 0, patience: int = 40, kick: float = 0.2,
+               max_passes: int | None = None) -> tuple[np.ndarray, dict]:
     """Greedy + local search, then iterated local search: knock out a random `kick` share of
     assignments, repair greedily, re-run local search, keep the result if it is better.
-    Stops at `time_limit` or after `patience` kicks without improvement."""
+    Stops at `time_limit` or after `patience` kicks without improvement. For counterfactual
+    comparisons pass max_passes and patience=0 so the result does not depend on wall-clock time."""
     t0 = time.monotonic()
     deadline = t0 + time_limit
     rng = np.random.default_rng(seed)
@@ -232,7 +236,7 @@ def coordinate(inst: Instance, x0: np.ndarray | None = None, K: int = 60, time_l
     st = State(inst, x0)
     _greedy(st, cands, K, deadline)
     greedy_obj = st.objective()
-    moves, improved = _local_search(st, cands, K, deadline, rng)
+    moves, improved = _local_search(st, cands, K, deadline, rng, max_passes)
     best_x, best_obj = st.x.copy(), st.objective()
 
     kicks = stale = 0

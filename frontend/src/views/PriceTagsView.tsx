@@ -1,0 +1,313 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { api, DEFAULT_PARAMS, type ClearParams, type PriceTags, type SlotValue } from '../api'
+import type { ClearState } from '../App'
+import { Badge, Caveat, ErrorBox, Loading, NeedsClear, RunLine } from '../components'
+import { ctgovUrl, int, num, phaseLabel, siteName, times, trialName } from '../format'
+
+function paramsKey(p: ClearParams): string {
+  return [p.region, p.activation_lag, p.overlap_scale, p.capacity_scale, p.max_trials ?? ''].join('|')
+}
+
+interface Props {
+  clear: ClearState
+  selected: string | null
+  setSelected: (nct: string | null) => void
+}
+
+type Async<T> = { status: 'idle' } | { status: 'loading' } | { status: 'error'; error: string } | { status: 'ok'; data: T }
+
+export default function PriceTagsView({ clear, selected, setSelected }: Props) {
+  const r = clear.result
+  const solved = clear.solvedParams
+  const tagsCache = useRef(new Map<string, PriceTags>())
+  const slotsCache = useRef(new Map<string, SlotValue[]>())
+  const [tags, setTags] = useState<Async<PriceTags>>({ status: 'idle' })
+  const [slots, setSlots] = useState<Async<SlotValue[]>>({ status: 'idle' })
+  const [reloadTick, setReloadTick] = useState(0)
+  const slotAbort = useRef<AbortController | null>(null)
+
+  const trials = useMemo(
+    () => (r ? [...r.trials].sort((a, b) => (a.acronym ?? a.nct_id).localeCompare(b.acronym ?? b.nct_id)) : []),
+    [r],
+  )
+  const trial = r?.trials.find((t) => t.nct_id === selected) ?? null
+  const pkey = solved ? paramsKey(solved) : ''
+
+  useEffect(() => {
+    if (!solved || !trial) {
+      setTags({ status: 'idle' })
+      return
+    }
+    const key = `${pkey}|${trial.nct_id}`
+    const hit = tagsCache.current.get(key)
+    if (hit) {
+      setTags({ status: 'ok', data: hit })
+      return
+    }
+    const ctl = new AbortController()
+    setTags({ status: 'loading' })
+    api
+      .priceTags(trial.nct_id, solved, ctl.signal)
+      .then((d) => {
+        tagsCache.current.set(key, d)
+        setTags({ status: 'ok', data: d })
+      })
+      .catch((e: unknown) => {
+        if (!ctl.signal.aborted) setTags({ status: 'error', error: e instanceof Error ? e.message : String(e) })
+      })
+    return () => ctl.abort()
+  }, [pkey, solved, trial, reloadTick])
+
+  useEffect(() => {
+    const hit = slotsCache.current.get(pkey)
+    setSlots(hit ? { status: 'ok', data: hit } : { status: 'idle' })
+    return () => slotAbort.current?.abort()
+  }, [pkey])
+
+  const loadSlots = () => {
+    if (!solved) return
+    slotAbort.current?.abort()
+    const ctl = new AbortController()
+    slotAbort.current = ctl
+    const key = pkey
+    setSlots({ status: 'loading' })
+    api
+      .slotValues(solved, ctl.signal)
+      .then((d) => {
+        slotsCache.current.set(key, d)
+        setSlots({ status: 'ok', data: d })
+      })
+      .catch((e: unknown) => {
+        if (!ctl.signal.aborted) setSlots({ status: 'error', error: e instanceof Error ? e.message : String(e) })
+      })
+  }
+
+  if (!r || !solved) {
+    if (clear.loading) return <Loading label={`Clearing ${clear.pendingParams?.region ?? ''}…`} />
+    return (
+      <>
+        {clear.error && <ErrorBox error={clear.error} onRetry={() => clear.run(DEFAULT_PARAMS)} />}
+        <NeedsClear onRun={() => clear.run(DEFAULT_PARAMS)} busy={clear.loading} />
+      </>
+    )
+  }
+
+  const tagData = tags.status === 'ok' ? tags.data : null
+  const maxTrialSaved = tagData ? Math.max(0.01, ...tagData.criteria.map((c) => Math.abs(c.months_saved_trial))) : 1
+  const unchanged = tagData ? tagData.criteria.filter((c) => c.pool_multiplier === 1) : []
+  const floor = unchanged.length ? Math.max(...unchanged.map((c) => c.months_saved_portfolio)) : null
+
+  return (
+    <section className="view">
+      <div className="view-head">
+        <div>
+          <h1>What each eligibility criterion costs</h1>
+          <p className="lede">
+            For one trial, drop each parsed criterion in turn, recompute the eligible pool and overlaps, and re-clear.
+            The result is a price tag in months of enrollment.
+          </p>
+        </div>
+        <RunLine params={solved} stale={clear.loading} />
+      </div>
+
+      <div className="card controls">
+        <label className="field field-wide">
+          <span className="field-label">Trial ({trials.length} in {solved.region})</span>
+          <select value={selected ?? ''} onChange={(e) => setSelected(e.target.value || null)}>
+            <option value="">Select a trial…</option>
+            {trials.map((t) => (
+              <option key={t.nct_id} value={t.nct_id}>
+                {trialName(t)}
+                {t.sponsor ? ` · ${t.sponsor}` : ''}
+                {t.flagged ? ' · needs review' : ''}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {selected && !trial && (
+        <div className="empty">
+          <p>
+            {selected} is not in the {solved.region} instance. Pick a trial from this region.
+          </p>
+        </div>
+      )}
+
+      {trial && (
+        <div className="card trial-head">
+          <div className="trial-head-top">
+            <a href={ctgovUrl(trial.nct_id)} target="_blank" rel="noreferrer" className="strong">
+              {trialName(trial)}
+            </a>
+            {trial.flagged && <Badge tone="warn">needs review</Badge>}
+            <span className="muted small">
+              {phaseLabel(trial.phases)} · {trial.sponsor ?? 'sponsor unknown'}
+            </span>
+          </div>
+          <p className="small">{trial.title}</p>
+          <div className="kv-row small tnum">
+            <span>
+              T actual <strong>{num(trial.T_actual)}</strong> mo
+            </span>
+            <span>
+              T indep <strong>{num(trial.T_indep)}</strong> mo
+            </span>
+            <span>
+              T coord <strong>{num(trial.T_coord)}</strong> mo
+            </span>
+            <span>
+              regional target <strong>{num(trial.target_region)}</strong> pts
+            </span>
+            <span>
+              eligible fraction (synthetic) <strong>{num(trial.f !== null ? trial.f * 100 : null, 1)}%</strong>
+            </span>
+          </div>
+        </div>
+      )}
+
+      {trial && tags.status === 'loading' && (
+        <Loading label="Re-clearing once per criterion…" hint="Usually 5–15 seconds; the backend re-solves the market for each relaxation." />
+      )}
+      {trial && tags.status === 'error' && <ErrorBox error={tags.error} onRetry={() => setReloadTick((x) => x + 1)} />}
+
+      {tagData && (
+        <div className="card">
+          <h2>Price tags · {tagData.criteria.length} parsed criteria</h2>
+          {tagData.criteria.length === 0 && <p className="muted">No criteria were parsed from this trial’s CT.gov text.</p>}
+          <ul className="tags">
+            {tagData.criteria.map((c) => {
+              const w = (100 * Math.abs(c.months_saved_trial)) / maxTrialSaved
+              return (
+                <li key={c.id} className="tag">
+                  <div className="tag-main">
+                    <div className="tag-title">
+                      <span className="strong">{c.label}</span>
+                      <Badge tone={c.kind === 'exclusion' ? 'bad' : 'ok'}>{c.kind}</Badge>
+                      {c.pool_multiplier === 1 && (
+                        <Badge tone="neutral" title="Dropping this criterion does not change the synthetic eligible pool">
+                          pool unchanged
+                        </Badge>
+                      )}
+                    </div>
+                    <blockquote className="source" title="Source sentence from ClinicalTrials.gov eligibility text">
+                      “{c.source}”
+                    </blockquote>
+                  </div>
+                  <div className="tag-nums tnum">
+                    <div>
+                      <span className="muted small">this trial, if relaxed</span>
+                      <div className={c.months_saved_trial > 0 ? 'pos strong' : c.months_saved_trial < 0 ? 'neg strong' : 'strong'}>
+                        {c.months_saved_trial > 0 ? '−' : c.months_saved_trial < 0 ? '+' : ''}
+                        {num(Math.abs(c.months_saved_trial))} mo
+                      </div>
+                      <div className="minibar" aria-hidden="true">
+                        <span style={{ width: `${w}%` }} className={c.months_saved_trial < 0 ? 'minibar-neg' : ''} />
+                      </div>
+                    </div>
+                    <div>
+                      <span className="muted small">portfolio</span>
+                      <div>{num(c.months_saved_portfolio)} trial-mo</div>
+                    </div>
+                    <div>
+                      <span className="muted small">pool</span>
+                      <div>{times(c.pool_multiplier)}</div>
+                    </div>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+          {floor !== null && floor > 0 && (
+            <p className="note small">
+              <strong>Reading the portfolio column:</strong> criteria that leave the pool unchanged (×1.00) still show up
+              to {num(floor)} portfolio trial-months. That is the solver improving further on a time-limited baseline when it
+              re-clears, not an effect of the criterion. Compare portfolio figures against that baseline.
+            </p>
+          )}
+          <Caveat>
+            {tagData.note} Months saved are relative to the cleared time T<sub>coord</sub> = {num(tagData.T_coord)} months;
+            “pool” is the eligible-population multiplier from dropping the criterion. Review parsed criteria against the
+            source text: the rule-based parser can misread a sentence.
+          </Caveat>
+        </div>
+      )}
+
+      {!trial && !selected && (
+        <div className="empty">
+          <p>Select a trial above, or click a row in the “Clear it” table.</p>
+        </div>
+      )}
+
+      <div className="card">
+        <div className="section-head">
+          <div>
+            <h2>Slot values</h2>
+            <p className="muted small">
+              Portfolio trial-months saved by one more concurrent-trial slot at sites already at capacity in the cleared
+              allocation (up to 12, highest enrollment rate first).
+            </p>
+          </div>
+          <button className="btn" onClick={loadSlots} disabled={slots.status === 'loading'}>
+            {slots.status === 'ok' ? 'Recompute' : 'Compute slot values'}
+          </button>
+        </div>
+        {slots.status === 'loading' && <Loading label="Re-clearing once per candidate site…" hint="Usually 10–20 seconds." />}
+        {slots.status === 'error' && <ErrorBox error={slots.error} onRetry={loadSlots} />}
+        {slots.status === 'ok' && slots.data.length === 0 && <p className="muted">No site is at capacity in this allocation.</p>}
+        {slots.status === 'ok' && slots.data.length > 0 && (
+          <>
+            <div className="table-scroll">
+              <table className="tbl">
+                <thead>
+                  <tr>
+                    <th>Site</th>
+                    <th className="num">Capacity</th>
+                    <th className="num">Hist. rate (pts/mo)</th>
+                    <th className="num">n hist</th>
+                    <th className="num">Months saved</th>
+                    <th className="bar-col" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {slots.data.map((s) => {
+                    const max = Math.max(0.01, ...slots.data.map((x) => x.months_saved))
+                    return (
+                      <tr key={s.site_id}>
+                        <td>
+                          <span>{siteName(s)}</span> {s.is_amc && <Badge tone="neutral">AMC</Badge>}
+                        </td>
+                        <td className="num">{int(s.k)}</td>
+                        <td className="num" title={s.lam_ci ? `80% interval ${num(s.lam_ci[0], 2)}–${num(s.lam_ci[1], 2)}` : ''}>
+                          {num(s.lam_hist, 2)}
+                          {s.lam_ci && (
+                            <span className="muted small">
+                              {' '}
+                              [{num(s.lam_ci[0], 2)}–{num(s.lam_ci[1], 2)}]
+                            </span>
+                          )}
+                        </td>
+                        <td className="num">{int(s.n_hist)}</td>
+                        <td className="num strong">{num(s.months_saved)}</td>
+                        <td className="bar-col">
+                          <div className="minibar">
+                            <span style={{ width: `${(100 * Math.max(0, s.months_saved)) / max}%` }} />
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <p className="muted small">
+              Hist. rate = fitted patients per month per trial at the site (posterior mean; bracket = 10th–90th
+              percentile), from n hist past trials at the site. Months saved include the solver’s own re-optimization from a time-limited baseline, so
+              small differences between sites are not meaningful.
+            </p>
+          </>
+        )}
+      </div>
+    </section>
+  )
+}

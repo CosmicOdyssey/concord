@@ -256,7 +256,19 @@ def _pairs(x: np.ndarray, inst: core.Instance) -> list[list[str]]:
     return [[inst.site_ids[i], inst.trial_ids[j]] for i, j in zip(s, p)]
 
 
-def price_tags(params: Params, nct_id: str, time_limit: float = 1.5) -> dict:
+# Counterfactual re-solves: deterministic warm start (no kicks, fixed passes), compared against
+# the same procedure run on the unchanged market so solver progress is not credited to the change.
+RESOLVE = dict(patience=0, max_passes=2, time_limit=60.0)
+
+
+def _reference(params: Params) -> np.ndarray:
+    run = clear(params)
+    if "x_ref" not in run:
+        run["x_ref"], _ = core.coordinate(run["built"].inst, x0=run["x_coord"], **RESOLVE)
+    return run["x_ref"]
+
+
+def price_tags(params: Params, nct_id: str) -> dict:
     """Months of enrollment each eligibility criterion of one trial costs (§4.5), by dropping
     it, recomputing f and overlaps, and re-solving from the cleared allocation."""
     run = clear(params)
@@ -264,8 +276,8 @@ def price_tags(params: Params, nct_id: str, time_limit: float = 1.5) -> dict:
     inst = b.inst
     p = inst.trial_ids.index(nct_id)
     pop = population()
-    base_obj = float(inst.w @ core.evaluate(inst, x0))
-    base_T = core.evaluate(inst, x0)[p]
+    T_ref = core.evaluate(inst, _reference(params))
+    base_obj, base_T = float(inst.w @ T_ref), T_ref[p]
     f_ref_scale = inst.f[p] / max(eligible_fraction(b.criteria[p], pop), 1e-9)
     out = []
     for c in b.criteria[p]:
@@ -278,22 +290,26 @@ def price_tags(params: Params, nct_id: str, time_limit: float = 1.5) -> dict:
         f[p] = f_new * f_ref_scale
         relaxed = core.Instance(inst.lam, inst.a, inst.k, f, inst.N, inst.n_max, inst.w, o, inst.feasible,
                                 inst.site_ids, inst.trial_ids)
-        x, _ = core.coordinate(relaxed, x0=x0, time_limit=time_limit)
+        x, _ = core.coordinate(relaxed, x0=x0, **RESOLVE)
         T = core.evaluate(relaxed, x)
         out.append({**c.to_dict(), "pool_multiplier": round(f_new / max(eligible_fraction(b.criteria[p], pop), 1e-9), 2),
                     "months_saved_trial": round(float(base_T - T[p]), 2),
                     "months_saved_portfolio": round(base_obj - float(inst.w @ T), 2)})
+    # Dropping one of several OR'ed alternatives (e.g. "ALK or ROS1") narrows the pool; it is not a
+    # relaxable restriction, so it gets no price tag.
+    alternatives = [r["label"] for r in out if r["pool_multiplier"] < 1.0]
+    out = [r for r in out if r["pool_multiplier"] >= 1.0]
     out.sort(key=lambda r: -r["months_saved_trial"])
-    return {"nct_id": nct_id, "T_coord": _m(base_T), "criteria": out,
+    return {"nct_id": nct_id, "T_coord": _m(base_T), "criteria": out, "alternatives_not_priced": alternatives,
             "note": "Criteria from rule-based parsing of CT.gov text; synthetic population. Not clinical advice."}
 
 
-def slot_values(params: Params, top: int = 12, time_limit: float = 1.0) -> list[dict]:
+def slot_values(params: Params, top: int = 12) -> list[dict]:
     """Portfolio months saved by one more concurrent-trial slot at the busiest full sites."""
     run = clear(params)
     b, x0 = run["built"], run["x_coord"]
     inst = b.inst
-    base_obj = float(inst.w @ core.evaluate(inst, x0))
+    base_obj = float(inst.w @ core.evaluate(inst, _reference(params)))
     full = np.flatnonzero(x0.sum(axis=1) >= inst.k)
     full = full[np.argsort(-inst.lam[full])][:top]
     out = []
@@ -302,7 +318,7 @@ def slot_values(params: Params, top: int = 12, time_limit: float = 1.0) -> list[
         k[s] += 1
         more = core.Instance(inst.lam, inst.a, k, inst.f, inst.N, inst.n_max, inst.w, inst.o, inst.feasible,
                              inst.site_ids, inst.trial_ids)
-        x, _ = core.coordinate(more, x0=x0, time_limit=time_limit)
+        x, _ = core.coordinate(more, x0=x0, **RESOLVE)
         out.append({**b.sites[s], "months_saved": round(base_obj - float(more.w @ core.evaluate(more, x)), 2)})
     out.sort(key=lambda r: -r["months_saved"])
     return out
