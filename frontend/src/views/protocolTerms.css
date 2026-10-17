@@ -27,14 +27,17 @@
 }
 
 /* ---------- flow nav: the steps are tabs (termsSteps.tsx) ---------- */
-/* Sticks under the app header (--sticky-h, app.css) on the page background, so it stays in reach on a long step; one
-   row at every width (it scrolls sideways on a phone, never the page). */
+/* Sticks under the app header on the page background, so it stays in reach on a long step (StepNav measures the
+   header; --sticky-h, app.css, is the fallback); one row at every width (it scrolls sideways on a phone, never the
+   page). */
 .tf-flow {
   position: sticky;
-  top: var(--sticky-h);
+  top: calc(var(--sticky-h) - 1px);
   z-index: 900;
   background: var(--bg);
   border-bottom: 1px solid var(--rule);
+  /* Paints over a sub-pixel gap under the header, so content never shows between the two. */
+  box-shadow: 0 -4px 0 var(--bg);
 }
 .tf-flow ol {
   display: flex;

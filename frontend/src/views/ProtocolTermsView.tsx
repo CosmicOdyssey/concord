@@ -47,7 +47,7 @@ import { GPCI_PLAIN } from './termsAnchoringText'
 import TermsProposalCheck from './TermsProposalCheck'
 import './protocolTerms.css'
 import TermsSpread from './TermsSpread'
-import { STEPS, panelId, stepFromHash, stepSlug, tabId, useStepState, useStepTabs } from './termsStepTabs'
+import { STEPS, createStepStore, panelId, stepFromHash, stepSlug, tabId, useStepTabs } from './termsStepTabs'
 import { StepNav, StepPager, StepPlaceholder, StepTabsProvider } from './termsSteps'
 
 type Async<T> = { status: 'idle' } | { status: 'loading' } | { status: 'error'; error: string } | { status: 'ok'; data: T; pending: boolean }
@@ -209,9 +209,9 @@ export default function ProtocolTermsView() {
   const [pickB, setSiteB] = useState('')
   const [selected, setSelected] = useState<string | null>(null)
   const [withCompare, setWithCompare] = useState(true)
-  // The step on show (termsSteps.tsx): #terms-flow/<nct>/<step> opens that step; otherwise step 1.
-  const tabs = useStepState(stepFromHash)
-  const { active: step, setFromLink: setStepFromLink } = tabs
+  // The step on show (termsStepTabs.ts), kept outside this component's state so a switch does not re-render it:
+  // #terms-flow/<nct>/<step> opens that step; otherwise step 1.
+  const [steps] = useState(() => createStepStore(stepFromHash()))
   // Range on coded lines, percent of Medicare (an assumption; default 100%-150%).
   const [band, setBand] = useState<[number, number]>(() => {
     const v = readStore<unknown>('tf:band', null)
@@ -232,8 +232,8 @@ export default function ProtocolTermsView() {
   // address bar.
   useEffect(() => {
     writeStore('tf:nct', nct)
-    writeHash(nct, step)
-  }, [nct, step])
+    writeHash(nct)
+  }, [nct])
 
   // Deep link #terms-flow/<nct>[/<step>]; other tabs own the rest of the hash.
   useEffect(() => {
@@ -242,12 +242,12 @@ export default function ProtocolTermsView() {
       const h = nctFromHash()
       const s = stepFromHash()
       if (h && h !== nct) selectTrial(h)
-      setStepFromLink(s)
+      steps.setFromLink(s)
       writeHash(h ?? nct, s)
     }
     window.addEventListener('hashchange', on)
     return () => window.removeEventListener('hashchange', on)
-  }, [nct, selectTrial, setStepFromLink])
+  }, [nct, selectTrial, steps])
 
   useEffect(() => writeStore(`tf:overrides:${nct}`, overrides), [nct, overrides])
   useEffect(() => writeStore('tf:standard:v1', standard), [standard])
@@ -690,7 +690,7 @@ export default function ProtocolTermsView() {
         ))}
     </section>
   )
-  return <StepTabsProvider value={tabs}>{view}</StepTabsProvider>
+  return <StepTabsProvider store={steps}>{view}</StepTabsProvider>
 }
 
 // ====================================================================== step frame

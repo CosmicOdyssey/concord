@@ -4,19 +4,47 @@
 // when motion is allowed); the old one is removed at once, so there is no blank gap. The page scrolls (instantly)
 // only when the new panel's top would sit under the sticky header and step nav; focus moves to the panel heading
 // only on keyboard activation. Deep link: #terms-flow/<NCT>/<step slug>.
-import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react'
-import { STEPS, StepTabsContext, howOf, panelId, tabId, useStepTabs, type StepTabs } from './termsStepTabs'
+import { useEffect, useLayoutEffect, useRef, type KeyboardEvent, type ReactNode } from 'react'
+import { STEPS, StepTabsContext, afterSwitch, howOf, panelId, tabId, useStepSwitch, useStepTabs, type StepStore } from './termsStepTabs'
 
-export function StepTabsProvider({ value, children }: { value: StepTabs; children: ReactNode }) {
-  return <StepTabsContext.Provider value={value}>{children}</StepTabsContext.Provider>
+export function StepTabsProvider({ store, children }: { store: StepStore; children: ReactNode }) {
+  return <StepTabsContext.Provider value={store}>{children}</StepTabsContext.Provider>
 }
 
 /** The step nav: a tab list, one tab per step, the active one marked with the accent. */
 export function StepNav() {
   const { active, select } = useStepTabs()
+  const sw = useStepSwitch()
+  // After the panels swap (same commit), before paint: scroll if the new top would be hidden, focus on keyboard use.
+  useLayoutEffect(() => afterSwitch(sw), [sw])
   const refs = useRef<(HTMLButtonElement | null)[]>([])
   const listRef = useRef<HTMLOListElement>(null)
+  const navRef = useRef<HTMLElement>(null)
   const last = STEPS.length - 1
+
+  // Stick just under what the app header keeps on screen (the one-row header, or the tab bar below 1320 px), measured:
+  // the CSS fallback (--sticky-h) is short of the two-line tab bar on narrow screens.
+  useLayoutEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+    const els = [...document.querySelectorAll<HTMLElement>('.appbar, nav.tabs')]
+    const fit = () => {
+      let h = 0
+      for (const el of els) {
+        const cs = getComputedStyle(el)
+        if (cs.position === 'sticky' || cs.position === 'fixed') h = Math.max(h, (parseFloat(cs.top) || 0) + el.getBoundingClientRect().height)
+      }
+      nav.style.top = h > 0 ? `${Math.floor(h)}px` : ''
+    }
+    fit()
+    const ro = new ResizeObserver(fit)
+    els.forEach((el) => ro.observe(el))
+    window.addEventListener('resize', fit)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', fit)
+    }
+  }, [])
 
   const onKey = (e: KeyboardEvent<HTMLButtonElement>, i: number) => {
     const to =
@@ -39,7 +67,7 @@ export function StepNav() {
   }, [active])
 
   return (
-    <nav className="tf-flow" role="tablist" aria-label="Steps">
+    <nav ref={navRef} className="tf-flow" role="tablist" aria-label="Steps">
       <ol ref={listRef} role="presentation">
         {STEPS.map((s, i) => {
           const on = i === active
