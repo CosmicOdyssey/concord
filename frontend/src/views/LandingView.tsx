@@ -314,7 +314,7 @@ function PairCard({ crop, sel }: { crop: Crop; sel: Oriented }) {
   const p = sel.pair
   const region = regionWord(crop)
   return (
-    <div className="lp-paircard reveal" aria-live="polite">
+    <div className="lp-paircard reveal">
       <p className="lp-paircard-title">
         {A.label} × {B.label}
       </p>
@@ -684,8 +684,8 @@ export default function LandingView({ focus }: { focus: { id: string | null; n: 
                 </p>
               ) : (
                 <p className="lp-body">
-                  For one sponsor on one date: the registered sites each pair of its lung cancer trials shares, and how many eligible patients the two could both enroll,
-                  on a synthetic population.
+                  For one sponsor on one date: the registered sites each pair of its lung cancer trials shares, and what share of one trial's eligible patients
+                  also qualify for the other, on a synthetic population.
                 </p>
               )}
             </div>
@@ -845,7 +845,7 @@ export default function LandingView({ focus }: { focus: { id: string | null; n: 
 
         <section className="lp-close" aria-labelledby="lp-h-close">
           <div className="lp-close-in">
-            <h2 id="lp-h-close">Price a protocol line by line, with a source on every number.</h2>
+            <h2 id="lp-h-close">Price a protocol line by line, and see where every number comes from.</h2>
             <a className="btn btn-primary btn-big lp-cta" href={TERMS_HREF}>
               {TERMS_CTA}
             </a>

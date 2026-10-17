@@ -170,6 +170,28 @@ async function settle(page) {
       check('no page or console errors (interactions)', page.__errors.length === 0, page.__errors.slice(0, 3))
       await ctx.close()
     }
+    // The preview's link opens the Portfolio overlap tab on the same preset, with the fianlimab pair selected.
+    {
+      const { ctx, page } = await open(browser, { width: 1440, theme: 'light', density: 'simple' })
+      await page.goto(`${BASE}/#home/overlap`, { waitUntil: 'domcontentloaded' })
+      await page.waitForSelector('.lp-paircard', { timeout: 30000 })
+      await settle(page)
+      await page.click('#landing-overlap a.lp-open')
+      await page.waitForSelector('nav.tabs', { timeout: 30000 })
+      await settle(page)
+      const ov = await page.evaluate(() => ({
+        hash: location.hash,
+        active: document.querySelector('nav.tabs [aria-selected="true"] .tab-label')?.innerText.trim(),
+        text: document.querySelector('main')?.innerText ?? '',
+      }))
+      check(
+        'preview link opens Portfolio overlap on the Regeneron preset with the fianlimab pair',
+        ov.hash === '#overlap/regeneron' && ov.active === 'Portfolio overlap' && /Regeneron/.test(ov.text) && /NCT05785767/.test(ov.text) && /NCT05800015/.test(ov.text),
+        { hash: ov.hash, active: ov.active },
+      )
+      check('no page or console errors (preview link)', page.__errors.length === 0, page.__errors.slice(0, 3))
+      await ctx.close()
+    }
     for (const width of [1440, 390])
       for (const theme of ['light', 'dark']) {
         const { ctx, page } = await open(browser, { width, theme, density: 'simple' })
