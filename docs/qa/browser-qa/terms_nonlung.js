@@ -121,7 +121,10 @@ async function ready(page) {
         check(`${name} theme`, r.theme === theme, r.theme)
         check(`${name} no page scroll`, !lay.overflow, JSON.stringify(lay.offenders.slice(0, 3)))
         check(`${name} picker label`, r.picker.some((p) => p.includes('Outside lung cancer')), JSON.stringify(r.picker))
-        check(`${name} picker lists 3 trials`, r.picker.length === 3, String(r.picker.length))
+        // the three authored trials, plus any trial added by NCT ID (terms_anytrial.js adds three to the gitignored cache)
+        const listed = await getJson('/api/terms-flow/trials')
+        const authored = listed.filter((t) => !t.import).length
+        check(`${name} picker lists 3 authored trials, and every trial the API lists`, authored === 3 && r.picker.length === listed.length, `${authored} authored, ${r.picker.length} shown, ${listed.length} listed`)
         check(`${name} lede names the non-lung trial`, r.lede1.includes('outside lung cancer'), r.lede1)
         check(`${name} disclaimer visible`, r.main.includes(DISCLAIMER))
         check(`${name} illustrative visible`, r.main.includes(ILLUSTRATIVE))
