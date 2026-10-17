@@ -34,7 +34,7 @@ function measure(page, sel) {
       })
     // Header cells of each table that start past the right edge of their scroller (need a sideways scroll to see).
     const hidden = [...root.querySelectorAll('table')].map((t) => {
-      const box = t.closest('.table-scroll, .tf-lines-wrap, .ov-matrix-scroll')
+      const box = t.closest('.table-scroll, .tf-lines-wrap, .ov-mscroll')
       const br = box ? box.getBoundingClientRect() : { left: 0, right: vw }
       const right = Math.min(br.right, vw)
       return {
@@ -52,7 +52,7 @@ function measure(page, sel) {
     const page = await open(browser, '#overlap/regeneron', () => (document.querySelector('.ov-detail h2')?.innerText ?? '').includes('NCT05785767'))
     for (const [sel, name] of [
       ['section[aria-label="Pair matrix"]', 'overlap-matrix'],
-      ['section[aria-label="Pair detail"]', 'overlap-pair-detail'],
+      ['.ov-detail', 'overlap-pair-detail'],
     ]) {
       out.sections.push({ name, m: await measure(page, sel) })
       await Q.snap(browser, await page.$(sel), `${PREFIX}-${name}-390`, { element: true, maxH: 2400 })
