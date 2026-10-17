@@ -75,7 +75,7 @@ def stochastic_oracle(request,coverage):
         # Pricing is linear in edge months and enrollments, so averaging per-draw costs is equivalent.
         prices=[cost(request,selected,o,coverage) for o in rows]
         committed=prices[0][1]
-        if round(committed,2)>request['budget']+.005 or any(min(row[2])<request['hospital_floor']-.005 for row in prices):continue
+        if round(committed,2)>request['budget']+.005 or any(np.mean([row[2][i] for row in prices])<request['hospital_floor']-.005 for i in range(len(request['trials']))):continue
         expected=float(np.mean([row[0] for row in prices]))
         if request['objective']=='min_cost_deadline':
             if any(means[t['id']]>t['deadline']+1e-8 for t in request['trials']):continue
@@ -129,9 +129,12 @@ def test_equal_cost_alternatives_have_stable_lexicographic_tie_break():
     for e in body['edges']:e.update(rate=2,lag=0,activation=0,operating=0,monitoring=0,participant=0,screening=0)
     result=p.run(p.PortfolioRequest.model_validate(body))
     assert result['scenarios'][4]['selected_edges']==[0,1]
-    # With a tight shared slot, the two one-edge networks tie; lowest edge index wins.
-    body['sites'][1]['capacity']=.01;body['edges'][1]['feasibility']='UNKNOWN'
-    assert p.run(p.PortfolioRequest.model_validate(body))['scenarios'][4]['selected_edges']==[0]
+    # Cost objective: every network costs the same and both single-site alternatives meet the deadline.
+    body['objective']='min_cost_deadline';body['trials'][0]['deadline']=4
+    tied=p.run(p.PortfolioRequest.model_validate(body))
+    assert tied['scenarios'][4]['selected_edges']==[0]
+    assert tied['scenarios'][4]['optimization']['absolute_gap']==0
+
 
 
 def test_joint_policy_proof_covers_optional_rate_interventions():

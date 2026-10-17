@@ -1,0 +1,254 @@
+Browser tab: 1783081799, Title: "Portfolio Command · Concord", URL: "http://127.0.0.1:5178/#portfolio-command".
+0 AXWebArea Portfolio Command · Concord, URL: 127.0.0.1:5178/#portfolio-command
+	1 container root
+		2 link Description: Skip to content, Value: 127.0.0.1:5178/#main-content
+		3 container
+			4 link Description: Back to the Concord home page, Value: 127.0.0.1:5178/#home
+			5 container Display density
+				6 checkbox Simple, Help: One headline and one number per section. Hover or focus for details. Key caveats stay visible., Value: 1
+				7 checkbox Detailed, Help: Every table, note and source, at full density., Value: 0
+			8 container Color theme
+				9 checkbox Description: Light theme, Value: 0
+				10 checkbox Description: Dark theme, Value: 0
+				11 checkbox Description: Match system theme, Value: 1
+			12 tab group Views
+				13 tab (selectable, settable, boolean) Protocol to terms, Help: A schedule of assessments, turned into a coverage grid, a budget and a term sheet., Value: 0
+				14 tab (selectable, settable, boolean) Portfolio overlap, Help: Where one sponsor's trials share registered sites and eligible patients., Value: 0
+				15 tab (selectable, settable, boolean) Findings, Help: What we tested, including results that weakened the original idea., Value: 0
+				16 tab (selectable, settable, boolean) Site scores Historical, not a forecast, Help: Historical per-site enrollment evidence, and how well it held up on later trials., Value: 0
+				17 tab (selectable, settable, boolean) Research In-sample model outputs, Help: The earlier site-clearing views, kept for reference. Not product claims., Value: 0
+		18 container main-content
+			22 container
+				23 text CONCORD / SPONSOR PLANNING
+				24 heading Portfolio Command, Value: 1
+					25 text Portfolio Command
+				26 text Where should the next dollar go? LIVE COMPUTATION
+				27 text SYNTHETIC OPERATIONS
+			28 text Regeneron registry context · hypothetical hospitals, enrollment progress, financial inputs and recruitment effects. Planning tool; no live sponsor or payer relationship.
+			29 container
+				30 text Sponsor budget (USD)
+				31 stepper (settable, integer) Description: Sponsor budget (USD), Value: 3000000
+			32 container
+				33 text Portfolio objective
+				34 pop up button (collapsed, settable) Description: Portfolio objective, Value: Minimize maximum weighted completion, Secondary Actions: Expand
+					35 menu
+						36 (selected) Minimize maximum weighted completion
+						37 Minimize sum of weighted durations
+						38 Minimize cost within expected deadlines
+			39 container
+				40 text Planning horizon (months)
+				41 stepper (settable, integer) Description: Planning horizon (months), Value: 36
+			42 button Run portfolio comparison
+			263 container
+				264 text Inputs changed. Run comparison to compute compatible results.  Displayed evidence belongs to the previous inputs.
+			44 container Portfolio sections
+				45 button 01 Executive Overview
+					46 text 0
+					47 text 1
+					48 text Executive Overview
+				49 button 02 Trial Portfolio
+					50 text 0
+					51 text 2
+					52 text Trial Portfolio
+				53 button 03 Site Capacity
+					54 text 0
+					55 text 3
+					56 text Site Capacity
+				57 button 04 Financial Allocation
+					58 text 0
+					59 text 4
+					60 text Financial Allocation
+				61 button 05 Scenario Lab
+					62 text 0
+					63 text 5
+					64 text Scenario Lab
+				65 button 06 Evidence and Reports
+					66 text 0
+					67 text 6
+					68 text Evidence and Reports
+			81 container Financial Allocation
+				82 heading Financial allocation, Value: 2
+					83 text Financial allocation
+				84 container
+					85 text Administrative reduction fraction
+					86 stepper (settable, float) Description: Administrative reduction fraction, Value: 0.25
+				87 checkbox (settable, integer) Description: Assume administrative savings are realizable, Value: 1
+				88 container
+					89 text Minimum hospital contribution per trial USD
+					90 stepper (settable, integer) Description: Minimum hospital contribution per trial USD, Value: 0
+				91 text Financial efficiency uses reduced administration only under the realization assumption. Sponsor-to-hospital payments and insurer payments are transfers. The resource total is calculated separately.
+				92 heading Joint portfolio optimization, Value: 3
+					93 text Joint portfolio optimization
+				94 container
+					95 text Expected sponsor cash $1,027,502
+				96 container
+					97 text Unknown responsibility reserve $200,000
+				98 container
+					99 text Modeled resource consumption $1,391,610
+				100 table
+					101 row
+						102 cell
+							103 text TRIAL
+						104 cell
+							105 text EXPECTED INCL. RESERVE
+						106 cell
+							107 text CONSERVATIVE COMMITMENT
+						108 cell
+							109 text HOSPITAL CONTRIBUTION
+						110 cell
+							111 text POTENTIAL PAYER
+						112 cell
+							113 text POTENTIAL COST SHARING
+						114 cell
+							115 text ACCESS SUPPORT
+					116 row
+						117 cell
+							118 text NCT05800015
+						119 cell
+							120 text $611,339
+						121 cell
+							122 text $765,533
+						123 cell
+							124 text $150,004
+						125 cell
+							126 text $192,292
+						127 cell
+							128 text $39,048
+						129 cell
+							130 text $20,000
+					131 row
+						132 cell
+							133 text NCT05785767
+						134 cell
+							135 text $616,163
+						136 cell
+							137 text $765,533
+						138 cell
+							139 text $150,968
+						140 cell
+							141 text $192,292
+						142 cell
+							143 text $39,048
+						144 cell
+							145 text $20,000
+				146 button (collapsed) NCT05800015 cost components and transfers, Secondary Actions: Expand
+					147 text NCT05800015
+					148 text  cost components and transfers
+				149 button (collapsed) NCT05785767 cost components and transfers, Secondary Actions: Expand
+					150 text NCT05785767
+					151 text  cost components and transfers
+				152 container
+					153 text Expected sponsor cost plus reserve per required remaining participant:  $15,344 . All amounts are hypothetical USD. Full-horizon commitment includes maximum selected per-participant cost; expected costs use simulated edge flows. Potential coverage is subject to payer and beneficiary review. Unknown responsibility is reserved. Actual drug costs and costs beyond the fixed authored schedule remain unknown.
+				154 heading Marginal investments against the fixed baseline, Value: 3
+					155 text Marginal investments against the fixed baseline
+				156 table
+					157 row
+						158 cell
+							159 text INTERVENTION
+						160 cell
+							161 text EXTRA EXPECTED COST
+						162 cell
+							163 text ADDITIONAL RESERVE COMMITMENT
+						164 cell
+							165 text MONTHS SAVED
+						166 cell
+							167 text ENROLLMENT GAIN AT 12 MO OR HORIZON
+						168 cell
+							169 text BREAK-EVEN USD / MONTH SAVED
+						170 cell
+							171 text ASSESSMENT
+					172 row
+						173 cell
+							174 text Add SYN-C to NCT05800015
+						175 cell
+							176 text $23,673
+						177 cell
+							178 text $76,800
+						179 cell
+							180 text 1.1 (0.291–2.269)
+						181 cell
+							182 text 4.94 / 2.09e-4 per dollar
+						183 cell
+							184 text $21,450
+						185 cell
+							186 text Candidate under assumptions
+					187 row
+						188 cell
+							189 text Add SYN-D to NCT05800015
+						190 cell
+							191 text $54,628
+						192 cell
+							193 text $96,800
+						194 cell
+							195 text 0.6 (0.119–1.646)
+						196 cell
+							197 text 3.21 / 5.87e-5 per dollar
+						198 cell
+							199 text $91,277
+						200 cell
+							201 text Candidate under assumptions
+					202 row
+						203 cell
+							204 text Add SYN-C to NCT05785767
+						205 cell
+							206 text $24,528
+						207 cell
+							208 text $76,800
+						209 cell
+							210 text 2.8 (0.786–5.074)
+						211 cell
+							212 text 9.05 / 3.69e-4 per dollar
+						213 cell
+							214 text $8,754
+						215 cell
+							216 text Candidate under assumptions
+					217 row
+						218 cell
+							219 text Add SYN-D to NCT05785767
+						220 cell
+							221 text $56,720
+						222 cell
+							223 text $96,800
+						224 cell
+							225 text 1.64 (0.296–2.895)
+						226 cell
+							227 text 5.33 / 9.40e-5 per dollar
+						228 cell
+							229 text $34,680
+						230 cell
+							231 text Candidate under assumptions
+					232 row
+						233 cell
+							234 text Participant support
+						235 cell
+							236 text $24,000
+						237 cell
+							238 text $24,000
+						239 cell
+							240 text 0 (0–0)
+						241 cell
+							242 text 0 / 0.00e+0 per dollar
+						243 cell
+							244 text No positive time gain
+						245 cell
+							246 text Retain funds; no feasible demonstrated time gain
+					247 row
+						248 cell
+							249 text Recruitment operations (assumed effect)
+						250 cell
+							251 text $47,404
+						252 cell
+							253 text $50,000
+						254 cell
+							255 text 0.67 (0.127–1.254)
+						256 cell
+							257 text 1.64 / 3.45e-5 per dollar
+						258 cell
+							259 text $70,430
+						260 cell
+							261 text Candidate under assumptions
+				262 text Break-even is the assumed sponsor value of one month saved required to cover the incremental modeled cost, not a clinical benefit valuation. Individual investments are evaluated without presuming administrative savings.
+			80 text Concord · Portfolio Command · reproducible planning, explicitly bounded evidence.
+		21 text Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates; Sponsor budget is a worksheet on synthetic inputs with no time model. Decision support only, not clinical, legal or coverage advice.
+
+The focused UI element is 87 checkbox (settable, integer) Description: Assume administrative savings are realizable, Value: 1

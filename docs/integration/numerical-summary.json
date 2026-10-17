@@ -1,0 +1,24 @@
+{
+  "independent_cases": 19,
+  "false_infeasible": [],
+  "time_mismatches": [],
+  "nonzero_gaps": [],
+  "counterexample": {
+    "trials": 4,
+    "sites": 3,
+    "edges": 12,
+    "before_months": 12,
+    "corrected_months": 4.0,
+    "independent_optimum": 4.0
+  },
+  "default_horizon": {
+    "horizon_type": "int",
+    "dtype": "float64",
+    "expected": 3.5,
+    "actual": [
+      [
+        3.5
+      ]
+    ]
+  }
+}

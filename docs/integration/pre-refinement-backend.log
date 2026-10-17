@@ -1,0 +1,159 @@
+................................................ssssssssss.............. [ 10%]
+.....F.....F...................................................s........ [ 21%]
+.sss....ssssssssssssssssssssssssss.s.................................... [ 32%]
+........................................................................ [ 43%]
+........................................................................ [ 54%]
+........................................................................ [ 65%]
+........................................................................ [ 76%]
+......................................................sssssssssss....... [ 87%]
+.ssssssssss.ss...sssss.......sssssssss....s.ssssss..sssssssss..s......s. [ 98%]
+s..s..ssss                                                               [100%]
+=================================== FAILURES ===================================
+_______ test_investigational_supply_is_never_a_hospital_receipt_or_cost ________
+
+client = <starlette.testclient.TestClient object at 0x10e58e690>
+request_body = {'trial_id': 'NCT05800015', 'budget': 1500000.0, 'target': 60, 'budget_period_months': 24.0, ...}
+
+    def test_investigational_supply_is_never_a_hospital_receipt_or_cost(client, request_body):
+        default = by_id(compare(client, request_body))["A"]["economics"]
+        # Default demo: 60 x (0.8 x 0 + 0.8 x 52,800 + 0.8 x 120,000 ...) with no 2,500 drug reserve per participant.
+>       assert default["hospital"]["net_contribution"] == pytest.approx(200489.40, abs=0.01)
+E       assert 194163.6 == 200489.4 ± 0.01
+E
+E         comparison failed
+E         Obtained: 194163.6
+E         Expected: 200489.4 ± 0.01
+
+backend/tests/test_financial.py:167: AssertionError
+___ test_medicare_pays_clinical_lab_tests_in_full_with_no_participant_share ____
+
+client = <starlette.testclient.TestClient object at 0x10e58c490>
+request_body = {'trial_id': 'NCT05800015', 'budget': 1500000.0, 'target': 60, 'budget_period_months': 24.0, ...}
+
+    def test_medicare_pays_clinical_lab_tests_in_full_with_no_participant_share(client, request_body):
+        """SSA 1833(a)(1)(D) and (b)(3): CLFS clinical diagnostic lab tests carry no Part B deductible or coinsurance."""
+        from concord import terms
+        result = compare(client, request_body)
+        routine = [i for i in result["coverage"]["items"] if i["status"] == "POTENTIALLY_PAYER_COVERED"]
+        clfs = [i for i in routine if (terms._price_code(i["code"], None) or {}).get("schedule") == "CLFS"]
+        other = [i for i in routine if i not in clfs]
+        assert clfs and other
+        for item in clfs:
+            assert item["payer_per_participant"] == item["unit_rate"] and item["patient_per_participant"] == 0
+            assert item["explanation"].endswith("Medicare pays clinical diagnostic lab tests at 100% of the CLFS amount "
+                                                "(no Part B deductible or coinsurance), so the participant share is 0")
+        fraction = request_body["payer_fraction"]
+        for item in other:  # the stated payer share still splits the other routine lines
+            assert item["payer_per_participant"] == pytest.approx(item["unit_rate"] * fraction, abs=0.01)
+        # Default demo, per participant: insurer 5,026.97 and participant 1,031.70; ledger A 301,618.20 / 61,902.
+>       assert result["coverage"]["totals"]["payer"] == pytest.approx(5026.97, abs=0.01)
+E       assert 4807.3 == 5026.97 ± 0.01
+E
+E         comparison failed
+E         Obtained: 4807.3
+E         Expected: 5026.97 ± 0.01
+
+backend/tests/test_financial.py:274: AssertionError
+=============================== warnings summary ===============================
+backend/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /Users/sadius/concord-final-integration/backend/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [2] backend/tests/test_anchoring.py:45: data/concord.db or data/ratecard.json not built
+SKIPPED [1] backend/tests/test_anchoring.py:70: data/concord.db or data/ratecard.json not built
+SKIPPED [1] backend/tests/test_anchoring.py:99: data/concord.db or data/ratecard.json not built
+SKIPPED [2] backend/tests/test_anchoring.py:117: data/concord.db or data/ratecard.json not built
+SKIPPED [1] backend/tests/test_anchoring.py:132: data/concord.db or data/ratecard.json not built
+SKIPPED [1] backend/tests/test_anchoring.py:144: data/concord.db or data/ratecard.json not built
+SKIPPED [1] backend/tests/test_anchoring.py:160: data/concord.db or data/ratecard.json not built
+SKIPPED [1] backend/tests/test_anchoring.py:184: data/concord.db or data/ratecard.json not built
+SKIPPED [1] backend/tests/test_findings.py:9: data/concord.db not built
+SKIPPED [1] backend/tests/test_findings_api.py:162: data/concord.db not built
+SKIPPED [1] backend/tests/test_hooks.py:12: data/concord.db not built
+SKIPPED [1] backend/tests/test_hooks.py:25: data/concord.db not built
+SKIPPED [1] backend/tests/test_indication_overlap.py:117: data/concord.db not built
+SKIPPED [1] backend/tests/test_line_detail.py:46: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_line_detail.py:74: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_line_detail.py:89: CMS rvu26d.zip not downloaded
+SKIPPED [2] backend/tests/test_line_detail.py:95: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_line_detail.py:126: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_line_detail.py:139: data/concord.db not built
+SKIPPED [1] backend/tests/test_line_detail.py:160: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_line_detail.py:173: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_overlap.py:36: data/concord.db not built
+SKIPPED [1] backend/tests/test_overlap.py:45: data/concord.db not built
+SKIPPED [1] backend/tests/test_overlap.py:60: data/concord.db not built
+SKIPPED [1] backend/tests/test_overlap.py:74: data/concord.db not built
+SKIPPED [1] backend/tests/test_overlap.py:98: data/concord.db not built
+SKIPPED [1] backend/tests/test_overlap.py:109: data/concord.db not built
+SKIPPED [1] backend/tests/test_overlap.py:130: data/concord.db not built
+SKIPPED [1] backend/tests/test_overlap.py:143: data/concord.db not built
+SKIPPED [1] backend/tests/test_overlap.py:162: data/concord.db not built
+SKIPPED [1] backend/tests/test_overlap.py:174: data/concord.db not built
+SKIPPED [1] backend/tests/test_overlap.py:185: data/concord.db not built
+SKIPPED [1] backend/tests/test_overlap.py:208: data/concord.db not built
+SKIPPED [1] backend/tests/test_overlap.py:227: data/concord.db not built
+SKIPPED [1] backend/tests/test_overlap.py:236: data/concord.db not built
+SKIPPED [1] backend/tests/test_overlap.py:253: data/concord.db not built
+SKIPPED [1] backend/tests/test_overlap.py:273: data/concord.db not built
+SKIPPED [1] backend/tests/test_overrides.py:26: /Users/sadius/concord-final-integration/data/demo_trials.json not present
+SKIPPED [1] backend/tests/test_proposal.py:109: data/concord.db or data/ratecard.json not built
+SKIPPED [1] backend/tests/test_proposal.py:140: data/concord.db or data/ratecard.json not built
+SKIPPED [1] backend/tests/test_proposal.py:165: data/concord.db or data/ratecard.json not built
+SKIPPED [1] backend/tests/test_proposal.py:171: data/concord.db or data/ratecard.json not built
+SKIPPED [1] backend/tests/test_proposal.py:178: data/concord.db or data/ratecard.json not built
+SKIPPED [1] backend/tests/test_proposal.py:189: data/concord.db or data/ratecard.json not built
+SKIPPED [1] backend/tests/test_proposal.py:202: data/concord.db or data/ratecard.json not built
+SKIPPED [1] backend/tests/test_proposal.py:210: data/concord.db or data/ratecard.json not built
+SKIPPED [1] backend/tests/test_proposal.py:218: data/concord.db or data/ratecard.json not built
+SKIPPED [1] backend/tests/test_proposal.py:248: data/concord.db or data/ratecard.json not built
+SKIPPED [1] backend/tests/test_proposal.py:268: data/concord.db or data/ratecard.json not built
+SKIPPED [1] backend/tests/test_site_scores.py:48: data/concord.db not built
+SKIPPED [1] backend/tests/test_site_scores.py:57: data/concord.db not built
+SKIPPED [1] backend/tests/test_site_scores.py:70: data/concord.db not built
+SKIPPED [1] backend/tests/test_site_scores.py:83: data/concord.db not built
+SKIPPED [1] backend/tests/test_site_scores.py:105: data/concord.db not built
+SKIPPED [1] backend/tests/test_site_scores.py:116: data/concord.db not built
+SKIPPED [1] backend/tests/test_site_scores.py:129: data/concord.db not built
+SKIPPED [1] backend/tests/test_site_scores.py:139: data/concord.db not built
+SKIPPED [1] backend/tests/test_site_scores.py:162: data/concord.db not built
+SKIPPED [1] backend/tests/test_site_scores.py:184: data/concord.db not built
+SKIPPED [1] backend/tests/test_site_scores.py:214: data/concord.db not built
+SKIPPED [1] backend/tests/test_site_scores.py:227: data/concord.db not built
+SKIPPED [1] backend/tests/test_site_scores.py:333: data/concord.db not built
+SKIPPED [1] backend/tests/test_site_scores.py:357: data/concord.db not built
+SKIPPED [1] backend/tests/test_site_scores.py:370: data/concord.db not built
+SKIPPED [1] backend/tests/test_site_scores.py:385: data/concord.db not built
+SKIPPED [1] backend/tests/test_site_scores.py:399: data/concord.db not built
+SKIPPED [1] backend/tests/test_terms.py:93: data/ratecard.json not built
+SKIPPED [2] backend/tests/test_terms.py:106: data/concord.db not built
+SKIPPED [1] backend/tests/test_terms.py:133: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_terms.py:149: data/concord.db not built
+SKIPPED [2] backend/tests/test_terms.py:172: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_terms.py:194: data/concord.db not built
+SKIPPED [1] backend/tests/test_terms.py:226: data/concord.db not built
+SKIPPED [1] backend/tests/test_terms_nonlung.py:76: data/concord.db not built
+SKIPPED [1] backend/tests/test_terms_nonlung.py:95: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_terms_nonlung.py:120: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_terms_nonlung.py:165: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_terms_nonlung.py:174: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_terms_nonlung.py:205: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_terms_nonlung.py:219: data/ratecard.json not built
+SKIPPED [2] backend/tests/test_terms_spread.py:41: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_terms_spread.py:65: data/ratecard.json not built
+SKIPPED [2] backend/tests/test_terms_spread.py:86: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_terms_spread.py:106: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_terms_spread.py:125: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_terms_spread.py:157: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_terms_spread.py:175: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_terms_spread.py:231: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_trial_import.py:127: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_trial_import.py:185: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_trial_import.py:222: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_trial_import.py:262: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_trial_import.py:290: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_trial_import.py:303: data/ratecard.json not built
+SKIPPED [1] backend/tests/test_trial_import.py:342: data/ratecard.json not built
+2 failed, 554 passed, 102 skipped, 1 warning in 31.89s

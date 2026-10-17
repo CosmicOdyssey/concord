@@ -1,0 +1,27 @@
+
+> frontend@0.0.0 test:financial
+> node --experimental-strip-types --test tests/financial.test.mjs
+
+✔ comparison posts the complete financial request (8.7685ms)
+✔ nonfinite numeric edits cannot silently become null (0.24175ms)
+✔ export recomputes exact inputs through the report endpoint (0.476541ms)
+✔ API failures and cancellation propagate to the UI (0.204709ms)
+✔ the demo request the view starts from has exactly the contract fields (a removed field posted back is a 422) (0.11225ms)
+✔ comparisons carry no time, speed, ranking or netted-participant field (0.913208ms)
+✔ unknown amounts read Unknown and uncosted plans read Not costed, never 0 (7.346375ms)
+✔ default fixture: each change against A equals budget_reallocation and names its cause (0.188334ms)
+✔ capacity-short fixture: A is not costed, so C and E state the added sites’ own cost instead of a change (0.102667ms)
+✔ the payer framing is the API’s own sentences, from assumptions or limitations (0.145042ms)
+✔ the worksheet amounts count as current only for the demo’s coverage inputs (0.071667ms)
+✔ Simple’s payer guard is the first sentence of the API’s PAYER_INDEPENDENCE, verbatim (0.083583ms)
+✔ Medicare pays CLFS lab tests in full: no participant share on them; default totals and ledger (0.116833ms)
+✔ research items and the supply reserve offer only sponsor-side statuses; Medicaid disables participant cost sharing (0.117916ms)
+✔ the view and its API module reference no removed field and use no speed, ranking or saving wording (10.913166ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 97.966708

@@ -1,0 +1,124 @@
+Browser tab: 1783081799, Title: "Portfolio Command · Concord", URL: "http://127.0.0.1:5178/#portfolio-command".
+0 AXWebArea Portfolio Command · Concord, URL: 127.0.0.1:5178/#portfolio-command
+	1 container root
+		2 link Description: Skip to content, Value: 127.0.0.1:5178/#main-content
+		3 container
+			4 link Description: Back to the Concord home page, Value: 127.0.0.1:5178/#home
+			5 container Display density
+				6 checkbox Simple, Help: One headline and one number per section. Hover or focus for details. Key caveats stay visible., Value: 1
+				7 checkbox Detailed, Help: Every table, note and source, at full density., Value: 0
+			8 container Color theme
+				9 checkbox Description: Light theme, Value: 0
+				10 checkbox Description: Dark theme, Value: 0
+				11 checkbox Description: Match system theme, Value: 1
+			12 tab group Views
+				13 tab (selectable, settable, boolean) Protocol to terms, Help: A schedule of assessments, turned into a coverage grid, a budget and a term sheet., Value: 0
+				14 tab (selectable, settable, boolean) Portfolio overlap, Help: Where one sponsor's trials share registered sites and eligible patients., Value: 0
+				15 tab (selectable, settable, boolean) Findings, Help: What we tested, including results that weakened the original idea., Value: 0
+				16 tab (selectable, settable, boolean) Site scores Historical, not a forecast, Help: Historical per-site enrollment evidence, and how well it held up on later trials., Value: 0
+				17 tab (selectable, settable, boolean) Research In-sample model outputs, Help: The earlier site-clearing views, kept for reference. Not product claims., Value: 0
+		18 container main-content
+			22 container
+				23 text CONCORD / SPONSOR PLANNING
+				24 heading Portfolio Command, Value: 1
+					25 text Portfolio Command
+				26 text Where should the next dollar go? LIVE COMPUTATION
+				27 text SYNTHETIC OPERATIONS
+			28 text Regeneron registry context · hypothetical hospitals, enrollment progress, financial inputs and recruitment effects. Planning tool; no live sponsor or payer relationship.
+			29 container
+				30 text Sponsor budget (USD)
+				31 stepper (settable, integer) Description: Sponsor budget (USD), Value: 3000000
+			32 container
+				33 text Portfolio objective
+				34 pop up button (collapsed, settable) Description: Portfolio objective, Value: Minimize maximum weighted completion, Secondary Actions: Expand
+					35 menu
+						36 (selected) Minimize maximum weighted completion
+						37 Minimize sum of weighted durations
+						38 Minimize cost within expected deadlines
+			39 container
+				40 text Planning horizon (months)
+				41 stepper (settable, integer) Description: Planning horizon (months), Value: 36
+			42 button Run portfolio comparison
+			43 text Comparison computed and saved. Report links export this exact result.
+			44 container Portfolio sections
+				45 button 01 Executive Overview
+					46 text 0
+					47 text 1
+					48 text Executive Overview
+				49 button 02 Trial Portfolio
+					50 text 0
+					51 text 2
+					52 text Trial Portfolio
+				53 button 03 Site Capacity
+					54 text 0
+					55 text 3
+					56 text Site Capacity
+				57 button 04 Financial Allocation
+					58 text 0
+					59 text 4
+					60 text Financial Allocation
+				61 button 05 Scenario Lab
+					62 text 0
+					63 text 5
+					64 text Scenario Lab
+				65 button 06 Evidence and Reports
+					66 text 0
+					67 text 6
+					68 text Evidence and Reports
+			81 container Trial Portfolio
+				82 heading Trial portfolio, Value: 2
+					83 text Trial portfolio
+				84 text Progress below is simulated. Financial templates are illustrative fixed schedules. NCT05785767 uses an explicitly assumed NCT05800015 proxy.
+				85 container
+					86 heading NCT05800015 SIMULATED OPERATIONS, Value: 3
+						87 text NCT05800015 SIMULATED OPERATIONS
+					88 text A Trial to Learn How the Combination of Fianlimab With Cemiplimab and Chemotherapy Works Compared With Cemiplimab and Chemotherapy for Treating Adult Patients With Advanced Non-small Cell Lung Cancer Regeneron Pharmaceuticals NCT05800015 enrollment target
+					89 stepper (settable, integer) Description: NCT05800015 enrollment target, Value: 40
+					90 text NCT05800015 simulated enrolled
+					91 stepper (settable, integer) Description: NCT05800015 simulated enrolled, Value: 0
+					92 text NCT05800015 priority
+					93 stepper (settable, float) Description: NCT05800015 priority, Value: 1.2000000476837158, Details: 1.2
+					94 text NCT05800015 deadline months
+					95 stepper (settable, integer) Description: NCT05800015 deadline months, Value: 24
+					96 text NCT05800015 administration USD
+					97 stepper (settable, integer) Description: NCT05800015 administration USD, Value: 150000
+					98 text NCT05800015 support per participant USD
+					99 stepper (settable, integer) Description: NCT05800015 support per participant USD, Value: 500
+					100 text Illustrative financial template
+					101 pop up button (collapsed, settable) Description: NCT05800015 financial template, Value: NCT05800015, Secondary Actions: Expand
+						102 menu
+							103 (selected) NCT05800015
+							104 NCT06627647
+					105 button Remove trial
+				106 container
+					107 heading NCT05785767 SIMULATED OPERATIONS, Value: 3
+						108 text NCT05785767 SIMULATED OPERATIONS
+					109 text A Study to Learn if a Combination of Fianlimab and Cemiplimab Versus Cemiplimab Alone is More Effective for Adult Participants With Advanced Non-Small Cell Lung Cancer (NSCLC) Regeneron Pharmaceuticals NCT05785767 enrollment target
+					110 stepper (settable, integer) Description: NCT05785767 enrollment target, Value: 40
+					111 text NCT05785767 simulated enrolled
+					112 stepper (settable, integer) Description: NCT05785767 simulated enrolled, Value: 0
+					113 text NCT05785767 priority
+					114 stepper (settable, integer) Description: NCT05785767 priority, Value: 1
+					115 text NCT05785767 deadline months
+					116 stepper (settable, integer) Description: NCT05785767 deadline months, Value: 20
+					117 text NCT05785767 administration USD
+					118 stepper (settable, integer) Description: NCT05785767 administration USD, Value: 150000
+					119 text NCT05785767 support per participant USD
+					120 stepper (settable, integer) Description: NCT05785767 support per participant USD, Value: 500
+					121 text Illustrative financial template
+					122 pop up button (collapsed, settable) Description: NCT05785767 financial template, Value: NCT05800015, Secondary Actions: Expand
+						123 menu
+							124 (selected) NCT05800015
+							125 NCT06627647
+					126 button Remove trial
+				127 heading Create or import a trial, Value: 3
+					128 text Create or import a trial
+				129 text Use a bundled registry ID to import its sourced metadata, or a SIM- identifier for a custom assumption. New operational feasibility starts UNKNOWN.
+				130 container
+					131 text New trial ID
+					132 combo box (settable) Description: New trial ID, Value: SIM-NEW
+				133 button Create / import trial
+			80 text Concord · Portfolio Command · reproducible planning, explicitly bounded evidence.
+		21 text Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates; Sponsor budget is a worksheet on synthetic inputs with no time model. Decision support only, not clinical, legal or coverage advice.
+
+The focused UI element is 49 button 02 Trial Portfolio
