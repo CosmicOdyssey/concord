@@ -2,10 +2,12 @@
 // one-line formula. Simple and Detailed, light and dark, 1440 and 390 px; page and console errors; horizontal page
 // scroll; the table's numbers equal to the API (71260: $191.25 at NY 01 Manhattan, $195.46 at NY 02 NYC Suburbs/Long
 // Island); the multiplier and overhead boxes in the table edit the step 3 controls; the hover-card variant.
+// Steps are tabs (termsSteps.tsx): each check first chooses its step in the step nav (lib.js showStep), since only the
+// step on show is visible (the others are mounted but hidden).
 // Usage (NODE_PATH must reach puppeteer-core): node terms_linedetail.js [baseUrl] [outDir]
 const fs = require('fs')
 const path = require('path')
-const { launch, sleep, layoutCheck } = require('./lib')
+const { launch, sleep, layoutCheck, showStep } = require('./lib')
 
 const BASE = process.argv[2] || 'http://localhost:5288'
 const OUT = process.argv[3] || 'C:/Users/micha/Projects/concord/data/work/T/linedetail'
@@ -77,6 +79,7 @@ const check = (name, ok, detail = '') => {
         const name = `${density}-${theme}-${width}`
         const page = await open(name, 'NCT05800015', width, { theme, density })
         await waitTable(page)
+        await showStep(page, 'term-sheet')
         await sleep(500)
         const txt = await page.$eval('#tf-step-6 .lb-wrap', (e) => e.innerText)
         check(`${name}: Medicare rate $191.25`, txt.includes('$191.25'))
@@ -118,6 +121,7 @@ const check = (name, ok, detail = '') => {
   {
     const page = await open('edit', 'NCT05800015', 1440, { density: 'detailed' })
     await waitTable(page)
+    await showStep(page, 'term-sheet')
     const boxes = await page.$$('#tf-step-6 .lb-pct input')
     check('edit: two boxes', boxes.length === 2, String(boxes.length))
     await boxes[0].click({ clickCount: 3 })
@@ -150,6 +154,7 @@ const check = (name, ok, detail = '') => {
   {
     const page = await open('westbury', 'NCT06627647', 1440, { density: 'detailed' })
     await waitTable(page)
+    await showStep(page, 'term-sheet')
     const txt = await page.$eval('#tf-step-6 .lb-wrap', (e) => e.innerText)
     check('westbury: $195.46', txt.includes('$195.46'))
     check('westbury: locality NY 02', txt.includes('CMS 2026 GPCI file, locality NYC Suburbs/Long Island (NY 02)'))
@@ -161,6 +166,8 @@ const check = (name, ok, detail = '') => {
   for (const width of [1440, 390]) {
     const page = await open(`hover-${width}`, 'NCT05800015', width, { density: 'detailed' })
     await waitTable(page)
+    // the budget's line table (provenance column) is in step 3
+    await showStep(page, 'budget')
     await page.evaluate(() => {
       const row = [...document.querySelectorAll('.tf-budget tbody tr.clickable')].find((r) => r.innerText.includes('Cycle 7 Day 1'))
       row?.click()
@@ -190,6 +197,8 @@ const check = (name, ok, detail = '') => {
   {
     const page = await open('TA36', 'NCT05800015', 1440)
     await waitTable(page)
+    // the schedule grid is in step 2 (Simple: inside its Details disclosure); the line shows in step 6
+    await showStep(page, 'coverage')
     const clicked = await page.evaluate(() => {
       const b = [...document.querySelectorAll('button.tf-cell')].find((x) => x.title.startsWith('Tumor assessment at week 36, CT chest'))
       if (!b) return false
@@ -197,6 +206,7 @@ const check = (name, ok, detail = '') => {
       return true
     })
     check('TA36: grid cell', clicked)
+    await showStep(page, 'term-sheet')
     await page.waitForFunction(
       () => (document.querySelector('#tf-step-6 .lb-wrap h3')?.innerText ?? '').includes('week 36') && document.querySelector('#tf-step-6 .lb-tbl') && !document.querySelector('#tf-step-6 .lb-stale'),
       { timeout: 30000, polling: 300 },
@@ -213,6 +223,7 @@ const check = (name, ok, detail = '') => {
   // ---- step 5 site proposal check: no one-line formula; the Medicare amount opens the breakdown
   {
     const page = await open('proposal', 'NCT05800015', 1440, { density: 'detailed' })
+    await showStep(page, 'proposal')
     await page.waitForFunction(() => [...document.querySelectorAll('#tf-step-5 button')].some((b) => b.textContent.includes('Load synthetic sample')), { timeout: 60000, polling: 300 })
     await page.evaluate(() => [...document.querySelectorAll('#tf-step-5 button')].find((x) => x.textContent.includes('Load synthetic sample')).click())
     await page.waitForSelector('#tf-step-5 .tp-table-full', { timeout: 60000 })
