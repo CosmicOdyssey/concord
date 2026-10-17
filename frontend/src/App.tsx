@@ -21,11 +21,11 @@ interface Route {
   tab: TabId
   /** Research sub-tab named by the hash, if any. */
   sub: ResearchTabId | null
-  /** Trailing segment: #research/prices/NCT01234567, #research/portfolio/regeneron. */
+  /** Trailing segment: #research/prices/NCT01234567, #research/portfolio/regeneron, #findings/allocation. */
   arg: string | null
 }
 
-/** Hash routes: #findings (default), #overlap, #terms-flow, #research/<sub>[/<arg>]. The pre-pivot
+/** Hash routes: #findings[/<finding id>] (default), #overlap, #terms-flow, #research/<sub>[/<arg>]. The pre-pivot
  *  flat links (#clear, #map, #prices/NCT..., #portfolio/regeneron, ...) open the same research sub-tab. */
 function parseHash(hash: string = window.location.hash): Route {
   const [head = '', ...rest] = hash.replace(/^#\/?/, '').split('/').filter(Boolean)
@@ -36,13 +36,20 @@ function parseHash(hash: string = window.location.hash): Route {
   }
   const sub = researchTab(h)
   if (sub) return { tab: 'research', sub, arg: rest[0] ?? null }
-  return { tab: TABS.find((t) => t.id === h)?.id ?? 'findings', sub: null, arg: null }
+  const tab = TABS.find((t) => t.id === h)?.id ?? 'findings'
+  return { tab, sub: null, arg: tab === 'findings' && tab === h ? (rest[0] ?? null) : null }
+}
+
+// Deep link #research/portfolio/regeneron (or #portfolio/regeneron) opens the Regeneron Sept 2024 portfolio demo,
+// on first load or when the hash changes to it later.
+function regeneronLink(r: Route): boolean {
+  return r.sub === 'portfolio' && /^regeneron$/i.test(r.arg ?? '')
 }
 
 const INITIAL_ROUTE = parseHash()
-// Deep link #research/portfolio/regeneron (or #portfolio/regeneron) opens the Regeneron Sept 2024 portfolio demo.
-const REGENERON_LINK = INITIAL_ROUTE.sub === 'portfolio' && /^regeneron$/i.test(INITIAL_ROUTE.arg ?? '')
-const INITIAL_SCENARIO: Scenario = REGENERON_LINK ? REGENERON_PRESET : DEFAULT_SCENARIO
+const INITIAL_SCENARIO: Scenario = regeneronLink(INITIAL_ROUTE) ? REGENERON_PRESET : DEFAULT_SCENARIO
+
+const sameScenario = (a: Scenario | null, b: Scenario | null) => !!a && !!b && JSON.stringify(a) === JSON.stringify(b)
 
 function trialArg(r: Route): string | null {
   return r.sub === 'prices' && /^NCT\d+$/i.test(r.arg ?? '') ? r.arg!.toUpperCase() : null
@@ -83,6 +90,14 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   // Deep link: #research/prices/NCT01234567 preselects a trial for the price-tag view.
   const [selectedTrial, setSelectedTrial] = useState<string | null>(() => trialArg(INITIAL_ROUTE))
+  // #findings/<id> scrolls the landing page to that finding (the Research views link to #findings/allocation).
+  const [findingFocus, setFindingFocus] = useState<{ id: string | null; n: number }>({
+    id: INITIAL_ROUTE.tab === 'findings' ? INITIAL_ROUTE.arg : null,
+    n: 0,
+  })
+  // A scenario a deep link asked for (the Regeneron preset), cleared once Research is showing.
+  const presetRequest = useRef<Scenario | null>(regeneronLink(INITIAL_ROUTE) ? REGENERON_PRESET : null)
+  const [presetTick, setPresetTick] = useState(0)
   const abortRef = useRef<AbortController | null>(null)
   const loading = pendingParams !== null
   const elapsed = useElapsed(loading)
@@ -95,6 +110,12 @@ export default function App() {
       if (r.sub) setSub(r.sub)
       const nct = trialArg(r)
       if (nct) setSelectedTrial(nct)
+      if (regeneronLink(r)) {
+        presetRequest.current = REGENERON_PRESET
+        setForm(REGENERON_PRESET)
+        setPresetTick((x) => x + 1)
+      }
+      if (r.tab === 'findings') setFindingFocus((f) => ({ id: r.arg, n: f.n + 1 }))
       window.scrollTo({ top: 0 })
     }
     window.addEventListener('hashchange', onHash)
@@ -154,11 +175,17 @@ export default function App() {
         /* keep the built-in list */
       })
     }
-    const needs = NEEDS_CLEAR.has(sub) || (sub === 'portfolio' && REGENERON_LINK)
-    if (!needs || autoCleared.current) return
+    const preset = presetRequest.current
+    if (preset) {
+      presetRequest.current = null
+      autoCleared.current = true
+      if (!sameScenario(preset, pendingParams) && !(sameScenario(preset, solvedParams) && !pendingParams)) run(preset)
+      return
+    }
+    if (!NEEDS_CLEAR.has(sub) || autoCleared.current) return
     autoCleared.current = true
     if (!result && !pendingParams) run(INITIAL_SCENARIO)
-  }, [tab, sub, result, pendingParams, run])
+  }, [tab, sub, result, pendingParams, solvedParams, presetTick, run])
 
   const clear: ClearState = { result, solvedParams, loading, pendingParams, error, elapsed, run }
 
@@ -179,8 +206,9 @@ export default function App() {
           <span className="brand-name">Concord</span>
           <span className="brand-tag">NSCLC trial portfolios on public ClinicalTrials.gov data</span>
         </div>
+        {/* Clearing is a Research-only computation: its status shows only there. */}
         <div className="run-status small" aria-live="polite">
-          {loading ? (
+          {tab !== 'research' ? null : loading ? (
             <span>
               <span className="dot dot-busy" /> Clearing {pendingParams?.region}… <span className="tnum">{elapsed.toFixed(0)} s</span>
             </span>
@@ -212,7 +240,7 @@ export default function App() {
         ))}
       </nav>
       <main className="main">
-        {tab === 'findings' && <FindingsView />}
+        {tab === 'findings' && <FindingsView focus={findingFocus} />}
         {tab === 'overlap' && <Integrating title="Portfolio overlap" />}
         {tab === 'terms-flow' && <Integrating title="Protocol to terms" />}
         {tab === 'research' && (

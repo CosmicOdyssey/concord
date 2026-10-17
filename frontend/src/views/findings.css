@@ -126,13 +126,56 @@
 .fd-table td {
   white-space: nowrap;
 }
-.fd-row-hl th,
-.fd-row-hl td {
+/* The row-header column stays in view while a wide table scrolls sideways. */
+.fd-table tbody th,
+.fd-table thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface);
+}
+.fd-table thead th:first-child {
+  z-index: 2;
+}
+.fd-table .fd-row-hl th,
+.fd-table .fd-row-hl td {
   background: var(--accent-soft);
   font-weight: 650;
 }
-.fd-row-hl th:first-child {
+.fd-table .fd-row-hl th:first-child {
   box-shadow: inset 3px 0 0 var(--accent);
+}
+.fd-scroll-l .fd-table tbody th,
+.fd-scroll-l .fd-table thead th:first-child {
+  box-shadow: 6px 0 6px -6px rgba(0, 0, 0, 0.35);
+}
+.fd-scroll-l .fd-table .fd-row-hl th:first-child {
+  box-shadow:
+    inset 3px 0 0 var(--accent),
+    6px 0 6px -6px rgba(0, 0, 0, 0.35);
+}
+/* scroll cue: the right edge fades out while columns are off-screen */
+.fd-scroll {
+  position: relative;
+  min-width: 0;
+}
+.fd-scroll::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 2.25rem;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--surface));
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.fd-scroll-r::after {
+  opacity: 1;
+}
+.fd-scroll-hint {
+  margin: 0.3rem 0 0;
 }
 .fd-notes {
   margin: 0.4rem 0 0;
@@ -174,17 +217,24 @@
   overflow-wrap: anywhere;
 }
 
-/* related note */
+/* related note (portfolio overlap audit), right under the findings index */
 .fd-related {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.3rem 0.75rem;
+  flex-direction: column;
+  gap: 0.3rem;
   font-size: 0.88rem;
   color: var(--text-2);
   padding: 0.65rem 0.9rem;
   border: 1px dashed var(--border-strong);
   border-radius: var(--radius);
+  min-width: 0;
+}
+.fd-related-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.2rem 0.75rem;
 }
 .fd-related-label {
   font-size: 0.75rem;
@@ -193,8 +243,33 @@
   letter-spacing: 0.04em;
   color: var(--muted);
 }
+.fd-related-link {
+  font-weight: 600;
+  white-space: nowrap;
+}
 .fd-related-text {
+  margin: 0;
   color: var(--text);
+  max-width: 90ch;
+}
+.fd-related-count {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.fd-related-def summary {
+  cursor: pointer;
+  color: var(--muted);
+  width: fit-content;
+}
+.fd-related-def p {
+  margin: 0.35rem 0 0;
+  max-width: 90ch;
+  color: var(--text-2);
+}
+
+/* a cited file this checkout does not have: plain text, not a dead link */
+.fd-src-off {
+  color: var(--text-2);
 }
 
 /* CI plot */
@@ -312,6 +387,12 @@
   }
   .fd-table thead th:first-child,
   .fd-table tbody th {
-    min-width: 10.5rem;
+    min-width: 7.75rem;
+    max-width: 8.5rem;
+    font-size: 0.8rem;
+    overflow-wrap: anywhere;
+  }
+  .fd-table thead th {
+    min-width: 5.5rem;
   }
 }

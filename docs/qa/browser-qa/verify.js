@@ -15,7 +15,7 @@ fs.mkdirSync(DIR, { recursive: true })
   L.instrument(page, log)
   try {
     await page.setViewport({ width: 1400, height: 900 })
-    await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' })
+    await page.goto(BASE + L.RESEARCH_START, { waitUntil: 'domcontentloaded' }) // research views; the landing page does not clear
     await L.waitCleared(page, 'US-Northeast')
     await L.settle(page, 1000)
     log.text.map = await page.evaluate(() => [...document.querySelectorAll('.side p')].map((p) => p.innerText).join(' | '))

@@ -93,7 +93,7 @@ export function HeadlineBlock({ r }: { r: ClearResult }) {
         </span>
       </div>
       <Caveat>
-        <strong>Does not hold out of sample.</strong> These numbers are in-sample: the allocation is chosen and scored with the same site rates. They do not hold out of sample. Choosing with older trials and scoring with newer ones, the joint optimum is 0.98× its best-response baseline, and under held-out rates 22% of trials are slower than at their registered sites. They are shown for transparency, not as a claim.
+        <strong>Does not hold out of sample.</strong> These numbers are in-sample: the allocation is chosen and scored with the same site rates. They do not hold out of sample; the held-out test (choosing with older trials, scoring with newer ones) is reported on <a href="#findings/allocation">Findings</a>. They are shown for transparency, not as a claim.
       </Caveat>
       <div className="stats">
         <Stat

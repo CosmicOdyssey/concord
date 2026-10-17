@@ -32,6 +32,8 @@ export interface FindingSource {
   label: string
   /** Repo-relative path. */
   path: string
+  /** Added by the API: false when this checkout lacks the cited file (shown as plain text, not a link). */
+  available?: boolean
 }
 
 export interface Finding {
@@ -51,11 +53,30 @@ export interface FindingsDoc {
   findings: Finding[]
 }
 
-/** Written by the portfolio overlap audit; only its headline is read here, so every field is optional. */
+/** data/findings/self_overlap.json, written by the portfolio overlap audit (python -m concord.overlap).
+ *  Its shape: `headline` {count, upper_bound_count, sponsors, variant, text} (the count to lead with: pairs whose
+ *  eligibility was hand-encoded and reviewed), the broad top-level `count`, `upper_bound_count` and
+ *  `sponsors_with_pairs`, plus `definition` and `parameters`. Every field is optional here. */
+export interface SelfOverlapHeadline {
+  count?: number
+  value?: number
+  upper_bound_count?: number
+  sponsors?: number
+  variant?: string
+  /** A short noun phrase for the count ("same-sponsor pairs where ..."), if the audit provides one. */
+  label?: string
+  text?: string
+}
+
 export interface SelfOverlap {
-  headline?: string | { value?: number; count?: number; label?: string; text?: string }
+  headline?: string | SelfOverlapHeadline
   headline_count?: number
   headline_label?: string
+  count?: number
+  sponsors_with_pairs?: number
+  upper_bound_count?: number
+  definition?: string
+  parameters?: { min_shared_sites?: number; min_overlap_one_direction?: number; since?: string; [k: string]: unknown }
   [k: string]: unknown
 }
 
@@ -88,17 +109,73 @@ export function isCiChart(c: Finding['chart']): c is CiChart {
   return !!c && c.type === 'ci' && Array.isArray((c as CiChart).items) && typeof (c as CiChart).reference?.value === 'number'
 }
 
-/** The self-overlap file's headline as one line, whichever of the supported shapes it uses. */
-export function overlapHeadline(d: SelfOverlap | null): string | null {
+const isCount = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x) && x >= 0
+
+export interface OverlapNote {
+  /** The headline count, shown emphasised; null when the file only has a headline sentence. */
+  count: number | null
+  /** The rest of the sentence after the count (or the whole headline sentence when count is null). */
+  text: string
+  /** The audit's own definition, shown on request. */
+  definition: string | null
+}
+
+/** The noun phrase a headline sentence starts with: "21 same-sponsor pairs where ...; in 19 of them ..." gives
+ *  "same-sponsor pairs where ...". Null unless the sentence starts with the count itself. */
+function leadPhrase(text: string | undefined, count: number): string | null {
+  const m = typeof text === 'string' ? text.trim().match(/^([\d,]+)\s+([^;.]+)/) : null
+  if (!m || Number(m[1].replace(/,/g, '')) !== count) return null
+  return m[2].trim() || null
+}
+
+/** The self-overlap file's headline count, described with the file's own thresholds (shared sites, eligibility
+ *  overlap) and labels. Lead with `headline.count` (the audit's reviewed subset); fall back to the broad `count`.
+ *  A plain `headline` string is shown as written. */
+export function overlapNote(d: SelfOverlap | null): OverlapNote | null {
   if (!d) return null
+  const definition = typeof d.definition === 'string' && d.definition.trim() ? d.definition.trim() : null
   const h = d.headline
-  if (typeof h === 'string' && h.trim()) return h.trim()
+  if (typeof h === 'string') return h.trim() ? { count: null, text: h.trim(), definition } : null
+
+  let count: number | null = null
+  let label: string | null = null
+  let sponsors: number | null = null
+  let upper: number | null = null
   if (h && typeof h === 'object') {
-    if (typeof h.text === 'string' && h.text.trim()) return h.text.trim()
-    const n = typeof h.count === 'number' ? h.count : h.value
-    if (typeof n === 'number' && Number.isFinite(n)) return `${n.toLocaleString('en-US')}${h.label ? ` ${h.label}` : ''}`
+    const n = isCount(h.count) ? h.count : isCount(h.value) ? h.value : null
+    if (n === null) {
+      if (typeof h.text === 'string' && h.text.trim()) return { count: null, text: h.text.trim(), definition }
+    } else {
+      count = n
+      label = (typeof h.label === 'string' && h.label.trim()) || leadPhrase(h.text, n)
+      sponsors = isCount(h.sponsors) ? h.sponsors : null
+      upper = isCount(h.upper_bound_count) ? h.upper_bound_count : null
+    }
   }
-  if (typeof d.headline_count === 'number' && Number.isFinite(d.headline_count))
-    return `${d.headline_count.toLocaleString('en-US')}${d.headline_label ? ` ${d.headline_label}` : ''}`
-  return null
+  if (count === null && isCount(d.headline_count)) {
+    count = d.headline_count
+    label = d.headline_label ?? null
+  }
+  if (count === null && isCount(d.count)) {
+    count = d.count
+    sponsors = isCount(d.sponsors_with_pairs) ? d.sponsors_with_pairs : null
+    upper = isCount(d.upper_bound_count) ? d.upper_bound_count : null
+  }
+  if (count === null) return null
+
+  const p = d.parameters ?? {}
+  const sites = isCount(p.min_shared_sites) ? p.min_shared_sites : null
+  const share = isCount(p.min_overlap_one_direction) && p.min_overlap_one_direction <= 1 ? p.min_overlap_one_direction : null
+  const plural = (n: number, w: string) => `${n.toLocaleString('en-US')} ${w}${n === 1 ? '' : 's'}`
+  const clause = [
+    'concurrent',
+    sites !== null ? `sharing at least ${plural(sites, 'registered site')}` : null,
+    share !== null ? `with at least ${Math.round(share * 100)}% of one trial’s eligible patients also eligible for the other` : null,
+  ].filter(Boolean)
+  let text = label ?? `same-sponsor trial pair${count === 1 ? '' : 's'}`
+  if (sponsors !== null) text += `, across ${plural(sponsors, 'sponsor')}`
+  text += clause.length > 1 ? `: ${clause.join(', ')}.` : ' overlap.'
+  if (upper !== null && upper > 0)
+    text += ` For ${upper.toLocaleString('en-US')} of them the eligibility overlap is an upper bound (criteria the synthetic population does not model).`
+  return { count, text, definition }
 }

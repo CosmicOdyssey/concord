@@ -1,11 +1,11 @@
 // Findings page (landing). Renders /api/findings (data/findings/findings.json, written by
 // `python -m concord.findings`) generically: every sentence and number on this page comes from that file.
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Badge, ErrorBox, Loading } from '../components'
 import {
   findingsApi,
   isCiChart,
-  overlapHeadline,
+  overlapNote,
   sourceHref,
   type CiChart,
   type Finding,
@@ -192,21 +192,70 @@ function isNumericCell(s: string): boolean {
   return /\d/.test(t) && NUMERIC.test(t)
 }
 
+/** Horizontal scroller for a wide table: the first column stays put (CSS), the right edge fades while more
+ *  columns are off-screen, and a one-line hint says the table scrolls. */
+function ScrollBox({ label, children }: { label: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [edge, setEdge] = useState({ left: false, right: false })
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const update = () => {
+      const left = el.scrollLeft > 1
+      const right = el.scrollLeft < el.scrollWidth - el.clientWidth - 1
+      setEdge((e) => (e.left === left && e.right === right ? e : { left, right }))
+    }
+    update()
+    el.addEventListener('scroll', update, { passive: true })
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    if (el.firstElementChild) ro.observe(el.firstElementChild)
+    return () => {
+      el.removeEventListener('scroll', update)
+      ro.disconnect()
+    }
+  }, [])
+  const scrolls = edge.left || edge.right
+  return (
+    <>
+      <div className={`fd-scroll${edge.left ? ' fd-scroll-l' : ''}${edge.right ? ' fd-scroll-r' : ''}`}>
+        <div
+          ref={ref}
+          className="table-scroll"
+          role={scrolls ? 'region' : undefined}
+          aria-label={scrolls ? `${label} (scrolls sideways)` : undefined}
+          tabIndex={scrolls ? 0 : undefined}
+        >
+          {children}
+        </div>
+      </div>
+      {scrolls && (
+        <p className="fd-scroll-hint small muted" aria-hidden="true">
+          Scroll the table sideways for all columns →
+        </p>
+      )}
+    </>
+  )
+}
+
 function FTable({ table }: { table: FindingTable }) {
+  const filled = (j: number) => table.rows.some((r) => (r[j] ?? '').trim() !== '')
+  // A column with no value in any row says nothing: drop it (the row-header column always stays).
+  const cols = table.columns.map((_, j) => j).filter((j) => j === 0 || filled(j))
   const numericCol = table.columns.map(
-    (_, j) => j > 0 && table.rows.some((r) => (r[j] ?? '').trim() !== '') && table.rows.every((r) => !(r[j] ?? '').trim() || isNumericCell(r[j])),
+    (_, j) => j > 0 && filled(j) && table.rows.every((r) => !(r[j] ?? '').trim() || isNumericCell(r[j])),
   )
   const hl = table.highlight_row
   return (
     <div className="fd-table-block">
       <h3 className="fd-table-title">{table.title}</h3>
-      <div className="table-scroll">
+      <ScrollBox label={table.title}>
         <table className="tbl fd-table">
           <thead>
             <tr>
-              {table.columns.map((c, j) => (
+              {cols.map((j) => (
                 <th key={j} scope="col" className={numericCol[j] ? 'num' : undefined}>
-                  {c}
+                  {table.columns[j]}
                 </th>
               ))}
             </tr>
@@ -214,8 +263,9 @@ function FTable({ table }: { table: FindingTable }) {
           <tbody>
             {table.rows.map((row, i) => (
               <tr key={i} className={i === hl ? 'fd-row-hl' : undefined}>
-                {row.map((cell, j) =>
-                  j === 0 ? (
+                {cols.map((j) => {
+                  const cell = row[j] ?? ''
+                  return j === 0 ? (
                     <th key={j} scope="row">
                       {cell}
                     </th>
@@ -223,13 +273,13 @@ function FTable({ table }: { table: FindingTable }) {
                     <td key={j} className={numericCol[j] ? 'num' : undefined}>
                       {cell.trim() ? cell : <span className="muted" aria-label="none">—</span>}
                     </td>
-                  ),
-                )}
+                  )
+                })}
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
+      </ScrollBox>
       {table.notes && table.notes.length > 0 && (
         <ul className="fd-notes small muted">
           {table.notes.map((n, i) => (
@@ -281,9 +331,15 @@ function FindingCard({ f, n }: { f: Finding; n: number }) {
                   <ul className="fd-list fd-sources">
                     {f.sources!.map((s) => (
                       <li key={s.path}>
-                        <a href={sourceHref(s.path)} target="_blank" rel="noreferrer">
-                          {s.label}
-                        </a>
+                        {s.available === false ? (
+                          <span className="fd-src-off" title="This file is not in this checkout of the repository.">
+                            {s.label} <span className="muted">(not in this checkout)</span>
+                          </span>
+                        ) : (
+                          <a href={sourceHref(s.path)} target="_blank" rel="noreferrer">
+                            {s.label}
+                          </a>
+                        )}
                         <code className="fd-path">{s.path}</code>
                       </li>
                     ))}
@@ -299,21 +355,34 @@ function FindingCard({ f, n }: { f: Finding; n: number }) {
 }
 
 function RelatedOverlap({ data }: { data: SelfOverlap }) {
-  const line = overlapHeadline(data)
+  const note = overlapNote(data)
   return (
     <aside className="fd-related" aria-label="Related: portfolio overlap">
-      <span className="fd-related-label">Related: portfolio overlap</span>
-      {line && <span className="fd-related-text">{line}</span>}
-      <a href="#overlap" className="fd-related-link">
-        Open the overlap audit →
-      </a>
+      <div className="fd-related-row">
+        <span className="fd-related-label">Related: portfolio overlap</span>
+        <a href="#overlap" className="fd-related-link">
+          Open the overlap audit →
+        </a>
+      </div>
+      {note && (
+        <p className="fd-related-text">
+          {note.count !== null && <strong className="fd-related-count tnum">{note.count.toLocaleString('en-US')}</strong>}{' '}
+          {note.text}
+        </p>
+      )}
+      {note?.definition && (
+        <details className="fd-related-def small">
+          <summary>How the pairs are counted</summary>
+          <p>{note.definition}</p>
+        </details>
+      )}
     </aside>
   )
 }
 
 /* ---------- page ---------- */
 
-export default function FindingsView() {
+export default function FindingsView({ focus }: { focus?: { id: string | null; n: number } }) {
   const [state, setState] = useState<Async<FindingsDoc>>({ status: 'loading' })
   const [overlap, setOverlap] = useState<SelfOverlap | null>(null)
   const [tick, setTick] = useState(0)
@@ -338,6 +407,14 @@ export default function FindingsView() {
   const doc = state.status === 'ok' ? state.data : null
   const findings = doc?.findings ?? []
   const when = generatedAt(doc?.generated_at)
+
+  // #findings/<id>: once the cards exist, bring that finding into view.
+  const focusId = focus?.id ?? null
+  const focusN = focus?.n ?? 0
+  useEffect(() => {
+    if (!doc || !focusId) return
+    document.getElementById(`finding-${focusId.toLowerCase()}`)?.scrollIntoView({ block: 'start' })
+  }, [doc, focusId, focusN])
 
   return (
     <section className="view fd">
@@ -383,11 +460,11 @@ export default function FindingsView() {
         </nav>
       )}
 
+      {overlap && doc && <RelatedOverlap data={overlap} />}
+
       {findings.map((f, i) => (
         <FindingCard key={f.id} f={f} n={i + 1} />
       ))}
-
-      {overlap && doc && <RelatedOverlap data={overlap} />}
     </section>
   )
 }

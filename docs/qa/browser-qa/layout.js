@@ -33,7 +33,7 @@ fs.mkdirSync(DIR, { recursive: true })
   }
   try {
     step('open app')
-    await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' })
+    await page.goto(BASE + L.RESEARCH_START, { waitUntil: 'domcontentloaded' }) // research views; the landing page does not clear
     await L.waitCleared(page, 'US-Northeast')
     await L.settle(page, 2000)
     await check('01_map')

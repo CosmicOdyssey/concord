@@ -137,7 +137,7 @@ async function livePass(browser, vp, log) {
   fs.mkdirSync(dir, { recursive: true })
   const page = await newPage(browser, vp, log, null)
   const tag = `${vp}/live`
-  await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' })
+  await page.goto(BASE + L.RESEARCH_START, { waitUntil: 'domcontentloaded' }) // research views; the landing page does not clear
   await L.waitCleared(page, 'US-Northeast')
   await L.settle(page, 1000)
   const r = lastApi(page, '/api/clear', 'POST')
@@ -297,6 +297,7 @@ async function fixturePass(browser, vp, log) {
   await L.shot(page, dir, '07_model_fixture_subsets', false)
 
   // Robustness with placeholder material shares on even rows
+  await L.clickTab(page, 'Clear it') // #model does not start the clear; a sub-tab that needs it does
   await L.waitCleared(page, 'US-Northeast')
   await L.clickTab(page, 'Robustness')
   await L.waitNoLoading(page)
