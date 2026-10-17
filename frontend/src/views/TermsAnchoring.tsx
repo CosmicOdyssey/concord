@@ -142,7 +142,7 @@ export function AnchorBar({ a }: { a: Anchoring }) {
       </div>
       <p className="tfa-lede">
         <span className="tnum strong">{pub ? `${pub.pct.toFixed(0)}%` : '—'}</span> of the <span className="tnum">{usd(a.total)}</span> per participant is
-        priced from public CMS rates; the rest rests on Concord’s proposed standard or is open to negotiation.
+        priced from public CMS rates; the rest is Concord’s proposed standard or open to negotiation.
       </p>
       <div className="tfa-bar" role="img" aria-label={a.shares.map((s) => `${s.label}: ${usd(s.amount)}, ${s.pct.toFixed(1)}%`).join('; ')}>
         {a.shares.map((s) => (
@@ -197,7 +197,7 @@ function AnchorRows({ s }: { s: AnchorShare }) {
         <th scope="row">
           <span className={`tf-key ${ANCHOR_CLASS[s.id]}`} aria-hidden="true" /> {s.label}{' '}
           <span className="muted small">
-            ({s.pct.toFixed(1)}%, {s.n_lines} line{s.n_lines === 1 ? '' : 's'})
+            ({s.pct.toFixed(1)}%{s.n_lines > 0 ? `, ${s.n_lines} line${s.n_lines === 1 ? '' : 's'}` : ''})
           </span>
         </th>
         <td className="num strong">{usd(s.amount)}</td>
@@ -309,11 +309,9 @@ export function BasisNotes({ pb }: { pb: PricingBasis }) {
   return (
     <ul className="tfa-basis tfa-list small">
       <li>
-        <strong>Physician lines:</strong> {pb.pfs} <span className="muted">({pb.pfs_column}.)</span>
+        {pb.pfs} <span className="muted">(Source column: {pb.pfs_column}.)</span>
       </li>
-      <li>
-        <strong>Lab lines:</strong> {pb.lab}
-      </li>
+      <li>{pb.lab}</li>
     </ul>
   )
 }
@@ -450,7 +448,8 @@ export function CompareWhy({ c }: { c: Compare }) {
   const sm = c.summary
   const d = sm.delta_per_participant
   const same = !!c.a.locality && !!c.b.locality && c.a.locality.code === c.b.locality.code && c.a.locality.state === c.b.locality.state
-  const constant = 'Lab prices are one national amount and the proposed standard fees are set once for every site, so neither differs.'
+  const constant =
+    'Lab prices are one national amount and the proposed standard fees are set once for every site, so neither differs. The difference reflects the fee schedule, not a saving.'
   if (Math.abs(d) < 0.005)
     return (
       <>

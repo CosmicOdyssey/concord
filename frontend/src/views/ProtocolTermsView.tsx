@@ -474,7 +474,7 @@ export default function ProtocolTermsView() {
                 <>
                   At {bud.site.label}, the sponsor pays <span className="tnum strong">{usd(bud.totals.per_participant)}</span> per participant:
                   research-only items <span className="tnum">{usd(bud.totals.per_participant_research_items)}</span>, coordinator time{' '}
-                  <span className="tnum">{usd(bud.totals.per_participant_coordinator)}</span> and overhead{' '}
+                  <span className="tnum">{usd(bud.totals.per_participant_coordinator)}</span> and overhead (an assumption){' '}
                   <span className="tnum">{usd(bud.totals.per_participant_overhead)}</span>.
                 </>
               ) : (
@@ -957,19 +957,19 @@ function LocalityLine({ b }: { b: Budget }) {
               </span>
               <span className="tf-hc-kv">
                 <span>
-                  {GPCI_PLAIN.work.label} <span className="muted">(work GPCI)</span>
+                  {GPCI_PLAIN.work.label} <span className="muted">(Work GPCI)</span>
                 </span>{' '}
                 <span className="num">{l.gpci_work.toFixed(3)}</span>
               </span>
               <span className="tf-hc-kv">
                 <span>
-                  {GPCI_PLAIN.pe.label} <span className="muted">(practice expense GPCI)</span>
+                  {GPCI_PLAIN.pe.label} <span className="muted">(Practice expense GPCI)</span>
                 </span>{' '}
                 <span className="num">{l.gpci_pe.toFixed(3)}</span>
               </span>
               <span className="tf-hc-kv">
                 <span>
-                  {GPCI_PLAIN.mp.label} <span className="muted">(malpractice GPCI)</span>
+                  {GPCI_PLAIN.mp.label} <span className="muted">(Malpractice GPCI)</span>
                 </span>{' '}
                 <span className="num">{l.gpci_mp.toFixed(3)}</span>
               </span>
@@ -1233,7 +1233,7 @@ function BudgetDetails({
       <h3>Visit by visit</h3>
       <p className="small tf-compose-line">
         Per participant = research items <strong className="tnum">{usd(t.per_participant_research_items)}</strong> + coordinator time{' '}
-        <strong className="tnum">{usd(t.per_participant_coordinator)}</strong> + overhead <strong className="tnum">{usd(t.per_participant_overhead)}</strong>.
+        <strong className="tnum">{usd(t.per_participant_coordinator)}</strong> + overhead (assumption) <strong className="tnum">{usd(t.per_participant_overhead)}</strong>.
         Lab placeholders inside it: <span className="tnum">{usd(t.per_participant_placeholder)}</span>. Routine care billed to insurance over the same
         visits (Medicare amounts, for reference): <span className="tnum">{usd(t.per_participant_insurance_medicare)}</span>. Select a visit for its lines.
       </p>
