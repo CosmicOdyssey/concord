@@ -7,7 +7,7 @@
 // Detailed: every line with its source inline. No forecasting: Medicare amounts are benchmarks for fair-value
 // reasoning in negotiation, never a saving or a speed-up.
 import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
-import { Badge, ErrorBox, HoverCard, InfoTip, KeyFigure, Loading, Qualifier } from '../components'
+import { Badge, Details, ErrorBox, HoverCard, InfoTip, KeyFigure, Loading, Qualifier } from '../components'
 import { useDensity } from '../density'
 import { usd } from '../format'
 import { DISCLAIMER, formulaText, localityTitle, type Locality, type PriceParams } from '../termsFlowApi'
@@ -313,7 +313,16 @@ export default function TermsProposalCheck({ nct, siteId, params }: { nct: strin
 
       {data && (
         <>
-          {detailed ? <AllLines r={data} /> : <FlaggedLines r={data} />}
+          {detailed ? (
+            <AllLines r={data} />
+          ) : (
+            <>
+              <TopGaps r={data} />
+              <Details summary={`Flagged lines (${data.rows.filter((x) => x.flag !== 'in_range').length} of ${data.rows.length})`} className="section-disclosure">
+                <FlaggedLines r={data} />
+              </Details>
+            </>
+          )}
           {data.errors.length > 0 && <Unreadable r={data} />}
           <div className="tp-export">
             <button type="button" className="btn btn-primary" onClick={download} disabled={exporting || stale}>
@@ -477,14 +486,38 @@ function RangeCell({ row }: { row: ProposalRow }) {
   return <span className="muted">—</span>
 }
 
+/** Simple mode: the three lines furthest outside their justified range, sources in hover cards. */
+function TopGaps({ r }: { r: ProposalResult }) {
+  const top = r.summary.top_outside
+  if (top.length === 0) return null
+  const byRow = new Map(r.rows.map((x) => [x.row, x]))
+  return (
+    <div className="tp-lines">
+      <h3 className="tp-h">Furthest outside the range</h3>
+      <ol className="tp-top">
+        {top.map((t) => {
+          const row = byRow.get(t.row)
+          return (
+            <li key={t.row}>
+              <span className="tp-top-item">{row ? <HoverCard content={<RowSource row={row} r={r} />}>{t.item}</HoverCard> : t.item}</span>{' '}
+              <span className="num">{usd(t.ask)}</span> <span className="muted">against</span>{' '}
+              <span className="num">
+                {usd(t.range_low)}–{usd(t.range_high)}
+              </span>{' '}
+              <FlagBadge flag={t.flag} /> <span className="muted">by</span> <span className="num strong">{usd(t.outside_by)}</span>
+            </li>
+          )
+        })}
+      </ol>
+    </div>
+  )
+}
+
 function FlaggedLines({ r }: { r: ProposalResult }) {
   const rows = r.rows.filter((x) => x.flag !== 'in_range').sort((a, b) => FLAG_ORDER.indexOf(a.flag) - FLAG_ORDER.indexOf(b.flag) || b.outside_by - a.outside_by)
   const nIn = r.summary.counts.in_range
   return (
     <div className="tp-lines">
-      <h3 className="tp-h">
-        Flagged lines <span className="muted tnum">({rows.length})</span>
-      </h3>
       {rows.length === 0 ? (
         <p className="small">Every line is within its justified range.</p>
       ) : (

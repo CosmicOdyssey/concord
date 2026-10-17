@@ -122,9 +122,14 @@
 }
 .tp-quals {
   margin: 0;
+  font-size: var(--fs-sm);
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem 0.75rem;
+}
+/* Qualifiers stay on one line elsewhere; here they wrap so a phone never scrolls sideways. */
+.tp .qual {
+  white-space: normal;
 }
 
 .tp-lines {
@@ -151,6 +156,18 @@
 }
 .tp-dl > div {
   grid-template-columns: 6rem minmax(0, 1fr);
+}
+.tp-top {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-size: var(--fs-ui);
+}
+.tp-top-item {
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 .tp-errors {
   margin: 0;
