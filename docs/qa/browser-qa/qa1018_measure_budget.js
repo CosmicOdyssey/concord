@@ -8,8 +8,10 @@ const BASE = process.argv[2] || 'http://localhost:5173'
   const page = await browser.newPage()
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1, isMobile: true, hasTouch: true })
   await page.goto(`${BASE}/#terms-flow/NCT05800015`, { waitUntil: 'domcontentloaded' })
-  await page.waitForFunction(() => document.querySelectorAll('.tf-stats .stat-value').length >= 4 && document.querySelector('table.tf-budget'), { timeout: 120000, polling: 300 })
+  await page.waitForFunction(() => document.querySelector('#tf-step-3 .tf-payer-value') && document.querySelector('table.tf-budget'), { timeout: 120000, polling: 300 })
   await Q.sleep(800)
+  // One step at a time (tabs): the budget is step 3, chosen in the step nav (the compare table is measured on step 4).
+  await Q.showStep(page, 3)
   const m = await page.evaluate(() => {
     const t = document.querySelector('table.tf-budget')
     const box = t.closest('.table-scroll')
@@ -34,6 +36,11 @@ const BASE = process.argv[2] || 'http://localhost:5173'
       })(),
       cmpCols: cmp ? [...cmp.querySelectorAll('thead th')].map((th) => ({ text: th.innerText, w: Math.round(th.getBoundingClientRect().width) })) : null,
     }
+  })
+  await Q.showStep(page, 4)
+  m.cmpCols = await page.evaluate(() => {
+    const cmp = document.querySelector('table.tf-cmp-tbl')
+    return cmp ? [...cmp.querySelectorAll('thead th')].map((th) => ({ text: th.innerText, w: Math.round(th.getBoundingClientRect().width) })) : null
   })
   console.log(JSON.stringify(m, null, 1))
   await browser.close()

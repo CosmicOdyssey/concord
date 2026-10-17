@@ -49,19 +49,13 @@ import { LineDetailContext, type LineDetailScope } from '../lineDetailApi'
 import { LineBreakdown } from './LineBreakdown'
 import './protocolTerms.css'
 import TermsSpread from './TermsSpread'
+import { STEPS, createStepStore, panelId, stepFromHash, stepSlug, tabId, useStepTabs } from './termsStepTabs'
+import { StepNav, StepPager, StepPlaceholder, StepTabsProvider } from './termsSteps'
 
 type Async<T> = { status: 'idle' } | { status: 'loading' } | { status: 'error'; error: string } | { status: 'ok'; data: T; pending: boolean }
 type Settled<T> = { key: string; tick: number; data: T } | { key: string; tick: number; error: string }
 
 const DEFAULT_NCT = 'NCT05800015'
-const STEPS = [
-  { name: 'Protocol', nav: 'Protocol' },
-  { name: 'Coverage', nav: 'Coverage' },
-  { name: 'Budget at a site', nav: 'Budget' },
-  { name: 'Compare two sites', nav: 'Compare' },
-  { name: 'Site proposal', nav: 'Site proposal' },
-  { name: 'Term sheet', nav: 'Term sheet' },
-] as const
 
 function nctFromHash(): string | null {
   return window.location.hash.match(/^#terms-flow\/(NCT\d{8})/i)?.[1]?.toUpperCase() ?? null
@@ -73,10 +67,12 @@ function initialNct(): string {
   return nctFromHash() ?? (typeof stored === 'string' && /^NCT\d{8}$/.test(stored) ? stored : DEFAULT_NCT)
 }
 
-/** Keep the address bar on #terms-flow/<nct> so a reload or a shared link reopens the same trial. */
-function writeHash(nct: string) {
+/** Keep the address bar on #terms-flow/<nct>[/<step>] so a reload or a shared link reopens the same trial and step
+ *  (step 1, Protocol, has no slug). Without `step`, the step the address already names is kept. */
+function writeHash(nct: string, step: number = stepFromHash()) {
   try {
-    if (/^#terms-flow(\/|$)/i.test(window.location.hash) && nctFromHash() !== nct) window.history.replaceState(null, '', `#terms-flow/${nct}`)
+    const want = `#terms-flow/${nct}${step > 0 ? `/${stepSlug(step)}` : ''}`
+    if (/^#terms-flow(\/|$)/i.test(window.location.hash) && window.location.hash !== want) window.history.replaceState(null, '', want)
   } catch {
     /* ignore */
   }
@@ -200,14 +196,6 @@ function occ(v: VisitBudget): number {
   return v.occurrences ?? 1
 }
 
-const reduceMotion = () => {
-  try {
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  } catch {
-    return false
-  }
-}
-
 export default function ProtocolTermsView() {
   const { density } = useDensity()
   const detailed = density === 'detailed'
@@ -223,6 +211,9 @@ export default function ProtocolTermsView() {
   const [pickB, setSiteB] = useState('')
   const [selected, setSelected] = useState<string | null>(null)
   const [withCompare, setWithCompare] = useState(true)
+  // The step on show (termsStepTabs.ts), kept outside this component's state so a switch does not re-render it:
+  // #terms-flow/<nct>/<step> opens that step; otherwise step 1.
+  const [steps] = useState(() => createStepStore(stepFromHash()))
   // Range on coded lines, percent of Medicare (an assumption; default 100%-150%).
   const [band, setBand] = useState<[number, number]>(() => {
     const v = readStore<unknown>('tf:band', null)
@@ -246,15 +237,19 @@ export default function ProtocolTermsView() {
     writeHash(nct)
   }, [nct])
 
-  // Deep link #terms-flow/<nct>; other tabs own the rest of the hash.
+  // Deep link #terms-flow/<nct>[/<step>]; other tabs own the rest of the hash.
   useEffect(() => {
     const on = () => {
+      if (!/^#terms-flow(\/|$)/i.test(window.location.hash)) return
       const h = nctFromHash()
+      const s = stepFromHash()
       if (h && h !== nct) selectTrial(h)
+      steps.setFromLink(s)
+      writeHash(h ?? nct, s)
     }
     window.addEventListener('hashchange', on)
     return () => window.removeEventListener('hashchange', on)
-  }, [nct, selectTrial])
+  }, [nct, selectTrial, steps])
 
   useEffect(() => writeStore(`tf:overrides:${nct}`, overrides), [nct, overrides])
   useEffect(() => writeStore('tf:standard:v1', standard), [standard])
@@ -347,13 +342,6 @@ export default function ProtocolTermsView() {
   const nResearch = proto ? proto.nodes.filter((n) => states.get(n.id)?.coverage === 'research').length : 0
   const nRoutine = proto ? proto.nodes.length - nResearch : 0
 
-  const go = (i: number) => {
-    const el = document.getElementById(`tf-step-${i + 1}`)
-    if (!el) return
-    el.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' })
-    el.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true })
-  }
-
   // A trial added by NCT ID can get a new schedule (CSV upload, back to the draft): reload it; the prices follow
   // through params.ver once it is in.
   const onScheduleChanged = () => {
@@ -365,7 +353,8 @@ export default function ProtocolTermsView() {
   const trialList = trials.status === 'ok' ? trials.data : null
   const picked = trialList?.find((t) => t.nct_id === nct) ?? null
 
-  return (
+  // The steps read the active one from context (termsSteps.tsx).
+  const view = (
     <LineDetailContext.Provider value={lineScope}>
     <section className="view tf" aria-label="Protocol to terms">
       <StepLabel.Provider value={proto?.import ? proto.label : ILLUSTRATIVE}>
@@ -380,28 +369,7 @@ export default function ProtocolTermsView() {
         </Banner>
       </PageHead>
 
-      <nav className="tf-flow" aria-label="Steps">
-        <ol>
-          {STEPS.map((s, i) => (
-            <li key={s.name}>
-              <button type="button" className="tf-flow-btn" onClick={() => go(i)}>
-                <span className="tf-flow-n num" aria-hidden="true">
-                  {i + 1}
-                </span>
-                <span>
-                  <span className="sr-only">Step {i + 1}: </span>
-                  {s.nav}
-                </span>
-              </button>
-              {i < STEPS.length - 1 && (
-                <span className="tf-flow-arrow" aria-hidden="true">
-                  →
-                </span>
-              )}
-            </li>
-          ))}
-        </ol>
-      </nav>
+      <StepNav />
 
       {/* 1. Protocol */}
       <Step
@@ -774,10 +742,18 @@ export default function ProtocolTermsView() {
           </Step>
         </>
       )}
+      {/* Steps 2 to 6 need the protocol: until it loads, the same frames say so (a deep link may open one of them). */}
+      {!proto &&
+        STEPS.slice(1).map((s, k) => (
+          <StepPlaceholder key={s.slug} i={k + 1}>
+            {protocol.status === 'error' ? <ErrorBox error={protocol.error} onRetry={retryProtocol} /> : <Loading label="Loading the schedule of assessments…" />}
+          </StepPlaceholder>
+        ))}
       </StepLabel.Provider>
     </section>
     </LineDetailContext.Provider>
   )
+  return <StepTabsProvider store={steps}>{view}</StepTabsProvider>
 }
 
 // ====================================================================== step frame
@@ -814,8 +790,10 @@ function Step({
   const { density } = useDensity()
   const hid = useId()
   const stepLabel = useContext(StepLabel)
+  const { active } = useStepTabs()
+  // A tab panel (termsSteps.tsx): hidden, not unmounted, while another step is on show.
   return (
-    <section id={`tf-step-${n}`} className="win section tf-step" aria-labelledby={hid}>
+    <section id={panelId(n - 1)} className="win section tf-step" role="tabpanel" aria-labelledby={tabId(n - 1)} hidden={active !== n - 1}>
       <div className="win-strip">
         <span>
           <span className="win-title">
@@ -848,6 +826,7 @@ function Step({
               {details}
             </Details>
           ))}
+        <StepPager i={n - 1} />
       </div>
     </section>
   )

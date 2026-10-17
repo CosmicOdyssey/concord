@@ -3,7 +3,7 @@
 // usage: NODE_PATH=C:/Users/micha/Projects/concord/data/work/D/node_modules node calm_foundation.js [base] [outDir]
 const fs = require('fs')
 const path = require('path')
-const { launch, sleep } = require('./lib')
+const { launch, sleep, showStep } = require('./lib')
 
 const BASE = process.argv[2] || 'http://127.0.0.1:5201'
 const OUT = process.argv[3] || 'C:/Users/micha/Projects/concord/data/work/R/foundation'
@@ -15,6 +15,12 @@ fs.mkdirSync(OUT, { recursive: true })
 const ROUTES = [
   ['landing', '#home'],
   ['terms-flow', '#terms-flow'],
+  // Protocol to terms shows one step at a time (tabs): each later step, chosen in the step nav after the page loads.
+  ['terms-flow-coverage', '#terms-flow', 2],
+  ['terms-flow-budget', '#terms-flow', 3],
+  ['terms-flow-compare', '#terms-flow', 4],
+  ['terms-flow-proposal', '#terms-flow', 5],
+  ['terms-flow-term-sheet', '#terms-flow', 6],
   ['overlap', '#overlap'],
   ['findings', '#findings'],
   ['site-scores', '#site-scores'],
@@ -69,12 +75,16 @@ async function openPage(browser, width, theme, log) {
   try {
     for (const width of WIDTHS)
       for (const theme of THEMES)
-        for (const [name, hash] of ROUTES) {
+        for (const [name, hash, step] of ROUTES) {
           if (ONLY && !ONLY.includes(name)) continue
           const log = { name, width, theme, console: [], pageerrors: [], failed: [] }
           const page = await openPage(browser, width, theme, log)
           await page.goto(`${BASE}/${hash}`, { waitUntil: 'domcontentloaded', timeout: 90000 })
           await settle(page)
+          if (step) {
+            await showStep(page, step)
+            await settle(page)
+          }
           Object.assign(
             log,
             await page.evaluate(() => {
@@ -144,7 +154,7 @@ async function openPage(browser, width, theme, log) {
     if (!ONLY || ONLY.includes('header')) {
       const widths = [320, 360, 390, 414, 480, 600, 641, 700, 768, 800, 1024, 1280, 1319, 1320, 1366, 1440]
       const page = await openPage(browser, 1440, 'light', { console: [], pageerrors: [], failed: [] })
-      for (const [name, hash] of ROUTES.filter(([n]) => n !== 'landing' && n !== 'dev')) {
+      for (const [name, hash] of ROUTES.filter(([n, , step]) => n !== 'landing' && n !== 'dev' && !step)) {
         await page.goto(`${BASE}/${hash}`, { waitUntil: 'domcontentloaded' })
         await sleep(1200)
         const row = { name }

@@ -6,7 +6,7 @@
 // Usage (NODE_PATH must reach puppeteer-core): node terms_proposal.js [baseUrl] [outDir]
 const fs = require('fs')
 const path = require('path')
-const { launch, sleep, layoutCheck } = require('./lib')
+const { launch, sleep, layoutCheck, showStep } = require('./lib')
 
 const BASE = process.argv[2] || 'http://localhost:5284'
 const OUT = process.argv[3] || 'C:/Users/micha/Projects/concord/data/work/T/proposal'
@@ -67,6 +67,8 @@ const check = (name, ok, detail = '') => {
     await page.waitForFunction(() => [...document.querySelectorAll('#tf-step-5 button')].some((b) => b.textContent.includes('Load synthetic sample')), {
       timeout: 60000,
     })
+    // One step at a time (tabs): choose step 5, Site proposal, in the step nav.
+    await showStep(page, 5)
     return page
   }
 

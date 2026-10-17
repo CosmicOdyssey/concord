@@ -5,7 +5,7 @@
 // Usage (NODE_PATH must reach puppeteer-core): node terms_anchoring.js [baseUrl] [outDir]
 const fs = require('fs')
 const path = require('path')
-const { launch, sleep, layoutCheck } = require('./lib')
+const { launch, sleep, layoutCheck, showStep } = require('./lib')
 
 const BASE = process.argv[2] || 'http://localhost:5283'
 const OUT = process.argv[3] || 'C:/Users/micha/Projects/concord/data/work/T/anchoring'
@@ -48,6 +48,8 @@ const check = (name, ok, detail = '') => {
     await page.goto(`${BASE}/#terms-flow/${NCT}`, { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => document.querySelector('.tfa-bar') && document.querySelector('.tf-decomp-total'), { timeout: 60000, polling: 300 })
     await sleep(800)
+    // One step at a time (tabs): everything here is in step 3, Budget, except the compare captures (step 4).
+    await showStep(page, 3)
     return page
   }
 
@@ -71,8 +73,8 @@ const check = (name, ok, detail = '') => {
         await (await page.$('#tf-step-3')).screenshot({ path: path.join(OUT, `budget_${name}.png`) })
         await (await page.$('#tf-step-3 .section-row')).screenshot({ path: path.join(OUT, `budget_top_${name}.png`) })
         await (await page.$('.tfa')).screenshot({ path: path.join(OUT, `budget_transparency_${name}.png`) })
-        await (await page.$('#tf-step-4')).screenshot({ path: path.join(OUT, `compare_${name}.png`) })
-        await (await page.$('#tf-step-4 .section-row')).screenshot({ path: path.join(OUT, `compare_top_${name}.png`) })
+        const lay3 = await layoutCheck(page)
+        check(`${name} step 3 no horizontal page scroll`, !lay3.overflow, JSON.stringify(lay3.offenders.slice(0, 3)))
         const r = await page.evaluate(() => {
           const txt = (sel) => document.querySelector(sel)?.innerText ?? ''
           return {
@@ -82,8 +84,6 @@ const check = (name, ok, detail = '') => {
             payerSub: [...document.querySelectorAll('#tf-step-3 .tf-payer-sub')].map((e) => e.innerText),
             basis: txt('.tfa-basis'),
             bdRows: [...document.querySelectorAll('.tfa-bd tbody tr')].map((tr) => tr.innerText.replace(/\s+/g, ' ')),
-            lede4: txt('#tf-step-4 .section-lede'),
-            decomp: [...document.querySelectorAll('.tf-decomp-name')].map((e) => e.innerText),
             quals3: txt('#tf-step-3 .section-quals'),
             bandInputs: document.querySelectorAll('.tfa-band input').length,
             overInput: document.querySelectorAll('.tfa-over input').length,
@@ -91,6 +91,16 @@ const check = (name, ok, detail = '') => {
             step3: txt('#tf-step-3'),
           }
         })
+        await showStep(page, 4)
+        await (await page.$('#tf-step-4')).screenshot({ path: path.join(OUT, `compare_${name}.png`) })
+        await (await page.$('#tf-step-4 .section-row')).screenshot({ path: path.join(OUT, `compare_top_${name}.png`) })
+        Object.assign(
+          r,
+          await page.evaluate(() => ({
+            lede4: document.querySelector('#tf-step-4 .section-lede')?.innerText ?? '',
+            decomp: [...document.querySelectorAll('.tf-decomp-name')].map((e) => e.innerText),
+          })),
+        )
         const lay = await layoutCheck(page)
         check(`${name} no horizontal page scroll`, !lay.overflow, JSON.stringify(lay.offenders.slice(0, 3)))
         sh.forEach((s, i) => check(`${name} legend ${s.id}`, r.legend[i]?.includes(usd(s.amount)) && r.legend[i]?.includes(`${s.pct.toFixed(1)}%`), r.legend[i]))
@@ -169,7 +179,8 @@ const check = (name, ok, detail = '') => {
     await sleep(300)
     const pay = await page.evaluate(() => document.querySelector('.tfa-card-wide')?.innerText ?? '')
     check('breakdown who pays', pay.includes('not one total') && pay.includes('Sponsor') && pay.includes('insurance'), pay.slice(0, 200))
-    // GPCI tooltip carries the technical term.
+    // GPCI tooltip carries the technical term (the decomposition is in step 4, Compare).
+    await showStep(page, 4)
     await page.hover('.tf-decomp-name button')
     await sleep(600)
     const tip = await page.evaluate(() => [...document.querySelectorAll('.hc-card,[role="tooltip"]')].map((c) => c.innerText).join('\n'))

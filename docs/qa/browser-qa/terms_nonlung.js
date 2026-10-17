@@ -7,7 +7,10 @@
 // Usage (NODE_PATH must reach puppeteer-core): node terms_nonlung.js [baseUrl] [outDir]
 const fs = require('fs')
 const path = require('path')
-const { launch, sleep, layoutCheck } = require('./lib')
+const { launch, sleep, layoutCheck, showStep } = require('./lib')
+// termsProposalApi.sample reads a 404 from /proposal-sample as 'this trial ships no synthetic sample' (only
+// NCT05800015 does), so that one 404, and Chrome's console line for it, are expected and not counted.
+const noSample404 = (url, status) => status === 404 && /\/api\/terms-flow\/[^/]+\/proposal-sample(\?|$)/.test(url)
 
 const BASE = process.argv[2] || 'http://localhost:5282'
 const OUT = process.argv[3] || 'C:/Users/micha/Projects/concord/data/work/T/nonlung'
@@ -39,9 +42,9 @@ async function ready(page) {
   const log = { console: [], pageerrors: [], failed: [], runs: {} }
   const open = async (name, width, { theme = 'light', density = 'simple', hash = `#terms-flow/${NCT}` } = {}) => {
     const page = await browser.newPage()
-    page.on('console', (m) => (m.type() === 'error' || m.type() === 'warning') && log.console.push(`${name}: ${m.text()}`))
+    page.on('console', (m) => (m.type() === 'error' || m.type() === 'warning') && !(/status of 404/.test(m.text()) && noSample404(m.location()?.url ?? '', 404)) && log.console.push(`${name}: ${m.text()}`))
     page.on('pageerror', (e) => log.pageerrors.push(`${name}: ${e}`))
-    page.on('response', (r) => r.url().includes('/api/') && r.status() >= 400 && log.failed.push(`${name}: ${r.status()} ${r.url()}`))
+    page.on('response', (r) => r.url().includes('/api/') && r.status() >= 400 && !noSample404(r.url(), r.status()) && log.failed.push(`${name}: ${r.status()} ${r.url()}`))
     await page.evaluateOnNewDocument(
       (theme, density) => {
         try {
@@ -86,18 +89,33 @@ async function ready(page) {
                 const t = txt(`#tf-step-${n}`)
                 return { illustrative: t.includes(ILLUSTRATIVE), disclaimer: t.includes(DISCLAIMER) }
               }),
-              payerValues: [...document.querySelectorAll('.tf-payer-value')].map((e) => e.textContent),
-              // text clipped inside a payer card (a nowrap qualifier wider than its card)
-              payerClipped: [...document.querySelectorAll('.tf-payer, .tf-payer .qual')]
-                .filter((e) => e.scrollWidth > e.clientWidth + 1 || e.getBoundingClientRect().right > (e.closest('.tf-payer')?.getBoundingClientRect().right ?? 1e9) + 1)
-                .map((e) => e.className),
-              main: txt('main'),
             }
           },
           DISCLAIMER,
           ILLUSTRATIVE,
         )
-        const lay = await layoutCheck(page)
+        // One step at a time (tabs): choose each step in the step nav; read its text and check its layout. The payer
+        // cards are measured while step 3 (Budget) is on show.
+        r.main = ''
+        const lays = []
+        for (let n = 1; n <= 6; n++) {
+          await showStep(page, n)
+          r.main += ' ' + (await page.evaluate(() => document.querySelector('main')?.innerText ?? ''))
+          lays.push(await layoutCheck(page))
+          if (n !== 3) continue
+          Object.assign(
+            r,
+            await page.evaluate(() => ({
+              payerValues: [...document.querySelectorAll('.tf-payer-value')].map((e) => e.textContent),
+              // text clipped inside a payer card (a nowrap qualifier wider than its card)
+              payerClipped: [...document.querySelectorAll('.tf-payer, .tf-payer .qual')]
+                .filter((e) => e.scrollWidth > e.clientWidth + 1 || e.getBoundingClientRect().right > (e.closest('.tf-payer')?.getBoundingClientRect().right ?? 1e9) + 1)
+                .map((e) => e.className),
+            })),
+          )
+          await page.screenshot({ path: path.join(OUT, `nonlung_budget_${name}.png`), fullPage: true })
+        }
+        const lay = { overflow: lays.some((l) => l.overflow), offenders: lays.flatMap((l) => l.offenders) }
         log.runs[name] = { ...r, main: undefined, overflow: lay.overflow, offenders: lay.offenders.slice(0, 5) }
         check(`${name} density`, r.density === density, r.density)
         check(`${name} theme`, r.theme === theme, r.theme)
@@ -121,6 +139,7 @@ async function ready(page) {
   const tampa = sites.sites.find((s) => s.city === 'Tampa')
   if (check('Tampa site present', !!tampa) && check('Tampa unresolved', tampa.locality === null && !!tampa.locality_note)) {
     const page = await open('unresolved-1440', 1440, { density: 'detailed' })
+    await showStep(page, 3)
     const sel = await page.$('#tf-step-3 select')
     if (check('budget site select present', !!sel)) {
       await page.select('#tf-step-3 select', tampa.site_id)
@@ -142,6 +161,7 @@ async function ready(page) {
   if (check('Richmond unresolved site present', !!rich)) {
     for (const density of ['simple', 'detailed']) {
       const page = await open(`compare-unresolved-${density}`, 1440, { density })
+      await showStep(page, 4)
       const sels = await page.$$('#tf-step-4 select')
       if (check(`${density} compare selects present`, sels.length === 2, String(sels.length))) {
         await sels[1].select(rich.site_id)
@@ -172,7 +192,7 @@ async function ready(page) {
   for (const width of [1440, 390]) {
     const page = await browser.newPage()
     page.on('pageerror', (e) => log.pageerrors.push(`sheet-${width}: ${e}`))
-    page.on('console', (m) => m.type() === 'error' && log.console.push(`sheet-${width}: ${m.text()}`))
+    page.on('console', (m) => m.type() === 'error' && !(/status of 404/.test(m.text()) && noSample404(m.location()?.url ?? '', 404)) && log.console.push(`sheet-${width}: ${m.text()}`))
     await page.setViewport({ width, height: 900 })
     await page.goto(`${BASE}/api/terms-flow/${NCT}/termsheet.html?site_id=${A}&compare_site=${B}`, { waitUntil: 'load' })
     const lay = await layoutCheck(page)

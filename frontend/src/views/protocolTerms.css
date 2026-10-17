@@ -26,22 +26,39 @@
   max-width: 72ch;
 }
 
-/* ---------- flow nav ---------- */
+/* ---------- flow nav: the steps are tabs (termsSteps.tsx) ---------- */
+/* Sticks under the app header on the page background, so it stays in reach on a long step (StepNav measures the
+   header; --sticky-h, app.css, is the fallback); one row at every width (it scrolls sideways on a phone, never the
+   page). At 900 px and below it drops the arrows and tightens, so all six steps fit down to about 660 px. */
+.tf-flow {
+  position: sticky;
+  top: calc(var(--sticky-h) - 1px);
+  z-index: 900;
+  background: var(--bg);
+  border-bottom: 1px solid var(--rule);
+  /* Paints over a sub-pixel gap under the header, so content never shows between the two. */
+  box-shadow: 0 -4px 0 var(--bg);
+}
 .tf-flow ol {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: var(--sp-1) 0;
+  gap: 0;
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0.25rem;
+  overflow-x: auto;
+  /* A thin scrollbar (as app.css .tabs) shows a strip that does not fit, and lets a mouse scroll it. */
+  scrollbar-width: thin;
 }
 .tf-flow li {
   display: inline-flex;
   align-items: center;
+  flex: none;
 }
 .tf-flow-btn {
   appearance: none;
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -50,18 +67,43 @@
   border: 0;
   border-radius: var(--radius-ctl);
   background: none;
-  color: var(--ink);
+  color: var(--ink-2);
   font: inherit;
   font-size: var(--fs-md);
-  font-weight: 600;
+  font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
 }
 .tf-flow-btn:hover {
+  color: var(--ink);
   background: var(--surface);
 }
-.tf-flow-btn:hover > span:last-child {
+.tf-flow-btn:hover > .tf-flow-label {
   text-decoration: underline;
   text-underline-offset: 0.22em;
+}
+/* The step on show: accent number and underline, like the app's tabs. Visited steps stay plain. */
+.tf-flow-on {
+  color: var(--ink);
+  font-weight: 600;
+}
+.tf-flow-on:hover > .tf-flow-label {
+  text-decoration: none;
+}
+.tf-flow-on::after {
+  content: '';
+  position: absolute;
+  left: 0.625rem;
+  right: 0.625rem;
+  bottom: -0.25rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.tf-flow-on .tf-flow-n {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
 }
 .tf-flow-n {
   display: inline-grid;
@@ -80,8 +122,40 @@
 }
 
 /* ---------- step window ---------- */
+/* Under the sticky app header and the sticky step nav (about 3.1rem; a step switch measures both, termsStepTabs.ts). */
 .tf-step {
-  scroll-margin-top: calc(var(--sticky-h) + 0.75rem);
+  scroll-margin-top: calc(var(--sticky-h) + 3.875rem);
+}
+/* The step just shown fades in (opacity and a 6 px rise, 180 ms). The hidden attribute takes a panel out of display,
+   so the animation replays each time its tab is chosen. No fade-out: the old step goes at once, leaving no gap. No
+   fill mode, so nothing (no transform) stays on the panel afterwards. */
+@media (prefers-reduced-motion: no-preference) {
+  .tf-step[role='tabpanel']:not([hidden]) {
+    animation: tf-step-in 180ms ease-out;
+  }
+}
+@keyframes tf-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* Back and Next at the foot of each step. */
+.tf-pager {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-top: var(--sp-6);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--rule);
+}
+.tf-pager-next {
+  margin-left: auto;
 }
 .tf-strip-label {
   color: var(--caution-ink);
@@ -1336,11 +1410,20 @@
     height: 1.25rem;
   }
 }
-@media (max-width: 640px) {
+@media (max-width: 900px) {
   .tf-flow-btn {
     padding: 0.25rem 0.375rem;
     font-size: var(--fs-ui);
   }
+  .tf-flow-on::after {
+    left: 0.375rem;
+    right: 0.375rem;
+  }
+  .tf-flow-arrow {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
   .tf-trial {
     padding: var(--sp-4);
   }

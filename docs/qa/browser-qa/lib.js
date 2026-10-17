@@ -227,8 +227,29 @@ async function layoutCheck(page) {
   })
 }
 
+/** Protocol to terms shows one step at a time (tabs, termsSteps.tsx): choose step `step` (1-6, or its slug: protocol,
+ *  coverage, budget, compare, proposal, term-sheet) with a click on its tab in the step nav, then wait for its panel
+ *  and the fade-in (180 ms). Returns the panel's selector (#tf-step-N). */
+const STEP_SLUGS = ['protocol', 'coverage', 'budget', 'compare', 'proposal', 'term-sheet']
+async function showStep(page, step) {
+  const i = typeof step === 'number' ? step - 1 : STEP_SLUGS.indexOf(step)
+  if (i < 0 || i >= STEP_SLUGS.length) throw new Error('unknown step ' + step)
+  const id = `tf-step-${i + 1}`
+  await page.waitForSelector(`#tf-tab-${STEP_SLUGS[i]}`, { timeout: 60000 })
+  const shown = await page.evaluate((id) => document.getElementById(id) && !document.getElementById(id).hidden, id)
+  // A real pointer click (a click from script reports detail 0, which the page treats as keyboard activation and
+  // answers by focusing the step's heading).
+  if (!shown) {
+    await page.click(`#tf-tab-${STEP_SLUGS[i]}`)
+    await page.mouse.move(1, 1)
+  }
+  await page.waitForFunction((id) => document.getElementById(id) && !document.getElementById(id).hidden, { timeout: 60000 }, id)
+  await sleep(260)
+  return `#${id}`
+}
+
 function save(file, obj) {
   fs.writeFileSync(file, JSON.stringify(obj, null, 1))
 }
 
-module.exports = { launch, instrument, clickTab, RESEARCH_START, clickButton, waitCleared, waitNoLoading, settle, sleep, shot, grab, layoutCheck, save, WORK, LONG }
+module.exports = { launch, instrument, clickTab, RESEARCH_START, clickButton, waitCleared, waitNoLoading, settle, sleep, shot, grab, layoutCheck, showStep, STEP_SLUGS, save, WORK, LONG }

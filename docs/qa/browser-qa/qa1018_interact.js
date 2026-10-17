@@ -46,8 +46,10 @@ const wait = (page, fn, arg, timeout = 90000) => page.waitForFunction(fn, { time
     localStorage.clear()
   })
   await page.reload({ waitUntil: 'domcontentloaded' })
-  await wait(page, () => document.querySelectorAll('.tf-stats .stat-value').length >= 4 && document.querySelector('.tf-decomp-total'))
-  const inp = await page.$('.tf-mult input')
+  await wait(page, () => document.querySelector('#tf-step-3 .tf-payer-value') && document.querySelector('.tf-decomp-total'))
+  // One step at a time (tabs): the multiplier is on step 3, Budget at a site.
+  await Q.showStep(page, 3)
+  const inp = await page.$('#tf-step-3 .tf-mult input')
   await inp.click({ clickCount: 3 })
   await inp.type('120')
   await page.evaluate(() => document.activeElement.blur())
@@ -57,7 +59,7 @@ const wait = (page, fn, arg, timeout = 90000) => page.waitForFunction(fn, { time
   await wait(page, () => (document.querySelectorAll('.tf-cmp-site')[1]?.innerText ?? '').includes('Montefiore'))
   await Q.settle(page, 800)
   const scr = await page.evaluate(() => ({
-    per: document.querySelector('.tf-stats .stat-value')?.innerText,
+    per: document.querySelector('#tf-step-3 .tf-payer-value')?.innerText,
     totals: [...document.querySelectorAll('.tf-cmp-total')].map((e) => e.innerText),
     delta: document.querySelector('.tf-decomp-total')?.innerText,
     sites: [...document.querySelectorAll('.tf-cmp-site')].map((e) => e.innerText.replace(/\s+/g, ' ')),
@@ -68,10 +70,12 @@ const wait = (page, fn, arg, timeout = 90000) => page.waitForFunction(fn, { time
   ck('120% compare totals (Manhattan vs Bronx)', JSON.stringify([Q.fmt.usd(c.a.totals.per_participant), Q.fmt.usd(c.b.totals.per_participant)]), JSON.stringify(scr.totals))
   ck('120% delta', Q.fmt.signedUsd(c.summary.delta_per_participant), scr.delta)
   ck('Bronx locality differs from Manhattan', true, c.a.locality.code !== c.b.locality.code, `${c.a.locality.name} ${c.a.locality.code} vs ${c.b.locality.name} ${c.b.locality.code}`)
-  const hrefOn = await page.$eval('#tf-step-7 a[download]', (a) => a.getAttribute('href'))
-  await page.evaluate(() => document.querySelector('#tf-step-7 label.check input').click())
+  // One step at a time (tabs): the term sheet is step 6, chosen in the step nav.
+  await Q.showStep(page, 6)
+  const hrefOn = await page.$eval('#tf-step-6 a[download]', (a) => a.getAttribute('href'))
+  await page.evaluate(() => document.querySelector('#tf-step-6 label.check input').click())
   await Q.sleep(300)
-  const hrefOff = await page.$eval('#tf-step-7 a[download]', (a) => a.getAttribute('href'))
+  const hrefOff = await page.$eval('#tf-step-6 a[download]', (a) => a.getAttribute('href'))
   ck('compare toggle adds compare_site', true, hrefOn.includes('compare_site=17ac1cf8701d') && hrefOn.includes('multiplier=1.2'), hrefOn)
   ck('compare toggle off drops compare_site', true, !hrefOff.includes('compare_site'), hrefOff)
   const mdOff = (await Q.apiGet(hrefOff)).body
