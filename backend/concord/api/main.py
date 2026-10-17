@@ -218,3 +218,7 @@ def compile_eligibility(body: EligibilityText) -> dict:
     return {"criteria": [c.to_dict() for c in crit],
             "eligible_fraction": eligible_fraction(crit, pop) if crit else None,  # unknown is never 100%
             "parser": "rule-based v0", "review_required": True}
+
+
+from concord.api.overlap import router as overlap_router  # noqa: E402  portfolio overlap audit
+app.include_router(overlap_router)
