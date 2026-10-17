@@ -129,7 +129,6 @@ export const SIMPLE_PAIN = [
 export const SIMPLE_THEY_DO = [
   'Negotiated-price benchmarks.',
   'Protocol-document ingestion.',
-  'SoA spreadsheet import.',
   'Site payments.',
   'CTA redlining.',
   'A CTMS system of record.',
@@ -1190,7 +1189,7 @@ export const ROWS: readonly Row[] = [
     ],
     "cells": [
       {
-        "mark": "partial",
+        "mark": "yes",
         "key": "K1"
       },
       {
@@ -1980,11 +1979,11 @@ export const EVIDENCE: readonly Evidence[] = [
     "key": "K1",
     "product": "concord",
     "paras": [
-      "The schedule of assessments is written by hand as `concord.protocol/v1` JSON (`backend/concord/compiler/protocols/`). There are three illustrative protocols built from public registry information:",
+      "Since 17 Oct, any trial can be added by NCT ID (`backend/concord/trial_import.py`): its record and registered U.S. sites are fetched from the ClinicalTrials.gov API v2, and its schedule of assessments comes from an uploaded SoA CSV (template provided) or, failing that, a draft from the registry in which every item cites its registry field and is marked 'confirm against the protocol'. Protocol documents (PDF) are not read. Three hand-authored illustrative protocols (`concord.protocol/v1` JSON in `backend/concord/compiler/protocols/`) remain as demos:",
       "NCT05800015 (fianlimab, NSCLC)",
       "NCT06627647 (ARTEMIDE-Lung03, NSCLC)",
       "NCT06541704 (SIENNA, geographic atrophy, eye)",
-      "Concord does not yet parse protocol PDFs or import an SoA spreadsheet."
+      "Concord does not parse protocol PDFs; the SoA comes from a CSV or the registry draft."
     ],
     "links": [],
     "groupNote": "sources: this repository"
@@ -2234,15 +2233,6 @@ export const THEY_DO: readonly ListItem[] = [
   {
     "lead": "Budgets from a digital study design.",
     "text": "Evinova and Faro state it."
-  },
-  {
-    "lead": "SoA spreadsheet import.",
-    "text": "Suvoda and TrialPro state it.",
-    "subs": [
-      {
-        "text": "Concord's protocols are written by hand, which is the main obstacle to \"any trial\"."
-      }
-    ]
   },
   {
     "lead": "Site payments.",

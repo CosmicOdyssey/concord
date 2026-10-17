@@ -65,7 +65,7 @@ The benchmark data the vendors describe is proprietary: blinded client contracts
 | **Citeline Sitetrove** (site selection teams) | – | – | – | – | – | – | – | partial [C1] | yes [C2] | – | – | – | – |
 | **Dataiku Clinical Site Intelligence** (feasibility) | – | – | – | – | – | – | – | partial [D1] | yes [D2] | – | – | partial [D3] | – |
 | **TriNetX** (pharma and CROs; also providers and academic research) | – | – | – | – | – | – | – | – | yes [T1] | – | – | – | – |
-| **Concord** (sponsor and site; open source) | partial [K1] | partial [K2] | yes, draft [K3] | yes [K4] | yes [K5] | yes [K6] | yes [K7] | yes, lung only [K8] | partial [K9] | **no** | **no** | yes [K10] | partial [K11] |
+| **Concord** (sponsor and site; open source) | yes [K1] | partial [K2] | yes, draft [K3] | yes [K4] | yes [K5] | yes [K6] | yes [K7] | yes, lung only [K8] | partial [K9] | **no** | **no** | yes [K10] | partial [K11] |
 
 In the Concord row, "no" means we have not built it.
 
@@ -227,12 +227,12 @@ All three keys cite https://www.dataiku.com/solutions/catalog/clinical-site-inte
 
 **Concord** (sources: this repository)
 
-- **K1.** The schedule of assessments is written by hand as `concord.protocol/v1` JSON (`backend/concord/compiler/protocols/`). There are three illustrative protocols built from public registry information:
+- **K1.** Since 17 Oct, any trial can be added by NCT ID (`backend/concord/trial_import.py`): its record and registered U.S. sites are fetched from the ClinicalTrials.gov API v2, and its schedule of assessments comes from an uploaded SoA CSV (template provided) or, failing that, a draft from the registry in which every item cites its registry field and is marked 'confirm against the protocol'. Protocol documents (PDF) are not read. Three hand-authored illustrative protocols (`concord.protocol/v1` JSON in `backend/concord/compiler/protocols/`) remain as demos:
   - NCT05800015 (fianlimab, NSCLC)
   - NCT06627647 (ARTEMIDE-Lung03, NSCLC)
   - NCT06541704 (SIENNA, geographic atrophy, eye)
 
-  Concord does not yet parse protocol PDFs or import an SoA spreadsheet.
+  Concord does not parse protocol PDFs; the SoA comes from a CSV or the registry draft.
 - **K2.** Prices come from public CMS rates only: the 2026 physician fee schedule RVU26D (17,190 codes, 109 localities) and the 2026 Q4 lab fee schedule (2,117 codes), in `data/ratecard.json`. Concord has no negotiated-price benchmark.
 - **K3.** The routine-versus-research split under NCD 310.1 is rule-based. Each line shows its rule, and a reviewer can override it. It is labelled "not a coverage determination". Local coverage determinations and commercial payers are not modelled.
 - **K4.** Physician lines use non-facility rates at the site's Medicare locality, using its GPCIs. The locality comes from a city-to-county crosswalk where one exists; otherwise it is matched by city name and labelled "check before relying on it" (`backend/concord/terms.py`). Lab lines use CLFS national limitation amounts, which are not geographically adjusted. Hospital outpatient facility fees (OPPS) are not included.
@@ -314,8 +314,6 @@ The defensible combination is free **and** open method **and** public source per
   - Concord knows nothing about what sites actually accept.
 - **Protocol-document ingestion.** GrantPlan states it (the Feb 2026 fact sheet lists it as "Looking ahead").
 - **Budgets from a digital study design.** Evinova and Faro state it.
-- **SoA spreadsheet import.** Suvoda and TrialPro state it.
-  - Concord's protocols are written by hand, which is the main obstacle to "any trial".
 - **Site payments.** IQVIA, Medidata, Suvoda, Veeva and ClinRun. Site-side receivables: OnCore, SiteVault, Velos, Clinical Conductor, CRIO, RealTime.
 - **CTA redlining.** ClinRun; WCG and Huron as services.
 - **A CTMS system of record.** OnCore, SiteVault, Velos, Clinical Conductor, CRIO, RealTime.
@@ -364,11 +362,11 @@ The defensible combination is free **and** open method **and** public source per
 
 Sponsor and site can both reproduce it for free.
 
-"Any trial" is the target, not today's state. Today it runs on three hand-authored demo protocols (K1).
+"Any trial" now works through an SoA CSV upload or a cited registry draft (K1); budgets from a registry draft cover only the procedures the registry names, so a real SoA is what makes them complete.
 
 **What "any trial" needs, in order:**
 
-1. An SoA import: visits by procedures, with CPT/HCPCS codes, and unmapped items kept as "open". Suvoda and TrialPro both state SoA import publicly, so it is table stakes.
+1. ~~An SoA import~~ Done 17 Oct: SoA CSV upload and add-by-NCT-ID (K1). Suvoda and TrialPro also state SoA import publicly, so it is table stakes, not a differentiator.
    - A spreadsheet is the minimum.
    - CDISC's USDM is a further option. It is the open study-design standard from TransCelerate's Digital Data Flow work ("USDM enables the digitization of study timelines and activities"; "These technical standards will be open source and available for all users"; v4.0, 3 June 2025; https://www.cdisc.org/ddf).
 2. ~~The SIENNA anchored-share fix (K6).~~ Done 17 Oct (commit 78a033d).
@@ -387,7 +385,7 @@ Sponsor and site can both reproduce it for free.
 | We already pay for GrantPlan or Medidata. Why this? | It does not replace negotiated benchmarks, and we have none. It adds a public, citable anchor that both sides can reproduce. It also explains U.S. locality differences, where GrantPlan states country-level geography. Use it next to a benchmark, not instead of one. |
 | Medicare rates are below what sites charge. Isn't this a lowball? | The output is a range, not a price. The band is an explicit, adjustable assumption (default 100–150% of Medicare), and only CMS-priced lines move with it. Non-procedure lines are flagged for itemized justification, not priced down. It is decision support, not a fair-market-value opinion. |
 | How much of a real budget does the public anchor cover? | On the NSCLC demo, 18% of per-participant sponsor dollars. 62% sits on our labelled proposed standard (coordinator time, per-visit fees) and 20% is overhead. Showing that split is the product. |
-| Can I run my own protocol tomorrow? | Not without writing its schedule of assessments as JSON. Today there are three illustrative protocols built from public registry information. SoA import is the next build. |
+| Can I run my own protocol tomorrow? | Yes, as a CSV of its schedule of assessments: add the trial by NCT ID, upload the SoA (template provided), and mark routine care. Without a CSV, Concord drafts a schedule from the registry, which names only some procedures. Protocol PDFs are not read. |
 | Who stands behind the coverage calls? | They are a rule-based draft under NCD 310.1, with each rule shown and a reviewer override. The site's coverage analyst confirms them. Local coverage determinations and commercial payers are not modelled. |
 | Ex-U.S. sites? | Not covered. Concord is U.S. Medicare only. |
 | (Regeneron) What does the overlap audit tell us? | From public registry data, your two fianlimab Phase 2/3 trials shared 16 registered U.S. sites. The eligible-patient overlap is modelled on a synthetic population, not observed patients. It covers lung trials only today. |

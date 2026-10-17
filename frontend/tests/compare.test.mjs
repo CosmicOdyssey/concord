@@ -84,7 +84,7 @@ test('the Concord row matches the document, including no for site payments and C
   const d = docRows.find((x) => x.name === 'Concord')
   assert.deepEqual(CONCORD_ROW.cells.map(cellText), d.cells)
   assert.deepEqual(d.cells, [
-    'partial [K1]',
+    'yes [K1]',
     'partial [K2]',
     'yes, draft [K3]',
     'yes [K4]',
