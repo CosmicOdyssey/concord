@@ -113,6 +113,14 @@ def test_unverified_historical_speedups_not_used_as_headlines():
     assert '1.05x' in finding['archived_headline']
 
 
+def test_historical_prediction_error_is_also_unverified():
+    result=TestClient(app).get('/api/findings').json()
+    finding=next(f for f in result['findings'] if f['id']=='implication')
+    assert finding['validation_status']=='UNVERIFIED'
+    assert finding['status']=='provisional'
+    assert all('UNVERIFIED' in table['title'] for table in finding['tables'])
+
+
 def test_saved_delivery_is_labeled_as_replay(tmp_path,monkeypatch):
     monkeypatch.setattr(p,'STORE',tmp_path)
     client=TestClient(app)
@@ -124,3 +132,33 @@ def test_saved_delivery_is_labeled_as_replay(tmp_path,monkeypatch):
     report=client.get(base+'/report/html')
     assert 'Computation evidence snapshot' in report.text
     assert report.headers.get('x-concord-delivery-mode')=='artifact-replay'
+
+
+def test_financial_cost_shifting_counterfactuals():
+    from .acceptance_financial import run
+    assert len(run())==3
+
+
+def test_missing_prices_and_invalid_costs_are_explicit(monkeypatch):
+    from concord import financial as f
+    from pydantic import ValidationError
+    monkeypatch.setattr(f.terms,'_price_code',lambda *_:None)
+    coverage=f.coverage(f.FinanceRequest())
+    assert all(i['rate_kind']!='verified_fee_schedule_benchmark' for i in coverage['items'])
+    assert all(i['unit_rate']>=0 for i in coverage['items'])
+    with pytest.raises(ValidationError):f.FinanceRequest(admin_cost=-1)
+    with pytest.raises(ValidationError):f.Site(id='A',name='A',activation_cost=-1)
+    assert f.FinanceRequest(admin_cost=0,drug_contingency_per_participant=0).admin_cost==0
+
+
+def test_budget_and_sensitivity_counterfactuals():
+    req=p.PortfolioRequest.model_validate(cases()['one_trial_two_sites'])
+    normal=p.run(req)
+    limited=p.run(req.model_copy(update={'budget':normal['scenarios'][0]['ledger']['budget_commitment']}))
+    assert normal['scenarios'][4]['expected_makespan']<limited['scenarios'][4]['expected_makespan']
+    delayed=req.model_copy(deep=True);delayed.edges[1].lag=10
+    assert p.run(delayed)['scenarios'][4]['expected_makespan']>=normal['scenarios'][4]['expected_makespan']
+    uncertain=p.run(req.model_copy(update={'spread':.6}))
+    assert uncertain['scenarios'][0]['interval'][0]<uncertain['scenarios'][0]['interval'][2]
+    assert normal['scenarios'][0]['interval'][0]==normal['scenarios'][0]['interval'][2]
+    assert p.run(req)['scenarios']==normal['scenarios']

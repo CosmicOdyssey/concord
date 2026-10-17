@@ -65,14 +65,18 @@ def findings() -> dict:
     doc = _read(FINDINGS_FILE, "run python -m concord.findings to generate it")
     sections = doc.get("findings", []) if isinstance(doc, dict) else []
     for f in sections if isinstance(sections, list) else []:
-        if isinstance(f, dict) and f.get('id') == 'allocation':
+        if isinstance(f, dict) and f.get('id') in {'allocation', 'implication'}:
             # Preserve the archived data, but do not promote leaky evaluation to
             # a fresh predictive-performance headline. No corrected backtest exists.
             f['validation_status'] = 'UNVERIFIED'
             f['archived_headline'] = f.get('headline')
-            f['title'] = 'Historical allocation performance remains unverified'
-            f['headline'] = ('UNVERIFIED: historical training uses a start-date cutoff without proving outcomes were available by that date. '
-                             'Archived model speedups do not establish predictive performance or trial acceleration.')
+            if f.get('id') == 'allocation':
+                f['title'] = 'Historical allocation performance remains unverified'
+                f['headline'] = ('UNVERIFIED: historical training uses a start-date cutoff without proving outcomes were available by that date. '
+                                 'Archived model speedups do not establish predictive performance or trial acceleration.')
+            else:
+                f['headline'] = ('UNVERIFIED historical prediction errors: the archived backtest does not prove outcomes were available at its training cutoff. '
+                                 + f.get('headline', ''))
             f['status'] = 'provisional'
             f['caveats'] = ['Historical predictive performance is UNVERIFIED pending an as-of-data evaluation. Archived figures below are replayed research artifacts, not corrected results.', *(f.get('caveats') or [])]
             for table in f.get('tables') or []:
