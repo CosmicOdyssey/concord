@@ -152,6 +152,7 @@ class _State:
     links_of: dict[int, list[int]]  # site index -> link indices
     stored_max_diff: float  # max |our lam_eff - site_model.lam_eff| over fitted sites
     stored_compared: int
+    at_cap: int  # U.S. fitted sites whose score equals the cap (they share one tied value)
     rows: list[dict]  # list rows for U.S. non-anonymized fitted sites (without calibration)
 
 
@@ -216,18 +217,33 @@ def _build() -> _State:
     for k, s in enumerate(f.si.tolist()):
         links_of.setdefault(s, []).append(k)
 
+    at_cap = int(np.sum(f.lam_eff[us_idx] == f.floor))
     st = _State(f, s_index, sites, trials, us_idx, us_sorted, m, links_of,
-                max(diffs) if diffs else float("nan"), len(diffs), [])
+                max(diffs) if diffs else float("nan"), len(diffs), at_cap, [])
     st.rows = [_row(st, int(i)) for i in us_idx]
     return st
 
 
 def _percentile(st: _State, score: float) -> float:
-    """Mid-rank percentile of a score among U.S. fitted sites (ties, e.g. every capped site, share one value)."""
+    """Mid-rank percentile of a score among U.S. fitted sites (ties share one value)."""
     n = len(st.us_sorted)
     below = int(np.searchsorted(st.us_sorted, score, side="left"))
     upto = int(np.searchsorted(st.us_sorted, score, side="right"))
     return 100.0 * (below + 0.5 * (upto - below)) / n
+
+
+def _percentile_status(is_us: bool, n_fit: int, capped: bool) -> str:
+    """Whether a site gets a percentile. Only U.S. sites with at least one fitted trial whose score was not lowered
+    by the low-history cap do: every capped site ties at the cap value (the prior's 25th percentile), which sits
+    above the median of the sites with deep history, so a percentile would rank a 1-2 trial site above them; a
+    site with no fitted trial is not among the U.S. fitted sites at all."""
+    if not is_us:
+        return "outside_us"
+    if n_fit == 0:
+        return "no_fitted_trials"
+    if capped:
+        return "tied_at_cap"
+    return "ok"
 
 
 def _row(st: _State, i: int) -> dict:
@@ -236,12 +252,14 @@ def _row(st: _State, i: int) -> dict:
     s = st.sites.get(sid, {})
     low = bool(f.n_fit[i] < R.LOW_HISTORY_N)
     capped = bool(low and f.mean[i] > f.floor)
+    status = _percentile_status(True, int(f.n_fit[i]), capped)
     return {
         "site_id": sid, "facility": s.get("facility"), "city": s.get("city"), "state": s.get("state"),
         "is_amc": bool(s.get("is_amc")), "n_hist": int(s.get("n_hist", 0)), "n_fit": int(f.n_fit[i]),
         "score": float(f.lam_eff[i]), "posterior_mean": float(f.mean[i]),
         "interval": [float(f.lo[i]), float(f.hi[i])], "low_history": low, "capped": capped,
-        "percentile": _percentile(st, float(f.lam_eff[i])),
+        "percentile": _percentile(st, float(f.lam_eff[i])) if status == "ok" else None,
+        "percentile_status": status,
     }
 
 
@@ -273,31 +291,50 @@ def validation() -> dict | None:
                 "overstatement": (1.0 / r["slope"]) if r["slope"] > 0 else None}
 
     b_ind, b_all = block(ind), block(allt)
-    signal = b_ind["ci95"][0] > 0 and (b_all is None or b_all["ci95"][0] > 0)
-    parts = []
-    if signal:
-        parts.append("Both slopes are above zero and their 95% intervals exclude zero, so the scores carry real "
-                     "signal about how the site lists sponsors registered went on to enroll.")
-    else:
-        parts.append("At least one 95% interval includes zero, so the signal in the scores is not established.")
-    if b_ind["slope"] < 1:
-        tail = (f" ({_fmt(b_all['slope'])} across all trials)" if b_all else "")
-        parts.append(f"Both are well below 1: a difference of 1 in log score between two site lists went with about "
-                     f"{_fmt(b_ind['slope'])} in observed log enrollment rate for industry Phase II/III trials{tail}.")
-        if b_ind["overstatement"]:
-            all_x = (f" (about {b_all['overstatement']:.0f}x across all trials)"
-                     if b_all and b_all["overstatement"] else "")
-            parts.append(f"Differences between sites read off the raw scores are overstated about "
-                         f"{b_ind['overstatement']:.0f}x{all_x}; the calibrated score shrinks them by the measured "
-                         f"slope.")
     return {
         "source": f"data/findings/{VALIDATION_FILE}",
         "script": "backend/concord/analysis/selection_validation.py",
         "cutoff": doc.get("cutoff"), "fit_trials": (doc.get("rates") or {}).get("n_trials"),
         "outcome": doc.get("outcome"), "score": doc.get("score"), "controls": doc.get("controls"),
-        "industry_phase2_3": b_ind, "all_trials": b_all, "reading": " ".join(parts),
+        "industry_phase2_3": b_ind, "all_trials": b_all, "reading": _reading(b_ind, b_all),
         "interpretation": doc.get("interpretation"),
     }
+
+
+def _reading(b_ind: dict, b_all: dict | None) -> str:
+    """Plain reading of the slopes. Built from whichever blocks exist and what they show, so the wording stays
+    right if the analysis is re-run (one block, a slope above 1, an interval that includes zero)."""
+    blocks = [("industry Phase II/III trials", b_ind)] + ([("all trials", b_all)] if b_all else [])
+    parts = []
+    with_signal = [lbl for lbl, b in blocks if isinstance(b.get("ci95"), list) and b["ci95"][0] > 0]
+    if len(with_signal) == len(blocks):
+        lead = ("Both slopes are above zero and their 95% intervals exclude zero" if len(blocks) == 2
+                else "The slope is above zero and its 95% interval excludes zero")
+        parts.append(f"{lead}, so the scores carry real signal about how the site lists sponsors registered went on "
+                     f"to enroll.")
+    else:
+        missing = [lbl for lbl, _ in blocks if lbl not in with_signal]
+        parts.append(f"The 95% interval for {' and '.join(missing)} includes zero, so the signal in the scores is "
+                     f"not established there.")
+    if b_ind["slope"] < 1:
+        below = [b for _, b in blocks if b["slope"] < 1]
+        who = "Both slopes are" if len(below) == 2 else "The industry Phase II/III slope is"
+        tail = f" ({_fmt(b_all['slope'])} across all trials)" if b_all else ""
+        parts.append(f"{who} below 1: a difference of 1 in log score between two site lists went with about "
+                     f"{_fmt(b_ind['slope'])} in observed log enrollment rate for industry Phase II/III trials{tail}.")
+        if b_ind["overstatement"]:
+            all_x = (f" (about {b_all['overstatement']:.0f}x across all trials)"
+                     if b_all and b_all["slope"] < 1 and b_all["overstatement"] else "")
+            b = b_ind["slope"]
+            parts.append(f"So differences in log score are overstated about {b_ind['overstatement']:.0f}x{all_x}. "
+                         f"That is on the log scale, not a division of ratios: a raw score ratio R between two site "
+                         f"lists went with an observed ratio of about R^{_fmt(b)} (10x raw, about {10 ** b:.1f}x "
+                         f"observed). The calibrated score shrinks each site's log distance from the U.S. average "
+                         f"by the measured slope.")
+    else:
+        parts.append(f"The industry Phase II/III slope is {_fmt(b_ind['slope'])}, not below 1, so on this check the "
+                     f"raw scores do not overstate differences between site lists.")
+    return " ".join(parts)
 
 
 def _calibration(st: _State, v: dict | None) -> dict | None:
@@ -436,11 +473,14 @@ def site_detail(site_id: str) -> dict:
                      key=lambda d: -d["n"])
 
     is_us = s["country"] == US
-    pct = _percentile(st, lam) if is_us else None
+    applied = bool(low and mean > f.floor)
+    pct_status = _percentile_status(is_us, n_fit, applied)
+    pct = _percentile(st, lam) if pct_status == "ok" else None
     calibrated = None
     if cal is not None:
         b_lo, b_hi = cal["b_ci"]
-        calibrated = {**cal, "value": _calibrated(lam, cal),
+        # m is the U.S. mean, so for a site outside the U.S. the calibrated value is relative to the U.S. average.
+        calibrated = {**cal, "value": _calibrated(lam, cal), "relative_to_us_mean": not is_us,
                       "range_over_b_ci": sorted([_calibrated(lam, cal, b_lo), _calibrated(lam, cal, b_hi)])}
     return {
         "site": {k: s[k] for k in ("site_id", "facility", "city", "state", "zip", "country")}
@@ -455,9 +495,12 @@ def site_detail(site_id: str) -> dict:
                  "data_weight": weight},
         "posterior": {"shape": shape, "rate": rate, "mean": mean, "p10": lo, "p90": hi},
         "cap": {"low_history": low, "threshold": R.LOW_HISTORY_N, "quantile": R.LOW_HISTORY_Q, "cap_value": f.floor,
-                "applied": bool(low and mean > f.floor), "value": lam},
+                "applied": applied, "value": lam},
         "score": lam,
         "percentile": pct,
+        "percentile_status": pct_status,
+        "us_fitted_sites": int(len(st.us_idx)),
+        "us_at_cap": st.at_cap,
         "calibrated": calibrated,
         "trials": trials,
         "method": {"iters": f.iters_run, "enroll_fraction": R.ENROLL_FRACTION},
@@ -492,13 +535,15 @@ def summary() -> dict:
              "low_history": int(((idx == j) & low).sum()), "history_3plus": int(((idx == j) & ~low).sum())}
             for j in range(nbins)]
 
-    preset = None
+    preset, basis = None, None
     for r in st.rows:
         name = (r["facility"] or "").lower()
         if any(p in name for p in PRESET_PATTERNS) and (preset is None or r["n_fit"] > preset["n_fit"]):
             preset = r
+            basis = "most fitted trials among the Dana-Farber and Memorial Sloan Kettering sites"
     if preset is None and st.rows:
         preset = max(st.rows, key=lambda r: r["n_fit"])
+        basis = "most fitted trials among U.S. sites"
 
     states: dict[str, int] = {}
     for r in st.rows:
@@ -513,7 +558,8 @@ def summary() -> dict:
                 "iters": f.iters_run, "enroll_fraction": R.ENROLL_FRACTION, "low_history_n": R.LOW_HISTORY_N,
                 "low_history_q": R.LOW_HISTORY_Q, "min_window_months": R.MIN_TAU_MONTHS},
         "us": {"sites": int(len(st.us_idx)), "low_history": int(low.sum()),
-               "capped": int((low & (mean > f.floor)).sum()), "median_score": float(np.median(lam)),
+               "capped": int((low & (mean > f.floor)).sum()), "at_cap": st.at_cap,
+               "cap_percentile": _percentile(st, f.floor), "median_score": float(np.median(lam)),
                "m": st.m, "geo_mean": math.exp(st.m)},
         "buckets": buckets,
         "histogram": {"bin_log10": HIST_BIN, "bins": hist},
@@ -524,6 +570,7 @@ def summary() -> dict:
         "regions": list(_regions()),
         "region_states": _regions(),
         "states": [{"state": k, "sites": n} for k, n in sorted(states.items())],
-        "preset": {"site_id": preset["site_id"], "facility": preset["facility"], "n_fit": preset["n_fit"]}
+        "preset": {"site_id": preset["site_id"], "facility": preset["facility"], "n_fit": preset["n_fit"],
+                   "basis": basis}
         if preset else None,
     }

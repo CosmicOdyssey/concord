@@ -14,16 +14,11 @@ now does things that need no forecasting:
   (routine care vs research-only, rule shown, reviewer override), a per-patient budget priced from the
   real CMS 2026 physician fee schedule with Medicare locality, a proposed standard non-procedure schedule,
   and a term sheet with provenance on every line. Decision support, not a fair-market-value legal opinion.
-- **Site scores** (`#site-scores[/<site_id>]`): each U.S. site's historical patients per month per lung
-  trial from completed trials, broken down step by step (prior, the site's allocated share of each trial's
-  enrollment, posterior, low-history cap, final score, calibrated score) with the trials behind it and the
-  observed-outcome check (`data/findings/selection_validation.json`). Historical estimates with their
-  validation, not forecasts for a new trial; the list is ordered by history depth, not score.
 - **Findings** (landing page): the research results that motivate both. The earlier clearing views live
   under **Research**, labelled as in-sample model outputs.
 
 Rule for the whole app: no view shows a predicted speedup, time-to-fill or enrollment rate as a product
-claim. The Site scores tab shows historical per-site rates only next to their validation and calibrated value.
+claim.
 
 ## Layout
 
@@ -42,7 +37,6 @@ backend/concord/
   ratecard/cms.py         loads the real CMS physician fee schedule (RVU + GPCI) and, if supplied, CLFS
   ratecard/medicare.py    rate card, coverage grid, standard schedule, term sheet
   service.py              instance builder (region, date, sponsor); the four allocations; price tags
-  site_scores.py          Site scores tab: replicates the fit keeping the EM allocations; breakdown, calibration
   api/main.py             FastAPI
 frontend/                 Vite + React + TS
 scripts/pipeline.sh       crawl -> normalize -> build -> congestion test -> CMS rates -> robustness grids
@@ -73,9 +67,6 @@ cd frontend && npm install && npm run dev          # http://localhost:5173, prox
 | `GET /api/overlap?sponsor&as_of&region` | a sponsor's concurrent trials, pairwise shared sites, eligibility overlap, criteria diff |
 | `GET /api/terms-flow/trials` | demo protocols (illustrative, authored from public trial information) |
 | `GET /api/terms-flow/{nct}/protocol, /sites, /budget, /compare, /termsheet.md, /termsheet.html` | schedule of assessments, coverage, site budget, two-site comparison, term sheet export |
-| `GET /api/site-scores?region&state&q&min_trials&sort&limit&offset` | U.S. sites with fitted trials: score, posterior 10-90%, calibrated score, percentile (default sort: fitted trials) |
-| `GET /api/site-scores/summary` | method, prior, history-depth buckets, score histogram, validation block |
-| `GET /api/site-scores/{site_id}` | one site's score step by step, with its contributing trials and the lung trials not in the fit |
 | `GET /api/status` | crawl state, counts, model prior, backtest, congestion test |
 | `POST /api/clear` `{region, as_of, sponsor, beta, low_history, universe, ...}` | registered vs best-response vs coordinated allocations (free and no-loser) |
 | `GET /api/robustness?<scenario>` | headline under each congestion elasticity x site-rate rule (precomputed) |

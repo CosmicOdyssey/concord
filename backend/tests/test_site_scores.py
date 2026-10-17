@@ -143,8 +143,63 @@ def test_list_defaults_to_history_depth_and_filters(st, con):
     assert q["total"] > 0 and all("dana" in f"{r['facility']} {r['city']} {r['state']}".lower() for r in q["rows"])
     by_score = S.list_sites(sort="-score", limit=50)["rows"]
     assert [r["score"] for r in by_score] == sorted((r["score"] for r in by_score), reverse=True)
-    pct = [r["percentile"] for r in out["rows"]]
-    assert all(0 < p <= 100 for p in pct)
+    for r in out["rows"]:
+        if r["capped"]:
+            assert r["percentile"] is None and r["percentile_status"] == "tied_at_cap"
+        else:
+            assert 0 < r["percentile"] <= 100 and r["percentile_status"] == "ok"
+
+
+def test_capped_and_unfitted_sites_get_no_percentile(st, con):
+    """Every capped site ties at the cap value, which sits above most deep-history sites, so a percentile would
+    rank a 1-2 trial site above them; a U.S. site with no fitted trial is not among the U.S. fitted sites."""
+    f = st.fit
+    capped = [i for i in st.us_idx if f.n_fit[i] < R.LOW_HISTORY_N and f.mean[i] > f.floor]
+    assert len(capped) == st.at_cap > 0
+    d = S.site_detail(f.hist.site_ids[int(capped[0])])
+    assert d["percentile"] is None and d["percentile_status"] == "tied_at_cap" and d["us_at_cap"] == st.at_cap
+    fitted = set(f.hist.site_ids)
+    unfitted = next(r[0] for r in con.execute(
+        "SELECT s.site_id FROM sites s JOIN site_model m USING(site_id) "
+        "WHERE s.country='United States' AND s.anonymized=0 AND m.n_hist > 0 ORDER BY m.n_hist DESC")
+        if r[0] not in fitted)
+    d = S.site_detail(unfitted)
+    assert d["history"]["n_fit"] == 0 and d["percentile"] is None and d["percentile_status"] == "no_fitted_trials"
+    assert d["score"] == f.floor and not d["site"]["in_us_list"]
+    deep = max(st.us_idx, key=lambda i: f.n_fit[i])
+    d = S.site_detail(f.hist.site_ids[int(deep)])
+    assert d["percentile_status"] == "ok" and 0 < d["percentile"] <= 100
+    assert d["calibrated"]["relative_to_us_mean"] is False
+
+
+def test_non_us_site_labels(st):
+    f = st.fit
+    i = next(i for s, i in st.s_index.items()
+             if st.sites.get(s) and st.sites[s]["country"] not in (S.US, None) and not st.sites[s]["anonymized"])
+    d = S.site_detail(f.hist.site_ids[i])
+    assert d["percentile"] is None and d["percentile_status"] == "outside_us"
+    assert d["calibrated"]["relative_to_us_mean"] is True
+
+
+def _reading_for(ind: dict, allt: dict | None) -> str:
+    def blk(r):
+        return None if r is None else {**r, "overstatement": 1 / r["slope"] if r["slope"] > 0 else None}
+    return S._reading(blk(ind), blk(allt))
+
+
+def test_validation_reading_follows_the_numbers():
+    ind = {"slope": 0.334, "ci95": [0.164, 0.504]}
+    both = _reading_for(ind, {"slope": 0.158, "ci95": [0.072, 0.243]})
+    assert both.startswith("Both slopes are above zero") and "Both slopes are below 1" in both
+    assert "on the log scale" in both and "about 3x (about 6x across all trials)" in both
+    one = _reading_for(ind, None)
+    assert "Both" not in one and one.startswith("The slope is above zero and its 95% interval excludes zero")
+    assert "The industry Phase II/III slope is below 1" in one
+    mixed = _reading_for(ind, {"slope": 1.2, "ci95": [-0.1, 2.5]})
+    assert "Both" not in mixed and "The 95% interval for all trials includes zero" in mixed
+    assert "about 6x" not in mixed
+    high = _reading_for({"slope": 1.1, "ci95": [0.8, 1.4]}, None)
+    assert "not below 1" in high and "overstated" not in high
 
 
 def test_summary_buckets_and_histogram(st):
@@ -154,6 +209,10 @@ def test_summary_buckets_and_histogram(st):
     assert all(b["capped"] == 0 for b in s["buckets"] if not b["low_history"])
     assert s["consistency"]["max_abs_diff"] <= 1e-12
     assert s["preset"]["n_fit"] >= max(b["lo"] for b in s["buckets"])
+    assert s["preset"]["basis"].startswith("most fitted trials among")
+    if "dana" in s["preset"]["facility"].lower() or "sloan" in s["preset"]["facility"].lower():
+        assert "Dana-Farber" in s["preset"]["basis"]
+    assert s["us"]["at_cap"] == s["us"]["capped"]
 
 
 def test_api_routes(client):

@@ -83,6 +83,43 @@ function useWidth(): [(el: HTMLElement | null) => void, number] {
   return [setEl, w]
 }
 
+/** A horizontal table scroller that shows when columns sit beyond its edge: a fade on the side with hidden
+ *  columns, and a one-line hint whenever the table is wider than its box (stable, so nothing shifts on scroll). */
+function ScrollX({ children, label }: { children: ReactNode; label: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [st, setSt] = useState({ over: false, l: false, r: false })
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const update = () => {
+      const max = el.scrollWidth - el.clientWidth
+      const next = { over: max > 1, l: el.scrollLeft > 1, r: el.scrollLeft < max - 1 }
+      setSt((s) => (s.over === next.over && s.l === next.l && s.r === next.r ? s : next))
+    }
+    update()
+    el.addEventListener('scroll', update, { passive: true })
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    for (const c of Array.from(el.children)) ro.observe(c)
+    return () => {
+      el.removeEventListener('scroll', update)
+      ro.disconnect()
+    }
+  }, [])
+  return (
+    <div className={`ss-scrollx${st.over && st.l ? ' ss-more-l' : ''}${st.over && st.r ? ' ss-more-r' : ''}`}>
+      {st.over && (
+        <div className="ss-scroll-hint small muted" aria-hidden="true">
+          Scroll sideways for more columns &rarr;
+        </div>
+      )}
+      <div className="table-scroll" ref={ref} tabIndex={st.over ? 0 : undefined} role="region" aria-label={label}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
 function siteFromHash(): string | null {
   const m = window.location.hash.match(/^#site-scores\/([^/?#]+)/i)
   return m ? decodeURIComponent(m[1]) : null
@@ -132,11 +169,31 @@ export default function SiteScoresView() {
   // A deep link (#site-scores/<site_id>) scrolls to that site's breakdown once it has loaded.
   const scrollOnLoad = useRef(siteFromHash() !== null)
   const loadedId = detail.status === 'ok' ? detail.data.site.site_id : null
+  const ready = summary.status === 'ok' // the breakdown card exists only once the summary has loaded
   useEffect(() => {
-    if (!scrollOnLoad.current || loadedId === null || loadedId !== selected) return
+    if (!scrollOnLoad.current || !ready || loadedId === null || loadedId !== selected) return
+    const el = breakdownRef.current
+    if (!el) return
     scrollOnLoad.current = false
-    breakdownRef.current?.scrollIntoView({ block: 'start' })
-  }, [loadedId, selected])
+    el.scrollIntoView({ block: 'start' })
+    // The histogram above sizes itself after the first paint and can push the card down: scroll once more, unless
+    // the reader has started scrolling.
+    const id = window.setTimeout(() => {
+      const top = el.getBoundingClientRect().top
+      if (top < -2 || top > 120) el.scrollIntoView({ block: 'start' })
+    }, 300)
+    const cancel = () => window.clearTimeout(id)
+    const opts = { once: true, passive: true } as const
+    window.addEventListener('wheel', cancel, opts)
+    window.addEventListener('touchstart', cancel, opts)
+    window.addEventListener('keydown', cancel, { once: true })
+    return () => {
+      cancel()
+      window.removeEventListener('wheel', cancel)
+      window.removeEventListener('touchstart', cancel)
+      window.removeEventListener('keydown', cancel)
+    }
+  }, [loadedId, selected, ready])
   useEffect(() => {
     const on = () => {
       const id = siteFromHash()
@@ -210,18 +267,13 @@ export default function SiteScoresView() {
             minTrials={minTrials}
             setMinTrials={resetPage(setMinTrials)}
           />
-          {['score', 'calibrated', 'percentile'].includes(sort.replace(/^-/, '')) && (
-            <p className="ss-sortnote small">
-              Sorted by historical score. Differences between sites read off raw scores are overstated
-              {S.validation?.industry_phase2_3.overstatement ? ` about ${S.validation.industry_phase2_3.overstatement.toFixed(0)}x` : ''} (see the
-              validation above); the calibrated column shrinks them. Not a forecast for a new trial.
-            </p>
-          )}
+          {['score', 'calibrated', 'percentile'].includes(sort.replace(/^-/, '')) && <SortNote S={S} />}
           {list.status === 'error' ? (
             <ErrorBox error={list.error} onRetry={retryList} />
           ) : list.status === 'ok' ? (
             <SiteTable
               data={list.data}
+              S={S}
               sort={sort}
               onSort={(s) => {
                 setSort(s)
@@ -249,6 +301,26 @@ export default function SiteScoresView() {
 
       {d && <Contributing key={d.site.site_id} d={d} stale={d.site.site_id !== siteId} />}
     </div>
+  )
+}
+
+/** Shown while the table is sorted by score. The overstatement (1 / b) is on the log scale: a raw ratio R between
+ *  two scores becomes R^b between calibrated scores, not R / (1 / b). */
+function SortNote({ S }: { S: Summary }) {
+  const b = S.calibration?.b ?? null
+  const over = S.validation?.industry_phase2_3.overstatement ?? null
+  return (
+    <p className="ss-sortnote small">
+      Sorted by historical score. Not a forecast for a new trial.
+      {over !== null && b !== null ? (
+        <>
+          {' '}
+          Differences in <em>log</em> score between sites are overstated about {over.toFixed(0)}x (see the validation
+          above). On the log scale, not as a division of ratios: a 10x ratio between two raw scores is about{' '}
+          {(10 ** b).toFixed(1)}x between their calibrated scores (10^{fixed(b)}).
+        </>
+      ) : null}
+    </p>
   )
 }
 
@@ -370,8 +442,28 @@ function SlopePlot({ rows }: { rows: { key: string; label: string; b: Validation
 
 /* ---------- distribution ---------- */
 
+/** What the bucket medians show about depth, read off the numbers (no claim that scores fall steadily with depth:
+ *  the deepest bucket's median is above the middle one's). */
+function depthNote(buckets: Bucket[]): string | null {
+  const med = (b: Bucket) => b.median_score
+  const low = buckets.filter((b) => b.low_history && med(b) !== null)
+  const deep = buckets.filter((b) => !b.low_history && med(b) !== null)
+  if (!low.length || !deep.length) return null
+  const lowMin = Math.min(...low.map((b) => med(b) as number))
+  const deepMax = Math.max(...deep.map((b) => med(b) as number))
+  if (deepMax >= lowMin) return null
+  return (
+    `Every bucket with 3 or more fitted trials has a lower median (${deep.map((b) => `${b.label}: ${rate(med(b))}`).join(', ')}) ` +
+    `than the 1–2 trial buckets (${low.map((b) => `${b.label}: ${rate(med(b))}`).join(', ')}), which are held at or below the cap. ` +
+    'Sites that took part in many large multi-site trials receive a small share of each, and the cap is still above most ' +
+    'of their scores, so a capped score says little about how a little-known site compares with them. That is why capped ' +
+    'sites get no percentile.'
+  )
+}
+
 function Distribution({ S, selected }: { S: Summary; selected: SiteDetail | null }) {
   const lowShare = S.us.sites ? S.us.low_history / S.us.sites : 0
+  const depth = depthNote(S.buckets)
   return (
     <section className="card ss-dist">
       <div className="section-head">
@@ -387,8 +479,7 @@ function Distribution({ S, selected }: { S: Summary; selected: SiteDetail | null
         {S.fit.low_history_n} fitted trials. Their scores rest on the split of one or two trials, which is noisy, and on the
         model&rsquo;s backtest the uncapped model&rsquo;s optimism came from sites it barely knew. So the cap holds them
         at or below {perMonth(S.prior.p25)}; it lowered {int(S.us.capped)} of them, which is the spike in the histogram.
-        The cap is a ceiling, not a floor. Scores also fall with history depth: sites that took part in many large
-        multi-site trials receive a small share of each.
+        The cap is a ceiling, not a floor.{depth ? ` ${depth}` : ''}
       </p>
     </section>
   )
@@ -501,7 +592,7 @@ function Histogram({ bins, cap, site }: { bins: HistBin[]; cap: number; site: Si
       )}
       <details className="ss-details small">
         <summary>Histogram as a table</summary>
-        <div className="table-scroll">
+        <ScrollX label="Histogram of U.S. site scores as a table">
           <table className="tbl tbl-compact">
             <thead>
               <tr>
@@ -522,7 +613,7 @@ function Histogram({ bins, cap, site }: { bins: HistBin[]; cap: number; site: Si
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollX>
       </details>
     </figure>
   )
@@ -545,23 +636,37 @@ function shortName(s: string | null): string {
   return t.length > 28 ? `${t.slice(0, 26)}…` : t
 }
 
+/** A column header with a shorter form below 560 px, so the bucket table fits a phone without scrolling. */
+function ShortLabel({ long, short }: { long: string; short: string }) {
+  return (
+    <>
+      <span className="ss-h-long">{long}</span>
+      <span className="ss-h-short">{short}</span>
+    </>
+  )
+}
+
 function BucketTable({ buckets, lowN }: { buckets: Bucket[]; lowN: number }) {
   return (
     <div className="ss-buckets">
       <h3>By history depth</h3>
-      <div className="table-scroll">
+      <ScrollX label="Sites by history depth">
         <table className="tbl tbl-compact">
           <thead>
             <tr>
-              <th>Fitted trials</th>
+              <th title="Fitted trials">
+                <ShortLabel long="Fitted trials" short="Trials" />
+              </th>
               <th className="num">Sites</th>
-              <th className="num" title="Final score after the low-history cap">
-                Median score
+              <th className="num" title="Median final score, after the low-history cap">
+                <ShortLabel long="Median score" short="Median" />
               </th>
-              <th className="num" title="Posterior mean before the cap">
-                Before cap
+              <th className="num" title="Median posterior mean, before the cap">
+                <ShortLabel long="Before cap" short="Pre-cap" />
               </th>
-              <th className="num">Lowered by cap</th>
+              <th className="num" title="Sites whose score the cap lowered">
+                <ShortLabel long="Lowered by cap" short="Capped" />
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -578,7 +683,7 @@ function BucketTable({ buckets, lowN }: { buckets: Bucket[]; lowN: number }) {
             ))}
           </tbody>
         </table>
-      </div>
+      </ScrollX>
       <p className="small muted">
         Medians in patients per month per trial. The cap applies only below {lowN} fitted trials.
       </p>
@@ -642,12 +747,12 @@ function Filters(p: {
   )
 }
 
-function SortTh({ k, label, sort, onSort, num, title }: { k: string; label: ReactNode; sort: string; onSort: (s: string) => void; num?: boolean; title?: string }) {
+function SortTh({ k, label, sort, onSort, num, title, className }: { k: string; label: ReactNode; sort: string; onSort: (s: string) => void; num?: boolean; title?: string; className?: string }) {
   const active = sort.replace(/^-/, '') === k
   const desc = sort.startsWith('-')
   const next = active ? (desc ? k : `-${k}`) : num ? `-${k}` : k
   return (
-    <th className={`sortable${num ? ' num' : ''}`} aria-sort={active ? (desc ? 'descending' : 'ascending') : 'none'} title={title}>
+    <th className={`sortable${num ? ' num' : ''}${className ? ` ${className}` : ''}`} aria-sort={active ? (desc ? 'descending' : 'ascending') : 'none'} title={title}>
       <button type="button" onClick={() => onSort(next)}>
         {label}
         <span className="sort-ind">{active ? (desc ? '▼' : '▲') : ''}</span>
@@ -656,13 +761,16 @@ function SortTh({ k, label, sort, onSort, num, title }: { k: string; label: Reac
   )
 }
 
-function SiteTable({ data, sort, onSort, selected, onPick, onPage }: { data: SiteList; sort: string; onSort: (s: string) => void; selected: string | null; onPick: (id: string) => void; onPage: (o: number) => void }) {
+function SiteTable({ data, S, sort, onSort, selected, onPick, onPage }: { data: SiteList; S: Summary; sort: string; onSort: (s: string) => void; selected: string | null; onPick: (id: string) => void; onPage: (o: number) => void }) {
   const cal = data.calibration
   const from = data.total ? data.offset + 1 : 0
   const to = Math.min(data.offset + data.limit, data.total)
+  const atCapTitle =
+    `All ${int(S.us.at_cap)} capped sites share the cap value ${rate(S.prior.p25)}; as a percentile that would be the ` +
+    `${ordinal(S.us.cap_percentile)}, above most sites with 3 or more fitted trials, so capped sites get none`
   return (
     <>
-      <div className="table-scroll">
+      <ScrollX label="U.S. sites with fitted trials">
         <table className="tbl ss-sites">
           <thead>
             <tr>
@@ -676,15 +784,16 @@ function SiteTable({ data, sort, onSort, selected, onPick, onPage }: { data: Sit
                   sort={sort}
                   onSort={onSort}
                   num
+                  className="ss-col-wide"
                   title={`exp(m + b(log score - m)), b = ${fixed(cal.b)} [${fixed(cal.b_ci[0])}, ${fixed(cal.b_ci[1])}]`}
                 />
               )}
-              <SortTh k="percentile" label="Pctile" sort={sort} onSort={onSort} num title="Percentile of the score among U.S. fitted sites" />
+              <SortTh k="percentile" label="Pctile" sort={sort} onSort={onSort} num className="ss-col-wide" title="Percentile of the score among U.S. fitted sites; none for capped sites, which all tie at the cap" />
             </tr>
           </thead>
           <tbody>
             {data.rows.map((r) => (
-              <SiteTr key={r.site_id} r={r} on={r.site_id === selected} onPick={onPick} showCal={!!cal} />
+              <SiteTr key={r.site_id} r={r} on={r.site_id === selected} onPick={onPick} showCal={!!cal} atCapTitle={atCapTitle} />
             ))}
             {data.rows.length === 0 && (
               <tr>
@@ -695,7 +804,7 @@ function SiteTable({ data, sort, onSort, selected, onPick, onPage }: { data: Sit
             )}
           </tbody>
         </table>
-      </div>
+      </ScrollX>
       <div className="ss-pager small">
         <span className="muted tnum">
           {int(from)}&ndash;{int(to)} of {int(data.total)}
@@ -710,14 +819,33 @@ function SiteTable({ data, sort, onSort, selected, onPick, onPage }: { data: Sit
       {cal && (
         <p className="small muted ss-calnote">
           Calibrated: b = {fixed(cal.b)} [{fixed(cal.b_ci[0])}, {fixed(cal.b_ci[1])}], {cal.b_label}, n {int(cal.b_n)}.
-          Score intervals are posterior 10th&ndash;90th percentiles.
+          Score intervals are posterior 10th&ndash;90th percentiles; they treat each trial&rsquo;s split across its sites
+          as known, so they are narrower than the real uncertainty (the validation above shows how much). Capped sites
+          (<em>at cap</em>) all share one value, {rate(S.prior.p25)}, so they get no percentile.
+        </p>
+      )}
+      {!cal && (
+        <p className="small muted ss-calnote">
+          Score intervals are posterior 10th&ndash;90th percentiles; they treat each trial&rsquo;s split across its sites
+          as known, so they are narrower than the real uncertainty. Capped sites (<em>at cap</em>) all share one value,{' '}
+          {rate(S.prior.p25)}, so they get no percentile.
         </p>
       )}
     </>
   )
 }
 
-function SiteTr({ r, on, onPick, showCal }: { r: SiteRow; on: boolean; onPick: (id: string) => void; showCal: boolean }) {
+function Pct({ r, atCapTitle }: { r: SiteRow; atCapTitle: string }) {
+  if (r.percentile_status === 'tied_at_cap')
+    return (
+      <span className="ss-atcap" title={atCapTitle}>
+        at cap
+      </span>
+    )
+  return <>{ordinal(r.percentile)}</>
+}
+
+function SiteTr({ r, on, onPick, showCal, atCapTitle }: { r: SiteRow; on: boolean; onPick: (id: string) => void; showCal: boolean; atCapTitle: string }) {
   const pick = () => onPick(r.site_id)
   return (
     <tr className={`clickable${on ? ' row-on' : ''}`} tabIndex={0} onClick={pick} onKeyDown={onActivate(pick)} aria-selected={on}>
@@ -735,9 +863,18 @@ function SiteTr({ r, on, onPick, showCal }: { r: SiteRow; on: boolean; onPick: (
         <div className={`small muted${r.capped ? ' ss-iv-capped' : ''}`} title={r.capped ? 'Posterior interval; the score is capped below it' : 'Posterior 10th to 90th percentile'}>
           {rate(r.interval[0])}&ndash;{rate(r.interval[1])}
         </div>
+        {/* Below 560 px the Calibrated and Pctile columns fold in here, so nothing sits off-screen on a phone. */}
+        <div className="ss-stack small">
+          {showCal && <div>cal. {rate(r.calibrated)}</div>}
+          <div>
+            {r.percentile_status === 'tied_at_cap' ? <Pct r={r} atCapTitle={atCapTitle} /> : <>{ordinal(r.percentile)} pctile</>}
+          </div>
+        </div>
       </td>
-      {showCal && <td className="num">{rate(r.calibrated)}</td>}
-      <td className="num">{ordinal(r.percentile)}</td>
+      {showCal && <td className="num ss-col-wide">{rate(r.calibrated)}</td>}
+      <td className="num ss-col-wide">
+        <Pct r={r} atCapTitle={atCapTitle} />
+      </td>
     </tr>
   )
 }
@@ -765,10 +902,19 @@ function SiteBadges({ amc, low, capped }: { amc: boolean; low: boolean; capped: 
 function Breakdown({ d, S, stale, isPreset }: { d: SiteDetail; S: Summary; stale: boolean; isPreset: boolean }) {
   const { prior, data, posterior: post, cap, calibrated: cal, history: h } = d
   const w = data.data_weight
+  const nUS = int(d.us_fitted_sites)
+  const pct: Record<SiteDetail['percentile_status'], { value: string; sub: string }> = {
+    ok: { value: ordinal(d.percentile), sub: `among ${nUS} U.S. fitted sites` },
+    tied_at_cap: { value: 'at cap', sub: `tied with ${int(d.us_at_cap)} capped U.S. sites: no percentile` },
+    no_fitted_trials: { value: '—', sub: `no fitted trials: not among the ${nUS} U.S. fitted sites` },
+    outside_us: { value: '—', sub: 'outside the U.S.: percentiles cover U.S. sites only' },
+  }
+  const fig = pct[d.percentile_status]
+  const unseen = h.n_fit === 0
   return (
     <div className={stale ? 'ss-stale' : undefined}>
       <div className="ss-bd-head">
-        <div className="small muted">{isPreset ? 'Example site (most fitted trials among Dana-Farber and Memorial Sloan Kettering)' : 'Selected site'}</div>
+        <div className="small muted">{isPreset ? `Example site (${S.preset?.basis ?? 'chosen by fitted trials'})` : 'Selected site'}</div>
         <h2 className="ss-bd-title">{d.site.facility}</h2>
         <div className="small muted">
           {place(d.site.city, d.site.state)}
@@ -781,7 +927,7 @@ function Breakdown({ d, S, stale, isPreset }: { d: SiteDetail; S: Summary; stale
         <div className="ss-fig">
           <div className="stat-label">Score</div>
           <div className="ss-fig-value">{rate(d.score)}</div>
-          <div className="small muted">patients / month / trial, historical</div>
+          <div className="small muted">{unseen ? 'unseen-site rate (no fitted trials)' : 'patients / month / trial, historical'}</div>
         </div>
         {cal && (
           <div className="ss-fig">
@@ -789,13 +935,14 @@ function Breakdown({ d, S, stale, isPreset }: { d: SiteDetail; S: Summary; stale
             <div className="ss-fig-value">{rate(cal.value)}</div>
             <div className="small muted">
               b = {fixed(cal.b)} [{fixed(cal.b_ci[0])}, {fixed(cal.b_ci[1])}]
+              {cal.relative_to_us_mean && <>; relative to the U.S. mean</>}
             </div>
           </div>
         )}
         <div className="ss-fig">
           <div className="stat-label">Percentile</div>
-          <div className="ss-fig-value">{d.percentile === null ? '—' : ordinal(d.percentile)}</div>
-          <div className="small muted">among {int(S.us.sites)} U.S. sites</div>
+          <div className="ss-fig-value">{fig.value}</div>
+          <div className="small muted">{fig.sub}</div>
         </div>
         <div className="ss-fig">
           <div className="stat-label">History</div>
@@ -849,16 +996,34 @@ function Breakdown({ d, S, stale, isPreset }: { d: SiteDetail; S: Summary; stale
           )}
         </Step>
         <Step n={5} title="Final score" value={perMonth(d.score)} emph>
-          Historical patients per month per trial at this site (the app&rsquo;s stored site_model.lam_eff).
-          {d.percentile !== null && <> {ordinal(d.percentile)} percentile among {int(S.us.sites)} U.S. fitted sites.</>}
+          {unseen ? (
+            <>
+              No completed trial at this site is in the fit, so this is the unseen-site rate (the prior&rsquo;s{' '}
+              {fixed(cap.quantile * 100, 0)}th percentile, stored as site_model.lam_eff), not a measurement of this site.
+              {d.site.country === 'United States' && <> It is not among the {nUS} U.S. fitted sites and gets no percentile.</>}
+            </>
+          ) : (
+            <>Historical patients per month per trial at this site (the app&rsquo;s stored site_model.lam_eff).</>
+          )}
+          {d.percentile_status === 'ok' && <> {ordinal(d.percentile)} percentile among {nUS} U.S. fitted sites.</>}
+          {d.percentile_status === 'tied_at_cap' && (
+            <>
+              {' '}
+              This is the cap, shared by {int(d.us_at_cap)} capped U.S. sites. It sits above most sites with{' '}
+              {cap.threshold} or more fitted trials, so it gets no percentile.
+            </>
+          )}
+          {d.percentile_status === 'outside_us' && <> The site is outside the U.S., so it has no percentile among U.S. sites.</>}
         </Step>
         <Step n={6} title="Calibrated" value={cal ? perMonth(cal.value) : 'not shown'}>
           {cal ? (
             <>
-              exp(m + b &times; (log {rate(d.score)} &minus; m)) with m = log {rate(cal.geo_mean)} (U.S. geometric mean) and b ={' '}
+              exp(m + b &times; (log {rate(d.score)} &minus; m)) with m = log {rate(cal.geo_mean)} (U.S. geometric mean
+              {cal.relative_to_us_mean ? '; this site is outside the U.S., so the value is relative to the U.S. average' : ''})
+              and b ={' '}
               {fixed(cal.b)} [{fixed(cal.b_ci[0])}, {fixed(cal.b_ci[1])}]; {rate(cal.range_over_b_ci[0])}&ndash;
-              {rate(cal.range_over_b_ci[1])} across b&rsquo;s interval. Shrinks the distance from the U.S. average by the
-              slope measured on observed enrollment.
+              {rate(cal.range_over_b_ci[1])} across b&rsquo;s interval. Shrinks the log distance from the U.S. average by
+              the slope measured on observed enrollment.
             </>
           ) : (
             <>Omitted: the validation file is missing, and the slope b is never assumed.</>
@@ -986,7 +1151,7 @@ function Contributing({ d, stale }: { d: SiteDetail; stale: boolean }) {
         </p>
       )}
       {d.trials.length > 0 && (
-        <div className="table-scroll">
+        <ScrollX label="Completed trials behind this score">
           <table className="tbl tbl-compact ss-trials">
             <thead>
               <tr>
@@ -1043,7 +1208,7 @@ function Contributing({ d, stale }: { d: SiteDetail; stale: boolean }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollX>
       )}
       {rows.length > TRIALS_SHOWN && (
         <button className="btn btn-small ss-more" onClick={() => setAll((a) => !a)}>

@@ -9,7 +9,13 @@ const SCREENS = process.env.SCREENS || 'C:/Users/micha/Projects/concord/data/wor
 fs.mkdirSync(SCREENS, { recursive: true })
 
 // Product-claim wording the app rule forbids on this view.
-const FORBIDDEN = [/speed-?up/i, /time[- ]to[- ]fill/i, /\bfaster\b/i, /best sites/i, /top sites/i, /fastest/i]
+const FORBIDDEN = [
+  /speed-?up/i, /time[- ]to[- ]fill/i, /\bfaster\b/i, /\bfastest\b/i, /\bslower\b/i, /\bbest\b/i, /\btop\b/i,
+  /\brecommend/i, /\bpick\b/i, /\bchoose\b/i, /\bpredict/i, /\brank/i, /\bperformance\b/i,
+]
+// Review fixes: sites to deep-link (an unfitted U.S. site and a non-U.S. site).
+const UNFITTED_US = process.env.UNFITTED_US || 'f4911c74062a' // Northwestern Medicine Glenview, 0 fitted of 12
+const NON_US = process.env.NON_US || '661aca9983d3' // Vall Hebron Institute of Oncology, Spain
 
 const out = { checks: [], shots: [] }
 const check = (name, ok, detail) => {
@@ -49,6 +55,9 @@ const texts = (page, sel) => page.$$eval(sel, (es) => es.map((e) => e.innerText.
     check('tab order: Site scores after Protocol to terms, before Research', at > 0 && tabs[at - 1] === 'Protocol to terms' && tabs[at + 1] === 'Research', tabs)
     const title = await text(page, '.ss-bd-title')
     check('preset opens the richest-history Dana-Farber / MSK site', /dana|sloan/i.test(title), title)
+    const head = await text(page, '.ss-bd-head .small.muted')
+    const sum = await (await fetch(`${APP}/api/site-scores/summary`)).json()
+    check('preset label is built from summary.preset.basis', head === `Example site (${sum.preset.basis})`, head)
     const firstRows = await texts(page, '.ss-sites tbody tr .ss-site-name')
     const nfit = await page.$$eval('.ss-sites tbody tr td:nth-child(2) div:first-child', (es) => es.map((e) => Number(e.textContent.replace(/,/g, ''))))
     check('default order is fitted trials, descending', nfit.every((v, i) => i === 0 || nfit[i - 1] >= v), nfit.slice(0, 6))
@@ -70,6 +79,9 @@ const texts = (page, sel) => page.$$eval(sel, (es) => es.map((e) => e.innerText.
       tableRows: (await texts(page, '.ss-sites tbody tr')).slice(0, 5),
       calnote: await text(page, '.ss-calnote'),
     }
+    check('distribution caveat no longer says scores fall with history depth', !/Scores also fall with history depth/i.test(out.preset.caveat) && /lower median/.test(out.preset.caveat), out.preset.caveat)
+    check('table note: intervals leave out the split uncertainty', /narrower than the real uncertainty/.test(out.preset.calnote), out.preset.calnote)
+    check('reading: overstatement explained on the log scale', /on the log scale, not a division of ratios/.test(out.preset.reading), out.preset.reading)
     const body = await page.evaluate(() => document.querySelector('.ss').innerText)
     const hits = FORBIDDEN.filter((r) => r.test(body)).map(String)
     check('no speedup / time-to-fill / faster / best-sites wording', hits.length === 0, hits)
@@ -105,7 +117,9 @@ const texts = (page, sel) => page.$$eval(sel, (es) => es.map((e) => e.innerText.
     // Sorting by score shows the overstatement note.
     await page.evaluate(() => [...document.querySelectorAll('.ss-sites th button')].find((b) => b.textContent.startsWith('Score')).click())
     await page.waitForSelector('.ss-sortnote', { timeout: 10_000 })
-    check('sorting by score shows the overstatement note', true, await text(page, '.ss-sortnote'))
+    const note = await text(page, '.ss-sortnote')
+    check('sort note: overstatement is on the log scale, with a worked ratio', /log score/i.test(note) && /log scale/i.test(note) && /10x ratio between two raw scores is about 2\.2x/.test(note), note)
+    out.sortedByScoreRows = (await texts(page, '.ss-sites tbody tr')).slice(0, 3)
 
     // Search and min-trials filter.
     await page.evaluate(() => [...document.querySelectorAll('.ss-sites th button')].find((b) => b.textContent.startsWith('Fitted')).click())
@@ -126,7 +140,35 @@ const texts = (page, sel) => page.$$eval(sel, (es) => es.map((e) => e.innerText.
     const top = await page.$eval('.ss-breakdown', (e) => Math.round(e.getBoundingClientRect().top))
     check('fresh deep link scrolls to the breakdown', top >= -2 && top < 200, top)
     out.capped = { site: c, steps: await texts(page, '.ss-steps .ss-step'), figs: await texts(page, '.ss-figs .ss-fig') }
+    check('capped site: list row has no percentile (status tied_at_cap)', c.percentile === null && c.percentile_status === 'tied_at_cap', c)
+    check('capped site: percentile figure reads "at cap", Step 5 explains the tie',
+      /^Percentile at cap tied with [\d,]+ capped U\.S\. sites/i.test(out.capped.figs.find((f) => /^percentile/i.test(f)) || '') && /gets no percentile/.test(out.capped.steps[4]),
+      { figs: out.capped.figs, step5: out.capped.steps[4] })
     await shot(page, 'site-scores-1440-capped-site')
+
+    // Deep link to a U.S. site with no fitted trial: no percentile, Step 5 says it is the unseen-site rate.
+    await page.goto('about:blank')
+    await page.goto(`${APP}/#site-scores/${UNFITTED_US}`, { waitUntil: 'networkidle0' })
+    await settle(page)
+    const uf = { title: await text(page, '.ss-bd-title'), figs: await texts(page, '.ss-figs .ss-fig'), steps: await texts(page, '.ss-steps .ss-step') }
+    out.unfitted = uf
+    check('unfitted U.S. site: no percentile, Step 5 says unseen-site rate',
+      /^Percentile — no fitted trials/i.test(uf.figs.find((f) => /^percentile/i.test(f)) || '') &&
+        /unseen-site rate/.test(uf.steps[4]) && !/percentile among/.test(uf.steps[4]),
+      uf)
+
+    // Deep link to a non-U.S. site: calibrated value labelled as relative to the U.S. mean; no U.S. percentile.
+    await page.goto('about:blank')
+    await page.goto(`${APP}/#site-scores/${NON_US}`, { waitUntil: 'networkidle0' })
+    await settle(page)
+    const nu = { title: await text(page, '.ss-bd-title'), figs: await texts(page, '.ss-figs .ss-fig'), steps: await texts(page, '.ss-steps .ss-step') }
+    out.nonUS = nu
+    check('non-U.S. site: calibrated labelled relative to the U.S. mean; percentile says outside the U.S.',
+      /relative to the U\.S\. mean/.test(nu.figs.find((f) => /^calibrated/i.test(f)) || '') &&
+        /outside the U\.S\./.test(nu.figs.find((f) => /^percentile/i.test(f)) || '') &&
+        /relative to the U\.S\. average/.test(nu.steps[5]),
+      nu)
+    await shot(page, 'site-scores-1440-non-us-site')
 
     // Phone width.
     await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
@@ -143,6 +185,26 @@ const texts = (page, sel) => page.$$eval(sel, (es) => es.map((e) => e.innerText.
         .map((e) => `${e.tagName}.${e.className}`),
     )
     check('390: nothing outside table scrollers overflows the viewport', wide.length === 0, wide)
+    const sitesTable = await page.$eval('.ss-list .table-scroll', (e) => ({ sw: e.scrollWidth, cw: e.clientWidth }))
+    check('390: site table fits (calibrated and percentile fold into the score cell)', sitesTable.sw <= sitesTable.cw + 1, sitesTable)
+    const stack = await texts(page, '.ss-sites tbody tr .ss-stack')
+    check('390: folded calibrated value and percentile are visible', stack.length > 0 && /^cal\. [\d.]+ (\d+(st|nd|rd|th) pctile|at cap)$/.test(stack[0]), stack.slice(0, 3))
+    // Open the histogram table so every scroller has a size; any scroller wider than its box must show the hint.
+    await page.$eval('.ss-hist details', (d) => {
+      d.open = true
+    })
+    await new Promise((r) => setTimeout(r, 300))
+    const scrollers = await page.$$eval('.ss-scrollx', (es) =>
+      es.map((e) => {
+        const t = e.querySelector('.table-scroll')
+        return { label: t.getAttribute('aria-label'), sw: t.scrollWidth, cw: t.clientWidth, hint: !!e.querySelector('.ss-scroll-hint'), fade: e.classList.contains('ss-more-r') }
+      }),
+    )
+    out.scrollers390 = scrollers
+    check('390: every table wider than its box shows a scroll hint and a right-edge fade', scrollers.every((x) => x.sw <= x.cw + 1 || (x.hint && x.fade)), scrollers)
+    await page.$eval('.ss-hist details', (d) => {
+      d.open = false
+    })
     await shot(page, 'site-scores-390')
     await shot(page, 'site-scores-390-full', true)
 

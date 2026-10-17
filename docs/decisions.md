@@ -71,12 +71,3 @@ Judgment calls made without being able to ask. Newest last. Each says what and w
     the 5-50 gene panel (81445: $597.91 vs $597.00). The Terms view's "includes placeholder lab prices"
     labels now appear only when a total still contains placeholder amounts. API restarted to reload the
     cached rate table.
-19. **Site scores tab (user request: a tab for site scoring with a breakdown).** Placed after Protocol to terms.
-    The score is the stored `site_model.lam_eff` (historical patients per month per trial); the backend
-    re-runs `recruitment.fit`'s loop to keep the final E-step allocations, and tests check the posterior arrays
-    equal `recruitment.fit` and every score equals `site_model.lam_eff` (largest difference 0 over 27,434
-    sites). Calibrated score = exp(m + b(log score - m)), m = mean log score over the 8,811 U.S. identifiable
-    sites with a fitted trial, b = the industry Phase II/III slope from `selection_validation.json` (0.334
-    [0.164, 0.504]); fixed before looking at results and omitted if the file is missing. Default order is
-    fitted trials, not score; sorting by score shows a note that raw differences are overstated about 3x.
-    The 10-90% posterior interval leaves out the uncertainty in splitting trials across sites, and says so.

@@ -32,9 +32,15 @@ export interface SiteRow {
   low_history: boolean
   /** The low-history cap lowered the score below the posterior mean. */
   capped: boolean
-  percentile: number
+  /** Percentile among U.S. fitted sites; null when the score is the tied cap value (see percentile_status). */
+  percentile: number | null
+  percentile_status: PercentileStatus
   calibrated: number | null
 }
+
+/** Why a site has or lacks a percentile: capped sites all tie at the cap; unfitted and non-U.S. sites are not
+ *  among the U.S. fitted sites. */
+export type PercentileStatus = 'ok' | 'tied_at_cap' | 'no_fitted_trials' | 'outside_us'
 
 export interface SiteList {
   total: number
@@ -115,7 +121,18 @@ export interface Summary {
     low_history_q: number
     min_window_months: number
   }
-  us: { sites: number; low_history: number; capped: number; median_score: number; m: number; geo_mean: number }
+  us: {
+    sites: number
+    low_history: number
+    capped: number
+    /** U.S. fitted sites whose score equals the cap (one tied value). */
+    at_cap: number
+    /** Mid-rank percentile the tied cap value would have: why capped sites get none. */
+    cap_percentile: number
+    median_score: number
+    m: number
+    geo_mean: number
+  }
   buckets: Bucket[]
   histogram: { bin_log10: number; bins: HistBin[] }
   validation: Validation | null
@@ -125,7 +142,8 @@ export interface Summary {
   /** States in each region (null = every state). */
   region_states: Record<string, string[] | null>
   states: { state: string; sites: number }[]
-  preset: { site_id: string; facility: string; n_fit: number } | null
+  /** The site opened when none is selected, and how it was chosen. */
+  preset: { site_id: string; facility: string; n_fit: number; basis: string } | null
 }
 
 export interface ContribTrial {
@@ -179,7 +197,11 @@ export interface SiteDetail {
   cap: { low_history: boolean; threshold: number; quantile: number; cap_value: number; applied: boolean; value: number }
   score: number
   percentile: number | null
-  calibrated: (Calibration & { value: number; range_over_b_ci: [number, number] }) | null
+  percentile_status: PercentileStatus
+  us_fitted_sites: number
+  us_at_cap: number
+  /** relative_to_us_mean: the site is outside the U.S., and m is the U.S. mean log score. */
+  calibrated: (Calibration & { value: number; range_over_b_ci: [number, number]; relative_to_us_mean: boolean }) | null
   trials: ContribTrial[]
   method: { iters: number; enroll_fraction: number }
 }

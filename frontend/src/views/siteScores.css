@@ -585,7 +585,73 @@
   margin-top: 0.75rem;
 }
 
+/* Horizontal table scrollers: a fade on the side where columns are hidden, and a hint above the table. */
+.ss-scrollx {
+  position: relative;
+}
+.ss-scrollx::before,
+.ss-scrollx::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 1;
+}
+.ss-scrollx::before {
+  left: 0;
+  background: linear-gradient(to right, var(--surface), transparent);
+}
+.ss-scrollx::after {
+  right: 0;
+  background: linear-gradient(to left, var(--surface), transparent);
+}
+.ss-scrollx.ss-more-l::before,
+.ss-scrollx.ss-more-r::after {
+  opacity: 1;
+}
+.ss-scroll-hint {
+  text-align: right;
+  margin: 0 0 0.2rem;
+}
+.ss-scrollx .table-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Capped sites: no percentile, they all tie at the cap. */
+.ss-atcap {
+  color: var(--warn-ink);
+  white-space: nowrap;
+  cursor: help;
+}
+/* Calibrated and percentile folded into the score cell on narrow screens (see the media query below). */
+.ss-stack {
+  display: none;
+  margin-top: 0.15rem;
+  color: var(--text-2);
+}
+
+.ss-h-short {
+  display: none;
+}
+
 @media (max-width: 560px) {
+  .ss-sites .ss-col-wide {
+    display: none;
+  }
+  .ss-h-long {
+    display: none;
+  }
+  .ss-h-short {
+    display: inline;
+  }
+  .ss-stack {
+    display: block;
+  }
   .ss-strip-row {
     grid-template-columns: 4.4rem minmax(0, 1fr) 4.6rem;
     gap: 0.35rem;
