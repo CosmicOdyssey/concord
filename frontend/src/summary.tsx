@@ -1,6 +1,10 @@
+// Result blocks shared by the Research tab's clearing views (Clear it, Portfolio clearing, Robustness). Used only by
+// those views.
+import type { ReactNode } from 'react'
 import type { Assumptions, BetaInfo, CalibrationCheck, ClearResult, Comparison, ComparisonKey } from './api'
-import { Badge, Caveat, Stat } from './components'
+import { Badge, Gloss, Qualifier, Section, Stat } from './components'
 import { int, isNum, num, pct, times } from './format'
+import { InSampleMark, RatioLanes } from './views/researchParts'
 
 /** Material threshold (months) for "faster/slower": the API reports it per comparison block (1.0). */
 const MATERIAL_MONTHS = 1
@@ -81,52 +85,130 @@ function worst(c: Comparison): string {
   return `${num(c.worst_slowdown_months)} mo`
 }
 
-export function HeadlineBlock({ r }: { r: ClearResult }) {
+/** Model median time for this instance's Phase III trials over the completed-trial median enrollment window (the
+ *  calibration check), or null when either is missing. */
+function calibrationRatio(c: CalibrationCheck): number | null {
+  return isNum(c.model_median_T_actual_phase3) && isNum(c.real_completed_phase3_median_enrollment_window)
+    ? c.model_median_T_actual_phase3 / c.real_completed_phase3_median_enrollment_window
+    : null
+}
+
+const NOT_LIKE_FOR_LIKE =
+  'Not like for like: a snapshot of recruiting trials over-represents slow ones (length-biased sampling) and their site lists are still growing.'
+
+/** The four headline numbers of the capped allocation (Detailed, or inside the Simple disclosure). */
+export function HeadlineStats({ r }: { r: ClearResult }) {
+  const h = r.summary.coord_vs_actual
+  return (
+    <div className="stats rs-stats">
+      <Stat label="Enrollment-time ratio (in-sample)" value={times(h.ratio)} sub={<>Total trial-months, registered ÷ coordinated</>} />
+      <Stat label="Median per-trial ratio (in-sample)" value={times(h.median_speedup)} sub="T registered ÷ T coordinated" />
+      <Stat
+        label={`Trials faster by ${atLeast(materialMonths(h), true)} (in-sample)`}
+        value={pct(h.share_faster_material)}
+        sub={
+          <>
+            {pct(h.share_faster)} any change · slower by {atLeast(materialMonths(h))}: {pct(h.share_slower_material)} (
+            {pct(h.share_slower)} any change; {worst(h)}) in-sample only, by construction
+          </>
+        }
+      />
+      <Stat
+        label="Trial-months (in-sample)"
+        value={
+          <>
+            {int(h.dividend_trial_months)} <span className="unit">trial-months</span>
+          </>
+        }
+        sub={
+          <>
+            median T {num(h.median_T_base)} → {num(h.median_T_new)} months
+          </>
+        }
+      />
+    </div>
+  )
+}
+
+/** The in-sample result of a clear (Clear it and Portfolio clearing), as a Calm section: the claim, one plain
+ *  sentence, the qualifiers that change what the numbers mean (always visible), and a compact chart of the three
+ *  comparisons that matter, drawn with equal weight: the capped allocation, site selection alone, and what
+ *  coordination adds on top of it. `qualifiers` adds lines (the portfolio's background trials); `details` is the
+ *  secondary content (inline in Detailed, a closed disclosure in Simple). */
+export function InSampleResult({ r, qualifiers, details }: { r: ClearResult; qualifiers?: ReactNode; details?: ReactNode }) {
   const s = r.summary
   const h = s.coord_vs_actual
+  const sel = s.indep_vs_actual
+  const pure = s.coordination_no_loser_vs_indep
+  const calib = calibrationRatio(s.calibration_check)
+  const fromSelection = isNum(pure?.ratio) && pure.ratio < 1.05
   return (
-    <div className="headline card">
-      <div className="headline-title">
-        <h2>In-sample model result (not a claim)</h2>
-        <span className="muted small">
-          {int(h.trials)} trials compared · {int(s.background_trials)} held fixed as background (not in these numbers)
-        </span>
-      </div>
-      <Caveat>
-        <strong>Does not hold out of sample.</strong> These numbers are in-sample: the allocation is chosen and scored with the same site rates. They do not hold out of sample; the held-out test (choosing with older trials, scoring with newer ones) is reported on <a href="#findings/allocation">Findings</a>. They are shown for transparency, not as a claim.
-      </Caveat>
-      <div className="stats">
-        <Stat
-          label="Enrollment-time ratio (in-sample)"
-          value={times(h.ratio)}
-          sub={<>Total trial-months, registered ÷ coordinated</>}
-        />
-        <Stat label="Median per-trial speedup" value={times(h.median_speedup)} sub="T registered ÷ T coordinated" />
-        <Stat
-          label={`Trials faster by ${atLeast(materialMonths(h), true)}`}
-          value={pct(h.share_faster_material)}
-          sub={
+    <Section
+      id="rs-result"
+      title="In-sample model result (not a claim)"
+      lede={
+        <>
+          {r.params.sponsor
+            ? `Reassigning ${r.params.sponsor}’s trials jointly among its own registered sites, capped so no trial is slower than registered,`
+            : 'Choosing every trial’s sites jointly, capped so no trial is slower than registered,'}{' '}
+          gives an in-sample ratio of{' '}
+          <span className="num rs-fig">{times(h.ratio)}</span> against the registered sites.
+          {pure && (
             <>
-              {pct(h.share_faster)} any change · slower by {atLeast(materialMonths(h))}: {pct(h.share_slower_material)} (
-              {pct(h.share_slower)} any change; {worst(h)}) in-sample only, by construction
+              {' '}
+              On top of each trial’s own best response, coordination adds <span className="num rs-fig">{times(pure.ratio)}</span>
+              {fromSelection
+                ? ': the in-sample gain comes from choosing faster sites, which a single sponsor could do alone, not from coordinating trials.'
+                : '.'}
             </>
-          }
+          )}
+        </>
+      }
+      qualifiers={
+        <>
+          <p className="rs-qual-line">
+            <InSampleMark /> · <Gloss term="scored-by-model">scored by our enrollment model</Gloss>.{' '}
+            <strong>Does not hold out of sample:</strong> see the held-out test on <a href="#findings/allocation">Findings</a>.
+          </p>
+          <p className="rs-qual-line rs-qual-muted">
+            {int(h.trials)} trials compared · {int(s.background_trials)} held fixed as background (not in these numbers)
+          </p>
+          {calib !== null && calib > 1.25 && (
+            <p className="rs-qual-line">
+              <Qualifier info={NOT_LIKE_FOR_LIKE}>Calibration check:</Qualifier> model times for this instance’s Phase III trials are{' '}
+              <span className="num">{num(calib, 1)}×</span> the median enrollment window of completed trials.
+            </p>
+          )}
+          {qualifiers}
+        </>
+      }
+      info={
+        <>
+          <span className="hc-title">Does not hold out of sample</span>
+          These numbers are in-sample: the allocation is chosen and scored with the same site rates. They do not hold out of
+          sample; the held-out test (choosing with older trials, scoring with newer ones) is reported on Findings. They are
+          shown for transparency, not as a claim.
+        </>
+      }
+      figure={
+        <RatioLanes
+          label="In-sample ratios of total trial-months, three comparisons"
+          lanes={[
+            { label: 'Capped at registered times', sub: 'vs registered sites', value: h.ratio, note: 'in-sample' },
+            { label: 'Site selection alone', sub: 'best response vs registered', value: sel?.ratio ?? null, note: 'in-sample' },
+            { label: 'Pure coordination, no losers', sub: 'vs each trial’s best response', value: pure?.ratio ?? null, note: 'in-sample' },
+          ]}
         />
-        <Stat
-          label="Trial-months (in-sample)"
-          value={
-            <>
-              {int(h.dividend_trial_months)} <span className="unit">trial-months</span>
-            </>
-          }
-          sub={
-            <>
-              median T {num(h.median_T_base)} → {num(h.median_T_new)} months
-            </>
-          }
-        />
-      </div>
-    </div>
+      }
+      caption={
+        <>
+          Ratio = total trial-months, baseline ÷ alternative, scored by our enrollment model with the same site rates used to
+          choose the sites (in-sample). 1.00× = no gain.
+        </>
+      }
+      details={details}
+      detailsLabel="Details: headline numbers and comparisons"
+    />
   )
 }
 
@@ -140,7 +222,9 @@ export function DecompositionTable({ r, compact }: { r: ClearResult; compact?: b
           <tr>
             <th>Comparison</th>
             <th className="num">Ratio</th>
-            <th className="num">Median speedup</th>
+            <th className="num" title="Median over trials of T baseline ÷ T alternative">
+              Median per-trial ratio
+            </th>
             <th className="num" title={`Share of trials faster by ${thr}; below it, the share faster by any amount (near-ties included)`}>
               Faster {thr}
             </th>
@@ -237,10 +321,7 @@ export function AssumptionsUsed({ a }: { a: Assumptions }) {
 
 export function CalibrationLine({ c }: { c: CalibrationCheck }) {
   const same = c.same_trials_model_vs_realized
-  const ratio =
-    isNum(c.model_median_T_actual_phase3) && isNum(c.real_completed_phase3_median_enrollment_window)
-      ? c.model_median_T_actual_phase3 / c.real_completed_phase3_median_enrollment_window
-      : null
+  const ratio = calibrationRatio(c)
   return (
     <div className="small">
       <div>
@@ -257,10 +338,7 @@ export function CalibrationLine({ c }: { c: CalibrationCheck }) {
           </>
         )}
       </div>
-      <div className="muted">
-        Not like for like: a snapshot of recruiting trials over-represents slow ones (length-biased sampling)
-        and their site lists are still growing. The same-trial check below is the calibration test.
-      </div>
+      <div className="muted">{NOT_LIKE_FOR_LIKE} The same-trial check below is the calibration test.</div>
       <div className="muted">
         Same trials, model vs realized:{' '}
         {same.n >= 5 && isNum(same.median_model) ? (

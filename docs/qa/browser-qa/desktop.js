@@ -14,6 +14,14 @@ fs.mkdirSync(DIR, { recursive: true })
   const browser = await L.launch()
   const page = await browser.newPage()
   await page.setViewport({ width: 1400, height: 900 })
+  // The Calm redesign starts a new visitor in Simple; these grabs (and compare.js) read the full Detailed content.
+  await page.evaluateOnNewDocument(() => {
+    try {
+      localStorage.setItem('concord.density', 'detailed')
+    } catch {
+      /* storage off */
+    }
+  })
   L.instrument(page, log)
   const step = (s) => {
     log.steps.push({ t: new Date().toISOString(), s })
