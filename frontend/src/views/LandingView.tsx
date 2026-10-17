@@ -22,8 +22,8 @@ import {
   TRIAL_GLOSS,
   type Crop,
   type CropPair,
+  type SponsorSplit,
   type TermsFragment,
-  type TermsSide,
 } from '../landingData'
 import { overlapApi } from '../overlapApi'
 import { skipTo } from '../skip'
@@ -161,51 +161,87 @@ const insuranceCard =
   'Medicare rates for the routine-care lines, a public benchmark for fair-value reasoning in sponsor-site negotiation. Billed to the participant’s insurer, not part of the sponsor’s total and never subtracted from it.'
 
 const pct0 = (part: number, whole: number) => Math.round((part / whole) * 100)
-const rest = (s: TermsSide) => (s.split ? s.sponsor - s.split.cms : 0)
 
-/** How much of the sponsor total is priced from public CMS fee schedules before anyone negotiates, and how much comes
- *  from the proposed standard schedule (an assumption). Computed from the comparison's own lines and totals. */
+/** The three anchors of the sponsor total, in the Terms tab's own words (its anchoring panel, concord.anchoring). */
+function anchors(s: SponsorSplit) {
+  return [
+    { id: 'public', label: 'Anchored to public rates', amount: s.cms },
+    { id: 'standard', label: 'Anchored to a proposed standard', amount: s.fees + s.coordinator },
+    { id: 'open', label: 'Open to negotiation', amount: s.overhead },
+  ] as const
+}
+
+/** How much of the sponsor total is anchored before anyone negotiates: to public CMS rates, to Concord's proposed
+ *  standard (an assumption), or left open (the overhead %). Computed from the comparison's own lines and totals; the
+ *  same split as the Terms tab's anchoring panel. */
 function PublicShare({ f, detailed }: { f: TermsFragment; detailed: boolean }) {
   const a = f.a.split!
   const b = f.b.split
-  const breakdown = (s: TermsSide) =>
-    s.split
-      ? `per-visit research fees ${usd(s.split.fees)}, coordinator time ${usd(s.split.coordinator)} and ${Math.round(f.overheadRate * 100)}% overhead ${usd(s.split.overhead)}`
-      : ''
+  const oh = Math.round(f.overheadRate * 100)
   const card = (
     <span className="lp-src">
-      <span className="hc-title">Priced from public sources, and the rest</span>
+      <span className="hc-title">What each sponsor dollar is anchored to</span>
       <span>
-        {usd(a.cms)} at Site A: the research-only procedures with a CPT or lab code, over the fixed schedule ({f.scope.replace(/\.$/, '').toLowerCase()}),
+        Anchored to public rates: the research-only procedures with a CPT or lab code over the fixed schedule ({f.scope.replace(/\.$/, '').toLowerCase()}),
         priced from the {SRC_PFS}, and the {SRC_CLFS}, at 100% of Medicare.
       </span>
       <span>
-        {usd(rest(f.a))}: {breakdown(f.a)}. {SRC_STANDARD}
+        Anchored to a proposed standard: per-visit research fees ({usd(a.fees)} at Site A) and coordinator time ({usd(a.coordinator)}). {SRC_STANDARD}
       </span>
+      <span>Open to negotiation: the {oh}% overhead ({usd(a.overhead)} at Site A), a proposed default, not a public rate.</span>
     </span>
   )
-  if (!detailed)
+  if (!detailed) {
+    const [pub, std, open] = anchors(a)
     return (
       <p className="lp-terms-note lp-public">
-        <span className="num strong lp-ink">{usd(a.cms)}</span> ({pct0(a.cms, f.a.sponsor)}%) of Site A's {usd(f.a.sponsor)} is priced from public CMS 2026 fee
-        schedules, so both sides can check it; the other <span className="num strong lp-ink">{usd(rest(f.a))}</span> comes from Concord's proposed standard
-        schedule, an assumption left to negotiate. <InfoTip label="What is priced from public sources" content={card} />
+        Before anyone negotiates: <span className="num strong lp-ink">{usd(pub.amount)}</span> ({pct0(pub.amount, f.a.sponsor)}%) of Site A's{' '}
+        {usd(f.a.sponsor)} is anchored to public CMS 2026 rates, so both sides can check it; {usd(std.amount)} ({pct0(std.amount, f.a.sponsor)}%) is
+        anchored to Concord's proposed standard (an assumption) and {usd(open.amount)} ({pct0(open.amount, f.a.sponsor)}%), the overhead, is open to
+        negotiation. <InfoTip label="What each sponsor dollar is anchored to" content={card} />
       </p>
     )
+  }
+  const sides = [
+    { name: 'Site A', total: f.a.sponsor, rows: anchors(a) },
+    ...(b ? [{ name: 'Site B', total: f.b.sponsor, rows: anchors(b) }] : []),
+  ]
   return (
-    <p className="lp-terms-note lp-public">
-      Priced from public sources before anyone negotiates: <span className="num strong lp-ink">{usd(a.cms)}</span> of Site A's {usd(f.a.sponsor)} (
-      {pct0(a.cms, f.a.sponsor)}%)
-      {b && (
-        <>
-          {' '}
-          and <span className="num strong lp-ink">{usd(b.cms)}</span> of Site B's {usd(f.b.sponsor)} ({pct0(b.cms, f.b.sponsor)}%)
-        </>
-      )}
-      : the research procedures, at CMS 2026 fee-schedule rates (100% of Medicare; the multiplier is itself a term in Protocol to terms). Left to negotiate:{' '}
-      <span className="num strong lp-ink">{usd(rest(f.a))}</span> at Site A from Concord's proposed standard schedule (assumption): {breakdown(f.a)}
-      {b && <>; at Site B, {breakdown(f.b)}</>}. <InfoTip label="What is priced from public sources" content={card} />
-    </p>
+    <div className="lp-public">
+      <p className="lp-terms-note">
+        Before anyone negotiates, each sponsor dollar per participant is anchored to public CMS 2026 rates (at 100% of Medicare; the multiplier is itself a
+        term), to Concord's proposed standard schedule (an assumption: per-visit fees and coordinator time), or left open (the {oh}% overhead).{' '}
+        <InfoTip label="What each sponsor dollar is anchored to" content={card} />
+      </p>
+      <div className="table-scroll">
+        <table className="lp-tbl lp-anchor-tbl">
+          <thead>
+            <tr>
+              <th scope="col">
+                <span className="sr-only">Anchor</span>
+              </th>
+              {sides.map((x) => (
+                <th scope="col" key={x.name}>
+                  {x.name}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {[0, 1, 2].map((i) => (
+              <tr key={i}>
+                <th scope="row">{sides[0].rows[i].label}</th>
+                {sides.map((x) => (
+                  <td key={x.name}>
+                    <span className="num strong lp-ink">{usd(x.rows[i].amount)}</span> <span className="num">({pct0(x.rows[i].amount, x.total)}%)</span>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   )
 }
 

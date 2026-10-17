@@ -610,9 +610,16 @@ a.lp-open:hover {
   line-height: 1.6;
   color: var(--ink-2);
 }
-/* The share of the sponsor total priced from public CMS fee schedules (the subhead's "settled before anyone negotiates"). */
-.lp-public {
+/* What each sponsor dollar is anchored to before anyone negotiates (the subhead's "settled before anyone negotiates"). */
+p.lp-public,
+.lp-public > .lp-terms-note {
   color: var(--ink);
+}
+.lp-anchor-tbl {
+  margin-top: 0.5rem;
+}
+.lp-anchor-tbl td .num {
+  white-space: nowrap;
 }
 .lp-terms-scope {
   margin: 0.75rem 0 0;

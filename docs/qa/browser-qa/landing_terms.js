@@ -119,22 +119,23 @@ async function settle(page) {
           check(`${tag}: hero primary goes to #terms-flow, one quiet secondary`, r.heroCta.length === 2 && r.heroCta[0].endsWith('|#terms-flow') && /Protocol to terms/.test(r.heroCta[0]), r.heroCta)
           check(`${tag}: terms fragment (live) and its marks`, r.money.length === 4 && r.illustrative === 'Illustrative, authored from public trial information' && r.fmv, { money: r.money, ill: r.illustrative })
           check(`${tag}: term-sheet line only in Detailed`, r.sheet === (density === 'detailed'))
-          // How much of the sponsor total is priced from public CMS fee schedules: recomputed here from the comparison API.
+          // What each sponsor dollar is anchored to: the landing's three amounts must equal the Terms tab's anchoring
+          // panel (GET /budget ... anchoring.shares, concord.anchoring) for each site.
           {
             const want = await page.evaluate(async () => {
-              const c = await (await fetch('/api/terms-flow/NCT05800015/compare?site_a=334d690736c4&site_b=0bf11037dddd&multiplier=1')).json()
               const usd = (x) => x.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
-              const side = (k) => {
-                const t = c[k].totals
-                const cms = Math.round(c.rows.filter((x) => x.schedule === 'PFS' || x.schedule === 'CLFS').reduce((s, x) => s + x[k === 'a' ? 'unit_a' : 'unit_b'] * x.n_fixed, 0) * 100) / 100
-                return { cms: usd(cms), rest: usd(t.per_participant - cms), total: usd(t.per_participant), pct: `${Math.round((cms / t.per_participant) * 100)}%` }
+              const side = async (site) => {
+                const b = await (await fetch(`/api/terms-flow/NCT05800015/budget?site_id=${site}&multiplier=1`)).json()
+                const t = b.anchoring.total
+                return b.anchoring.shares.map((x) => ({ id: x.id, label: x.label, amount: usd(x.amount), pct: `(${Math.round((x.amount / t) * 100)}%)` }))
               }
-              return { a: side('a'), b: side('b') }
+              return { a: await side('334d690736c4'), b: await side('0bf11037dddd') }
             })
             const L = r.publicLine
-            const okA = L.includes(want.a.cms) && L.includes(want.a.total) && L.includes(want.a.pct) && L.includes(want.a.rest)
-            const okB = density === 'simple' || (L.includes(want.b.cms) && L.includes(want.b.total) && L.includes(want.b.pct))
-            check(`${tag}: public-source share of the sponsor total (from the API) with the assumption label`, okA && okB && /CMS 2026 fee/.test(L) && /assumption/.test(L), { line: L, want })
+            const has = (x) => L.includes(x.amount) && L.includes(x.pct)
+            const okA = want.a.every(has)
+            const okB = density === 'simple' || (want.b.every(has) && want.a.every((x) => L.includes(x.label)))
+            check(`${tag}: anchored shares equal the Terms tab's anchoring (API), with the assumption label`, okA && okB && /CMS 2026/.test(L) && /assumption/.test(L), { line: L, want })
           }
           check(`${tag}: Terms window names the protocol by its official-title paraphrase`, /vs cemiplimab \+ chemotherapy/.test(r.proto) && !/placebo/.test(r.proto), r.proto)
           check(`${tag}: overlap preview is the Regeneron preset with the fianlimab pair`, r.cardTitle === 'NCT05785767 × NCT05800015' && r.cells === 10 && /Regeneron Pharmaceuticals · Sep 1, 2024/.test(r.strip), {
