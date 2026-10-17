@@ -132,3 +132,46 @@ Judgment calls made without being able to ask. Newest last. Each says what and w
       model it errs toward narrower ranges; the cross-check above points the other way for most deep sites.
     The API keeps the old range as interval_poisson, and the view shows it in small text in Step 3. If 1/k
     cannot be estimated, the ranges fall back to it, flagged, and every text that describes them says so.
+24. **Financial tab: the time model is removed, and insurer payment amounts do not move the sponsor commitment
+    (only coverage status does)** (user: "I
+    would also definitely revise/override any projections they had of insurance payouts speeding up trials
+    because that is conflating many different relationships. Insurance payouts and medicare estimates can impact
+    fair value estimates and are relevant in sponsor negotiations with sites / hospitals but it doesn't mean that
+    if the insurance pays more the sponsor necessarily pays less or that the negotiation / rest of the trial
+    speeds up.", 17 Oct; spelling corrected). The teammate's version ranked scenarios by modeled months from
+    synthetic recruitment rates and activation lags (recommended = fastest), bounded C/E by a "no loser"
+    duration, varied recruitment rates in its sensitivity, and its Reinvestment Lab chained lower costs to added
+    sites to shorter modeled time. All removed: modeled_months, core_modeled_months, site_completion_months,
+    modeled_time_change, modeled_months_quantiles, probability_horizon_exceeded, nominal_max_months, max_months,
+    no_loser, site rate and activation_lag_months, recommended_scenario_id. Now a sponsor-budget comparison at a
+    fixed target over a budgeted contract period (horizon_months renamed budget_period_months, an input that
+    prices monthly site costs): A existing network; B lower administration (an assumption); C the existing
+    network, extended at the lowest commitment only if its stated capacity is short; D more participant support;
+    E = B + C + D. Participants split by stated capacity; listed, not ranked. Sensitivity varies site costs
+    (rate_spread renamed cost_spread). Two payer changes follow the ruling: (1) a commercial plan without the
+    commercial-rate assumption used to move every routine line into sponsor contingency; its insurer amounts are
+    now UNKNOWN and stay off the sponsor. (2) rate_multiplier used to scale insurer payments too; it is now
+    sponsor_rate_multiplier, the negotiated multiple of the benchmark for research items and contingency only,
+    so the benchmark feeds the sponsor's numbers only through that explicit FMV step. Tests hold the sponsor side
+    identical across 24 payer_kind x payer_fraction x commercial-rate combinations and scan the JSON keys, JSON
+    text and HTML report for any time, speed or recommendation output. In the default fixture C equals A (120
+    stated places for 60 participants). Backend only: the Financial view still reads the old fields until the
+    restyle pass moves it to docs/financial/CONTRACT.md.
+    Review fixes the same day: (1) participant access support (travel and lodging) was netted against routine
+    cost sharing, so D showed participant exposure falling by the support increase; cost sharing and support
+    are now separate fields (net_cash_exposure and delta.patient_exposure removed; delta.patient_cost_sharing
+    and delta.access_support added), with a limitation that support does not pay insurer cost sharing and that
+    covering a beneficiary's cost sharing is a separate compliance question. (2) The investigational-supply
+    reserve was counted as a hospital resource cost; the sponsor supplies the product, so it is now
+    sponsor.supply_resource_proxy (default hospital contribution 50,489.40 -> 200,489.40). (3) The billing
+    sentence said billing follows coverage rules "not negotiation"; a site contract can have the sponsor pay a
+    routine item (the tool already accepts that override), so the text now says insurer payment amounts are not
+    a lever over who is billed. (4) The independence sentence is scoped to this worksheet, as the ruling's
+    "not necessarily" asks, and names what does move the sponsor: a line's coverage status. (5) The
+    coordination-pilot wording behind scenario B is gone; B's cut is an input with no modeled source. (6) When
+    C/E extend a short network, existing sites are filled to stated capacity before added sites (20/20/20
+    instead of 12/12/36 in the 20 + 20 variant), and budget_reallocation.added_sites_cost states what the
+    added sites cost even when A is uncosted. (7) Medicaid shows no enrollee cost sharing (42 CFR
+    447.50-447.57) instead of applying payer_fraction. (8) The report's "no double billing" claim is replaced
+    by a statement that the worksheet is not a billing-compliance review, and site per_participant_cost is
+    defined as excluding every itemized worksheet procedure.
