@@ -1,0 +1,133 @@
+/* Any trial in Protocol to terms (TermsAddTrial.tsx): add by NCT ID, schedule source panel. Calm tokens only, so
+   both themes follow index.css. Prefix ta-. */
+
+.ta-add {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+  max-width: 36rem;
+  min-width: 0;
+}
+.ta-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+}
+.ta-add-row input {
+  flex: 1 1 12rem;
+  min-width: 0;
+  font-family: var(--mono);
+}
+.ta-hint {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.ta-error {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--error-ink);
+}
+.ta-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: var(--sp-5);
+  padding: var(--sp-4);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  min-width: 0;
+}
+.ta-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.ta-title {
+  margin: 0;
+  font-size: var(--fs-md);
+}
+.ta-kfs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3) var(--sp-7);
+}
+.ta-lede {
+  margin: 0;
+  font-size: var(--fs-ui);
+}
+.ta-csv {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.ta-csv-text {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  resize: vertical;
+}
+.ta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.ta-actions a.btn {
+  text-decoration: none;
+}
+.ta-warn {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--caution-ink);
+}
+.ta-tables h4 {
+  margin: var(--sp-3) 0 var(--sp-1);
+  font-size: var(--fs-ui);
+}
+.ta-tw {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.ta-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+.ta-table th,
+.ta-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+.ta-table th {
+  color: var(--muted);
+  font-weight: 600;
+}
+.ta-table td:first-child {
+  min-width: 9rem;
+}
+.ta-src {
+  color: var(--muted);
+  min-width: 14rem;
+  overflow-wrap: anywhere;
+}
+.ta-unmapped {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+.ta-field {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.ta-nowrap {
+  white-space: nowrap;
+}

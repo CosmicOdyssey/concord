@@ -44,6 +44,7 @@ import {
 import { CoverageList, CoverageSplit, NodeDetail, RuleChip, RuleList, ScheduleGrid, VisitTimeline } from './ProtocolTermsSchedule'
 import { AnchorChip, BandInputs, BandOutsideNote, BudgetTransparency, CompareWhy, GpciLabel, LineRange, OverheadInput } from './TermsAnchoring'
 import { GPCI_PLAIN } from './termsAnchoringText'
+import { AddedTrialSchedule, AddTrialForm } from './TermsAddTrial'
 import TermsProposalCheck from './TermsProposalCheck'
 import './protocolTerms.css'
 import TermsSpread from './TermsSpread'
@@ -326,6 +327,16 @@ export default function ProtocolTermsView() {
     el.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true })
   }
 
+  // A trial added by NCT ID can get a new schedule (CSV upload): refetch everything that depends on it.
+  const [rev, setRev] = useState(0)
+  const onScheduleChanged = () => {
+    setRev((r) => r + 1)
+    retryTrials()
+    retryProtocol()
+    retryBudget()
+    retryCmp()
+  }
+
   const selNode = proto && selected ? (proto.nodes.find((n) => n.id === selected) ?? null) : null
   const trialList = trials.status === 'ok' ? trials.data : null
   const picked = trialList?.find((t) => t.nct_id === nct) ?? null
@@ -410,9 +421,19 @@ export default function ProtocolTermsView() {
             ))}
           </div>
         )}
+        {trialList && (
+          <AddTrialForm
+            known={trialList.map((t) => t.nct_id)}
+            onAdded={(id) => {
+              retryTrials()
+              selectTrial(id)
+            }}
+          />
+        )}
         {protocol.status === 'error' && <ErrorBox error={protocol.error} onRetry={retryProtocol} />}
         {!proto && protocol.status !== 'error' && <Loading label="Loading the schedule of assessments…" />}
         {proto && <VisitTimeline protocol={proto} />}
+        {proto?.import && <AddedTrialSchedule key={`${nct}:${rev}`} proto={proto} onChanged={onScheduleChanged} />}
       </Step>
 
       {proto && (
@@ -656,7 +677,7 @@ export default function ProtocolTermsView() {
             details={cmpData && <CompareDetails c={cmpData} />}
             detailsLabel="Locality factors and every sponsor-paid item, site by site"
           >
-            {siteOk && <TermsSpread nct={nct} siteA={siteA} siteB={cmpOk ? siteB : null} overrides={dparams.overrides} standard={dparams.standard} />}
+            {siteOk && <TermsSpread key={`${nct}:${rev}`} nct={nct} siteA={siteA} siteB={cmpOk ? siteB : null} overrides={dparams.overrides} standard={dparams.standard} />}
           </Step>
 
           {/* 5. Site proposal (TermsProposalCheck.tsx) */}
@@ -673,7 +694,7 @@ export default function ProtocolTermsView() {
             }
             lede="Paste or upload a site’s price list. Each line is matched to this protocol at the site picked in step 3 and checked against the published fee schedules, or flagged for itemized justification."
           >
-            {siteOk ? <TermsProposalCheck key={nct} nct={nct} siteId={siteA} params={params} /> : <Loading label="Loading sites…" />}
+            {siteOk ? <TermsProposalCheck key={`${nct}:${rev}`} nct={nct} siteId={siteA} params={params} /> : <Loading label="Loading sites…" />}
           </Step>
 
           {/* 6. Term sheet */}
@@ -789,7 +810,9 @@ function Step({
 // ====================================================================== 1. protocol
 
 /** "two first-line NSCLC chemo-immunotherapy trials …, and one outside lung cancer, for geographic atrophy (eye)". */
-function trialPickerText(list: TrialCard[]): string {
+function trialPickerText(all: TrialCard[]): string {
+  const list = all.filter((t) => !t.import)
+  const added = all.length - list.length
   const lung = list.filter((t) => !t.area)
   const other = list.filter((t) => !!t.area)
   const parts: string[] = []
@@ -798,6 +821,7 @@ function trialPickerText(list: TrialCard[]): string {
     const conds = other.map((t) => (t.condition ?? '').toLowerCase()).filter(Boolean)
     parts.push(`${countWord(other.length)} outside lung cancer${conds.length ? `, for ${conds.join(', ')}` : ''}`)
   }
+  if (added) parts.push(`${countWord(added)} added by NCT ID`)
   return parts.join(', and ')
 }
 
