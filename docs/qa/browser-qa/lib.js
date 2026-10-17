@@ -44,14 +44,43 @@ function instrument(page, log) {
   })
 }
 
+// Pre-pivot tab labels that now name a Research sub-tab.
+const TAB_ALIASES = { 'Pre-cleared terms': 'Term sheet', Portfolio: 'Portfolio clearing' }
+const RESEARCH_SUBTABS = ['Clear it', 'Robustness', 'Map', 'Portfolio clearing', 'Price tags', 'Term sheet', 'Model & data']
+
+/** Click a top-level tab (Findings, Portfolio overlap, Protocol to terms, Research) or a Research sub-tab by
+ *  its label; a sub-tab opens Research first. Old labels from the 7-tab app map through TAB_ALIASES. */
 async function clickTab(page, label) {
-  await page.evaluate((label) => {
-    const b = [...document.querySelectorAll('nav.tabs button')].find((x) => x.innerText.includes(label))
-    if (!b) throw new Error('tab not found ' + label)
+  const want = TAB_ALIASES[label] ?? label
+  const top = await page.evaluate((want) => {
+    const name = (b) => [...b.childNodes].filter((n) => !(n.classList && n.classList.contains('tab-num'))).map((n) => n.textContent).join('').trim()
+    const b = [...document.querySelectorAll('nav.tabs button')].find((x) => name(x) === want)
+    if (!b) return false
     b.click()
-  }, label)
+    return true
+  }, want)
+  if (!top && RESEARCH_SUBTABS.includes(want)) {
+    if (!(await page.$('.rs-tabs'))) {
+      await clickTab(page, 'Research')
+      await page.waitForSelector('.rs-tabs', { timeout: 60000 })
+    }
+    await page.evaluate((want) => {
+      const b = [...document.querySelectorAll('.rs-tabs button')].find((x) => x.innerText.trim() === want)
+      if (!b) throw new Error('research sub-tab not found ' + want)
+      b.click()
+    }, want)
+  } else if (!top) {
+    await page.evaluate((label) => {
+      const b = [...document.querySelectorAll('nav.tabs button')].find((x) => x.innerText.includes(label))
+      if (!b) throw new Error('tab not found ' + label)
+      b.click()
+    }, label)
+  }
   await sleep(500)
 }
+
+/** The research views' starting point (the old app opened on the map and cleared on load). */
+const RESEARCH_START = '/#research/map'
 
 async function clickButton(page, text, scope = 'main') {
   await page.evaluate(
@@ -202,4 +231,4 @@ function save(file, obj) {
   fs.writeFileSync(file, JSON.stringify(obj, null, 1))
 }
 
-module.exports = { launch, instrument, clickTab, clickButton, waitCleared, waitNoLoading, settle, sleep, shot, grab, layoutCheck, save, WORK, LONG }
+module.exports = { launch, instrument, clickTab, RESEARCH_START, clickButton, waitCleared, waitNoLoading, settle, sleep, shot, grab, layoutCheck, save, WORK, LONG }

@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from concord import service
+from concord.api import findings as findings_api
 from concord.analysis.robustness import path_for
 from concord.compiler.eligibility import eligible_fraction, extract_criteria
 from concord.compiler.protocol import demo_protocol
@@ -75,6 +76,9 @@ def _meta() -> dict:
         return {}
     finally:
         con.close()
+
+
+app.include_router(findings_api.router)  # findings landing page (W3)
 
 
 @app.get("/api/health")
