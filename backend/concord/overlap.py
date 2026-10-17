@@ -97,11 +97,12 @@ def _sq(values: tuple[str, ...]) -> str:
     return ",".join(f"'{v}'" for v in values)
 
 
-def recruiting_clause(as_of: str, a: str = "t", open_ended: bool = False) -> tuple[str, list]:
+def recruiting_clause(as_of: str, a: str = "t", open_ended: bool = False, snap: str | None = None) -> tuple[str, list]:
     """(SQL, args) for "recruiting on as_of" (as_of <= snapshot): the estimated window bounded by the CT.gov
     status at the snapshot (module docstring). open_ended=True also admits closed-status trials that register no
-    completion date (used only to list them as excluded)."""
-    snap = snapshot_date()
+    completion date (used only to list them as excluded). `snap` overrides the lung DB's snapshot (another
+    indication's DB, concord.indications.sites)."""
+    snap = snap or snapshot_date()
     pc = f"COALESCE({a}.primary_completion_date, {a}.completion_date)"
     est = (f"julianday({a}.start_date) + {ENROLL_FRACTION} * (julianday(COALESCE({pc}, '{OPEN_END}')) - "
            f"julianday({a}.start_date))")
