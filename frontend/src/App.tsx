@@ -6,8 +6,11 @@ import { useActiveTabScroll } from './useActiveTabScroll'
 import FindingsView from './views/FindingsView'
 import './app.css'
 
-// The research views (Leaflet map, clearing, price tags, ...) load on first use of the Research tab.
+// The research views (Leaflet map, clearing, price tags, ...) load on first use of the Research tab; the overlap
+// audit and the protocol-to-terms flow load on first use too, so the Findings landing page stays light.
 const ResearchView = lazy(() => import('./views/ResearchView'))
+const OverlapView = lazy(() => import('./views/OverlapView'))
+const ProtocolTermsView = lazy(() => import('./views/ProtocolTermsView'))
 
 const TABS = [
   { id: 'findings', label: 'Findings' },
@@ -64,19 +67,6 @@ export interface ClearState {
   error: string | null
   elapsed: number
   run: (p: Scenario) => void
-}
-
-function Integrating({ title }: { title: string }) {
-  return (
-    <section className="view">
-      <div className="view-head">
-        <h1>{title}</h1>
-      </div>
-      <div className="empty">
-        <p>This view is being integrated.</p>
-      </div>
-    </section>
-  )
 }
 
 export default function App() {
@@ -241,8 +231,16 @@ export default function App() {
       </nav>
       <main className="main">
         {tab === 'findings' && <FindingsView focus={findingFocus} />}
-        {tab === 'overlap' && <Integrating title="Portfolio overlap" />}
-        {tab === 'terms-flow' && <Integrating title="Protocol to terms" />}
+        {tab === 'overlap' && (
+          <Suspense fallback={<Loading label="Loading portfolio overlap…" />}>
+            <OverlapView regions={regions} />
+          </Suspense>
+        )}
+        {tab === 'terms-flow' && (
+          <Suspense fallback={<Loading label="Loading protocol to terms…" />}>
+            <ProtocolTermsView />
+          </Suspense>
+        )}
         {tab === 'research' && (
           <Suspense fallback={<Loading label="Loading research views…" />}>
             <ResearchView

@@ -123,7 +123,8 @@ def congestion(con) -> dict:
         "title": "Competing trials barely slow each other within a site",
         "status": "final" if ps else "provisional",
         "headline": (f"Within the same site, the congestion elasticity is about {beta:.2f} (95% CI {lo:.2f} to "
-                     f"{hi:.2f}), against the 1.0 our original model assumed."),
+                     f"{hi:.2f}), against the 1.0 our original model assumed. The interval's lower end is floored at 0: "
+                     f"the coefficient's own interval ({w['ci95'][0]:+.3f} to {w['ci95'][1]:+.3f}) crosses zero."),
         "chart": {"type": "ci", "reference": {"label": "assumed in original model", "value": 1.0},
                   "items": [{"label": "within-site beta (default)", "estimate": beta, "lo": lo, "hi": hi}]},
         "tables": tables,

@@ -1,12 +1,12 @@
 {
- "generated_at": "2026-10-17T07:55:49+00:00",
+ "generated_at": "2026-10-17T08:27:17+00:00",
  "rule": "No view shows a predicted speedup, time-to-fill or ratio as a product claim. Numbers on this page are research findings, labelled with how they were measured.",
  "findings": [
   {
    "id": "congestion",
    "title": "Competing trials barely slow each other within a site",
    "status": "final",
-   "headline": "Within the same site, the congestion elasticity is about 0.09 (95% CI 0.00 to 0.30), against the 1.0 our original model assumed.",
+   "headline": "Within the same site, the congestion elasticity is about 0.09 (95% CI 0.00 to 0.30), against the 1.0 our original model assumed. The interval's lower end is floored at 0: the coefficient's own interval (-0.297 to +0.111) crosses zero.",
    "chart": {
     "type": "ci",
     "reference": {
