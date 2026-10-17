@@ -64,6 +64,13 @@ async function main() {
               pairPanel: root.querySelector('.ovs-pair')?.innerText?.slice(0, 400),
               stats: [...root.querySelectorAll('.stat')].map((s) => s.innerText.replace(/\s+/g, ' ')),
               head: document.querySelector('.page-head')?.innerText,
+              // Simple: the months' basis is a hover card in the pair panel; Detailed: the "Both recruiting" row.
+              monthsTip: !!root.querySelector('.ovs-pair [aria-label="How months are counted"]'),
+              bothRow: [...root.querySelectorAll('.ovs-pair dt')].some((d) => d.textContent === 'Both recruiting'),
+              // The pair list names the label once in its caption, never "absent" per row.
+              pairCaption: root.querySelector('.ovs-pairs-tbl caption')?.innerText ?? null,
+              absentCells: [...root.querySelectorAll('.ovs-pairs-tbl td')].filter((td) => td.textContent.trim() === 'absent').length,
+              trialsLede: !!root.querySelector('.ovs-trials .ov-trials-lede'),
             }
           }, LABEL)
           const lay = await layoutCheck(page)
@@ -71,16 +78,55 @@ async function main() {
           // The hover card of the first cell (keyboard focus), viewport only.
           await page.focus('.ovs .hg-cell')
           await sleep(400)
-          const tip = await page.evaluate(() => document.querySelector('.hc-card, [role="tooltip"], .hc')?.innerText ?? null)
+          const tip = await page.evaluate(() => document.querySelector('.hc-card:not([hidden])')?.innerText ?? null)
           if (density === 'simple' && width === 1440) await shot(page, OUT, `${name}-cellcard`, false)
+          const simple = density === 'simple'
           const ok =
             info.hasLabel && info.percentInView === 0 && info.shadeCells === 0 && info.hiDots === 0 && info.cells > 0 && !lay.overflow &&
+            info.monthsTip === simple && info.bothRow === !simple && info.trialsLede === simple && info.absentCells === 0 &&
+            (simple || (info.pairCaption || '').includes(LABEL)) && (tip || '').includes('later ClinicalTrials.gov start date') &&
             log.console.filter((c) => c.type === 'error').length === 0 && log.pageerrors.length === 0
           if (!ok) fail++
           results.push({ name, ok, info, tip, overflow: lay.overflow, docScrollWidth: lay.docScrollWidth, offenders: lay.offenders.slice(0, 5), console: log.console, pageerrors: log.pageerrors })
           console.log(name, ok ? 'OK' : 'FAIL', JSON.stringify({ cells: info.cells, pct: info.percentInView, shade: info.shadeCells, dots: info.hiDots, overflow: lay.overflow, errs: log.console.length + log.pageerrors.length }))
           await page.close()
         }
+
+    // From a lung deep link, choosing breast cancer resets the hash to #overlap, so a reload keeps breast cancer.
+    {
+      const name = 'deeplink-switch'
+      // Not open(): its init script would reset the stored indication on the reload this check depends on.
+      const page = await browser.newPage()
+      const log = {}
+      instrument(page, log)
+      await page.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 })
+      await page.evaluateOnNewDocument(() => {
+        try {
+          localStorage.setItem('concord.density', 'simple')
+          localStorage.setItem('concord.theme', 'light')
+        } catch {
+          /* ignore */
+        }
+      })
+      await page.goto(`${BASE}/#overlap/regeneron`, { waitUntil: 'networkidle0', timeout: 120000 })
+      await page.waitForSelector('.ov .ov-f-ind select', { timeout: 120000 })
+      const before = await page.evaluate(() => ({ hash: location.hash, ind: document.querySelector('.ov-f-ind select')?.value }))
+      await page.select('.ov-f-ind select', 'breast-cancer')
+      await page.waitForSelector('.ovs .hg-cell', { timeout: 120000 })
+      const after = await page.evaluate(() => location.hash)
+      await page.reload({ waitUntil: 'networkidle0', timeout: 120000 })
+      await page.waitForSelector('.ov-f-ind select', { timeout: 120000 })
+      await sleep(600)
+      const reloaded = await page.evaluate(() => ({ hash: location.hash, ind: document.querySelector('.ov-f-ind select')?.value, isSites: !!document.querySelector('.ovs') }))
+      const info = { before, after, reloaded }
+      const ok =
+        before.ind === 'lung' && after === '#overlap' && reloaded.ind === 'breast-cancer' && reloaded.isSites &&
+        log.console.filter((c) => c.type === 'error').length === 0 && log.pageerrors.length === 0
+      if (!ok) fail++
+      results.push({ name, ok, info, console: log.console, pageerrors: log.pageerrors })
+      console.log(name, ok ? 'OK' : 'FAIL', JSON.stringify(info))
+      await page.close()
+    }
 
     // Lung default: no stored indication -> the lung view, with its shade.
     for (const [density, width] of [

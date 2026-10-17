@@ -93,7 +93,13 @@ function SourceCard({ data }: { data: SitesAudit }) {
   )
 }
 
-function PairRows({ p, A, B, detailed }: { p: SitesPair; A: SitesTrial; B: SitesTrial; detailed: boolean }) {
+/** Where "months both recruiting" comes from: registered start dates and the snapshot (an estimate, not a record). */
+function monthsBasis(p: SitesPair): string {
+  if (!p.both_recruiting_from) return 'Not recruiting at the same time by the registry snapshot (registered start dates).'
+  return `From the later ClinicalTrials.gov start date (${shortDate(p.both_recruiting_from)}) to the ${shortDate(p.both_recruiting_to)} registry snapshot; both trials are listed as Recruiting at the snapshot. Assumes recruiting continuously since the registered start.`
+}
+
+function PairRows({ p, A, B, detailed, inCard }: { p: SitesPair; A: SitesTrial; B: SitesTrial; detailed: boolean; inCard?: boolean }) {
   const k = known(A, B)
   return (
     <dl className="ov-tip-rows">
@@ -103,7 +109,15 @@ function PairRows({ p, A, B, detailed }: { p: SitesPair; A: SitesTrial; B: Sites
       </div>
       <div>
         <dt>Months both recruiting (estimated)</dt>
-        <dd className="num">{num(p.months_both_recruiting_estimated, 1)}</dd>
+        <dd className="num">
+          {num(p.months_both_recruiting_estimated, 1)}
+          {!detailed && !inCard && (
+            <>
+              {' '}
+              <InfoTip label="How months are counted" content={monthsBasis(p)} />
+            </>
+          )}
+        </dd>
       </div>
       {detailed && (
         <div>
@@ -312,7 +326,9 @@ export default function OverlapSitesView({
   const pairList = data && (
     <div className="table-scroll">
       <table className="tbl tbl-compact ovs-pairs-tbl">
-        <caption className="sr-only">Every pair, most shared sites first</caption>
+        <caption className="small muted ovs-caption">
+          Every pair, most shared sites first. Eligibility overlap: {SITE_ONLY_LABEL}.
+        </caption>
         <thead>
           <tr>
             <th scope="col">Pair</th>
@@ -322,7 +338,6 @@ export default function OverlapSitesView({
             <th scope="col" className="num">
               Months both recruiting (est.)
             </th>
-            <th scope="col">Eligibility overlap</th>
           </tr>
         </thead>
         <tbody>
@@ -340,7 +355,6 @@ export default function OverlapSitesView({
                 </td>
                 <td className="num">{known(a, b) ? int(p.shared_sites) : '—'}</td>
                 <td className="num">{num(p.months_both_recruiting_estimated, 1)}</td>
-                <td className="small muted">absent</td>
               </tr>
             )
           })}
@@ -498,8 +512,9 @@ export default function OverlapSitesView({
                                       <span className="ov-tip-sub">
                                         {r.nct_id} · {plural(r.n_sites, 'site')} — {c.nct_id} · {plural(c.n_sites, 'site')}
                                       </span>
-                                      <PairRows p={p} A={r} B={c} detailed={false} />
-                                      <span className="small muted">Select for the shared site list. Source: ClinicalTrials.gov registered locations.</span>
+                                      <PairRows p={p} A={r} B={c} detailed={false} inCard />
+                                      <span className="small muted ovs-tip-note">Months: {monthsBasis(p)}</span>
+                                      <span className="small muted ovs-tip-note">Select for the shared site list. Source: ClinicalTrials.gov registered locations and start dates.</span>
                                     </div>
                                   }
                                 >
@@ -548,8 +563,17 @@ export default function OverlapSitesView({
           )}
 
           {trials.length > 0 && (
-            <Window label="Trials" title={`Trials recruiting on ${shortDate(data.as_of)}`} meta="CT.gov status">
-              {detailed ? <TrialTable trials={trials} /> : <Details summary={`All ${plural(trials.length, 'trial')}`}>{<TrialTable trials={trials} />}</Details>}
+            <Window label="Trials" className="ovs-trials" title={`Trials recruiting on ${shortDate(data.as_of)}`} meta="CT.gov status">
+              {detailed ? (
+                <TrialTable trials={trials} />
+              ) : (
+                <>
+                  <p className="ov-trials-lede">Each trial's phase, start date and registered sites, from its ClinicalTrials.gov record.</p>
+                  <Details summary={`All ${plural(trials.length, 'trial')}`}>
+                    <TrialTable trials={trials} />
+                  </Details>
+                </>
+              )}
             </Window>
           )}
 

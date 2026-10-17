@@ -57,6 +57,19 @@ export function IndicationSwitch({ regions, renderLung }: { regions: string[]; r
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
 
+  // A lung deep link no longer describes the view once another indication is chosen; without this, a reload or a
+  // shared URL would switch back to lung (the deep-link rule above). Mirrors LungOverlapView's update().
+  const choose = (next: string) => {
+    if (next !== LUNG && DEEP_LINK.test(window.location.hash)) {
+      try {
+        window.history.replaceState(null, '', '#overlap')
+      } catch {
+        /* ignore */
+      }
+    }
+    setSlug(next)
+  }
+
   const ind = list.find((i) => i.slug === slug)
   if (!ind && slug !== LUNG && !loaded) return <Loading label="Loading indications…" />
   const field = (
@@ -64,7 +77,7 @@ export function IndicationSwitch({ regions, renderLung }: { regions: string[]; r
       <label className="field-label" htmlFor={`${ids}-ind`}>
         Indication
       </label>
-      <select id={`${ids}-ind`} value={ind ? slug : LUNG} onChange={(e) => setSlug(e.target.value)}>
+      <select id={`${ids}-ind`} value={ind ? slug : LUNG} onChange={(e) => choose(e.target.value)}>
         {list.map((i) => (
           <option key={i.slug} value={i.slug}>
             {i.label}

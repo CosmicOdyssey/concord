@@ -95,3 +95,18 @@
   margin: 0;
   color: var(--text-2);
 }
+/* Notes under the pair rows in a matrix cell's hover card (where the months come from, the source). */
+.ovs-tip-note {
+  display: block;
+  margin-top: 0.375rem;
+  white-space: normal;
+}
+/* The pair list says what its eligibility column would hold, once, instead of a word per row. */
+.ovs-caption {
+  caption-side: top;
+  padding: 0.5rem 0.5rem 0.375rem;
+  text-align: left;
+}
+.ovs-trials .disclosure {
+  margin-top: var(--sp-4);
+}
