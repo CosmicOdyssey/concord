@@ -413,13 +413,16 @@ const TICK_STEPS = [10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 2500, 5000, 
 function StripPlot({ d }: { d: LocalityDistribution }) {
   const [hover, setHover] = useState<string | null>(null)
   const st = d.stats
+  const siteKeys = useMemo(() => new Set(d.sites.map((s) => s.key)), [d.sites])
   const layout = useMemo(() => {
     const bin = niceStep((st.max - st.min) / 24 || 1, DOT_STEPS)
     const lo = Math.floor(st.min / bin) * bin
     const nb = Math.floor((st.max - lo) / bin) + 1
     const hi = lo + nb * bin
     const cols = new Map<number, LocalityRow[]>()
-    for (const r of [...d.localities].sort((a, b) => a.total - b.total)) {
+    // Within a bin, the sites' localities go on top so their tags never cover another dot.
+    const top = (r: LocalityRow) => (siteKeys.has(r.key) ? 1 : 0)
+    for (const r of [...d.localities].sort((a, b) => top(a) - top(b) || a.total - b.total)) {
       const i = Math.min(nb - 1, Math.floor((r.total - lo) / bin))
       cols.set(i, [...(cols.get(i) ?? []), r])
     }
@@ -433,7 +436,7 @@ function StripPlot({ d }: { d: LocalityDistribution }) {
     const ticks: number[] = []
     for (let t = Math.ceil(lo / tick) * tick; t <= hi + 1e-9; t += tick) ticks.push(t)
     return { bin, lo, hi, dots, maxStack, ticks }
-  }, [d.localities, st.max, st.min])
+  }, [d.localities, st.max, st.min, siteKeys])
   const siteKey = new Map(d.sites.map((s, i) => [s.key, SITE_TAG[i]]))
   const pos = (v: number) => ((v - layout.lo) / (layout.hi - layout.lo)) * 100
   const hov = hover ? layout.dots.find((x) => x.r.key === hover) : null
@@ -528,7 +531,7 @@ function LocalityTable({ d }: { d: LocalityDistribution }) {
         Every locality in the CMS 2026 GPCI table, priced with the budget’s formula at 100% of Medicare. Lab lines ({usd(d.lab_constant)}) are in each
         total. Select a column heading to sort.
       </p>
-      <div className="table-scroll">
+      <div className="table-scroll tsp-table-scroll" tabIndex={0} role="region" aria-label={`All ${d.stats.n} Medicare localities, scrollable table`}>
         <table className="tbl tbl-compact">
           <caption className="sr-only">Per-participant procedure cost in every Medicare locality</caption>
           <thead>

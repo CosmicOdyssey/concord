@@ -6,6 +6,10 @@
   gap: var(--sp-6);
   min-width: 0;
 }
+/* Long qualifiers ("Assumption: no public benchmark ...") wrap here rather than run out of a phone-width window. */
+.tsp .qual {
+  white-space: normal;
+}
 .tsp-block {
   min-width: 0;
   padding-top: var(--sp-5);
@@ -212,6 +216,15 @@
 
 .tsp-table {
   margin-top: var(--sp-4);
+}
+.tsp-table-scroll {
+  max-height: 30rem;
+  overflow-y: auto;
+  border-bottom: 1px solid var(--rule);
+}
+.tsp-table-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 .tsp-table .tsp-key {
   vertical-align: 0.1em;
