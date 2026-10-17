@@ -147,6 +147,10 @@ def _allocation_source():
              "Task A on earlier inputs (beta 0.026, before hand-encoded eligibility); final rerun pending")):
         p = SOURCES / name
         if p.exists():
+            meta_p = SOURCES / name.replace(".json", "_meta.json")
+            if meta_p.exists():
+                m = json.loads(meta_p.read_text(encoding="utf-8"))
+                label = f"{label}: {m.get('summary', '')}".rstrip(": ")
             return json.loads(p.read_text(encoding="utf-8")), status, label, f"data/findings/sources/{name}"
     return None, "missing", "", ""
 
@@ -156,21 +160,23 @@ def allocation() -> dict:
     if d is None:
         return {"id": "allocation", "title": "Allocation", "status": "missing", "headline": "Not computed.",
                 "tables": [], "caveats": [], "sources": []}
-    tables, survive = [], {}
+    tables, held = [], {}
     for scen_key, scen in d["scenarios"].items():
         rows = []
         for key, name, detail in COMPARISONS:
             full = scen["full_data"]["in_sample"].get(key, {}).get("ratio")
             cells = [f"{name} ({detail})", _x(full)]
+            held.setdefault(key, {}).setdefault(scen_key, {})["full"] = full
             for split in ("alternating", "time"):
                 sm = scen["splits"][split]["summary"].get(key, {})
                 ins, ho = sm.get("in_sample", {}), sm.get("held_out", {})
                 dirs = ho.get("ratio_by_direction") or []
                 cells += [_x(ins.get("ratio_geomean")),
                           _x(ho.get("ratio_geomean")) + (f" ({' / '.join(_x(x) for x in dirs)})" if dirs else "")]
+                held[key][scen_key][split] = ho.get("ratio_geomean")
+                held[key][scen_key][split + "_slower"] = ho.get("share_slower_mean")
                 if split == "time":
                     cells.append("—" if ho.get("share_slower_mean") is None else f"{ho['share_slower_mean']:.0%}")
-                    survive.setdefault(key, {})[scen_key] = ho.get("ratio_geomean")
             rows.append(cells)
         n = scen["full_data"].get("n_movable")
         tables.append({"id": f"allocation-{scen_key}", "title": f"{scen_key.replace('_', ' ')} ({n} trials)",
@@ -178,15 +184,22 @@ def allocation() -> dict:
                                    "Alternating split: held-out (by direction)", "Time split: in-sample",
                                    "Time split: held-out (by direction)", "Time split: share slower held-out"],
                        "rows": rows, "notes": ["Ratio = total trial-months, baseline / alternative, under the model."]})
-    ne = survive.get("coord_free_vs_indep", {}).get("US-Northeast")
-    sel = survive.get("indep_vs_actual", {}).get("US-Northeast")
-    headline = (f"Coordination gains don't survive a time split: choosing with older trials and scoring with newer ones, "
-                f"the joint optimum is {_x(ne)} each trial's best response in US-Northeast. Site selection alone "
-                f"(each trial's best response vs its registered sites) is {_x(sel)} on the same split, scored by the "
-                f"same model rather than by observed enrollment.")
+    co = held.get("coord_free_vs_indep", {}).get("US-Northeast", {})
+    se = held.get("indep_vs_actual", {}).get("US-Northeast", {})
+
+    def pct(v):
+        return "—" if v is None else f"{v:.0%}"
+
+    # States the measured numbers; no adjectives beyond what the ratios show.
+    headline = (f"US-Northeast. Coordination (joint optimum vs each trial's best response): {_x(co.get('full'))} "
+                f"in-sample, {_x(co.get('alternating'))} held-out on the alternating split and {_x(co.get('time'))} on "
+                f"the time split, with {pct(co.get('time_slower'))} of trials slower. Site selection alone (each "
+                f"trial's best response vs its registered sites): {_x(se.get('full'))} in-sample, "
+                f"{_x(se.get('alternating'))} and {_x(se.get('time'))} held-out. Both are scored by our enrollment "
+                f"model, not observed enrollment.")
     return {
         "id": "allocation",
-        "title": "Allocation gains from coordination don't survive a time split",
+        "title": "Out of sample, coordination gains largely disappear; site-selection gains remain in the model",
         "status": status,
         "headline": headline,
         "tables": tables,

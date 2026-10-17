@@ -38,3 +38,11 @@ Judgment calls made without being able to ask. Newest last. Each says what and w
     pre-registered script runs (no post-hoc additions). A's earlier outputs on the pre-E database are kept as
     `data/robustness/holdout_preE.json` (and `_alloc_preE.npz`, `_posthoc_preE.json`), labelled beta 0.026,
     pre-E.
+11. **Final rerun results reported as they are** (README sections 3-4, findings page). US-Northeast, 46 trials:
+    coordination 1.42x in-sample -> 1.05x held-out on both splits (about half of trials slower); site selection
+    alone 1.76x in-sample -> 1.73x / 1.70x held-out. The second result cuts against the pivot's stated premise
+    ("choosing sites from registry data doesn't beat sponsors' choices out of sample"): in our model, it does,
+    and the holdout was designed to catch exactly the optimizer's curse. It is still scored by our enrollment
+    model (typical miss about 2x on held-out trials), not observed enrollment. The findings title says
+    "coordination gains largely disappear; site-selection gains remain in the model". Flagged for the user in
+    the morning handoff; the pivot's product rule (no predicted speedups in product views) is unaffected.

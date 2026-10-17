@@ -1,0 +1,16 @@
+{
+ "summary": "beta 0.0925 (two-way CI 0 to 0.297), database rebuilt with hand-encoded eligibility for 151 trials (basket and multi-cohort trials held out), deterministic solver (500k evaluations), run unchanged from task A's script on 17 Oct",
+ "beta": 0.0925487103635646,
+ "beta_ci95": [
+  0.0,
+  0.2965946716111516
+ ],
+ "eval_budget": 500000,
+ "script": "backend/concord/analysis/selection_holdout.py",
+ "output": "data/robustness/holdout.json",
+ "movable_trials": {
+  "US-Northeast": 46,
+  "US_Regeneron_2024-09-01": 5
+ },
+ "log": "data/logs/final_rerun_holdout.log (not committed)"
+}

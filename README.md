@@ -63,8 +63,8 @@ Interactive docs at `http://localhost:8000/docs`.
 
 ## Results (17 Oct 2026, after trying to break them)
 
-> **Status, 17 Oct.** The clearing results (sections 3-4) are withdrawn as headlines: they were measured
-> in-sample and do not hold out of sample. See "Checks in progress" at the end.
+> **Status, 17 Oct.** Sections 3-4 report the final rerun of the pre-registered holdout (task A's script,
+> unchanged). These are research results, not product claims: the app shows no predicted speedups.
 
 ### 1. Does congestion slow enrollment? Not measurably within a site, and far less than the model assumed.
 
@@ -140,28 +140,37 @@ not just a conservative choice. Calibration slope of actual on predicted rate: 0
 dates, the model's times for the same trials are within 15-40% of what they actually took (June 2019:
 31 vs 37 months).
 
-### 3. Clearing, US-Northeast: withdrawn as a headline
+### 3. Clearing, US-Northeast: final rerun of the holdout
 
-The earlier clearing numbers here (e.g. 1.28x with "no trial worse off" vs registered site lists) were
-**in-sample**: allocations were chosen and scored with the same site rates. **They do not hold out of
-sample** (section B under "Checks in progress"):
+Task A's pre-registered script (`analysis/selection_holdout.py`), run unchanged on the current database:
+beta 0.0925, hand-encoded eligibility (basket and multi-cohort trials held out), deterministic solver
+(500k evaluations). 46 movable trials. Allocations are chosen with site rates fit on one half of history
+and scored with rates fit on the other half (alternating and time splits; geometric mean of both
+directions). Ratio = total trial-months, baseline / alternative, under our enrollment model. "Slower" = share
+of trials slower than the baseline. Output: `data/robustness/holdout.json`; earlier run on the pre-E database:
+`holdout_preE.json`.
 
-- **Over time:** choosing with older trials and scoring with newer ones, the joint optimum is 0.98x its
-  best-response baseline.
-- **Under held-out rates:** 22% of trials are slower than with their registered sites, so "no trial
-  worse off" is not a claim we make.
+| comparison | in-sample, all history | alternating: in-sample | alternating: held-out | time: in-sample | time: held-out |
+|---|---|---|---|---|---|
+| Site selection alone: best response vs registered | 1.76x (20% slower) | 1.59x (18% slower) | 1.73x (14% slower) | 1.72x (16% slower) | 1.70x (13% slower) |
+| Coordination: joint optimum vs best response | 1.42x (39% slower) | 1.44x (41% slower) | 1.05x (47% slower) | 1.37x (38% slower) | 1.05x (51% slower) |
+| Coordination capped at registered times, vs registered | 1.60x (0% slower) | 1.57x (0% slower) | 1.37x (24% slower) | 1.67x (0% slower) | 1.23x (31% slower) |
+| Coordination capped at best-response times, vs best response | 1.00x (0% slower) | 1.00x (0% slower) | 1.00x (2% slower) | 1.01x (0% slower) | 0.99x (16% slower) |
 
-The pre-registered holdout (task A) is being rerun at the current beta with the deterministic solver.
-Whatever it shows replaces this note; nothing else is added to it.
+### 4. Portfolio clearing: Regeneron, as of 1 Sept 2024
 
-### 4. Portfolio clearing: Regeneron, as of 1 Sept 2024 (withdrawn as a headline)
+Same script and settings, 5 movable trials (Regeneron's), everyone else held fixed.
 
-The portfolio clearing ratios previously reported here were in-sample in the same way as section 3 and
-are withdrawn pending the same rerun. One observed fact stands, since it needs no model of site rates:
+| comparison | in-sample, all history | alternating: in-sample | alternating: held-out | time: in-sample | time: held-out |
+|---|---|---|---|---|---|
+| Site selection alone: best response vs registered | 2.04x (0% slower) | 1.90x (0% slower) | 1.69x (0% slower) | 1.90x (0% slower) | 1.42x (10% slower) |
+| Coordination: joint optimum vs best response | 1.01x (40% slower) | 1.00x (20% slower) | 0.99x (30% slower) | 1.00x (30% slower) | 1.03x (50% slower) |
+| Coordination capped at registered times, vs registered | 1.27x (0% slower) | 1.23x (0% slower) | 1.20x (20% slower) | 1.22x (0% slower) | 1.12x (30% slower) |
+| Coordination capped at best-response times, vs best response | 1.00x (0% slower) | 1.00x (0% slower) | 0.99x (40% slower) | 1.00x (0% slower) | 0.99x (40% slower) |
 
-- **Self-competition.** Regeneron's two fianlimab Phase 2/3 trials (NCT05785767, NCT05800015) shared 16
-  registered U.S. sites. Under hand-encoded eligibility on the synthetic population, every patient
-  eligible for the first was eligible for the second (overlap 1.0).
+Observed fact, no model needed: Regeneron's two fianlimab Phase 2/3 trials (NCT05785767, NCT05800015) shared
+16 registered U.S. sites. Under hand-encoded eligibility on the synthetic population, every patient eligible
+for the first was eligible for the second (overlap 1.0).
 
 ### 5. Term sheets
 
@@ -216,7 +225,7 @@ with adversarial audits. Numbers below are provisional until the final rerun (la
 
 | task | status | result so far |
 |---|---|---|
-| A. optimizer's curse holdout (choose with half the history, score with the other) | audit found issues; being fixed | the held-out number becomes the headline |
+| A. optimizer's curse holdout (choose with half the history, score with the other) | merged; final rerun done | sections 3-4 |
 | B. where the joint optimum comes from (capacity settings, beta = 0) | merged; one audit gap left (time split not run by B) | see below |
 | C. transfer surplus of the joint optimum | not merged (decision 17 Oct) | moot given the time-split result |
 | D. browser QA | merged | 2,576 of 2,580 on-screen numbers match the API; the other 4 were backend inconsistencies, now fixed. 7 label and layout defects fixed. No phone-width breakage. Report: `docs/qa/2026-10-17-browser-qa.md` |
@@ -226,7 +235,7 @@ with adversarial audits. Numbers below are provisional until the final rerun (la
 | UI: ">= 1 month" threshold for share faster; beta labels | merged | |
 | Deterministic solver | done: 500k-evaluation default, chosen by objective convergence; repeat runs identical | `data/robustness/solver_budget_calibration.json` |
 | Database rebuilt with E's encodings and academic flags | done | congestion regression rerun on it (section 1) |
-| Final rerun of sections 3-4: task A's script unchanged, current beta, deterministic solver, both splits | waits for A and the congestion re-estimate | replaces the withdrawn notes in sections 3-4; nothing added |
+| Final rerun of sections 3-4: task A's script unchanged, current beta, deterministic solver, both splits | done | sections 3-4 |
 
 ### B. Where the joint optimum's gain comes from (provisional)
 
