@@ -1,31 +1,51 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { api, DEFAULT_SCENARIO, REGENERON_PRESET, type ClearResult, type Scenario } from './api'
-import { useElapsed } from './components'
-import MapView from './views/MapView'
-import ClearView from './views/ClearView'
-import PriceTagsView from './views/PriceTagsView'
-import TermsView from './views/TermsView'
-import ModelView from './views/ModelView'
-import RobustnessView from './views/RobustnessView'
-import PortfolioView from './views/PortfolioView'
+import { Loading, useElapsed } from './components'
+import { NEEDS_CLEAR, RESEARCH_TABS, researchTab, type ResearchTabId } from './routes'
+import { useActiveTabScroll } from './useActiveTabScroll'
+import FindingsView from './views/FindingsView'
+import './app.css'
+
+// The research views (Leaflet map, clearing, price tags, ...) load on first use of the Research tab.
+const ResearchView = lazy(() => import('./views/ResearchView'))
 
 const TABS = [
-  { id: 'map', label: 'Congestion map' },
-  { id: 'clear', label: 'Clear it' },
-  { id: 'robustness', label: 'Robustness' },
-  { id: 'portfolio', label: 'Portfolio' },
-  { id: 'prices', label: 'Price tags' },
-  { id: 'terms', label: 'Pre-cleared terms' },
-  { id: 'model', label: 'Model & data' },
+  { id: 'findings', label: 'Findings' },
+  { id: 'overlap', label: 'Portfolio overlap' },
+  { id: 'terms-flow', label: 'Protocol to terms' },
+  { id: 'research', label: 'Research' },
 ] as const
 type TabId = (typeof TABS)[number]['id']
 
-// Deep link #portfolio/regeneron opens the Regeneron Sept 2024 portfolio demo instead of the default market.
-const INITIAL_SCENARIO: Scenario = /^#portfolio\/regeneron/i.test(window.location.hash) ? REGENERON_PRESET : DEFAULT_SCENARIO
+interface Route {
+  tab: TabId
+  /** Research sub-tab named by the hash, if any. */
+  sub: ResearchTabId | null
+  /** Trailing segment: #research/prices/NCT01234567, #research/portfolio/regeneron. */
+  arg: string | null
+}
 
-function tabFromHash(): TabId {
-  const h = window.location.hash.replace('#', '').split('/')[0]
-  return (TABS.find((t) => t.id === h)?.id ?? 'map') as TabId
+/** Hash routes: #findings (default), #overlap, #terms-flow, #research/<sub>[/<arg>]. The pre-pivot
+ *  flat links (#clear, #map, #prices/NCT..., #portfolio/regeneron, ...) open the same research sub-tab. */
+function parseHash(hash: string = window.location.hash): Route {
+  const [head = '', ...rest] = hash.replace(/^#\/?/, '').split('/').filter(Boolean)
+  const h = head.toLowerCase()
+  if (h === 'research') {
+    const sub = researchTab(rest[0])
+    return { tab: 'research', sub, arg: sub ? (rest[1] ?? null) : null }
+  }
+  const sub = researchTab(h)
+  if (sub) return { tab: 'research', sub, arg: rest[0] ?? null }
+  return { tab: TABS.find((t) => t.id === h)?.id ?? 'findings', sub: null, arg: null }
+}
+
+const INITIAL_ROUTE = parseHash()
+// Deep link #research/portfolio/regeneron (or #portfolio/regeneron) opens the Regeneron Sept 2024 portfolio demo.
+const REGENERON_LINK = INITIAL_ROUTE.sub === 'portfolio' && /^regeneron$/i.test(INITIAL_ROUTE.arg ?? '')
+const INITIAL_SCENARIO: Scenario = REGENERON_LINK ? REGENERON_PRESET : DEFAULT_SCENARIO
+
+function trialArg(r: Route): string | null {
+  return r.sub === 'prices' && /^NCT\d+$/i.test(r.arg ?? '') ? r.arg!.toUpperCase() : null
 }
 
 export interface ClearState {
@@ -39,31 +59,61 @@ export interface ClearState {
   run: (p: Scenario) => void
 }
 
+function Integrating({ title }: { title: string }) {
+  return (
+    <section className="view">
+      <div className="view-head">
+        <h1>{title}</h1>
+      </div>
+      <div className="empty">
+        <p>This view is being integrated.</p>
+      </div>
+    </section>
+  )
+}
+
 export default function App() {
-  const [tab, setTab] = useState<TabId>(tabFromHash)
+  const [tab, setTab] = useState<TabId>(INITIAL_ROUTE.tab)
+  const [sub, setSub] = useState<ResearchTabId>(INITIAL_ROUTE.sub ?? RESEARCH_TABS[0].id)
   const [regions, setRegions] = useState<string[]>(['US-Northeast', 'US-Midwest', 'US-South', 'US-West', 'US'])
   const [form, setForm] = useState<Scenario>(INITIAL_SCENARIO)
   const [result, setResult] = useState<ClearResult | null>(null)
   const [solvedParams, setSolvedParams] = useState<Scenario | null>(null)
   const [pendingParams, setPendingParams] = useState<Scenario | null>(null)
   const [error, setError] = useState<string | null>(null)
-  // Deep link: #prices/NCT01234567 preselects a trial for the price-tag view.
-  const [selectedTrial, setSelectedTrial] = useState<string | null>(
-    () => window.location.hash.match(/^#prices\/(NCT\d+)/i)?.[1]?.toUpperCase() ?? null,
-  )
+  // Deep link: #research/prices/NCT01234567 preselects a trial for the price-tag view.
+  const [selectedTrial, setSelectedTrial] = useState<string | null>(() => trialArg(INITIAL_ROUTE))
   const abortRef = useRef<AbortController | null>(null)
   const loading = pendingParams !== null
   const elapsed = useElapsed(loading)
+  const tabBar = useActiveTabScroll<HTMLElement>(tab)
 
   useEffect(() => {
-    const onHash = () => setTab(tabFromHash())
+    const onHash = () => {
+      const r = parseHash()
+      setTab(r.tab)
+      if (r.sub) setSub(r.sub)
+      const nct = trialArg(r)
+      if (nct) setSelectedTrial(nct)
+      window.scrollTo({ top: 0 })
+    }
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
 
-  const go = useCallback((t: TabId) => {
-    window.location.hash = t
-    setTab(t)
+  const go = useCallback(
+    (t: TabId) => {
+      window.location.hash = t === 'research' ? `research/${sub}` : t
+      setTab(t)
+      window.scrollTo({ top: 0 })
+    },
+    [sub],
+  )
+
+  const goSub = useCallback((s: ResearchTabId) => {
+    window.location.hash = `research/${s}`
+    setTab('research')
+    setSub(s)
     window.scrollTo({ top: 0 })
   }, [])
 
@@ -92,24 +142,29 @@ export default function App() {
       })
   }, [])
 
-  // Auto-clear the default region once so every tab has data on first load.
+  // Nothing heavy runs on the landing page. The region list loads when Research is first opened, and the
+  // default clear (15-25 s) runs once, the first time a Research sub-tab that needs it is opened.
+  const regionsLoaded = useRef(false)
+  const autoCleared = useRef(false)
   useEffect(() => {
-    const ctl = new AbortController()
-    api
-      .regions(ctl.signal)
-      .then(setRegions)
-      .catch(() => {
+    if (tab !== 'research') return
+    if (!regionsLoaded.current) {
+      regionsLoaded.current = true
+      api.regions().then(setRegions, () => {
         /* keep the built-in list */
       })
-    run(INITIAL_SCENARIO)
-    return () => ctl.abort()
-  }, [run])
+    }
+    const needs = NEEDS_CLEAR.has(sub) || (sub === 'portfolio' && REGENERON_LINK)
+    if (!needs || autoCleared.current) return
+    autoCleared.current = true
+    if (!result && !pendingParams) run(INITIAL_SCENARIO)
+  }, [tab, sub, result, pendingParams, run])
 
   const clear: ClearState = { result, solvedParams, loading, pendingParams, error, elapsed, run }
 
   const openTrial = (nct: string) => {
     setSelectedTrial(nct)
-    go('prices')
+    goSub('prices')
   }
 
   return (
@@ -122,7 +177,7 @@ export default function App() {
             <circle cx="21" cy="16" r="6" fill="none" stroke="#fff" strokeWidth="2.5" />
           </svg>
           <span className="brand-name">Concord</span>
-          <span className="brand-tag">clearing clinical-trial site capacity</span>
+          <span className="brand-tag">NSCLC trial portfolios on public ClinicalTrials.gov data</span>
         </div>
         <div className="run-status small" aria-live="polite">
           {loading ? (
@@ -142,7 +197,7 @@ export default function App() {
           ) : null}
         </div>
       </header>
-      <nav className="tabs" role="tablist" aria-label="Views">
+      <nav className="tabs" role="tablist" aria-label="Views" ref={tabBar}>
         {TABS.map((t, i) => (
           <button
             key={t.id}
@@ -157,21 +212,28 @@ export default function App() {
         ))}
       </nav>
       <main className="main">
-        {tab === 'map' && <MapView clear={clear} />}
-        {tab === 'clear' && (
-          <ClearView clear={clear} regions={regions} form={form} setForm={setForm} onOpenTrial={openTrial} />
+        {tab === 'findings' && <FindingsView />}
+        {tab === 'overlap' && <Integrating title="Portfolio overlap" />}
+        {tab === 'terms-flow' && <Integrating title="Protocol to terms" />}
+        {tab === 'research' && (
+          <Suspense fallback={<Loading label="Loading research views…" />}>
+            <ResearchView
+              sub={sub}
+              onSub={goSub}
+              clear={clear}
+              regions={regions}
+              form={form}
+              setForm={setForm}
+              selectedTrial={selectedTrial}
+              setSelectedTrial={setSelectedTrial}
+              onOpenTrial={openTrial}
+            />
+          </Suspense>
         )}
-        {tab === 'robustness' && <RobustnessView clear={clear} />}
-        {tab === 'portfolio' && (
-          <PortfolioView clear={clear} regions={regions} form={form} setForm={setForm} onOpenTrial={openTrial} />
-        )}
-        {tab === 'prices' && <PriceTagsView clear={clear} selected={selectedTrial} setSelected={setSelectedTrial} />}
-        {tab === 'terms' && <TermsView clear={clear} />}
-        {tab === 'model' && <ModelView />}
       </main>
       <footer className="footer small muted">
-        Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov; enrollment times are model estimates.
-        Decision support only, not clinical, legal or coverage advice.
+        Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times appear only in the
+        Research views and are model estimates. Decision support only, not clinical, legal or coverage advice.
       </footer>
     </div>
   )

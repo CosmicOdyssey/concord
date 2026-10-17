@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from concord import service
+from concord.api import findings as findings_api
 from concord.analysis.robustness import path_for
 from concord.compiler.eligibility import eligible_fraction, extract_criteria
 from concord.compiler.protocol import demo_protocol
@@ -25,6 +26,7 @@ from concord.ratecard import medicare
 app = FastAPI(title="Concord", version="0.2.0",
               description="Clearing mechanism for clinical-trial enrollment capacity (HackHarvard 2026)")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.include_router(findings_api.router)
 
 
 class Scenario(BaseModel):
