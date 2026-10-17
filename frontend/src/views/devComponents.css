@@ -1,0 +1,91 @@
+/* #dev/components QA page. */
+.dev .card h2 {
+  margin-bottom: 0.6rem;
+}
+.dev-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+.dev-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+}
+.dev-swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--text-2);
+}
+.dev-swatch i {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-strong);
+}
+.dev-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 0.25rem 1.5rem;
+}
+.dev-edge {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.75rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--border);
+}
+.dev-rich {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 14rem;
+}
+.dev-rich .tbl {
+  margin: 0;
+}
+.dev-scroller {
+  overflow-x: auto;
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+}
+.dev-scroller-inner {
+  display: flex;
+  justify-content: space-between;
+  width: 2400px;
+  padding: 0.75rem 1rem;
+}
+/* Room below the last card for the fixed dock. */
+.dev {
+  padding-bottom: 3.5rem;
+}
+.dev-dock {
+  position: fixed;
+  right: 10px;
+  bottom: 10px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: min(18rem, calc(100vw - 20px));
+  padding: 0.3rem 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+}
+.dev-dock-scroller {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+.dev-dock-inner {
+  display: flex;
+  justify-content: space-between;
+  width: 600px;
+  padding: 0.2rem 0.3rem;
+}

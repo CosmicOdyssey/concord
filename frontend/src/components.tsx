@@ -88,19 +88,6 @@ export function NeedsClear({ onRun, busy }: { onRun: () => void; busy: boolean }
   )
 }
 
-export function useDarkMode(): boolean {
-  const query = '(prefers-color-scheme: dark)'
-  const [dark, setDark] = useState(() => window.matchMedia?.(query).matches ?? false)
-  useEffect(() => {
-    const mq = window.matchMedia?.(query)
-    if (!mq) return
-    const on = (e: MediaQueryListEvent) => setDark(e.matches)
-    mq.addEventListener('change', on)
-    return () => mq.removeEventListener('change', on)
-  }, [])
-  return dark
-}
-
 export function RunLine({
   params,
   stale,
