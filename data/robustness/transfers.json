@@ -10156,7 +10156,374 @@
        "holds_out_of_sample": false
       }
      },
-     "seconds": 17.4
+     "seconds": 17.4,
+     "like_for_like": {
+      "note": "half in-sample vs held-out S on the same trials; screened = movable trials with T_registered <= 120 months under the score half's rates (from per-trial rows)",
+      "coord_free_vs_indep": {
+       "by_direction": [
+        {
+         "choose": "A",
+         "score": "B",
+         "half_in_sample": {
+          "trials_counted": 101,
+          "G": 1914.567,
+          "L": 269.593,
+          "L_bg": 0.0,
+          "S": 1644.974,
+          "winners": 65,
+          "losers": 36
+         },
+         "half_in_sample_screened": {
+          "trials_counted": 98,
+          "G": 1810.0479999999998,
+          "L": 251.017,
+          "L_bg": 0.0,
+          "S": 1559.0309999999997,
+          "winners": 63,
+          "losers": 35
+         },
+         "held_out": {
+          "trials_counted": 101,
+          "G": 1236.489,
+          "L": 324.059,
+          "L_bg": 0.0,
+          "S": 912.4300000000001,
+          "winners": 58,
+          "losers": 43
+         },
+         "held_out_screened": {
+          "trials_counted": 98,
+          "G": 1170.3539999999998,
+          "L": 317.452,
+          "L_bg": 0.0,
+          "S": 852.9019999999998,
+          "winners": 56,
+          "losers": 42
+         },
+         "largest_held_minus_half": [
+          {
+           "nct_id": "NCT07154706",
+           "movable": true,
+           "delta_half": 167.887,
+           "delta_held": 96.929,
+           "held_minus_half": -70.958,
+           "T_registered_held": 104.764,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT06899126",
+           "movable": true,
+           "delta_half": 82.048,
+           "delta_held": 24.371,
+           "held_minus_half": -57.677,
+           "T_registered_held": 96.101,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT07155187",
+           "movable": true,
+           "delta_half": 82.203,
+           "delta_held": 32.169,
+           "held_minus_half": -50.034,
+           "T_registered_held": 91.521,
+           "screened_out": false
+          }
+         ]
+        },
+        {
+         "choose": "B",
+         "score": "A",
+         "half_in_sample": {
+          "trials_counted": 104,
+          "G": 1317.6810000000005,
+          "L": 235.66000000000005,
+          "L_bg": 150.219,
+          "S": 931.8020000000004,
+          "winners": 57,
+          "losers": 47
+         },
+         "half_in_sample_screened": {
+          "trials_counted": 98,
+          "G": 1209.17,
+          "L": 221.01900000000003,
+          "L_bg": 150.219,
+          "S": 837.932,
+          "winners": 55,
+          "losers": 43
+         },
+         "held_out": {
+          "trials_counted": 104,
+          "G": 1951.9260000000002,
+          "L": 548.0620000000001,
+          "L_bg": 215.54899999999998,
+          "S": 1188.315,
+          "winners": 57,
+          "losers": 47
+         },
+         "held_out_screened": {
+          "trials_counted": 98,
+          "G": 1830.042,
+          "L": 452.12100000000004,
+          "L_bg": 215.54899999999998,
+          "S": 1162.3719999999998,
+          "winners": 55,
+          "losers": 43
+         },
+         "largest_held_minus_half": [
+          {
+           "nct_id": "NCT06051695",
+           "movable": true,
+           "delta_half": 0.384,
+           "delta_held": -103.371,
+           "held_minus_half": -103.755,
+           "T_registered_held": 60.089,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT07185997",
+           "movable": true,
+           "delta_half": 88.074,
+           "delta_held": 157.367,
+           "held_minus_half": 69.293,
+           "T_registered_held": 79.311,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT07154706",
+           "movable": true,
+           "delta_half": 81.722,
+           "delta_held": 144.636,
+           "held_minus_half": 62.914,
+           "T_registered_held": 106.085,
+           "screened_out": false
+          }
+         ]
+        }
+       ],
+       "mean": {
+        "half_in_sample": {
+         "trials_counted": 102.5,
+         "G": 1616.1240000000003,
+         "L": 252.62650000000002,
+         "L_bg": 75.1095,
+         "S": 1288.3880000000001,
+         "winners": 61.0,
+         "losers": 41.5
+        },
+        "half_in_sample_screened": {
+         "trials_counted": 98.0,
+         "G": 1509.609,
+         "L": 236.01800000000003,
+         "L_bg": 75.1095,
+         "S": 1198.4814999999999,
+         "winners": 59.0,
+         "losers": 39.0
+        },
+        "held_out": {
+         "trials_counted": 102.5,
+         "G": 1594.2075,
+         "L": 436.06050000000005,
+         "L_bg": 107.77449999999999,
+         "S": 1050.3725,
+         "winners": 57.5,
+         "losers": 45.0
+        },
+        "held_out_screened": {
+         "trials_counted": 98.0,
+         "G": 1500.1979999999999,
+         "L": 384.78650000000005,
+         "L_bg": 107.77449999999999,
+         "S": 1007.6369999999998,
+         "winners": 55.5,
+         "losers": 42.5
+        },
+        "held_out_change": -0.18473899167021124,
+        "held_out_change_screened": -0.15923858649466016
+       }
+      },
+      "coord_free_vs_actual": {
+       "by_direction": [
+        {
+         "choose": "A",
+         "score": "B",
+         "half_in_sample": {
+          "trials_counted": 101,
+          "G": 2452.380000000001,
+          "L": 45.424,
+          "L_bg": 24.980000000000004,
+          "S": 2381.976000000001,
+          "winners": 86,
+          "losers": 15
+         },
+         "half_in_sample_screened": {
+          "trials_counted": 98,
+          "G": 2301.809000000001,
+          "L": 45.424,
+          "L_bg": 24.980000000000004,
+          "S": 2231.405000000001,
+          "winners": 83,
+          "losers": 15
+         },
+         "held_out": {
+          "trials_counted": 101,
+          "G": 1789.107,
+          "L": 131.487,
+          "L_bg": 20.675000000000004,
+          "S": 1636.945,
+          "winners": 73,
+          "losers": 28
+         },
+         "held_out_screened": {
+          "trials_counted": 98,
+          "G": 1575.3890000000001,
+          "L": 131.487,
+          "L_bg": 20.675000000000004,
+          "S": 1423.227,
+          "winners": 70,
+          "losers": 28
+         },
+         "largest_held_minus_half": [
+          {
+           "nct_id": "NCT05592626",
+           "movable": true,
+           "delta_half": 16.328,
+           "delta_held": 79.051,
+           "held_minus_half": 62.723,
+           "T_registered_held": 104.471,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT07169734",
+           "movable": true,
+           "delta_half": 70.705,
+           "delta_held": 8.205,
+           "held_minus_half": -62.5,
+           "T_registered_held": 54.663,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT06899126",
+           "movable": true,
+           "delta_half": 81.22,
+           "delta_held": 23.6,
+           "held_minus_half": -57.62,
+           "T_registered_held": 96.101,
+           "screened_out": false
+          }
+         ]
+        },
+        {
+         "choose": "B",
+         "score": "A",
+         "half_in_sample": {
+          "trials_counted": 104,
+          "G": 2057.279,
+          "L": 48.891999999999996,
+          "L_bg": 84.809,
+          "S": 1923.578,
+          "winners": 80,
+          "losers": 24
+         },
+         "half_in_sample_screened": {
+          "trials_counted": 98,
+          "G": 1792.8550000000002,
+          "L": 46.031,
+          "L_bg": 84.809,
+          "S": 1662.0150000000003,
+          "winners": 75,
+          "losers": 23
+         },
+         "held_out": {
+          "trials_counted": 104,
+          "G": 3173.131,
+          "L": 232.622,
+          "L_bg": 165.245,
+          "S": 2775.264,
+          "winners": 79,
+          "losers": 25
+         },
+         "held_out_screened": {
+          "trials_counted": 98,
+          "G": 2186.0519999999983,
+          "L": 232.622,
+          "L_bg": 165.245,
+          "S": 1788.1849999999981,
+          "winners": 73,
+          "losers": 25
+         },
+         "largest_held_minus_half": [
+          {
+           "nct_id": "NCT06463665",
+           "movable": true,
+           "delta_half": 27.437,
+           "delta_held": 480.126,
+           "held_minus_half": 452.689,
+           "T_registered_held": 503.838,
+           "screened_out": true
+          },
+          {
+           "nct_id": "NCT06051695",
+           "movable": true,
+           "delta_half": 55.701,
+           "delta_held": -78.328,
+           "held_minus_half": -134.029,
+           "T_registered_held": 60.089,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT06228326",
+           "movable": true,
+           "delta_half": -2.861,
+           "delta_held": 124.753,
+           "held_minus_half": 127.614,
+           "T_registered_held": 165.834,
+           "screened_out": true
+          }
+         ]
+        }
+       ],
+       "mean": {
+        "half_in_sample": {
+         "trials_counted": 102.5,
+         "G": 2254.8295000000007,
+         "L": 47.158,
+         "L_bg": 54.8945,
+         "S": 2152.7770000000005,
+         "winners": 83.0,
+         "losers": 19.5
+        },
+        "half_in_sample_screened": {
+         "trials_counted": 98.0,
+         "G": 2047.3320000000008,
+         "L": 45.7275,
+         "L_bg": 54.8945,
+         "S": 1946.7100000000007,
+         "winners": 79.0,
+         "losers": 19.0
+        },
+        "held_out": {
+         "trials_counted": 102.5,
+         "G": 2481.1189999999997,
+         "L": 182.05450000000002,
+         "L_bg": 92.96000000000001,
+         "S": 2206.1045,
+         "winners": 76.0,
+         "losers": 26.5
+        },
+        "held_out_screened": {
+         "trials_counted": 98.0,
+         "G": 1880.7204999999992,
+         "L": 182.05450000000002,
+         "L_bg": 92.96000000000001,
+         "S": 1605.7059999999992,
+         "winners": 71.5,
+         "losers": 26.5
+        },
+        "held_out_change": 0.02477149282066815,
+        "held_out_change_screened": -0.17516938835265727
+       }
+      }
+     }
     },
     "unlimited": {
      "params": {
@@ -19994,7 +20361,374 @@
        "holds_out_of_sample": false
       }
      },
-     "seconds": 18.0
+     "seconds": 18.0,
+     "like_for_like": {
+      "note": "half in-sample vs held-out S on the same trials; screened = movable trials with T_registered <= 120 months under the score half's rates (from per-trial rows)",
+      "coord_free_vs_indep": {
+       "by_direction": [
+        {
+         "choose": "A",
+         "score": "B",
+         "half_in_sample": {
+          "trials_counted": 101,
+          "G": 16.336999999999996,
+          "L": 5.854,
+          "L_bg": 7.764,
+          "S": 2.7189999999999968,
+          "winners": 40,
+          "losers": 58
+         },
+         "half_in_sample_screened": {
+          "trials_counted": 98,
+          "G": 16.287999999999997,
+          "L": 5.783,
+          "L_bg": 7.764,
+          "S": 2.740999999999995,
+          "winners": 39,
+          "losers": 56
+         },
+         "held_out": {
+          "trials_counted": 101,
+          "G": 31.501,
+          "L": 85.721,
+          "L_bg": 6.019,
+          "S": -60.239,
+          "winners": 39,
+          "losers": 59
+         },
+         "held_out_screened": {
+          "trials_counted": 98,
+          "G": 31.329,
+          "L": 85.60300000000001,
+          "L_bg": 6.019,
+          "S": -60.293000000000006,
+          "winners": 38,
+          "losers": 57
+         },
+         "largest_held_minus_half": [
+          {
+           "nct_id": "NCT07154706",
+           "movable": true,
+           "delta_half": 1.523,
+           "delta_held": -13.659,
+           "held_minus_half": -15.182,
+           "T_registered_held": 104.764,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT06239194",
+           "movable": true,
+           "delta_half": 1.363,
+           "delta_held": -9.116,
+           "held_minus_half": -10.479,
+           "T_registered_held": 68.918,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT05456256",
+           "movable": true,
+           "delta_half": -0.08,
+           "delta_held": -7.944,
+           "held_minus_half": -7.864,
+           "T_registered_held": 5.66,
+           "screened_out": false
+          }
+         ]
+        },
+        {
+         "choose": "B",
+         "score": "A",
+         "half_in_sample": {
+          "trials_counted": 104,
+          "G": 59.66099999999998,
+          "L": 14.873999999999997,
+          "L_bg": 14.925,
+          "S": 29.861999999999984,
+          "winners": 51,
+          "losers": 50
+         },
+         "half_in_sample_screened": {
+          "trials_counted": 98,
+          "G": 49.22299999999999,
+          "L": 14.873999999999997,
+          "L_bg": 14.925,
+          "S": 19.423999999999996,
+          "winners": 45,
+          "losers": 50
+         },
+         "held_out": {
+          "trials_counted": 104,
+          "G": 139.933,
+          "L": 276.9219999999999,
+          "L_bg": 21.929,
+          "S": -158.91799999999992,
+          "winners": 44,
+          "losers": 57
+         },
+         "held_out_screened": {
+          "trials_counted": 98,
+          "G": 121.628,
+          "L": 259.659,
+          "L_bg": 21.929,
+          "S": -159.96,
+          "winners": 40,
+          "losers": 55
+         },
+         "largest_held_minus_half": [
+          {
+           "nct_id": "NCT05099172",
+           "movable": true,
+           "delta_half": 3.53,
+           "delta_held": -29.391,
+           "held_minus_half": -32.921,
+           "T_registered_held": 87.82,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT07154706",
+           "movable": true,
+           "delta_half": 5.843,
+           "delta_held": -24.929,
+           "held_minus_half": -30.772,
+           "T_registered_held": 106.085,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT06060613",
+           "movable": true,
+           "delta_half": 2.864,
+           "delta_held": -22.407,
+           "held_minus_half": -25.271,
+           "T_registered_held": 80.143,
+           "screened_out": false
+          }
+         ]
+        }
+       ],
+       "mean": {
+        "half_in_sample": {
+         "trials_counted": 102.5,
+         "G": 37.99899999999999,
+         "L": 10.363999999999999,
+         "L_bg": 11.3445,
+         "S": 16.29049999999999,
+         "winners": 45.5,
+         "losers": 54.0
+        },
+        "half_in_sample_screened": {
+         "trials_counted": 98.0,
+         "G": 32.7555,
+         "L": 10.328499999999998,
+         "L_bg": 11.3445,
+         "S": 11.082499999999996,
+         "winners": 42.0,
+         "losers": 53.0
+        },
+        "held_out": {
+         "trials_counted": 102.5,
+         "G": 85.717,
+         "L": 181.32149999999996,
+         "L_bg": 13.974,
+         "S": -109.57849999999996,
+         "winners": 41.5,
+         "losers": 58.0
+        },
+        "held_out_screened": {
+         "trials_counted": 98.0,
+         "G": 76.4785,
+         "L": 172.631,
+         "L_bg": 13.974,
+         "S": -110.12650000000001,
+         "winners": 39.0,
+         "losers": 56.0
+        },
+        "held_out_change": -7.726527730886101,
+        "held_out_change_screened": -10.936972704714645
+       }
+      },
+      "coord_free_vs_actual": {
+       "by_direction": [
+        {
+         "choose": "A",
+         "score": "B",
+         "half_in_sample": {
+          "trials_counted": 101,
+          "G": 3386.245999999999,
+          "L": 0.8170000000000001,
+          "L_bg": 37.017,
+          "S": 3348.4119999999994,
+          "winners": 99,
+          "losers": 2
+         },
+         "half_in_sample_screened": {
+          "trials_counted": 98,
+          "G": 3177.3439999999996,
+          "L": 0.8170000000000001,
+          "L_bg": 37.017,
+          "S": 3139.5099999999998,
+          "winners": 96,
+          "losers": 2
+         },
+         "held_out": {
+          "trials_counted": 101,
+          "G": 2204.2469999999994,
+          "L": 58.946000000000005,
+          "L_bg": 29.983,
+          "S": 2115.3179999999993,
+          "winners": 88,
+          "losers": 13
+         },
+         "held_out_screened": {
+          "trials_counted": 98,
+          "G": 1969.2740000000001,
+          "L": 58.946000000000005,
+          "L_bg": 29.983,
+          "S": 1880.3450000000003,
+          "winners": 85,
+          "losers": 13
+         },
+         "largest_held_minus_half": [
+          {
+           "nct_id": "NCT07154706",
+           "movable": true,
+           "delta_half": 60.165,
+           "delta_held": -9.108,
+           "held_minus_half": -69.273,
+           "T_registered_held": 104.764,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT05592626",
+           "movable": true,
+           "delta_half": 16.336,
+           "delta_held": 84.438,
+           "held_minus_half": 68.102,
+           "T_registered_held": 104.471,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT06357533",
+           "movable": true,
+           "delta_half": 76.576,
+           "delta_held": 14.486,
+           "held_minus_half": -62.09,
+           "T_registered_held": 68.968,
+           "screened_out": false
+          }
+         ]
+        },
+        {
+         "choose": "B",
+         "score": "A",
+         "half_in_sample": {
+          "trials_counted": 104,
+          "G": 2592.3469999999993,
+          "L": 3.187,
+          "L_bg": 93.35999999999999,
+          "S": 2495.7999999999993,
+          "winners": 98,
+          "losers": 6
+         },
+         "half_in_sample_screened": {
+          "trials_counted": 98,
+          "G": 2309.6369999999997,
+          "L": 3.187,
+          "L_bg": 93.35999999999999,
+          "S": 2213.0899999999997,
+          "winners": 92,
+          "losers": 6
+         },
+         "held_out": {
+          "trials_counted": 104,
+          "G": 3565.601,
+          "L": 46.531,
+          "L_bg": 128.35399999999998,
+          "S": 3390.7160000000003,
+          "winners": 99,
+          "losers": 5
+         },
+         "held_out_screened": {
+          "trials_counted": 98,
+          "G": 2508.2520000000018,
+          "L": 46.531,
+          "L_bg": 128.35399999999998,
+          "S": 2333.367000000002,
+          "winners": 93,
+          "losers": 5
+         },
+         "largest_held_minus_half": [
+          {
+           "nct_id": "NCT06463665",
+           "movable": true,
+           "delta_half": 27.734,
+           "delta_held": 498.324,
+           "held_minus_half": 470.59,
+           "T_registered_held": 503.838,
+           "screened_out": true
+          },
+          {
+           "nct_id": "NCT06228326",
+           "movable": true,
+           "delta_half": 1.228,
+           "delta_held": 100.556,
+           "held_minus_half": 99.328,
+           "T_registered_held": 165.834,
+           "screened_out": true
+          },
+          {
+           "nct_id": "NCT07566052",
+           "movable": true,
+           "delta_half": 44.314,
+           "delta_held": 118.987,
+           "held_minus_half": 74.673,
+           "T_registered_held": 157.226,
+           "screened_out": true
+          }
+         ]
+        }
+       ],
+       "mean": {
+        "half_in_sample": {
+         "trials_counted": 102.5,
+         "G": 2989.2964999999995,
+         "L": 2.002,
+         "L_bg": 65.18849999999999,
+         "S": 2922.1059999999993,
+         "winners": 98.5,
+         "losers": 4.0
+        },
+        "half_in_sample_screened": {
+         "trials_counted": 98.0,
+         "G": 2743.4905,
+         "L": 2.002,
+         "L_bg": 65.18849999999999,
+         "S": 2676.2999999999997,
+         "winners": 94.0,
+         "losers": 4.0
+        },
+        "held_out": {
+         "trials_counted": 102.5,
+         "G": 2884.924,
+         "L": 52.7385,
+         "L_bg": 79.1685,
+         "S": 2753.017,
+         "winners": 93.5,
+         "losers": 9.0
+        },
+        "held_out_screened": {
+         "trials_counted": 98.0,
+         "G": 2238.763000000001,
+         "L": 52.7385,
+         "L_bg": 79.1685,
+         "S": 2106.856000000001,
+         "winners": 89.0,
+         "losers": 9.0
+        },
+        "held_out_change": -0.057865457310583346,
+        "held_out_change_screened": -0.21277285805029278
+       }
+      }
+     }
     }
    },
    "any_solve_hit_time_limit": false
@@ -25156,7 +25890,374 @@
        "holds_out_of_sample": true
       }
      },
-     "seconds": 8.8
+     "seconds": 8.8,
+     "like_for_like": {
+      "note": "half in-sample vs held-out S on the same trials; screened = movable trials with T_registered <= 120 months under the score half's rates (from per-trial rows)",
+      "coord_free_vs_indep": {
+       "by_direction": [
+        {
+         "choose": "A",
+         "score": "B",
+         "half_in_sample": {
+          "trials_counted": 5,
+          "G": 0.05,
+          "L": 0.002,
+          "L_bg": 0.0,
+          "S": 0.048,
+          "winners": 1,
+          "losers": 1
+         },
+         "half_in_sample_screened": {
+          "trials_counted": 5,
+          "G": 0.05,
+          "L": 0.002,
+          "L_bg": 0.0,
+          "S": 0.048,
+          "winners": 1,
+          "losers": 1
+         },
+         "held_out": {
+          "trials_counted": 5,
+          "G": 0.079,
+          "L": 0.156,
+          "L_bg": 0.0,
+          "S": -0.077,
+          "winners": 1,
+          "losers": 1
+         },
+         "held_out_screened": {
+          "trials_counted": 5,
+          "G": 0.079,
+          "L": 0.156,
+          "L_bg": 0.0,
+          "S": -0.077,
+          "winners": 1,
+          "losers": 1
+         },
+         "largest_held_minus_half": [
+          {
+           "nct_id": "NCT05800015",
+           "movable": true,
+           "delta_half": -0.002,
+           "delta_held": -0.156,
+           "held_minus_half": -0.154,
+           "T_registered_held": 24.272,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT05785767",
+           "movable": true,
+           "delta_half": 0.05,
+           "delta_held": 0.079,
+           "held_minus_half": 0.029,
+           "T_registered_held": 69.69,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT06119581",
+           "movable": false,
+           "delta_half": 0.017,
+           "delta_held": 0.014,
+           "held_minus_half": -0.003,
+           "T_registered_held": 148.072,
+           "screened_out": false
+          }
+         ]
+        },
+        {
+         "choose": "B",
+         "score": "A",
+         "half_in_sample": {
+          "trials_counted": 5,
+          "G": 1.884,
+          "L": 2.331,
+          "L_bg": 0.010000000000000002,
+          "S": -0.4570000000000001,
+          "winners": 2,
+          "losers": 2
+         },
+         "half_in_sample_screened": {
+          "trials_counted": 5,
+          "G": 1.884,
+          "L": 2.331,
+          "L_bg": 0.010000000000000002,
+          "S": -0.4570000000000001,
+          "winners": 2,
+          "losers": 2
+         },
+         "held_out": {
+          "trials_counted": 5,
+          "G": 10.846,
+          "L": 3.189,
+          "L_bg": 0.007,
+          "S": 7.65,
+          "winners": 2,
+          "losers": 2
+         },
+         "held_out_screened": {
+          "trials_counted": 5,
+          "G": 10.846,
+          "L": 3.189,
+          "L_bg": 0.007,
+          "S": 7.65,
+          "winners": 2,
+          "losers": 2
+         },
+         "largest_held_minus_half": [
+          {
+           "nct_id": "NCT04077099",
+           "movable": true,
+           "delta_half": -1.832,
+           "delta_held": 10.165,
+           "held_minus_half": 11.997,
+           "T_registered_held": 66.077,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT05785767",
+           "movable": true,
+           "delta_half": 1.515,
+           "delta_held": -2.497,
+           "held_minus_half": -4.012,
+           "T_registered_held": 72.787,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT05800015",
+           "movable": true,
+           "delta_half": 0.369,
+           "delta_held": 0.681,
+           "held_minus_half": 0.312,
+           "T_registered_held": 24.727,
+           "screened_out": false
+          }
+         ]
+        }
+       ],
+       "mean": {
+        "half_in_sample": {
+         "trials_counted": 5.0,
+         "G": 0.967,
+         "L": 1.1664999999999999,
+         "L_bg": 0.005000000000000001,
+         "S": -0.20450000000000004,
+         "winners": 1.5,
+         "losers": 1.5
+        },
+        "half_in_sample_screened": {
+         "trials_counted": 5.0,
+         "G": 0.967,
+         "L": 1.1664999999999999,
+         "L_bg": 0.005000000000000001,
+         "S": -0.20450000000000004,
+         "winners": 1.5,
+         "losers": 1.5
+        },
+        "held_out": {
+         "trials_counted": 5.0,
+         "G": 5.4625,
+         "L": 1.6725,
+         "L_bg": 0.0035,
+         "S": 3.7865,
+         "winners": 1.5,
+         "losers": 1.5
+        },
+        "held_out_screened": {
+         "trials_counted": 5.0,
+         "G": 5.4625,
+         "L": 1.6725,
+         "L_bg": 0.0035,
+         "S": 3.7865,
+         "winners": 1.5,
+         "losers": 1.5
+        },
+        "held_out_change": null,
+        "held_out_change_screened": null
+       }
+      },
+      "coord_free_vs_actual": {
+       "by_direction": [
+        {
+         "choose": "A",
+         "score": "B",
+         "half_in_sample": {
+          "trials_counted": 5,
+          "G": 121.66499999999999,
+          "L": 0.0,
+          "L_bg": 1.9079999999999993,
+          "S": 119.75699999999999,
+          "winners": 5,
+          "losers": 0
+         },
+         "half_in_sample_screened": {
+          "trials_counted": 5,
+          "G": 121.66499999999999,
+          "L": 0.0,
+          "L_bg": 1.9079999999999993,
+          "S": 119.75699999999999,
+          "winners": 5,
+          "losers": 0
+         },
+         "held_out": {
+          "trials_counted": 5,
+          "G": 95.381,
+          "L": 0.0,
+          "L_bg": 1.4219999999999993,
+          "S": 93.959,
+          "winners": 5,
+          "losers": 0
+         },
+         "held_out_screened": {
+          "trials_counted": 5,
+          "G": 95.381,
+          "L": 0.0,
+          "L_bg": 1.4219999999999993,
+          "S": 93.959,
+          "winners": 5,
+          "losers": 0
+         },
+         "largest_held_minus_half": [
+          {
+           "nct_id": "NCT05557591",
+           "movable": true,
+           "delta_half": 33.502,
+           "delta_held": 18.054,
+           "held_minus_half": -15.448,
+           "T_registered_held": 36.885,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT05785767",
+           "movable": true,
+           "delta_half": 43.016,
+           "delta_held": 30.281,
+           "held_minus_half": -12.735,
+           "T_registered_held": 69.69,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT06161441",
+           "movable": true,
+           "delta_half": 13.823,
+           "delta_held": 22.651,
+           "held_minus_half": 8.828,
+           "T_registered_held": 31.016,
+           "screened_out": false
+          }
+         ]
+        },
+        {
+         "choose": "B",
+         "score": "A",
+         "half_in_sample": {
+          "trials_counted": 5,
+          "G": 105.42999999999999,
+          "L": 0.0,
+          "L_bg": 1.5369999999999997,
+          "S": 103.89299999999999,
+          "winners": 5,
+          "losers": 0
+         },
+         "half_in_sample_screened": {
+          "trials_counted": 5,
+          "G": 105.42999999999999,
+          "L": 0.0,
+          "L_bg": 1.5369999999999997,
+          "S": 103.89299999999999,
+          "winners": 5,
+          "losers": 0
+         },
+         "held_out": {
+          "trials_counted": 5,
+          "G": 109.002,
+          "L": 0.0,
+          "L_bg": 1.7519999999999991,
+          "S": 107.25,
+          "winners": 5,
+          "losers": 0
+         },
+         "held_out_screened": {
+          "trials_counted": 5,
+          "G": 109.002,
+          "L": 0.0,
+          "L_bg": 1.7519999999999991,
+          "S": 107.25,
+          "winners": 5,
+          "losers": 0
+         },
+         "largest_held_minus_half": [
+          {
+           "nct_id": "NCT05557591",
+           "movable": true,
+           "delta_half": 18.688,
+           "delta_held": 31.567,
+           "held_minus_half": 12.879,
+           "T_registered_held": 46.141,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT06161441",
+           "movable": true,
+           "delta_half": 23.188,
+           "delta_held": 13.225,
+           "held_minus_half": -9.963,
+           "T_registered_held": 19.327,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT04077099",
+           "movable": true,
+           "delta_half": 23.21,
+           "delta_held": 14.342,
+           "held_minus_half": -8.868,
+           "T_registered_held": 66.077,
+           "screened_out": false
+          }
+         ]
+        }
+       ],
+       "mean": {
+        "half_in_sample": {
+         "trials_counted": 5.0,
+         "G": 113.54749999999999,
+         "L": 0.0,
+         "L_bg": 1.7224999999999995,
+         "S": 111.82499999999999,
+         "winners": 5.0,
+         "losers": 0.0
+        },
+        "half_in_sample_screened": {
+         "trials_counted": 5.0,
+         "G": 113.54749999999999,
+         "L": 0.0,
+         "L_bg": 1.7224999999999995,
+         "S": 111.82499999999999,
+         "winners": 5.0,
+         "losers": 0.0
+        },
+        "held_out": {
+         "trials_counted": 5.0,
+         "G": 102.19149999999999,
+         "L": 0.0,
+         "L_bg": 1.5869999999999993,
+         "S": 100.6045,
+         "winners": 5.0,
+         "losers": 0.0
+        },
+        "held_out_screened": {
+         "trials_counted": 5.0,
+         "G": 102.19149999999999,
+         "L": 0.0,
+         "L_bg": 1.5869999999999993,
+         "S": 100.6045,
+         "winners": 5.0,
+         "losers": 0.0
+        },
+        "held_out_change": -0.10033981667784475,
+        "held_out_change_screened": -0.10033981667784475
+       }
+      }
+     }
     },
     "unlimited": {
      "params": {
@@ -30292,7 +31393,374 @@
        "holds_out_of_sample": true
       }
      },
-     "seconds": 9.4
+     "seconds": 9.4,
+     "like_for_like": {
+      "note": "half in-sample vs held-out S on the same trials; screened = movable trials with T_registered <= 120 months under the score half's rates (from per-trial rows)",
+      "coord_free_vs_indep": {
+       "by_direction": [
+        {
+         "choose": "A",
+         "score": "B",
+         "half_in_sample": {
+          "trials_counted": 5,
+          "G": 0.062,
+          "L": 0.001,
+          "L_bg": 0.0,
+          "S": 0.061,
+          "winners": 1,
+          "losers": 1
+         },
+         "half_in_sample_screened": {
+          "trials_counted": 5,
+          "G": 0.062,
+          "L": 0.001,
+          "L_bg": 0.0,
+          "S": 0.061,
+          "winners": 1,
+          "losers": 1
+         },
+         "held_out": {
+          "trials_counted": 5,
+          "G": 0.097,
+          "L": 0.154,
+          "L_bg": 0.0,
+          "S": -0.056999999999999995,
+          "winners": 1,
+          "losers": 1
+         },
+         "held_out_screened": {
+          "trials_counted": 5,
+          "G": 0.097,
+          "L": 0.154,
+          "L_bg": 0.0,
+          "S": -0.056999999999999995,
+          "winners": 1,
+          "losers": 1
+         },
+         "largest_held_minus_half": [
+          {
+           "nct_id": "NCT05800015",
+           "movable": true,
+           "delta_half": -0.001,
+           "delta_held": -0.154,
+           "held_minus_half": -0.153,
+           "T_registered_held": 24.272,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT05785767",
+           "movable": true,
+           "delta_half": 0.062,
+           "delta_held": 0.097,
+           "held_minus_half": 0.035,
+           "T_registered_held": 69.69,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT06119581",
+           "movable": false,
+           "delta_half": 0.017,
+           "delta_held": 0.014,
+           "held_minus_half": -0.003,
+           "T_registered_held": 148.072,
+           "screened_out": false
+          }
+         ]
+        },
+        {
+         "choose": "B",
+         "score": "A",
+         "half_in_sample": {
+          "trials_counted": 5,
+          "G": 0.126,
+          "L": 0.017,
+          "L_bg": 0.0,
+          "S": 0.109,
+          "winners": 1,
+          "losers": 1
+         },
+         "half_in_sample_screened": {
+          "trials_counted": 5,
+          "G": 0.126,
+          "L": 0.017,
+          "L_bg": 0.0,
+          "S": 0.109,
+          "winners": 1,
+          "losers": 1
+         },
+         "held_out": {
+          "trials_counted": 5,
+          "G": 0.399,
+          "L": 2.148,
+          "L_bg": 0.0,
+          "S": -1.749,
+          "winners": 1,
+          "losers": 1
+         },
+         "held_out_screened": {
+          "trials_counted": 5,
+          "G": 0.399,
+          "L": 2.148,
+          "L_bg": 0.0,
+          "S": -1.749,
+          "winners": 1,
+          "losers": 1
+         },
+         "largest_held_minus_half": [
+          {
+           "nct_id": "NCT05785767",
+           "movable": true,
+           "delta_half": 0.126,
+           "delta_held": -2.148,
+           "held_minus_half": -2.274,
+           "T_registered_held": 72.787,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT05800015",
+           "movable": true,
+           "delta_half": -0.017,
+           "delta_held": 0.399,
+           "held_minus_half": 0.416,
+           "T_registered_held": 24.727,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT06422143",
+           "movable": false,
+           "delta_half": 0.099,
+           "delta_held": 0.047,
+           "held_minus_half": -0.052,
+           "T_registered_held": 189.527,
+           "screened_out": false
+          }
+         ]
+        }
+       ],
+       "mean": {
+        "half_in_sample": {
+         "trials_counted": 5.0,
+         "G": 0.094,
+         "L": 0.009000000000000001,
+         "L_bg": 0.0,
+         "S": 0.08499999999999999,
+         "winners": 1.0,
+         "losers": 1.0
+        },
+        "half_in_sample_screened": {
+         "trials_counted": 5.0,
+         "G": 0.094,
+         "L": 0.009000000000000001,
+         "L_bg": 0.0,
+         "S": 0.08499999999999999,
+         "winners": 1.0,
+         "losers": 1.0
+        },
+        "held_out": {
+         "trials_counted": 5.0,
+         "G": 0.248,
+         "L": 1.151,
+         "L_bg": 0.0,
+         "S": -0.903,
+         "winners": 1.0,
+         "losers": 1.0
+        },
+        "held_out_screened": {
+         "trials_counted": 5.0,
+         "G": 0.248,
+         "L": 1.151,
+         "L_bg": 0.0,
+         "S": -0.903,
+         "winners": 1.0,
+         "losers": 1.0
+        },
+        "held_out_change": -11.623529411764707,
+        "held_out_change_screened": -11.623529411764707
+       }
+      },
+      "coord_free_vs_actual": {
+       "by_direction": [
+        {
+         "choose": "A",
+         "score": "B",
+         "half_in_sample": {
+          "trials_counted": 5,
+          "G": 121.66499999999999,
+          "L": 0.0,
+          "L_bg": 1.9079999999999993,
+          "S": 119.75699999999999,
+          "winners": 5,
+          "losers": 0
+         },
+         "half_in_sample_screened": {
+          "trials_counted": 5,
+          "G": 121.66499999999999,
+          "L": 0.0,
+          "L_bg": 1.9079999999999993,
+          "S": 119.75699999999999,
+          "winners": 5,
+          "losers": 0
+         },
+         "held_out": {
+          "trials_counted": 5,
+          "G": 95.381,
+          "L": 0.0,
+          "L_bg": 1.4219999999999993,
+          "S": 93.959,
+          "winners": 5,
+          "losers": 0
+         },
+         "held_out_screened": {
+          "trials_counted": 5,
+          "G": 95.381,
+          "L": 0.0,
+          "L_bg": 1.4219999999999993,
+          "S": 93.959,
+          "winners": 5,
+          "losers": 0
+         },
+         "largest_held_minus_half": [
+          {
+           "nct_id": "NCT05557591",
+           "movable": true,
+           "delta_half": 33.502,
+           "delta_held": 18.054,
+           "held_minus_half": -15.448,
+           "T_registered_held": 36.885,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT05785767",
+           "movable": true,
+           "delta_half": 43.016,
+           "delta_held": 30.281,
+           "held_minus_half": -12.735,
+           "T_registered_held": 69.69,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT06161441",
+           "movable": true,
+           "delta_half": 13.823,
+           "delta_held": 22.651,
+           "held_minus_half": 8.828,
+           "T_registered_held": 31.016,
+           "screened_out": false
+          }
+         ]
+        },
+        {
+         "choose": "B",
+         "score": "A",
+         "half_in_sample": {
+          "trials_counted": 5,
+          "G": 109.041,
+          "L": 0.0,
+          "L_bg": 1.4969999999999994,
+          "S": 107.544,
+          "winners": 5,
+          "losers": 0
+         },
+         "half_in_sample_screened": {
+          "trials_counted": 5,
+          "G": 109.041,
+          "L": 0.0,
+          "L_bg": 1.4969999999999994,
+          "S": 107.544,
+          "winners": 5,
+          "losers": 0
+         },
+         "held_out": {
+          "trials_counted": 5,
+          "G": 97.039,
+          "L": 0.0,
+          "L_bg": 1.685999999999999,
+          "S": 95.35300000000001,
+          "winners": 5,
+          "losers": 0
+         },
+         "held_out_screened": {
+          "trials_counted": 5,
+          "G": 97.039,
+          "L": 0.0,
+          "L_bg": 1.685999999999999,
+          "S": 95.35300000000001,
+          "winners": 5,
+          "losers": 0
+         },
+         "largest_held_minus_half": [
+          {
+           "nct_id": "NCT04077099",
+           "movable": true,
+           "delta_half": 24.914,
+           "delta_held": 4.109,
+           "held_minus_half": -20.805,
+           "T_registered_held": 66.077,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT06161441",
+           "movable": true,
+           "delta_half": 23.542,
+           "delta_held": 11.952,
+           "held_minus_half": -11.59,
+           "T_registered_held": 19.327,
+           "screened_out": false
+          },
+          {
+           "nct_id": "NCT05557591",
+           "movable": true,
+           "delta_half": 19.794,
+           "delta_held": 31.257,
+           "held_minus_half": 11.463,
+           "T_registered_held": 46.141,
+           "screened_out": false
+          }
+         ]
+        }
+       ],
+       "mean": {
+        "half_in_sample": {
+         "trials_counted": 5.0,
+         "G": 115.353,
+         "L": 0.0,
+         "L_bg": 1.7024999999999992,
+         "S": 113.6505,
+         "winners": 5.0,
+         "losers": 0.0
+        },
+        "half_in_sample_screened": {
+         "trials_counted": 5.0,
+         "G": 115.353,
+         "L": 0.0,
+         "L_bg": 1.7024999999999992,
+         "S": 113.6505,
+         "winners": 5.0,
+         "losers": 0.0
+        },
+        "held_out": {
+         "trials_counted": 5.0,
+         "G": 96.21000000000001,
+         "L": 0.0,
+         "L_bg": 1.5539999999999992,
+         "S": 94.656,
+         "winners": 5.0,
+         "losers": 0.0
+        },
+        "held_out_screened": {
+         "trials_counted": 5.0,
+         "G": 96.21000000000001,
+         "L": 0.0,
+         "L_bg": 1.5539999999999992,
+         "S": 94.656,
+         "winners": 5.0,
+         "losers": 0.0
+        },
+        "held_out_change": -0.1671308089273693,
+        "held_out_change_screened": -0.1671308089273693
+       }
+      }
+     }
     }
    },
    "any_solve_hit_time_limit": false
@@ -40453,7 +41921,374 @@
       "holds_out_of_sample": false
      }
     },
-    "seconds": 57.5
+    "seconds": 57.5,
+    "like_for_like": {
+     "note": "half in-sample vs held-out S on the same trials; screened = movable trials with T_registered <= 120 months under the score half's rates (from per-trial rows)",
+     "coord_free_vs_indep": {
+      "by_direction": [
+       {
+        "choose": "A",
+        "score": "B",
+        "half_in_sample": {
+         "trials_counted": 101,
+         "G": 1941.4829999999995,
+         "L": 247.76299999999998,
+         "L_bg": 0.225,
+         "S": 1693.4949999999997,
+         "winners": 66,
+         "losers": 34
+        },
+        "half_in_sample_screened": {
+         "trials_counted": 98,
+         "G": 1837.2299999999993,
+         "L": 224.76699999999997,
+         "L_bg": 0.225,
+         "S": 1612.2379999999994,
+         "winners": 64,
+         "losers": 33
+        },
+        "held_out": {
+         "trials_counted": 101,
+         "G": 1202.3610000000003,
+         "L": 271.634,
+         "L_bg": 0.029,
+         "S": 930.6980000000003,
+         "winners": 58,
+         "losers": 43
+        },
+        "held_out_screened": {
+         "trials_counted": 98,
+         "G": 1136.6060000000002,
+         "L": 261.258,
+         "L_bg": 0.029,
+         "S": 875.3190000000002,
+         "winners": 56,
+         "losers": 42
+        },
+        "largest_held_minus_half": [
+         {
+          "nct_id": "NCT07154706",
+          "movable": true,
+          "delta_half": 167.966,
+          "delta_held": 96.966,
+          "held_minus_half": -71.0,
+          "T_registered_held": 104.764,
+          "screened_out": false
+         },
+         {
+          "nct_id": "NCT07020221",
+          "movable": true,
+          "delta_half": 86.965,
+          "delta_held": 22.895,
+          "held_minus_half": -64.07,
+          "T_registered_held": 80.713,
+          "screened_out": false
+         },
+         {
+          "nct_id": "NCT06899126",
+          "movable": true,
+          "delta_half": 82.069,
+          "delta_held": 24.393,
+          "held_minus_half": -57.676,
+          "T_registered_held": 96.101,
+          "screened_out": false
+         }
+        ]
+       },
+       {
+        "choose": "B",
+        "score": "A",
+        "half_in_sample": {
+         "trials_counted": 104,
+         "G": 1328.8599999999997,
+         "L": 186.23100000000002,
+         "L_bg": 123.663,
+         "S": 1018.9659999999997,
+         "winners": 67,
+         "losers": 37
+        },
+        "half_in_sample_screened": {
+         "trials_counted": 98,
+         "G": 1216.1789999999996,
+         "L": 184.08300000000003,
+         "L_bg": 123.663,
+         "S": 908.4329999999995,
+         "winners": 62,
+         "losers": 36
+        },
+        "held_out": {
+         "trials_counted": 104,
+         "G": 1905.6120000000008,
+         "L": 465.8650000000001,
+         "L_bg": 170.23399999999998,
+         "S": 1269.5130000000008,
+         "winners": 62,
+         "losers": 42
+        },
+        "held_out_screened": {
+         "trials_counted": 98,
+         "G": 1810.5590000000004,
+         "L": 429.7950000000002,
+         "L_bg": 170.23399999999998,
+         "S": 1210.5300000000002,
+         "winners": 60,
+         "losers": 38
+        },
+        "largest_held_minus_half": [
+         {
+          "nct_id": "NCT07185997",
+          "movable": true,
+          "delta_half": 87.538,
+          "delta_held": 156.942,
+          "held_minus_half": 69.404,
+          "T_registered_held": 79.311,
+          "screened_out": false
+         },
+         {
+          "nct_id": "NCT07154706",
+          "movable": true,
+          "delta_half": 81.908,
+          "delta_held": 144.878,
+          "held_minus_half": 62.97,
+          "T_registered_held": 106.085,
+          "screened_out": false
+         },
+         {
+          "nct_id": "NCT06899126",
+          "movable": true,
+          "delta_half": 43.447,
+          "delta_held": 102.926,
+          "held_minus_half": 59.479,
+          "T_registered_held": 116.341,
+          "screened_out": false
+         }
+        ]
+       }
+      ],
+      "mean": {
+       "half_in_sample": {
+        "trials_counted": 102.5,
+        "G": 1635.1714999999995,
+        "L": 216.997,
+        "L_bg": 61.943999999999996,
+        "S": 1356.2304999999997,
+        "winners": 66.5,
+        "losers": 35.5
+       },
+       "half_in_sample_screened": {
+        "trials_counted": 98.0,
+        "G": 1526.7044999999994,
+        "L": 204.425,
+        "L_bg": 61.943999999999996,
+        "S": 1260.3354999999995,
+        "winners": 63.0,
+        "losers": 34.5
+       },
+       "held_out": {
+        "trials_counted": 102.5,
+        "G": 1553.9865000000004,
+        "L": 368.74950000000007,
+        "L_bg": 85.13149999999999,
+        "S": 1100.1055000000006,
+        "winners": 60.0,
+        "losers": 42.5
+       },
+       "held_out_screened": {
+        "trials_counted": 98.0,
+        "G": 1473.5825000000004,
+        "L": 345.52650000000006,
+        "L_bg": 85.13149999999999,
+        "S": 1042.9245,
+        "winners": 58.0,
+        "losers": 40.0
+       },
+       "held_out_change": -0.1888506415391773,
+       "held_out_change_screened": -0.17250248049031347
+      }
+     },
+     "coord_free_vs_actual": {
+      "by_direction": [
+       {
+        "choose": "A",
+        "score": "B",
+        "half_in_sample": {
+         "trials_counted": 101,
+         "G": 2507.407999999999,
+         "L": 51.702,
+         "L_bg": 27.288999999999998,
+         "S": 2428.416999999999,
+         "winners": 87,
+         "losers": 14
+        },
+        "half_in_sample_screened": {
+         "trials_counted": 98,
+         "G": 2361.5229999999992,
+         "L": 51.702,
+         "L_bg": 27.288999999999998,
+         "S": 2282.531999999999,
+         "winners": 84,
+         "losers": 14
+        },
+        "held_out": {
+         "trials_counted": 101,
+         "G": 1789.03,
+         "L": 113.115,
+         "L_bg": 22.993,
+         "S": 1652.922,
+         "winners": 79,
+         "losers": 22
+        },
+        "held_out_screened": {
+         "trials_counted": 98,
+         "G": 1579.461,
+         "L": 113.115,
+         "L_bg": 22.993,
+         "S": 1443.353,
+         "winners": 76,
+         "losers": 22
+        },
+        "largest_held_minus_half": [
+         {
+          "nct_id": "NCT05592626",
+          "movable": true,
+          "delta_half": 9.717,
+          "delta_held": 84.752,
+          "held_minus_half": 75.035,
+          "T_registered_held": 104.471,
+          "screened_out": false
+         },
+         {
+          "nct_id": "NCT07169734",
+          "movable": true,
+          "delta_half": 70.717,
+          "delta_held": 8.229,
+          "held_minus_half": -62.488,
+          "T_registered_held": 54.663,
+          "screened_out": false
+         },
+         {
+          "nct_id": "NCT06899126",
+          "movable": true,
+          "delta_half": 81.24,
+          "delta_held": 23.623,
+          "held_minus_half": -57.617,
+          "T_registered_held": 96.101,
+          "screened_out": false
+         }
+        ]
+       },
+       {
+        "choose": "B",
+        "score": "A",
+        "half_in_sample": {
+         "trials_counted": 104,
+         "G": 2112.4439999999986,
+         "L": 43.45099999999999,
+         "L_bg": 87.77000000000001,
+         "S": 1981.2229999999986,
+         "winners": 88,
+         "losers": 16
+        },
+        "half_in_sample_screened": {
+         "trials_counted": 98,
+         "G": 1834.2189999999994,
+         "L": 43.45099999999999,
+         "L_bg": 87.77000000000001,
+         "S": 1702.9979999999994,
+         "winners": 82,
+         "losers": 16
+        },
+        "held_out": {
+         "trials_counted": 104,
+         "G": 3170.206,
+         "L": 193.81700000000006,
+         "L_bg": 161.223,
+         "S": 2815.166,
+         "winners": 79,
+         "losers": 25
+        },
+        "held_out_screened": {
+         "trials_counted": 98,
+         "G": 2150.085,
+         "L": 193.81700000000006,
+         "L_bg": 161.223,
+         "S": 1795.045,
+         "winners": 73,
+         "losers": 25
+        },
+        "largest_held_minus_half": [
+         {
+          "nct_id": "NCT06463665",
+          "movable": true,
+          "delta_half": 27.944,
+          "delta_held": 494.787,
+          "held_minus_half": 466.843,
+          "T_registered_held": 503.838,
+          "screened_out": true
+         },
+         {
+          "nct_id": "NCT05592626",
+          "movable": true,
+          "delta_half": 84.693,
+          "delta_held": -40.773,
+          "held_minus_half": -125.466,
+          "T_registered_held": 26.553,
+          "screened_out": false
+         },
+         {
+          "nct_id": "NCT06228326",
+          "movable": true,
+          "delta_half": 0.58,
+          "delta_held": 78.881,
+          "held_minus_half": 78.301,
+          "T_registered_held": 165.834,
+          "screened_out": true
+         }
+        ]
+       }
+      ],
+      "mean": {
+       "half_in_sample": {
+        "trials_counted": 102.5,
+        "G": 2309.9259999999986,
+        "L": 47.576499999999996,
+        "L_bg": 57.529500000000006,
+        "S": 2204.819999999999,
+        "winners": 87.5,
+        "losers": 15.0
+       },
+       "half_in_sample_screened": {
+        "trials_counted": 98.0,
+        "G": 2097.870999999999,
+        "L": 47.576499999999996,
+        "L_bg": 57.529500000000006,
+        "S": 1992.764999999999,
+        "winners": 83.0,
+        "losers": 15.0
+       },
+       "held_out": {
+        "trials_counted": 102.5,
+        "G": 2479.618,
+        "L": 153.46600000000004,
+        "L_bg": 92.108,
+        "S": 2234.044,
+        "winners": 79.0,
+        "losers": 23.5
+       },
+       "held_out_screened": {
+        "trials_counted": 98.0,
+        "G": 1864.7730000000001,
+        "L": 153.46600000000004,
+        "L_bg": 92.108,
+        "S": 1619.199,
+        "winners": 74.5,
+        "losers": 23.5
+       },
+       "held_out_change": 0.013254596747127145,
+       "held_out_change_screened": -0.1874611406763964
+      }
+     }
+    }
    }
   },
   "any_solve_hit_time_limit": true

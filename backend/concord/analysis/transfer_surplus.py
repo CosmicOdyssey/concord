@@ -100,6 +100,10 @@ Reading rules (fixed now)
   - The ex-ante scheme "holds out of sample" only if no movable trial has realized net < -1 month in
     either direction; otherwise the count, shortfall and largest shortfall are the result.
 No parameter is tuned; every number is reported, including ones that weaken the pitch.
+
+POST-HOC ADDITION (after results, from the audit of finding 2; changes no pre-registered number):
+  like_for_like (--annotate) compares half in-sample and held-out S on the SAME trials, also on the
+  screened set M_s, recomputed from the per-trial rows, and names the trials behind the gap.
 """
 
 from __future__ import annotations
@@ -315,6 +319,79 @@ def _per_trial(ids: list[str], M: np.ndarray, T: dict, comp, T_held: dict | None
     return rows
 
 
+# --------------------------------------------------------------------- like-for-like shrink (audit fix)
+# Reporting addition after the audit of finding 2; it changes no pre-registered number. The held-out
+# screened view (M_s, task B's Fix 2) was pre-registered, but the half in-sample number it was compared
+# with was unscreened, so the two were not on the same trials. This recomputes the half in-sample
+# quantities on the SAME screened set M_s (T_registered <= 120 months under the score half's rates)
+# from the per-trial rows (values rounded to 0.001 month), and names the trials that drive the gap
+# between held-out and half in-sample S.
+
+def rows_surplus(rows: list[dict], delta_key: str, screened: bool) -> dict:
+    """G, L, L_bg, S from per-trial rows. Movable trials counted in G/L (only those with
+    T_registered_held <= PLAUSIBLE if screened); background losses always count in L_bg."""
+    G = L = L_bg = 0.0
+    winners = losers = counted = 0
+    for r in rows:
+        x = r[delta_key]
+        if r["movable"]:
+            if screened and r["T_registered_held"] > PLAUSIBLE:
+                continue
+            counted += 1
+            if x > EPS:
+                G, winners = G + x, winners + 1
+            elif x < -EPS:
+                L, losers = L - x, losers + 1
+        elif x < -EPS:
+            L_bg -= x
+    return {"trials_counted": counted, "G": G, "L": L, "L_bg": L_bg, "S": G - L - L_bg,
+            "winners": winners, "losers": losers}
+
+
+def like_for_like(setting: dict, top: int = 3) -> dict:
+    """Half in-sample vs held-out S on the same trials (all movable; screened), per PER_TRIAL comparison."""
+    out = {"note": "half in-sample vs held-out S on the same trials; screened = movable trials with "
+                   "T_registered <= 120 months under the score half's rates (from per-trial rows)"}
+    for c in COMPARISONS:
+        k = key(c)
+        if c not in PER_TRIAL or not all(k in d.get("per_trial", {}) for d in setting["directions"]):
+            continue
+        by_dir = []
+        for d in setting["directions"]:
+            rows = d["per_trial"][k]
+            drivers = sorted(rows, key=lambda r: -abs(r["delta_held"] - r["delta"]))[:top]
+            by_dir.append({
+                "choose": d["choose"], "score": d["score"],
+                **{name: rows_surplus(rows, dk, scr) for name, dk, scr in (
+                    ("half_in_sample", "delta", False), ("half_in_sample_screened", "delta", True),
+                    ("held_out", "delta_held", False), ("held_out_screened", "delta_held", True))},
+                "largest_held_minus_half": [
+                    {"nct_id": r["nct_id"], "movable": r["movable"], "delta_half": r["delta"],
+                     "delta_held": r["delta_held"], "held_minus_half": round(r["delta_held"] - r["delta"], 3),
+                     "T_registered_held": r["T_registered_held"],
+                     "screened_out": bool(r["movable"] and r["T_registered_held"] > PLAUSIBLE)} for r in drivers]})
+        mean = {}
+        for name in ("half_in_sample", "half_in_sample_screened", "held_out", "held_out_screened"):
+            mean[name] = {m: float(np.mean([b[name][m] for b in by_dir]))
+                          for m in ("trials_counted", "G", "L", "L_bg", "S", "winners", "losers")}
+        for scr in ("", "_screened"):
+            h, o = mean["half_in_sample" + scr]["S"], mean["held_out" + scr]["S"]
+            mean["held_out_change" + scr] = (o / h - 1) if h > 0 else None
+        out[k] = {"by_direction": by_dir, "mean": mean}
+    return out
+
+
+def annotate(result: dict) -> dict:
+    """Add like_for_like to every setting (scenarios and the 6 s context); no existing key changes."""
+    groups = list(result["scenarios"].values())
+    if "wallclock_6s_context" in result:
+        groups.append(result["wallclock_6s_context"])
+    for sc in groups:
+        for s in sc["settings"].values():
+            s["like_for_like"] = like_for_like(s)
+    return result
+
+
 # ----------------------------------------------------------------------------------------- running
 
 def run_setting(p: service.Params, rates: dict, solve) -> dict:
@@ -362,6 +439,7 @@ def run_setting(p: service.Params, rates: dict, solve) -> dict:
     res["in_sample_half_mean"] = _mean([d["in_sample_half"] for d in dirs])
     res["ex_post_mean"] = _mean_ex_post([d["ex_post"] for d in dirs])
     res["ex_post_screened_mean"] = _mean_ex_post([d["ex_post_screened"] for d in dirs])
+    res["like_for_like"] = like_for_like(res)
     res["seconds"] = round(time.time() - t0, 1)
     return res
 
@@ -499,6 +577,22 @@ def print_tables(result: dict) -> None:
                 if ep.get("scheme_in_both_directions"):
                     print(f"  ex post {key(c)}: shortfall {ep['shortfall_total']:.1f} (largest {ep['largest_shortfall']:.1f}),"
                           f" realized surplus {ep['realized_total_surplus']:.1f}, holds: {ep['holds_out_of_sample']}")
+    for name, sc in result["scenarios"].items():
+        for cap, s in sc["settings"].items():
+            for k, blk in s.get("like_for_like", {}).items():
+                if k == "note":
+                    continue
+                m = blk["mean"]
+                print(f"\n{name} [{cap}] {k} like for like (mean S): half in-sample {m['half_in_sample']['S']:.1f}"
+                      f" -> held-out {m['held_out']['S']:.1f} ({_fmt(m['held_out_change'], '{:+.1%}')}); screened "
+                      f"{m['half_in_sample_screened']['S']:.1f} -> {m['held_out_screened']['S']:.1f} "
+                      f"({_fmt(m['held_out_change_screened'], '{:+.1%}')})")
+                for d in blk["by_direction"]:
+                    top = d["largest_held_minus_half"][0]
+                    print(f"  {d['choose']}->{d['score']}: half {d['half_in_sample']['S']:.1f} held "
+                          f"{d['held_out']['S']:.1f}; screened half {d['half_in_sample_screened']['S']:.1f} held "
+                          f"{d['held_out_screened']['S']:.1f}; largest gap {top['nct_id']} "
+                          f"{top['held_minus_half']:+.1f} (T_reg held {top['T_registered_held']:.1f})")
     print("\nreading:", json.dumps(result.get("reading", {}), indent=1))
 
 
@@ -510,8 +604,15 @@ def main() -> None:
     ap.add_argument("--wallclock-context", action="store_true",
                     help="add one run of the unchanged 6 s service.solve for US-Northeast at peak (context only)")
     ap.add_argument("--print-only", action="store_true")
+    ap.add_argument("--annotate", action="store_true",
+                    help="add the like-for-like block to an existing --out file (no solve; no existing key changes)")
     a = ap.parse_args()
     path = Path(a.out)
+    if a.annotate:
+        result = annotate(json.loads(path.read_text(encoding="utf-8")))
+        path.write_text(json.dumps(result, indent=1), encoding="utf-8")
+        print_tables(result)
+        return
     if a.print_only:
         print_tables(json.loads(path.read_text(encoding="utf-8")))
         return

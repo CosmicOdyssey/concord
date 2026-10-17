@@ -30,3 +30,23 @@ def test_no_scheme_without_surplus_and_ex_post():
     # winner pays 1 and realizes 1 -> 0; loser gets 1 and realizes -2 -> -1
     assert summary["worse_off_movable"] == 1 and np.isclose(summary["shortfall_total"], 1.0)
     assert np.isclose(summary["realized_total_surplus"], -1.0) and np.allclose(net, [0.0, -1.0])
+
+
+def test_like_for_like_rows_surplus_screens_movable_only():
+    rows = [
+        {"nct_id": "a", "movable": True, "delta": 10.0, "delta_held": 400.0, "T_registered_held": 500.0},
+        {"nct_id": "b", "movable": True, "delta": 5.0, "delta_held": 4.0, "T_registered_held": 50.0},
+        {"nct_id": "c", "movable": True, "delta": -2.0, "delta_held": -3.0, "T_registered_held": 60.0},
+        {"nct_id": "d", "movable": False, "delta": -1.0, "delta_held": 2.0, "T_registered_held": 900.0},
+    ]
+    full = TS.rows_surplus(rows, "delta", screened=False)
+    scr = TS.rows_surplus(rows, "delta", screened=True)
+    held_scr = TS.rows_surplus(rows, "delta_held", screened=True)
+    assert (full["G"], full["L"], full["L_bg"], full["S"]) == (15.0, 2.0, 1.0, 12.0)
+    assert (scr["G"], scr["S"], scr["trials_counted"]) == (5.0, 2.0, 2)  # background loss kept when screened
+    assert (held_scr["G"], held_scr["L"], held_scr["L_bg"], held_scr["S"]) == (4.0, 3.0, 0.0, 1.0)
+    setting = {"directions": [{"choose": "A", "score": "B", "per_trial": {"coord_free_vs_actual": rows}}]}
+    lfl = TS.like_for_like(setting)["coord_free_vs_actual"]
+    assert lfl["by_direction"][0]["largest_held_minus_half"][0]["nct_id"] == "a"
+    assert lfl["by_direction"][0]["largest_held_minus_half"][0]["screened_out"] is True
+    assert abs(lfl["mean"]["held_out_change_screened"] - (1.0 / 2.0 - 1)) < 1e-12
