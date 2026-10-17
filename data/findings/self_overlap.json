@@ -1,0 +1,6474 @@
+{
+ "generated_at": "2026-10-17T07:54:12+00:00",
+ "snapshot_date": "2026-10-16",
+ "definition": "Same-sponsor pairs of NSCLC trials (is_lung = 1, industry lead sponsor, any phase; trials CT.gov lists as withdrawn or not yet recruiting at the snapshot excluded) whose enrollment windows are both open on some date between 2015-01-01 and the registry snapshot (2026-10-16), that share >= 10 identifiable registered sites (worldwide; site rows withdrawn from the trial and anonymized per-city pseudo-sites excluded), and whose eligibility overlap on the synthetic population is >= 0.8 in at least one direction (o_PQ = share of P's eligible patients also eligible for Q: one population nearly contained in the other). Window: start to start + 0.65 x (primary completion - start), bounded by the CT.gov status at the snapshot (still recruiting = open through the snapshot; any other status = closed by the snapshot), so nothing is projected past the snapshot. Excluded and counted separately: pairs where either trial has no encoded criteria (an empty criteria list describes everyone and passes the overlap test trivially) and pairs where either trial has a closed status and registers no completion date at all (no window can be estimated).",
+ "parameters": {
+  "min_shared_sites": 10,
+  "min_overlap_one_direction": 0.8,
+  "since": "2015-01-01",
+  "until": "2026-10-16",
+  "context_min_shared_sites": 5,
+  "enroll_fraction": 0.65,
+  "robust_min_container_criteria": 3,
+  "population_n": 20000,
+  "population_seed": 7
+ },
+ "headline": {
+  "count": 21,
+  "upper_bound_count": 19,
+  "sponsors": 10,
+  "variant": "both_hand_encoded",
+  "text": "21 same-sponsor pairs where both trials' eligibility was hand-encoded and reviewed; in 19 of them at least one trial has a restriction the synthetic population cannot represent, so their overlap is a ceiling (2 without that flag). The broad count (134) adds 113 pairs that rest on the unreviewed rule-based parse for at least one trial (the parse never sets the upper-bound flag, so those pairs are unflagged, not verified); 21 of all 134 are 'contained' in a trial with 2 or fewer encoded criteria. Lead with 21 and cite 134 only with these caveats."
+ },
+ "count": 134,
+ "upper_bound_count": 42,
+ "sponsors_with_pairs": 27,
+ "count_both_phase2_or_3": 114,
+ "count_by_eligibility_source": {
+  "both rule-based parse": 90,
+  "both hand-encoded": 21,
+  "one of each": 23
+ },
+ "robustness": {
+  "both_hand_encoded": {
+   "count": 21,
+   "upper_bound_count": 19,
+   "not_upper_bound_count": 2,
+   "definition": "both trials' criteria hand-encoded and reviewed (compiler.overrides)"
+  },
+  "container_min_3_criteria": {
+   "count": 113,
+   "upper_bound_count": 34,
+   "definition": "the containing trial (Q when o_PQ >= 0.8) has >= 3 encoded criteria, so containment is not automatic"
+  },
+  "container_at_most_2_criteria": {
+   "count": 21,
+   "exactly_one_criterion": 12,
+   "definition": "the containing trial has <= 2 encoded criteria: most synthetic patients pass it, so containment at >= 0.8 is close to automatic"
+  }
+ },
+ "context": {
+  "count_at_min_5_shared_sites": 358,
+  "upper_bound_count_at_min_5_shared_sites": 93,
+  "concurrent_same_sponsor_pairs_since": 8095,
+  "concurrent_pairs_sharing_min_10_sites": 450,
+  "concurrent_pairs_sharing_min_5_sites": 1009,
+  "excluded_no_criteria_at_min_10_sites": 11,
+  "excluded_no_criteria_at_min_5_sites": 30,
+  "excluded_open_ended_window_at_min_10_sites": 1,
+  "excluded_open_ended_window_at_min_5_sites": 1,
+  "industry_lung_trials_in_db": 3062,
+  "industry_lung_trials_withdrawn_or_not_yet_recruiting": 207,
+  "industry_lung_trials_considered": 2838,
+  "industry_sponsors_with_2plus_trials": 312,
+  "considered_trials_with_mostly_anonymized_sites": 639
+ },
+ "notes": [
+  "Descriptive: counts of registered sites, enrollment windows bounded by the registry status, and synthetic-population eligibility shares. Nothing here predicts enrollment speed, and no window runs past the snapshot.",
+  "Lead with headline.count (both trials hand-encoded and reviewed). The broad count includes pairs that rest on the unreviewed rule-based parse; a parse that keeps only one or two criteria (e.g. 'ECOG 0-1' or 'Stage IV') admits most patients, so a population 'contained' in it says little (see robustness).",
+  "upper_bound: either trial's hand-encoded design entry lists a required biomarker the population does not model, a basket or multi-cohort design, or any unmodeled restriction; the overlap shown is then a ceiling on the modeled populations, not a measurement.",
+  "Overlap months are the full overlap of the two bounded windows up to the snapshot (not only the part after the cut-off date).",
+  "Site lists are as registered on ClinicalTrials.gov at the snapshot; a site's activation dates are not public.",
+  "The count is a floor: sponsors that register their sites anonymously ('Research Site'; see context.considered_trials_with_mostly_anonymized_sites) cannot show identifiable shared sites, and different lead-sponsor strings of one company are not merged."
+ ],
+ "pairs": [
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT04487080",
+   "q": "NCT04988295",
+   "shared_sites": 113,
+   "o_pq": 0.7697,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 8.7,
+   "both_recruiting_from": "2021-11-17",
+   "both_recruiting_to": "2022-08-10",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04487080": "ACTIVE_NOT_RECRUITING",
+    "NCT04988295": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04487080": [],
+    "NCT04988295": []
+   },
+   "eligibility_source": {
+    "NCT04487080": "rule-based parse",
+    "NCT04988295": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04487080": 5,
+    "NCT04988295": 7
+   },
+   "eligible_share": {
+    "NCT04487080": 0.0234,
+    "NCT04988295": 0.0181
+   },
+   "containers": [
+    "NCT04487080"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT04487080": [
+     "PHASE3"
+    ],
+    "NCT04988295": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT04538664",
+   "q": "NCT04988295",
+   "shared_sites": 105,
+   "o_pq": 0.4298,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 6.8,
+   "both_recruiting_from": "2021-11-17",
+   "both_recruiting_to": "2022-06-10",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04538664": "ACTIVE_NOT_RECRUITING",
+    "NCT04988295": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04538664": [],
+    "NCT04988295": []
+   },
+   "eligibility_source": {
+    "NCT04538664": "rule-based parse",
+    "NCT04988295": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04538664": 6,
+    "NCT04988295": 7
+   },
+   "eligible_share": {
+    "NCT04538664": 0.042,
+    "NCT04988295": 0.0181
+   },
+   "containers": [
+    "NCT04538664"
+   ],
+   "container_criteria": 6,
+   "phases": {
+    "NCT04538664": [
+     "PHASE3"
+    ],
+    "NCT04988295": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT04988295",
+   "q": "NCT05388669",
+   "shared_sites": 85,
+   "o_pq": 1.0,
+   "o_qp": 0.413,
+   "overlap_months_estimated": 4.2,
+   "both_recruiting_from": "2022-08-05",
+   "both_recruiting_to": "2022-12-12",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04988295": "ACTIVE_NOT_RECRUITING",
+    "NCT05388669": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04988295": [],
+    "NCT05388669": []
+   },
+   "eligibility_source": {
+    "NCT04988295": "rule-based parse",
+    "NCT05388669": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04988295": 7,
+    "NCT05388669": 5
+   },
+   "eligible_share": {
+    "NCT04988295": 0.0181,
+    "NCT05388669": 0.0437
+   },
+   "containers": [
+    "NCT05388669"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT04988295": [
+     "PHASE3"
+    ],
+    "NCT05388669": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Amgen",
+   "p": "NCT06311721",
+   "q": "NCT06430866",
+   "shared_sites": 70,
+   "o_pq": 0.9499,
+   "o_qp": 0.3746,
+   "overlap_months_estimated": 17.6,
+   "both_recruiting_from": "2024-09-12",
+   "both_recruiting_to": "2026-02-28",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT06311721": "ACTIVE_NOT_RECRUITING",
+    "NCT06430866": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT06311721": [],
+    "NCT06430866": []
+   },
+   "eligibility_source": {
+    "NCT06311721": "rule-based parse",
+    "NCT06430866": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT06311721": 6,
+    "NCT06430866": 4
+   },
+   "eligible_share": {
+    "NCT06311721": 0.1367,
+    "NCT06430866": 0.3466
+   },
+   "containers": [
+    "NCT06430866"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT06311721": [
+     "PHASE3"
+    ],
+    "NCT06430866": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Bristol-Myers Squibb",
+   "p": "NCT06561386",
+   "q": "NCT07063745",
+   "shared_sites": 53,
+   "o_pq": 0.9625,
+   "o_qp": 0.3982,
+   "overlap_months_estimated": 9.4,
+   "both_recruiting_from": "2026-01-02",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT06561386": "RECRUITING",
+    "NCT07063745": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06561386": [
+     "5 restrictions not modeled"
+    ],
+    "NCT07063745": [
+     "requires a biomarker the synthetic population does not model",
+     "5 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT06561386": "hand-encoded",
+    "NCT07063745": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT06561386": 12,
+    "NCT07063745": 8
+   },
+   "eligible_share": {
+    "NCT06561386": 0.0614,
+    "NCT07063745": 0.1484
+   },
+   "containers": [
+    "NCT07063745"
+   ],
+   "container_criteria": 8,
+   "phases": {
+    "NCT06561386": [
+     "PHASE3"
+    ],
+    "NCT07063745": [
+     "PHASE2",
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Eli Lilly and Company",
+   "p": "NCT04194944",
+   "q": "NCT04819100",
+   "shared_sites": 51,
+   "o_pq": 0.845,
+   "o_qp": 0.5365,
+   "overlap_months_estimated": 2.9,
+   "both_recruiting_from": "2021-12-20",
+   "both_recruiting_to": "2022-03-17",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04194944": "ACTIVE_NOT_RECRUITING",
+    "NCT04819100": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04194944": [],
+    "NCT04819100": []
+   },
+   "eligibility_source": {
+    "NCT04194944": "rule-based parse",
+    "NCT04819100": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04194944": 5,
+    "NCT04819100": 2
+   },
+   "eligible_share": {
+    "NCT04194944": 0.4849,
+    "NCT04819100": 0.7639
+   },
+   "containers": [
+    "NCT04819100"
+   ],
+   "container_criteria": 2,
+   "phases": {
+    "NCT04194944": [
+     "PHASE3"
+    ],
+    "NCT04819100": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Bayer",
+   "p": "NCT05099172",
+   "q": "NCT06452277",
+   "shared_sites": 49,
+   "o_pq": 0.0582,
+   "o_qp": 0.807,
+   "overlap_months_estimated": 25.6,
+   "both_recruiting_from": "2024-08-28",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT05099172": "RECRUITING",
+    "NCT06452277": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT05099172": [
+     "multi-cohort design: cohorts the single population cannot represent",
+     "5 restrictions not modeled"
+    ],
+    "NCT06452277": [
+     "6 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT05099172": "hand-encoded",
+    "NCT06452277": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT05099172": 4,
+    "NCT06452277": 9
+   },
+   "eligible_share": {
+    "NCT05099172": 0.0791,
+    "NCT06452277": 0.0057
+   },
+   "containers": [
+    "NCT05099172"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT05099172": [
+     "PHASE1",
+     "PHASE2"
+    ],
+    "NCT06452277": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Regeneron Pharmaceuticals",
+   "p": "NCT05785767",
+   "q": "NCT05800015",
+   "shared_sites": 49,
+   "o_pq": 1.0,
+   "o_qp": 0.2645,
+   "overlap_months_estimated": 31.8,
+   "both_recruiting_from": "2023-08-08",
+   "both_recruiting_to": "2026-04-03",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05785767": "ACTIVE_NOT_RECRUITING",
+    "NCT05800015": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05785767": [],
+    "NCT05800015": []
+   },
+   "eligibility_source": {
+    "NCT05785767": "hand-encoded",
+    "NCT05800015": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT05785767": 10,
+    "NCT05800015": 8
+   },
+   "eligible_share": {
+    "NCT05785767": 0.0518,
+    "NCT05800015": 0.1958
+   },
+   "containers": [
+    "NCT05800015"
+   ],
+   "container_criteria": 8,
+   "phases": {
+    "NCT05785767": [
+     "PHASE2",
+     "PHASE3"
+    ],
+    "NCT05800015": [
+     "PHASE2",
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Boehringer Ingelheim",
+   "p": "NCT04886804",
+   "q": "NCT06151574",
+   "shared_sites": 45,
+   "o_pq": 1.0,
+   "o_qp": 0.4914,
+   "overlap_months_estimated": 11.6,
+   "both_recruiting_from": "2024-02-09",
+   "both_recruiting_to": "2025-01-26",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04886804": "ACTIVE_NOT_RECRUITING",
+    "NCT06151574": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04886804": [],
+    "NCT06151574": []
+   },
+   "eligibility_source": {
+    "NCT04886804": "rule-based parse",
+    "NCT06151574": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04886804": 3,
+    "NCT06151574": 3
+   },
+   "eligible_share": {
+    "NCT04886804": 0.0057,
+    "NCT06151574": 0.0116
+   },
+   "containers": [
+    "NCT06151574"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT04886804": [
+     "PHASE1"
+    ],
+    "NCT06151574": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "Amgen",
+   "p": "NCT05920356",
+   "q": "NCT06593522",
+   "shared_sites": 43,
+   "o_pq": 1.0,
+   "o_qp": 0.0155,
+   "overlap_months_estimated": 14.4,
+   "both_recruiting_from": "2024-12-26",
+   "both_recruiting_to": "2026-03-09",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05920356": "RECRUITING",
+    "NCT06593522": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT05920356": [
+     "4 restrictions not modeled"
+    ],
+    "NCT06593522": []
+   },
+   "eligibility_source": {
+    "NCT05920356": "hand-encoded",
+    "NCT06593522": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05920356": 7,
+    "NCT06593522": 5
+   },
+   "eligible_share": {
+    "NCT05920356": 0.0088,
+    "NCT06593522": 0.5657
+   },
+   "containers": [
+    "NCT06593522"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT05920356": [
+     "PHASE3"
+    ],
+    "NCT06593522": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Daiichi Sankyo",
+   "p": "NCT05338970",
+   "q": "NCT05555732",
+   "shared_sites": 40,
+   "o_pq": 1.0,
+   "o_qp": 0.0645,
+   "overlap_months_estimated": 8.7,
+   "both_recruiting_from": "2023-01-11",
+   "both_recruiting_to": "2023-10-01",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05338970": "ACTIVE_NOT_RECRUITING",
+    "NCT05555732": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05338970": [],
+    "NCT05555732": []
+   },
+   "eligibility_source": {
+    "NCT05338970": "rule-based parse",
+    "NCT05555732": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05338970": 7,
+    "NCT05555732": 3
+   },
+   "eligible_share": {
+    "NCT05338970": 0.0239,
+    "NCT05555732": 0.3712
+   },
+   "containers": [
+    "NCT05555732"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT05338970": [
+     "PHASE3"
+    ],
+    "NCT05555732": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT04077463",
+   "q": "NCT04538664",
+   "shared_sites": 40,
+   "o_pq": 0.8004,
+   "o_qp": 0.4298,
+   "overlap_months_estimated": 19.9,
+   "both_recruiting_from": "2020-10-13",
+   "both_recruiting_to": "2022-06-10",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04077463": "ACTIVE_NOT_RECRUITING",
+    "NCT04538664": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04077463": [],
+    "NCT04538664": []
+   },
+   "eligibility_source": {
+    "NCT04077463": "rule-based parse",
+    "NCT04538664": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04077463": 4,
+    "NCT04538664": 6
+   },
+   "eligible_share": {
+    "NCT04077463": 0.0226,
+    "NCT04538664": 0.042
+   },
+   "containers": [
+    "NCT04538664"
+   ],
+   "container_criteria": 6,
+   "phases": {
+    "NCT04077463": [
+     "PHASE1"
+    ],
+    "NCT04538664": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT04988295",
+   "q": "NCT05498428",
+   "shared_sites": 40,
+   "o_pq": 1.0,
+   "o_qp": 0.2996,
+   "overlap_months_estimated": 1.0,
+   "both_recruiting_from": "2022-11-11",
+   "both_recruiting_to": "2022-12-12",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04988295": "ACTIVE_NOT_RECRUITING",
+    "NCT05498428": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT04988295": [],
+    "NCT05498428": [
+     "multi-cohort design: cohorts the single population cannot represent",
+     "8 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT04988295": "rule-based parse",
+    "NCT05498428": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT04988295": 7,
+    "NCT05498428": 5
+   },
+   "eligible_share": {
+    "NCT04988295": 0.0181,
+    "NCT05498428": 0.0602
+   },
+   "containers": [
+    "NCT05498428"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT04988295": [
+     "PHASE3"
+    ],
+    "NCT05498428": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT05388669",
+   "q": "NCT05498428",
+   "shared_sites": 40,
+   "o_pq": 1.0,
+   "o_qp": 0.7253,
+   "overlap_months_estimated": 7.8,
+   "both_recruiting_from": "2022-11-11",
+   "both_recruiting_to": "2023-07-06",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05388669": "ACTIVE_NOT_RECRUITING",
+    "NCT05498428": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT05388669": [],
+    "NCT05498428": [
+     "multi-cohort design: cohorts the single population cannot represent",
+     "8 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT05388669": "rule-based parse",
+    "NCT05498428": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT05388669": 5,
+    "NCT05498428": 5
+   },
+   "eligible_share": {
+    "NCT05388669": 0.0437,
+    "NCT05498428": 0.0602
+   },
+   "containers": [
+    "NCT05498428"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT05388669": [
+     "PHASE3"
+    ],
+    "NCT05498428": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT01903993",
+   "q": "NCT02008227",
+   "shared_sites": 38,
+   "o_pq": 1.0,
+   "o_qp": 0.2933,
+   "overlap_months_estimated": 10.7,
+   "both_recruiting_from": "2014-03-11",
+   "both_recruiting_to": "2015-01-30",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT01903993": "COMPLETED",
+    "NCT02008227": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT01903993": [],
+    "NCT02008227": []
+   },
+   "eligibility_source": {
+    "NCT01903993": "rule-based parse",
+    "NCT02008227": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT01903993": 5,
+    "NCT02008227": 4
+   },
+   "eligible_share": {
+    "NCT01903993": 0.0936,
+    "NCT02008227": 0.3191
+   },
+   "containers": [
+    "NCT02008227"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT01903993": [
+     "PHASE2"
+    ],
+    "NCT02008227": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT05388669",
+   "q": "NCT05488314",
+   "shared_sites": 38,
+   "o_pq": 1.0,
+   "o_qp": 0.1037,
+   "overlap_months_estimated": 6.7,
+   "both_recruiting_from": "2022-12-13",
+   "both_recruiting_to": "2023-07-06",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05388669": "ACTIVE_NOT_RECRUITING",
+    "NCT05488314": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05388669": [],
+    "NCT05488314": []
+   },
+   "eligibility_source": {
+    "NCT05388669": "rule-based parse",
+    "NCT05488314": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05388669": 5,
+    "NCT05488314": 3
+   },
+   "eligible_share": {
+    "NCT05388669": 0.0437,
+    "NCT05488314": 0.4215
+   },
+   "containers": [
+    "NCT05488314"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT05388669": [
+     "PHASE3"
+    ],
+    "NCT05488314": [
+     "PHASE1",
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "BeiGene",
+   "p": "NCT03663205",
+   "q": "NCT03594747",
+   "shared_sites": 37,
+   "o_pq": 0.283,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 11.5,
+   "both_recruiting_from": "2018-07-30",
+   "both_recruiting_to": "2019-07-14",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03663205": "COMPLETED",
+    "NCT03594747": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03663205": [],
+    "NCT03594747": []
+   },
+   "eligibility_source": {
+    "NCT03663205": "rule-based parse",
+    "NCT03594747": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03663205": 8,
+    "NCT03594747": 9
+   },
+   "eligible_share": {
+    "NCT03663205": 0.1398,
+    "NCT03594747": 0.0396
+   },
+   "containers": [
+    "NCT03663205"
+   ],
+   "container_criteria": 8,
+   "phases": {
+    "NCT03663205": [
+     "PHASE3"
+    ],
+    "NCT03594747": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT04077463",
+   "q": "NCT04487080",
+   "shared_sites": 37,
+   "o_pq": 0.8293,
+   "o_qp": 0.7974,
+   "overlap_months_estimated": 22.3,
+   "both_recruiting_from": "2020-09-30",
+   "both_recruiting_to": "2022-08-10",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04077463": "ACTIVE_NOT_RECRUITING",
+    "NCT04487080": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04077463": [],
+    "NCT04487080": []
+   },
+   "eligibility_source": {
+    "NCT04077463": "rule-based parse",
+    "NCT04487080": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04077463": 4,
+    "NCT04487080": 5
+   },
+   "eligible_share": {
+    "NCT04077463": 0.0226,
+    "NCT04487080": 0.0234
+   },
+   "containers": [
+    "NCT04487080"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT04077463": [
+     "PHASE1"
+    ],
+    "NCT04487080": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT03178552",
+   "q": "NCT04513925",
+   "shared_sites": 34,
+   "o_pq": 0.1094,
+   "o_qp": 0.9054,
+   "overlap_months_estimated": 37.1,
+   "both_recruiting_from": "2020-08-24",
+   "both_recruiting_to": "2023-09-27",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03178552": "ACTIVE_NOT_RECRUITING",
+    "NCT04513925": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03178552": [],
+    "NCT04513925": []
+   },
+   "eligibility_source": {
+    "NCT03178552": "rule-based parse",
+    "NCT04513925": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03178552": 3,
+    "NCT04513925": 7
+   },
+   "eligible_share": {
+    "NCT03178552": 0.6471,
+    "NCT04513925": 0.0782
+   },
+   "containers": [
+    "NCT03178552"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT03178552": [
+     "PHASE2",
+     "PHASE3"
+    ],
+    "NCT04513925": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "BioAtla, Inc.",
+   "p": "NCT03504488",
+   "q": "NCT04681131",
+   "shared_sites": 33,
+   "o_pq": 1.0,
+   "o_qp": 0.7551,
+   "overlap_months_estimated": 18.1,
+   "both_recruiting_from": "2021-03-17",
+   "both_recruiting_to": "2022-09-19",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03504488": "COMPLETED",
+    "NCT04681131": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03504488": [],
+    "NCT04681131": []
+   },
+   "eligibility_source": {
+    "NCT03504488": "rule-based parse",
+    "NCT04681131": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03504488": 2,
+    "NCT04681131": 1
+   },
+   "eligible_share": {
+    "NCT03504488": 0.6049,
+    "NCT04681131": 0.8011
+   },
+   "containers": [
+    "NCT04681131"
+   ],
+   "container_criteria": 1,
+   "phases": {
+    "NCT03504488": [
+     "PHASE1",
+     "PHASE2"
+    ],
+    "NCT04681131": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT03178552",
+   "q": "NCT04294810",
+   "shared_sites": 33,
+   "o_pq": 0.2274,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 45.4,
+   "both_recruiting_from": "2020-03-04",
+   "both_recruiting_to": "2023-12-16",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03178552": "ACTIVE_NOT_RECRUITING",
+    "NCT04294810": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03178552": [],
+    "NCT04294810": []
+   },
+   "eligibility_source": {
+    "NCT03178552": "rule-based parse",
+    "NCT04294810": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03178552": 3,
+    "NCT04294810": 8
+   },
+   "eligible_share": {
+    "NCT03178552": 0.6471,
+    "NCT04294810": 0.1472
+   },
+   "containers": [
+    "NCT03178552"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT03178552": [
+     "PHASE2",
+     "PHASE3"
+    ],
+    "NCT04294810": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT03178552",
+   "q": "NCT04619797",
+   "shared_sites": 32,
+   "o_pq": 0.2145,
+   "o_qp": 0.9069,
+   "overlap_months_estimated": 26.1,
+   "both_recruiting_from": "2020-12-15",
+   "both_recruiting_to": "2023-02-16",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03178552": "ACTIVE_NOT_RECRUITING",
+    "NCT04619797": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03178552": [],
+    "NCT04619797": []
+   },
+   "eligibility_source": {
+    "NCT03178552": "rule-based parse",
+    "NCT04619797": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03178552": 3,
+    "NCT04619797": 9
+   },
+   "eligible_share": {
+    "NCT03178552": 0.6471,
+    "NCT04619797": 0.153
+   },
+   "containers": [
+    "NCT03178552"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT03178552": [
+     "PHASE2",
+     "PHASE3"
+    ],
+    "NCT04619797": [
+     "PHASE2",
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Eli Lilly and Company",
+   "p": "NCT03382899",
+   "q": "NCT03382912",
+   "shared_sites": 31,
+   "o_pq": 1.0,
+   "o_qp": 0.3025,
+   "overlap_months_estimated": 11.2,
+   "both_recruiting_from": "2018-03-22",
+   "both_recruiting_to": "2019-02-25",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03382899": "TERMINATED",
+    "NCT03382912": "TERMINATED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03382899": [],
+    "NCT03382912": []
+   },
+   "eligibility_source": {
+    "NCT03382899": "rule-based parse",
+    "NCT03382912": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03382899": 3,
+    "NCT03382912": 2
+   },
+   "eligible_share": {
+    "NCT03382899": 0.134,
+    "NCT03382912": 0.443
+   },
+   "containers": [
+    "NCT03382912"
+   ],
+   "container_criteria": 2,
+   "phases": {
+    "NCT03382899": [
+     "PHASE2"
+    ],
+    "NCT03382912": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT03178552",
+   "q": "NCT03456076",
+   "shared_sites": 31,
+   "o_pq": 0.0308,
+   "o_qp": 0.9087,
+   "overlap_months_estimated": 37.9,
+   "both_recruiting_from": "2018-08-16",
+   "both_recruiting_to": "2021-10-12",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03178552": "ACTIVE_NOT_RECRUITING",
+    "NCT03456076": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03178552": [],
+    "NCT03456076": []
+   },
+   "eligibility_source": {
+    "NCT03178552": "rule-based parse",
+    "NCT03456076": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03178552": 3,
+    "NCT03456076": 4
+   },
+   "eligible_share": {
+    "NCT03178552": 0.6471,
+    "NCT03456076": 0.0219
+   },
+   "containers": [
+    "NCT03178552"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT03178552": [
+     "PHASE2",
+     "PHASE3"
+    ],
+    "NCT03456076": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Mirati Therapeutics Inc.",
+   "p": "NCT04613596",
+   "q": "NCT06875310",
+   "shared_sites": 30,
+   "o_pq": 0.9515,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 17.7,
+   "both_recruiting_from": "2025-04-24",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT04613596": "RECRUITING",
+    "NCT06875310": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT04613596": [
+     "multi-cohort design: cohorts the single population cannot represent",
+     "4 restrictions not modeled"
+    ],
+    "NCT06875310": [
+     "6 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT04613596": "hand-encoded",
+    "NCT06875310": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT04613596": 3,
+    "NCT06875310": 5
+   },
+   "eligible_share": {
+    "NCT04613596": 0.0319,
+    "NCT06875310": 0.0304
+   },
+   "containers": [
+    "NCT06875310",
+    "NCT04613596"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT04613596": [
+     "PHASE2",
+     "PHASE3"
+    ],
+    "NCT06875310": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Chia Tai Tianqing Pharmaceutical Group Co., Ltd.",
+   "p": "NCT05922345",
+   "q": "NCT06300177",
+   "shared_sites": 29,
+   "o_pq": 0.0436,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 7.4,
+   "both_recruiting_from": "2024-03-28",
+   "both_recruiting_to": "2024-11-08",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05922345": "UNKNOWN",
+    "NCT06300177": "RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05922345": [],
+    "NCT06300177": []
+   },
+   "eligibility_source": {
+    "NCT05922345": "rule-based parse",
+    "NCT06300177": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05922345": 5,
+    "NCT06300177": 6
+   },
+   "eligible_share": {
+    "NCT05922345": 0.5053,
+    "NCT06300177": 0.0221
+   },
+   "containers": [
+    "NCT05922345"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT05922345": [
+     "PHASE3"
+    ],
+    "NCT06300177": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Pfizer",
+   "p": "NCT07222566",
+   "q": "NCT07227298",
+   "shared_sites": 29,
+   "o_pq": 0.9485,
+   "o_qp": 0.9528,
+   "overlap_months_estimated": 8.5,
+   "both_recruiting_from": "2026-01-30",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT07222566": "RECRUITING",
+    "NCT07227298": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT07222566": [
+     "6 restrictions not modeled"
+    ],
+    "NCT07227298": [
+     "multi-cohort design: cohorts the single population cannot represent",
+     "5 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT07222566": "hand-encoded",
+    "NCT07227298": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT07222566": 10,
+    "NCT07227298": 10
+   },
+   "eligible_share": {
+    "NCT07222566": 0.1905,
+    "NCT07227298": 0.1896
+   },
+   "containers": [
+    "NCT07227298",
+    "NCT07222566"
+   ],
+   "container_criteria": 10,
+   "phases": {
+    "NCT07222566": [
+     "PHASE3"
+    ],
+    "NCT07227298": [
+     "PHASE1",
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT04077463",
+   "q": "NCT04988295",
+   "shared_sites": 28,
+   "o_pq": 0.8004,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 12.8,
+   "both_recruiting_from": "2021-11-17",
+   "both_recruiting_to": "2022-12-12",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04077463": "ACTIVE_NOT_RECRUITING",
+    "NCT04988295": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04077463": [],
+    "NCT04988295": []
+   },
+   "eligibility_source": {
+    "NCT04077463": "rule-based parse",
+    "NCT04988295": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04077463": 4,
+    "NCT04988295": 7
+   },
+   "eligible_share": {
+    "NCT04077463": 0.0226,
+    "NCT04988295": 0.0181
+   },
+   "containers": [
+    "NCT04988295",
+    "NCT04077463"
+   ],
+   "container_criteria": 7,
+   "phases": {
+    "NCT04077463": [
+     "PHASE1"
+    ],
+    "NCT04988295": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT04077463",
+   "q": "NCT05388669",
+   "shared_sites": 28,
+   "o_pq": 0.8293,
+   "o_qp": 0.4279,
+   "overlap_months_estimated": 11.0,
+   "both_recruiting_from": "2022-08-05",
+   "both_recruiting_to": "2023-07-06",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04077463": "ACTIVE_NOT_RECRUITING",
+    "NCT05388669": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04077463": [],
+    "NCT05388669": []
+   },
+   "eligibility_source": {
+    "NCT04077463": "rule-based parse",
+    "NCT05388669": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04077463": 4,
+    "NCT05388669": 5
+   },
+   "eligible_share": {
+    "NCT04077463": 0.0226,
+    "NCT05388669": 0.0437
+   },
+   "containers": [
+    "NCT05388669"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT04077463": [
+     "PHASE1"
+    ],
+    "NCT05388669": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "EMD Serono Research & Development Institute, Inc.",
+   "p": "NCT02576574",
+   "q": "NCT03631706",
+   "shared_sites": 27,
+   "o_pq": 0.4481,
+   "o_qp": 0.8039,
+   "overlap_months_estimated": 12.5,
+   "both_recruiting_from": "2018-10-01",
+   "both_recruiting_to": "2019-10-17",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT02576574": "COMPLETED",
+    "NCT03631706": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT02576574": [],
+    "NCT03631706": []
+   },
+   "eligibility_source": {
+    "NCT02576574": "rule-based parse",
+    "NCT03631706": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT02576574": 4,
+    "NCT03631706": 5
+   },
+   "eligible_share": {
+    "NCT02576574": 0.3741,
+    "NCT03631706": 0.2086
+   },
+   "containers": [
+    "NCT02576574"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT02576574": [
+     "PHASE3"
+    ],
+    "NCT03631706": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT06074588",
+   "q": "NCT06077760",
+   "shared_sites": 27,
+   "o_pq": 0.9509,
+   "o_qp": 0.4639,
+   "overlap_months_estimated": 26.4,
+   "both_recruiting_from": "2023-12-06",
+   "both_recruiting_to": "2026-02-17",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT06074588": "ACTIVE_NOT_RECRUITING",
+    "NCT06077760": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT06074588": [],
+    "NCT06077760": []
+   },
+   "eligibility_source": {
+    "NCT06074588": "rule-based parse",
+    "NCT06077760": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT06074588": 6,
+    "NCT06077760": 3
+   },
+   "eligible_share": {
+    "NCT06074588": 0.3297,
+    "NCT06077760": 0.6759
+   },
+   "containers": [
+    "NCT06077760"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT06074588": [
+     "PHASE3"
+    ],
+    "NCT06077760": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "EMD Serono Research & Development Institute, Inc.",
+   "p": "NCT02576574",
+   "q": "NCT02864992",
+   "shared_sites": 26,
+   "o_pq": 0.4135,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 37.1,
+   "both_recruiting_from": "2016-09-13",
+   "both_recruiting_to": "2019-10-17",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT02576574": "COMPLETED",
+    "NCT02864992": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT02576574": [],
+    "NCT02864992": []
+   },
+   "eligibility_source": {
+    "NCT02576574": "rule-based parse",
+    "NCT02864992": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT02576574": 4,
+    "NCT02864992": 6
+   },
+   "eligible_share": {
+    "NCT02576574": 0.3741,
+    "NCT02864992": 0.1547
+   },
+   "containers": [
+    "NCT02576574"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT02576574": [
+     "PHASE3"
+    ],
+    "NCT02864992": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT05789082",
+   "q": "NCT06793215",
+   "shared_sites": 26,
+   "o_pq": 0.8909,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 11.7,
+   "both_recruiting_from": "2025-10-24",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT05789082": "RECRUITING",
+    "NCT06793215": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT05789082": [
+     "multi-cohort design: cohorts the single population cannot represent",
+     "7 restrictions not modeled"
+    ],
+    "NCT06793215": [
+     "7 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT05789082": "hand-encoded",
+    "NCT06793215": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT05789082": 6,
+    "NCT06793215": 11
+   },
+   "eligible_share": {
+    "NCT05789082": 0.0248,
+    "NCT06793215": 0.0221
+   },
+   "containers": [
+    "NCT06793215",
+    "NCT05789082"
+   ],
+   "container_criteria": 11,
+   "phases": {
+    "NCT05789082": [
+     "PHASE1",
+     "PHASE2"
+    ],
+    "NCT06793215": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT06074588",
+   "q": "NCT06305754",
+   "shared_sites": 26,
+   "o_pq": 1.0,
+   "o_qp": 0.5174,
+   "overlap_months_estimated": 20.3,
+   "both_recruiting_from": "2024-06-11",
+   "both_recruiting_to": "2026-02-17",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT06074588": "ACTIVE_NOT_RECRUITING",
+    "NCT06305754": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT06074588": [],
+    "NCT06305754": []
+   },
+   "eligibility_source": {
+    "NCT06074588": "rule-based parse",
+    "NCT06305754": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT06074588": 6,
+    "NCT06305754": 3
+   },
+   "eligible_share": {
+    "NCT06074588": 0.3297,
+    "NCT06305754": 0.6373
+   },
+   "containers": [
+    "NCT06305754"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT06074588": [
+     "PHASE3"
+    ],
+    "NCT06305754": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT06345729",
+   "q": "NCT06305754",
+   "shared_sites": 25,
+   "o_pq": 1.0,
+   "o_qp": 0.0118,
+   "overlap_months_estimated": 28.2,
+   "both_recruiting_from": "2024-06-11",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT06345729": "RECRUITING",
+    "NCT06305754": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06345729": [
+     "6 restrictions not modeled"
+    ],
+    "NCT06305754": []
+   },
+   "eligibility_source": {
+    "NCT06345729": "hand-encoded",
+    "NCT06305754": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT06345729": 7,
+    "NCT06305754": 3
+   },
+   "eligible_share": {
+    "NCT06345729": 0.0076,
+    "NCT06305754": 0.6373
+   },
+   "containers": [
+    "NCT06305754"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT06345729": [
+     "PHASE3"
+    ],
+    "NCT06305754": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Clovis Oncology, Inc.",
+   "p": "NCT02147990",
+   "q": "NCT02186301",
+   "shared_sites": 24,
+   "o_pq": 1.0,
+   "o_qp": 0.5603,
+   "overlap_months_estimated": 20.4,
+   "both_recruiting_from": "2014-11-15",
+   "both_recruiting_to": "2016-07-28",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT02147990": "TERMINATED",
+    "NCT02186301": "TERMINATED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT02147990": [],
+    "NCT02186301": []
+   },
+   "eligibility_source": {
+    "NCT02147990": "rule-based parse",
+    "NCT02186301": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT02147990": 5,
+    "NCT02186301": 4
+   },
+   "eligible_share": {
+    "NCT02147990": 0.0372,
+    "NCT02186301": 0.0663
+   },
+   "containers": [
+    "NCT02186301"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT02147990": [
+     "PHASE2"
+    ],
+    "NCT02186301": [
+     "PHASE2",
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "EMD Serono Research & Development Institute, Inc.",
+   "p": "NCT02864992",
+   "q": "NCT03631706",
+   "shared_sites": 24,
+   "o_pq": 0.9877,
+   "o_qp": 0.7327,
+   "overlap_months_estimated": 19.7,
+   "both_recruiting_from": "2018-10-01",
+   "both_recruiting_to": "2020-05-21",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT02864992": "ACTIVE_NOT_RECRUITING",
+    "NCT03631706": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT02864992": [],
+    "NCT03631706": []
+   },
+   "eligibility_source": {
+    "NCT02864992": "rule-based parse",
+    "NCT03631706": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT02864992": 6,
+    "NCT03631706": 5
+   },
+   "eligible_share": {
+    "NCT02864992": 0.1547,
+    "NCT03631706": 0.2086
+   },
+   "containers": [
+    "NCT03631706"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT02864992": [
+     "PHASE2"
+    ],
+    "NCT03631706": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Eli Lilly and Company",
+   "p": "NCT04819100",
+   "q": "NCT06119581",
+   "shared_sites": 24,
+   "o_pq": 0.0289,
+   "o_qp": 0.9504,
+   "overlap_months_estimated": 7.7,
+   "both_recruiting_from": "2023-12-21",
+   "both_recruiting_to": "2024-08-10",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04819100": "ACTIVE_NOT_RECRUITING",
+    "NCT06119581": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT04819100": [],
+    "NCT06119581": [
+     "multi-cohort design: cohorts the single population cannot represent",
+     "7 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT04819100": "rule-based parse",
+    "NCT06119581": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT04819100": 2,
+    "NCT06119581": 10
+   },
+   "eligible_share": {
+    "NCT04819100": 0.7639,
+    "NCT06119581": 0.0232
+   },
+   "containers": [
+    "NCT04819100"
+   ],
+   "container_criteria": 2,
+   "phases": {
+    "NCT04819100": [
+     "PHASE3"
+    ],
+    "NCT06119581": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT05609968",
+   "q": "NCT06170788",
+   "shared_sites": 24,
+   "o_pq": 0.4459,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 20.4,
+   "both_recruiting_from": "2023-12-15",
+   "both_recruiting_to": "2025-08-27",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05609968": "ACTIVE_NOT_RECRUITING",
+    "NCT06170788": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT05609968": [],
+    "NCT06170788": [
+     "4 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT05609968": "rule-based parse",
+    "NCT06170788": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT05609968": 5,
+    "NCT06170788": 11
+   },
+   "eligible_share": {
+    "NCT05609968": 0.0939,
+    "NCT06170788": 0.0418
+   },
+   "containers": [
+    "NCT05609968"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT05609968": [
+     "PHASE3"
+    ],
+    "NCT06170788": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT06077760",
+   "q": "NCT06305754",
+   "shared_sites": 23,
+   "o_pq": 0.8981,
+   "o_qp": 0.9525,
+   "overlap_months_estimated": 28.2,
+   "both_recruiting_from": "2024-06-11",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT06077760": "ACTIVE_NOT_RECRUITING",
+    "NCT06305754": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT06077760": [],
+    "NCT06305754": []
+   },
+   "eligibility_source": {
+    "NCT06077760": "rule-based parse",
+    "NCT06305754": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT06077760": 3,
+    "NCT06305754": 3
+   },
+   "eligible_share": {
+    "NCT06077760": 0.6759,
+    "NCT06305754": 0.6373
+   },
+   "containers": [
+    "NCT06305754",
+    "NCT06077760"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT06077760": [
+     "PHASE3"
+    ],
+    "NCT06305754": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT06077760",
+   "q": "NCT06345729",
+   "shared_sites": 23,
+   "o_pq": 0.0112,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 28.7,
+   "both_recruiting_from": "2024-05-24",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT06077760": "ACTIVE_NOT_RECRUITING",
+    "NCT06345729": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06077760": [],
+    "NCT06345729": [
+     "6 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT06077760": "rule-based parse",
+    "NCT06345729": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT06077760": 3,
+    "NCT06345729": 7
+   },
+   "eligible_share": {
+    "NCT06077760": 0.6759,
+    "NCT06345729": 0.0076
+   },
+   "containers": [
+    "NCT06077760"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT06077760": [
+     "PHASE3"
+    ],
+    "NCT06345729": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "BeiGene",
+   "p": "NCT04379635",
+   "q": "NCT04746924",
+   "shared_sites": 22,
+   "o_pq": 0.0679,
+   "o_qp": 0.9426,
+   "overlap_months_estimated": 13.3,
+   "both_recruiting_from": "2021-05-24",
+   "both_recruiting_to": "2022-07-04",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04379635": "ACTIVE_NOT_RECRUITING",
+    "NCT04746924": "TERMINATED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04379635": [],
+    "NCT04746924": []
+   },
+   "eligibility_source": {
+    "NCT04379635": "rule-based parse",
+    "NCT04746924": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04379635": 5,
+    "NCT04746924": 9
+   },
+   "eligible_share": {
+    "NCT04379635": 0.6162,
+    "NCT04746924": 0.0444
+   },
+   "containers": [
+    "NCT04379635"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT04379635": [
+     "PHASE3"
+    ],
+    "NCT04746924": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT02486718",
+   "q": "NCT02657434",
+   "shared_sites": 22,
+   "o_pq": 0.0235,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 25.1,
+   "both_recruiting_from": "2016-04-30",
+   "both_recruiting_to": "2018-06-02",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT02486718": "COMPLETED",
+    "NCT02657434": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT02486718": [],
+    "NCT02657434": []
+   },
+   "eligibility_source": {
+    "NCT02486718": "rule-based parse",
+    "NCT02657434": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT02486718": 3,
+    "NCT02657434": 7
+   },
+   "eligible_share": {
+    "NCT02486718": 0.4273,
+    "NCT02657434": 0.01
+   },
+   "containers": [
+    "NCT02486718"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT02486718": [
+     "PHASE3"
+    ],
+    "NCT02657434": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT02657434",
+   "q": "NCT03178552",
+   "shared_sites": 22,
+   "o_pq": 0.9254,
+   "o_qp": 0.0144,
+   "overlap_months_estimated": 8.3,
+   "both_recruiting_from": "2017-09-22",
+   "both_recruiting_to": "2018-06-02",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT02657434": "COMPLETED",
+    "NCT03178552": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT02657434": [],
+    "NCT03178552": []
+   },
+   "eligibility_source": {
+    "NCT02657434": "rule-based parse",
+    "NCT03178552": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT02657434": 7,
+    "NCT03178552": 3
+   },
+   "eligible_share": {
+    "NCT02657434": 0.01,
+    "NCT03178552": 0.6471
+   },
+   "containers": [
+    "NCT03178552"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT02657434": [
+     "PHASE3"
+    ],
+    "NCT03178552": [
+     "PHASE2",
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Ariad Pharmaceuticals",
+   "p": "NCT02737501",
+   "q": "NCT03535740",
+   "shared_sites": 21,
+   "o_pq": 1.0,
+   "o_qp": 0.9148,
+   "overlap_months_estimated": 0.3,
+   "both_recruiting_from": "2019-01-31",
+   "both_recruiting_to": "2019-02-10",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT02737501": "COMPLETED",
+    "NCT03535740": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT02737501": [],
+    "NCT03535740": []
+   },
+   "eligibility_source": {
+    "NCT02737501": "rule-based parse",
+    "NCT03535740": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT02737501": 5,
+    "NCT03535740": 3
+   },
+   "eligible_share": {
+    "NCT02737501": 0.0242,
+    "NCT03535740": 0.0264
+   },
+   "containers": [
+    "NCT03535740",
+    "NCT02737501"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT02737501": [
+     "PHASE3"
+    ],
+    "NCT03535740": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Gilead Sciences",
+   "p": "NCT05186974",
+   "q": "NCT05502237",
+   "shared_sites": 21,
+   "o_pq": 0.1085,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 32.9,
+   "both_recruiting_from": "2022-10-12",
+   "both_recruiting_to": "2025-07-10",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05186974": "ACTIVE_NOT_RECRUITING",
+    "NCT05502237": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05186974": [],
+    "NCT05502237": []
+   },
+   "eligibility_source": {
+    "NCT05186974": "rule-based parse",
+    "NCT05502237": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05186974": 4,
+    "NCT05502237": 7
+   },
+   "eligible_share": {
+    "NCT05186974": 0.1899,
+    "NCT05502237": 0.0206
+   },
+   "containers": [
+    "NCT05186974"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT05186974": [
+     "PHASE2"
+    ],
+    "NCT05502237": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT02486718",
+   "q": "NCT04513925",
+   "shared_sites": 21,
+   "o_pq": 0.183,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 6.5,
+   "both_recruiting_from": "2020-08-24",
+   "both_recruiting_to": "2021-03-08",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT02486718": "COMPLETED",
+    "NCT04513925": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT02486718": [],
+    "NCT04513925": []
+   },
+   "eligibility_source": {
+    "NCT02486718": "rule-based parse",
+    "NCT04513925": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT02486718": 3,
+    "NCT04513925": 7
+   },
+   "eligible_share": {
+    "NCT02486718": 0.4273,
+    "NCT04513925": 0.0782
+   },
+   "containers": [
+    "NCT02486718"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT02486718": [
+     "PHASE3"
+    ],
+    "NCT04513925": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT03178552",
+   "q": "NCT04222972",
+   "shared_sites": 21,
+   "o_pq": 0.4915,
+   "o_qp": 0.9055,
+   "overlap_months_estimated": 35.2,
+   "both_recruiting_from": "2020-07-24",
+   "both_recruiting_to": "2023-06-30",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03178552": "ACTIVE_NOT_RECRUITING",
+    "NCT04222972": "TERMINATED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03178552": [],
+    "NCT04222972": []
+   },
+   "eligibility_source": {
+    "NCT03178552": "rule-based parse",
+    "NCT04222972": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03178552": 3,
+    "NCT04222972": 6
+   },
+   "eligible_share": {
+    "NCT03178552": 0.6471,
+    "NCT04222972": 0.3513
+   },
+   "containers": [
+    "NCT03178552"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT03178552": [
+     "PHASE2",
+     "PHASE3"
+    ],
+    "NCT04222972": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT05388669",
+   "q": "NCT05908734",
+   "shared_sites": 21,
+   "o_pq": 0.4153,
+   "o_qp": 0.8811,
+   "overlap_months_estimated": 1.6,
+   "both_recruiting_from": "2023-05-18",
+   "both_recruiting_to": "2023-07-06",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05388669": "ACTIVE_NOT_RECRUITING",
+    "NCT05908734": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05388669": [],
+    "NCT05908734": []
+   },
+   "eligibility_source": {
+    "NCT05388669": "rule-based parse",
+    "NCT05908734": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05388669": 5,
+    "NCT05908734": 6
+   },
+   "eligible_share": {
+    "NCT05388669": 0.0437,
+    "NCT05908734": 0.0206
+   },
+   "containers": [
+    "NCT05388669"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT05388669": [
+     "PHASE3"
+    ],
+    "NCT05908734": [
+     "PHASE1",
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT06120140",
+   "q": "NCT06667076",
+   "shared_sites": 20,
+   "o_pq": 0.8008,
+   "o_qp": 0.5558,
+   "overlap_months_estimated": 15.6,
+   "both_recruiting_from": "2024-12-16",
+   "both_recruiting_to": "2026-04-06",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT06120140": "ACTIVE_NOT_RECRUITING",
+    "NCT06667076": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06120140": [],
+    "NCT06667076": [
+     "multi-cohort design: cohorts the single population cannot represent",
+     "5 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT06120140": "rule-based parse",
+    "NCT06667076": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT06120140": 4,
+    "NCT06667076": 5
+   },
+   "eligible_share": {
+    "NCT06120140": 0.0364,
+    "NCT06667076": 0.0524
+   },
+   "containers": [
+    "NCT06667076"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT06120140": [
+     "PHASE2"
+    ],
+    "NCT06667076": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT06312137",
+   "q": "NCT06623422",
+   "shared_sites": 20,
+   "o_pq": 0.7962,
+   "o_qp": 0.9106,
+   "overlap_months_estimated": 23.8,
+   "both_recruiting_from": "2024-10-21",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT06312137": "RECRUITING",
+    "NCT06623422": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06312137": [
+     "8 restrictions not modeled"
+    ],
+    "NCT06623422": [
+     "4 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT06312137": "hand-encoded",
+    "NCT06623422": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT06312137": 6,
+    "NCT06623422": 6
+   },
+   "eligible_share": {
+    "NCT06312137": 0.0812,
+    "NCT06623422": 0.071
+   },
+   "containers": [
+    "NCT06312137"
+   ],
+   "container_criteria": 6,
+   "phases": {
+    "NCT06312137": [
+     "PHASE3"
+    ],
+    "NCT06623422": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT02366143",
+   "q": "NCT03178552",
+   "shared_sites": 19,
+   "o_pq": 1.0,
+   "o_qp": 0.2748,
+   "overlap_months_estimated": 5.0,
+   "both_recruiting_from": "2017-09-22",
+   "both_recruiting_to": "2018-02-20",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT02366143": "COMPLETED",
+    "NCT03178552": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT02366143": [],
+    "NCT03178552": []
+   },
+   "eligibility_source": {
+    "NCT02366143": "rule-based parse",
+    "NCT03178552": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT02366143": 6,
+    "NCT03178552": 3
+   },
+   "eligible_share": {
+    "NCT02366143": 0.1778,
+    "NCT03178552": 0.6471
+   },
+   "containers": [
+    "NCT03178552"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT02366143": [
+     "PHASE3"
+    ],
+    "NCT03178552": [
+     "PHASE2",
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT04077463",
+   "q": "NCT05498428",
+   "shared_sites": 19,
+   "o_pq": 0.8293,
+   "o_qp": 0.3104,
+   "overlap_months_estimated": 19.8,
+   "both_recruiting_from": "2022-11-11",
+   "both_recruiting_to": "2024-07-05",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04077463": "ACTIVE_NOT_RECRUITING",
+    "NCT05498428": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT04077463": [],
+    "NCT05498428": [
+     "multi-cohort design: cohorts the single population cannot represent",
+     "8 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT04077463": "rule-based parse",
+    "NCT05498428": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT04077463": 4,
+    "NCT05498428": 5
+   },
+   "eligible_share": {
+    "NCT04077463": 0.0226,
+    "NCT05498428": 0.0602
+   },
+   "containers": [
+    "NCT05498428"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT04077463": [
+     "PHASE1"
+    ],
+    "NCT05498428": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "TJ Biopharma Co., Ltd.",
+   "p": "NCT06984588",
+   "q": "NCT07005336",
+   "shared_sites": 19,
+   "o_pq": 1.0,
+   "o_qp": 0.6416,
+   "overlap_months_estimated": 12.8,
+   "both_recruiting_from": "2025-01-09",
+   "both_recruiting_to": "2026-02-01",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT06984588": "ACTIVE_NOT_RECRUITING",
+    "NCT07005336": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT06984588": [],
+    "NCT07005336": []
+   },
+   "eligibility_source": {
+    "NCT06984588": "rule-based parse",
+    "NCT07005336": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT06984588": 7,
+    "NCT07005336": 6
+   },
+   "eligible_share": {
+    "NCT06984588": 0.0251,
+    "NCT07005336": 0.0392
+   },
+   "containers": [
+    "NCT07005336"
+   ],
+   "container_criteria": 6,
+   "phases": {
+    "NCT06984588": [
+     "PHASE2",
+     "PHASE3"
+    ],
+    "NCT07005336": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Klus Pharma Inc.",
+   "p": "NCT04152499",
+   "q": "NCT05816252",
+   "shared_sites": 18,
+   "o_pq": 0.0466,
+   "o_qp": 0.8864,
+   "overlap_months_estimated": 7.2,
+   "both_recruiting_from": "2023-04-19",
+   "both_recruiting_to": "2023-11-25",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04152499": "ACTIVE_NOT_RECRUITING",
+    "NCT05816252": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04152499": [],
+    "NCT05816252": []
+   },
+   "eligibility_source": {
+    "NCT04152499": "rule-based parse",
+    "NCT05816252": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04152499": 4,
+    "NCT05816252": 7
+   },
+   "eligible_share": {
+    "NCT04152499": 0.5195,
+    "NCT05816252": 0.0273
+   },
+   "containers": [
+    "NCT04152499"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT04152499": [
+     "PHASE1",
+     "PHASE2"
+    ],
+    "NCT05816252": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT03829319",
+   "q": "NCT04716933",
+   "shared_sites": 18,
+   "o_pq": 1.0,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 26.8,
+   "both_recruiting_from": "2019-11-05",
+   "both_recruiting_to": "2022-01-28",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03829319": "COMPLETED",
+    "NCT04716933": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03829319": [],
+    "NCT04716933": []
+   },
+   "eligibility_source": {
+    "NCT03829319": "rule-based parse",
+    "NCT04716933": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03829319": 8,
+    "NCT04716933": 8
+   },
+   "eligible_share": {
+    "NCT03829319": 0.0649,
+    "NCT04716933": 0.0649
+   },
+   "containers": [
+    "NCT04716933",
+    "NCT03829319"
+   ],
+   "container_criteria": 8,
+   "phases": {
+    "NCT03829319": [
+     "PHASE3"
+    ],
+    "NCT04716933": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT06312137",
+   "q": "NCT07513376",
+   "shared_sites": 18,
+   "o_pq": 1.0,
+   "o_qp": 0.8423,
+   "overlap_months_estimated": 5.4,
+   "both_recruiting_from": "2026-05-04",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT06312137": "RECRUITING",
+    "NCT07513376": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06312137": [
+     "8 restrictions not modeled"
+    ],
+    "NCT07513376": [
+     "4 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT06312137": "hand-encoded",
+    "NCT07513376": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT06312137": 6,
+    "NCT07513376": 5
+   },
+   "eligible_share": {
+    "NCT06312137": 0.0812,
+    "NCT07513376": 0.0964
+   },
+   "containers": [
+    "NCT07513376",
+    "NCT06312137"
+   ],
+   "container_criteria": 6,
+   "phases": {
+    "NCT06312137": [
+     "PHASE3"
+    ],
+    "NCT07513376": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Amgen",
+   "p": "NCT05094336",
+   "q": "NCT06593522",
+   "shared_sites": 17,
+   "o_pq": 0.8336,
+   "o_qp": 0.5622,
+   "overlap_months_estimated": 2.9,
+   "both_recruiting_from": "2024-12-26",
+   "both_recruiting_to": "2025-03-22",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05094336": "ACTIVE_NOT_RECRUITING",
+    "NCT06593522": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05094336": [],
+    "NCT06593522": []
+   },
+   "eligibility_source": {
+    "NCT05094336": "rule-based parse",
+    "NCT06593522": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05094336": 4,
+    "NCT06593522": 5
+   },
+   "eligible_share": {
+    "NCT05094336": 0.3816,
+    "NCT06593522": 0.5657
+   },
+   "containers": [
+    "NCT06593522"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT05094336": [
+     "PHASE1",
+     "PHASE2"
+    ],
+    "NCT06593522": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "BioNTech SE",
+   "p": "NCT07070232",
+   "q": "NCT07111520",
+   "shared_sites": 17,
+   "o_pq": 0.8997,
+   "o_qp": 0.5527,
+   "overlap_months_estimated": 12.8,
+   "both_recruiting_from": "2025-09-22",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT07070232": "RECRUITING",
+    "NCT07111520": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT07070232": [
+     "basket design: cohorts the single population cannot represent",
+     "5 restrictions not modeled"
+    ],
+    "NCT07111520": [
+     "multi-cohort design: cohorts the single population cannot represent",
+     "7 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT07070232": "hand-encoded",
+    "NCT07111520": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT07070232": 4,
+    "NCT07111520": 4
+   },
+   "eligible_share": {
+    "NCT07070232": 0.3191,
+    "NCT07111520": 0.5195
+   },
+   "containers": [
+    "NCT07111520"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT07070232": [
+     "PHASE1",
+     "PHASE2"
+    ],
+    "NCT07111520": [
+     "PHASE1",
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT02568267",
+   "q": "NCT03178552",
+   "shared_sites": 17,
+   "o_pq": 0.9066,
+   "o_qp": 0.0202,
+   "overlap_months_estimated": 68.5,
+   "both_recruiting_from": "2017-09-22",
+   "both_recruiting_to": "2023-06-06",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT02568267": "ACTIVE_NOT_RECRUITING",
+    "NCT03178552": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT02568267": [],
+    "NCT03178552": []
+   },
+   "eligibility_source": {
+    "NCT02568267": "rule-based parse",
+    "NCT03178552": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT02568267": 6,
+    "NCT03178552": 3
+   },
+   "eligible_share": {
+    "NCT02568267": 0.0144,
+    "NCT03178552": 0.6471
+   },
+   "containers": [
+    "NCT03178552"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT02568267": [
+     "PHASE2"
+    ],
+    "NCT03178552": [
+     "PHASE2",
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT03178552",
+   "q": "NCT05789082",
+   "shared_sites": 17,
+   "o_pq": 0.0341,
+   "o_qp": 0.8909,
+   "overlap_months_estimated": 7.3,
+   "both_recruiting_from": "2023-06-20",
+   "both_recruiting_to": "2024-01-28",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03178552": "ACTIVE_NOT_RECRUITING",
+    "NCT05789082": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT03178552": [],
+    "NCT05789082": [
+     "multi-cohort design: cohorts the single population cannot represent",
+     "7 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT03178552": "rule-based parse",
+    "NCT05789082": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT03178552": 3,
+    "NCT05789082": 6
+   },
+   "eligible_share": {
+    "NCT03178552": 0.6471,
+    "NCT05789082": 0.0248
+   },
+   "containers": [
+    "NCT03178552"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT03178552": [
+     "PHASE2",
+     "PHASE3"
+    ],
+    "NCT05789082": [
+     "PHASE1",
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT05488314",
+   "q": "NCT05908734",
+   "shared_sites": 17,
+   "o_pq": 0.0489,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 28.9,
+   "both_recruiting_from": "2023-05-18",
+   "both_recruiting_to": "2025-10-14",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05488314": "ACTIVE_NOT_RECRUITING",
+    "NCT05908734": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05488314": [],
+    "NCT05908734": []
+   },
+   "eligibility_source": {
+    "NCT05488314": "rule-based parse",
+    "NCT05908734": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05488314": 3,
+    "NCT05908734": 6
+   },
+   "eligible_share": {
+    "NCT05488314": 0.4215,
+    "NCT05908734": 0.0206
+   },
+   "containers": [
+    "NCT05488314"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT05488314": [
+     "PHASE1",
+     "PHASE2"
+    ],
+    "NCT05908734": [
+     "PHASE1",
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT04165070",
+   "q": "NCT06731907",
+   "shared_sites": 17,
+   "o_pq": 0.809,
+   "o_qp": 0.8015,
+   "overlap_months_estimated": 18.6,
+   "both_recruiting_from": "2025-03-30",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT04165070": "RECRUITING",
+    "NCT06731907": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT04165070": [
+     "4 restrictions not modeled"
+    ],
+    "NCT06731907": [
+     "8 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT04165070": "hand-encoded",
+    "NCT06731907": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT04165070": 8,
+    "NCT06731907": 6
+   },
+   "eligible_share": {
+    "NCT04165070": 0.1706,
+    "NCT06731907": 0.1722
+   },
+   "containers": [
+    "NCT06731907",
+    "NCT04165070"
+   ],
+   "container_criteria": 8,
+   "phases": {
+    "NCT04165070": [
+     "PHASE1",
+     "PHASE2"
+    ],
+    "NCT06731907": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT05609968",
+   "q": "NCT05722015",
+   "shared_sites": 17,
+   "o_pq": 1.0,
+   "o_qp": 0.0986,
+   "overlap_months_estimated": 11.0,
+   "both_recruiting_from": "2023-02-14",
+   "both_recruiting_to": "2024-01-14",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05609968": "ACTIVE_NOT_RECRUITING",
+    "NCT05722015": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05609968": [],
+    "NCT05722015": []
+   },
+   "eligibility_source": {
+    "NCT05609968": "rule-based parse",
+    "NCT05722015": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05609968": 5,
+    "NCT05722015": 1
+   },
+   "eligible_share": {
+    "NCT05609968": 0.0939,
+    "NCT05722015": 0.9519
+   },
+   "containers": [
+    "NCT05722015"
+   ],
+   "container_criteria": 1,
+   "phases": {
+    "NCT05609968": [
+     "PHASE3"
+    ],
+    "NCT05722015": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "BioNTech SE",
+   "p": "NCT06892548",
+   "q": "NCT07111520",
+   "shared_sites": 16,
+   "o_pq": 0.8588,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 12.8,
+   "both_recruiting_from": "2025-09-22",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT06892548": "RECRUITING",
+    "NCT07111520": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06892548": [
+     "basket design: cohorts the single population cannot represent",
+     "7 restrictions not modeled"
+    ],
+    "NCT07111520": [
+     "multi-cohort design: cohorts the single population cannot represent",
+     "7 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT06892548": "hand-encoded",
+    "NCT07111520": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT06892548": 2,
+    "NCT07111520": 4
+   },
+   "eligible_share": {
+    "NCT06892548": 0.6049,
+    "NCT07111520": 0.5195
+   },
+   "containers": [
+    "NCT07111520",
+    "NCT06892548"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT06892548": [
+     "PHASE1",
+     "PHASE2"
+    ],
+    "NCT07111520": [
+     "PHASE1",
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT02409342",
+   "q": "NCT03178552",
+   "shared_sites": 16,
+   "o_pq": 0.915,
+   "o_qp": 0.0241,
+   "overlap_months_estimated": 9.3,
+   "both_recruiting_from": "2017-09-22",
+   "both_recruiting_to": "2018-07-03",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT02409342": "COMPLETED",
+    "NCT03178552": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT02409342": [],
+    "NCT03178552": []
+   },
+   "eligibility_source": {
+    "NCT02409342": "rule-based parse",
+    "NCT03178552": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT02409342": 5,
+    "NCT03178552": 3
+   },
+   "eligible_share": {
+    "NCT02409342": 0.017,
+    "NCT03178552": 0.6471
+   },
+   "containers": [
+    "NCT03178552"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT02409342": [
+     "PHASE3"
+    ],
+    "NCT03178552": [
+     "PHASE2",
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT06345729",
+   "q": "NCT07190248",
+   "shared_sites": 16,
+   "o_pq": 1.0,
+   "o_qp": 0.2904,
+   "overlap_months_estimated": 12.3,
+   "both_recruiting_from": "2025-10-08",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT06345729": "RECRUITING",
+    "NCT07190248": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06345729": [
+     "6 restrictions not modeled"
+    ],
+    "NCT07190248": [
+     "3 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT06345729": "hand-encoded",
+    "NCT07190248": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT06345729": 7,
+    "NCT07190248": 7
+   },
+   "eligible_share": {
+    "NCT06345729": 0.0076,
+    "NCT07190248": 0.026
+   },
+   "containers": [
+    "NCT07190248"
+   ],
+   "container_criteria": 7,
+   "phases": {
+    "NCT06345729": [
+     "PHASE3"
+    ],
+    "NCT07190248": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Pfizer",
+   "p": "NCT05355701",
+   "q": "NCT05538130",
+   "shared_sites": 16,
+   "o_pq": 1.0,
+   "o_qp": 0.5491,
+   "overlap_months_estimated": 35.3,
+   "both_recruiting_from": "2022-11-30",
+   "both_recruiting_to": "2025-11-09",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05355701": "ACTIVE_NOT_RECRUITING",
+    "NCT05538130": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05355701": [],
+    "NCT05538130": []
+   },
+   "eligibility_source": {
+    "NCT05355701": "rule-based parse",
+    "NCT05538130": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05355701": 2,
+    "NCT05538130": 1
+   },
+   "eligible_share": {
+    "NCT05355701": 0.3025,
+    "NCT05538130": 0.551
+   },
+   "containers": [
+    "NCT05538130"
+   ],
+   "container_criteria": 1,
+   "phases": {
+    "NCT05355701": [
+     "PHASE1"
+    ],
+    "NCT05538130": [
+     "PHASE1"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "AbbVie",
+   "p": "NCT03539536",
+   "q": "NCT05029882",
+   "shared_sites": 15,
+   "o_pq": 0.0295,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 24.4,
+   "both_recruiting_from": "2021-10-13",
+   "both_recruiting_to": "2023-10-26",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03539536": "ACTIVE_NOT_RECRUITING",
+    "NCT05029882": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03539536": [],
+    "NCT05029882": []
+   },
+   "eligibility_source": {
+    "NCT03539536": "rule-based parse",
+    "NCT05029882": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03539536": 5,
+    "NCT05029882": 5
+   },
+   "eligible_share": {
+    "NCT03539536": 0.1731,
+    "NCT05029882": 0.0051
+   },
+   "containers": [
+    "NCT03539536"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT03539536": [
+     "PHASE2"
+    ],
+    "NCT05029882": [
+     "PHASE1"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "Clovis Oncology, Inc.",
+   "p": "NCT02186301",
+   "q": "NCT02322281",
+   "shared_sites": 15,
+   "o_pq": 1.0,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 17.4,
+   "both_recruiting_from": "2015-02-15",
+   "both_recruiting_to": "2016-07-28",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT02186301": "TERMINATED",
+    "NCT02322281": "TERMINATED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT02186301": [],
+    "NCT02322281": []
+   },
+   "eligibility_source": {
+    "NCT02186301": "rule-based parse",
+    "NCT02322281": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT02186301": 4,
+    "NCT02322281": 4
+   },
+   "eligible_share": {
+    "NCT02186301": 0.0663,
+    "NCT02322281": 0.0663
+   },
+   "containers": [
+    "NCT02322281",
+    "NCT02186301"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT02186301": [
+     "PHASE2",
+     "PHASE3"
+    ],
+    "NCT02322281": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT02486718",
+   "q": "NCT02568267",
+   "shared_sites": 15,
+   "o_pq": 0.0297,
+   "o_qp": 0.8789,
+   "overlap_months_estimated": 63.6,
+   "both_recruiting_from": "2015-11-19",
+   "both_recruiting_to": "2021-03-08",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT02486718": "COMPLETED",
+    "NCT02568267": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT02486718": [],
+    "NCT02568267": []
+   },
+   "eligibility_source": {
+    "NCT02486718": "rule-based parse",
+    "NCT02568267": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT02486718": 3,
+    "NCT02568267": 6
+   },
+   "eligible_share": {
+    "NCT02486718": 0.4273,
+    "NCT02568267": 0.0144
+   },
+   "containers": [
+    "NCT02486718"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT02486718": [
+     "PHASE3"
+    ],
+    "NCT02568267": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Incyte Corporation",
+   "p": "NCT03322540",
+   "q": "NCT03322566",
+   "shared_sites": 15,
+   "o_pq": 1.0,
+   "o_qp": 0.2934,
+   "overlap_months_estimated": 7.2,
+   "both_recruiting_from": "2018-01-09",
+   "both_recruiting_to": "2018-08-16",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03322540": "COMPLETED",
+    "NCT03322566": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03322540": [],
+    "NCT03322566": []
+   },
+   "eligibility_source": {
+    "NCT03322540": "rule-based parse",
+    "NCT03322566": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03322540": 8,
+    "NCT03322566": 7
+   },
+   "eligible_share": {
+    "NCT03322540": 0.0167,
+    "NCT03322566": 0.0568
+   },
+   "containers": [
+    "NCT03322566"
+   ],
+   "container_criteria": 7,
+   "phases": {
+    "NCT03322540": [
+     "PHASE2"
+    ],
+    "NCT03322566": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT04077463",
+   "q": "NCT05488314",
+   "shared_sites": 15,
+   "o_pq": 0.9424,
+   "o_qp": 0.0504,
+   "overlap_months_estimated": 18.7,
+   "both_recruiting_from": "2022-12-13",
+   "both_recruiting_to": "2024-07-05",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04077463": "ACTIVE_NOT_RECRUITING",
+    "NCT05488314": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04077463": [],
+    "NCT05488314": []
+   },
+   "eligibility_source": {
+    "NCT04077463": "rule-based parse",
+    "NCT05488314": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04077463": 4,
+    "NCT05488314": 3
+   },
+   "eligible_share": {
+    "NCT04077463": 0.0226,
+    "NCT05488314": 0.4215
+   },
+   "containers": [
+    "NCT05488314"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT04077463": [
+     "PHASE1"
+    ],
+    "NCT05488314": [
+     "PHASE1",
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT05908734",
+   "q": "NCT06120140",
+   "shared_sites": 15,
+   "o_pq": 1.0,
+   "o_qp": 0.5659,
+   "overlap_months_estimated": 19.9,
+   "both_recruiting_from": "2024-02-16",
+   "both_recruiting_to": "2025-10-14",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05908734": "ACTIVE_NOT_RECRUITING",
+    "NCT06120140": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05908734": [],
+    "NCT06120140": []
+   },
+   "eligibility_source": {
+    "NCT05908734": "rule-based parse",
+    "NCT06120140": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05908734": 6,
+    "NCT06120140": 4
+   },
+   "eligible_share": {
+    "NCT05908734": 0.0206,
+    "NCT06120140": 0.0364
+   },
+   "containers": [
+    "NCT06120140"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT05908734": [
+     "PHASE1",
+     "PHASE2"
+    ],
+    "NCT06120140": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT03829332",
+   "q": "NCT04676412",
+   "shared_sites": 15,
+   "o_pq": 1.0,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 9.7,
+   "both_recruiting_from": "2019-10-23",
+   "both_recruiting_to": "2020-08-12",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03829332": "COMPLETED",
+    "NCT04676412": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03829332": [],
+    "NCT04676412": []
+   },
+   "eligibility_source": {
+    "NCT03829332": "rule-based parse",
+    "NCT04676412": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03829332": 7,
+    "NCT04676412": 7
+   },
+   "eligible_share": {
+    "NCT03829332": 0.1401,
+    "NCT04676412": 0.1401
+   },
+   "containers": [
+    "NCT04676412",
+    "NCT03829332"
+   ],
+   "container_criteria": 7,
+   "phases": {
+    "NCT03829332": [
+     "PHASE3"
+    ],
+    "NCT04676412": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT05722015",
+   "q": "NCT06074588",
+   "shared_sites": 15,
+   "o_pq": 0.3294,
+   "o_qp": 0.9509,
+   "overlap_months_estimated": 2.1,
+   "both_recruiting_from": "2023-11-12",
+   "both_recruiting_to": "2024-01-14",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05722015": "ACTIVE_NOT_RECRUITING",
+    "NCT06074588": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05722015": [],
+    "NCT06074588": []
+   },
+   "eligibility_source": {
+    "NCT05722015": "rule-based parse",
+    "NCT06074588": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05722015": 1,
+    "NCT06074588": 6
+   },
+   "eligible_share": {
+    "NCT05722015": 0.9519,
+    "NCT06074588": 0.3297
+   },
+   "containers": [
+    "NCT05722015"
+   ],
+   "container_criteria": 1,
+   "phases": {
+    "NCT05722015": [
+     "PHASE3"
+    ],
+    "NCT06074588": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT06312137",
+   "q": "NCT07431827",
+   "shared_sites": 15,
+   "o_pq": 0.0862,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 7.0,
+   "both_recruiting_from": "2026-03-18",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT06312137": "RECRUITING",
+    "NCT07431827": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06312137": [
+     "8 restrictions not modeled"
+    ],
+    "NCT07431827": []
+   },
+   "eligibility_source": {
+    "NCT06312137": "hand-encoded",
+    "NCT07431827": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT06312137": 6,
+    "NCT07431827": 7
+   },
+   "eligible_share": {
+    "NCT06312137": 0.0812,
+    "NCT07431827": 0.007
+   },
+   "containers": [
+    "NCT06312137"
+   ],
+   "container_criteria": 6,
+   "phases": {
+    "NCT06312137": [
+     "PHASE3"
+    ],
+    "NCT07431827": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Pfizer",
+   "p": "NCT03915951",
+   "q": "NCT04543188",
+   "shared_sites": 15,
+   "o_pq": 1.0,
+   "o_qp": 0.345,
+   "overlap_months_estimated": 6.6,
+   "both_recruiting_from": "2021-01-08",
+   "both_recruiting_to": "2021-07-26",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03915951": "COMPLETED",
+    "NCT04543188": "TERMINATED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03915951": [],
+    "NCT04543188": []
+   },
+   "eligibility_source": {
+    "NCT03915951": "rule-based parse",
+    "NCT04543188": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03915951": 7,
+    "NCT04543188": 2
+   },
+   "eligible_share": {
+    "NCT03915951": 0.1528,
+    "NCT04543188": 0.443
+   },
+   "containers": [
+    "NCT04543188"
+   ],
+   "container_criteria": 2,
+   "phases": {
+    "NCT03915951": [
+     "PHASE2"
+    ],
+    "NCT04543188": [
+     "PHASE1"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "Taiho Oncology, Inc.",
+   "p": "NCT05967689",
+   "q": "NCT05973773",
+   "shared_sites": 15,
+   "o_pq": 0.3084,
+   "o_qp": 0.9446,
+   "overlap_months_estimated": 26.8,
+   "both_recruiting_from": "2023-12-18",
+   "both_recruiting_to": "2026-03-13",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05967689": "RECRUITING",
+    "NCT05973773": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT05967689": [
+     "requires a biomarker the synthetic population does not model",
+     "multi-cohort design: cohorts the single population cannot represent",
+     "9 restrictions not modeled"
+    ],
+    "NCT05973773": []
+   },
+   "eligibility_source": {
+    "NCT05967689": "hand-encoded",
+    "NCT05973773": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05967689": 4,
+    "NCT05973773": 5
+   },
+   "eligible_share": {
+    "NCT05967689": 0.0663,
+    "NCT05973773": 0.0216
+   },
+   "containers": [
+    "NCT05967689"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT05967689": [
+     "PHASE2"
+    ],
+    "NCT05973773": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Bayer",
+   "p": "NCT06452277",
+   "q": "NCT06914128",
+   "shared_sites": 14,
+   "o_pq": 0.807,
+   "o_qp": 0.0057,
+   "overlap_months_estimated": 18.9,
+   "both_recruiting_from": "2025-03-21",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT06452277": "RECRUITING",
+    "NCT06914128": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06452277": [
+     "6 restrictions not modeled"
+    ],
+    "NCT06914128": [
+     "requires a biomarker the synthetic population does not model",
+     "basket design: cohorts the single population cannot represent",
+     "4 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT06452277": "hand-encoded",
+    "NCT06914128": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT06452277": 9,
+    "NCT06914128": 1
+   },
+   "eligible_share": {
+    "NCT06452277": 0.0057,
+    "NCT06914128": 0.8011
+   },
+   "containers": [
+    "NCT06914128"
+   ],
+   "container_criteria": 1,
+   "phases": {
+    "NCT06452277": [
+     "PHASE3"
+    ],
+    "NCT06914128": [
+     "PHASE1",
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Boehringer Ingelheim",
+   "p": "NCT01853826",
+   "q": "NCT02272413",
+   "shared_sites": 14,
+   "o_pq": 0.81,
+   "o_qp": 0.9535,
+   "overlap_months_estimated": 15.4,
+   "both_recruiting_from": "2015-07-08",
+   "both_recruiting_to": "2016-10-19",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT01853826": "COMPLETED",
+    "NCT02272413": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT01853826": [],
+    "NCT02272413": []
+   },
+   "eligibility_source": {
+    "NCT01853826": "rule-based parse",
+    "NCT02272413": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT01853826": 5,
+    "NCT02272413": 5
+   },
+   "eligible_share": {
+    "NCT01853826": 0.0519,
+    "NCT02272413": 0.044
+   },
+   "containers": [
+    "NCT02272413",
+    "NCT01853826"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT01853826": [
+     "PHASE3"
+    ],
+    "NCT02272413": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Daiichi Sankyo",
+   "p": "NCT03260491",
+   "q": "NCT04619004",
+   "shared_sites": 14,
+   "o_pq": 0.6244,
+   "o_qp": 0.8115,
+   "overlap_months_estimated": 14.0,
+   "both_recruiting_from": "2021-02-02",
+   "both_recruiting_to": "2022-04-05",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03260491": "ACTIVE_NOT_RECRUITING",
+    "NCT04619004": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03260491": [],
+    "NCT04619004": []
+   },
+   "eligibility_source": {
+    "NCT03260491": "rule-based parse",
+    "NCT04619004": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03260491": 8,
+    "NCT04619004": 6
+   },
+   "eligible_share": {
+    "NCT03260491": 0.1017,
+    "NCT04619004": 0.0783
+   },
+   "containers": [
+    "NCT03260491"
+   ],
+   "container_criteria": 8,
+   "phases": {
+    "NCT03260491": [
+     "PHASE1"
+    ],
+    "NCT04619004": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "Daiichi Sankyo",
+   "p": "NCT04656652",
+   "q": "NCT04484142",
+   "shared_sites": 14,
+   "o_pq": 1.0,
+   "o_qp": 0.1669,
+   "overlap_months_estimated": 15.2,
+   "both_recruiting_from": "2021-03-30",
+   "both_recruiting_to": "2022-07-04",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04656652": "ACTIVE_NOT_RECRUITING",
+    "NCT04484142": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04656652": [],
+    "NCT04484142": []
+   },
+   "eligibility_source": {
+    "NCT04656652": "rule-based parse",
+    "NCT04484142": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04656652": 8,
+    "NCT04484142": 6
+   },
+   "eligible_share": {
+    "NCT04656652": 0.012,
+    "NCT04484142": 0.0716
+   },
+   "containers": [
+    "NCT04484142"
+   ],
+   "container_criteria": 6,
+   "phases": {
+    "NCT04656652": [
+     "PHASE3"
+    ],
+    "NCT04484142": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT05722015",
+   "q": "NCT06212752",
+   "shared_sites": 14,
+   "o_pq": 1.0,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 7.1,
+   "both_recruiting_from": "2023-06-13",
+   "both_recruiting_to": "2024-01-14",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05722015": "ACTIVE_NOT_RECRUITING",
+    "NCT06212752": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05722015": [],
+    "NCT06212752": []
+   },
+   "eligibility_source": {
+    "NCT05722015": "rule-based parse",
+    "NCT06212752": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05722015": 1,
+    "NCT06212752": 1
+   },
+   "eligible_share": {
+    "NCT05722015": 0.9519,
+    "NCT06212752": 0.9519
+   },
+   "containers": [
+    "NCT06212752",
+    "NCT05722015"
+   ],
+   "container_criteria": 1,
+   "phases": {
+    "NCT05722015": [
+     "PHASE3"
+    ],
+    "NCT06212752": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT06074588",
+   "q": "NCT07190248",
+   "shared_sites": 14,
+   "o_pq": 0.0643,
+   "o_qp": 0.8154,
+   "overlap_months_estimated": 4.4,
+   "both_recruiting_from": "2025-10-08",
+   "both_recruiting_to": "2026-02-17",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT06074588": "ACTIVE_NOT_RECRUITING",
+    "NCT07190248": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06074588": [],
+    "NCT07190248": [
+     "3 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT06074588": "rule-based parse",
+    "NCT07190248": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT06074588": 6,
+    "NCT07190248": 7
+   },
+   "eligible_share": {
+    "NCT06074588": 0.3297,
+    "NCT07190248": 0.026
+   },
+   "containers": [
+    "NCT06074588"
+   ],
+   "container_criteria": 6,
+   "phases": {
+    "NCT06074588": [
+     "PHASE3"
+    ],
+    "NCT07190248": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT06623422",
+   "q": "NCT07513376",
+   "shared_sites": 14,
+   "o_pq": 0.9106,
+   "o_qp": 0.6706,
+   "overlap_months_estimated": 5.4,
+   "both_recruiting_from": "2026-05-04",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT06623422": "RECRUITING",
+    "NCT07513376": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06623422": [
+     "4 restrictions not modeled"
+    ],
+    "NCT07513376": [
+     "4 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT06623422": "hand-encoded",
+    "NCT07513376": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT06623422": 6,
+    "NCT07513376": 5
+   },
+   "eligible_share": {
+    "NCT06623422": 0.071,
+    "NCT07513376": 0.0964
+   },
+   "containers": [
+    "NCT07513376"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT06623422": [
+     "PHASE3"
+    ],
+    "NCT07513376": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Alentis Therapeutics AG",
+   "p": "NCT06747585",
+   "q": "NCT07169734",
+   "shared_sites": 13,
+   "o_pq": 0.945,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 13.7,
+   "both_recruiting_from": "2025-08-26",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT06747585": "RECRUITING",
+    "NCT07169734": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06747585": [
+     "requires a biomarker the synthetic population does not model",
+     "basket design: cohorts the single population cannot represent",
+     "5 restrictions not modeled"
+    ],
+    "NCT07169734": [
+     "requires a biomarker the synthetic population does not model",
+     "basket design: cohorts the single population cannot represent",
+     "6 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT06747585": "hand-encoded",
+    "NCT07169734": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT06747585": 5,
+    "NCT07169734": 6
+   },
+   "eligible_share": {
+    "NCT06747585": 0.0781,
+    "NCT07169734": 0.0738
+   },
+   "containers": [
+    "NCT07169734",
+    "NCT06747585"
+   ],
+   "container_criteria": 6,
+   "phases": {
+    "NCT06747585": [
+     "PHASE1",
+     "PHASE2"
+    ],
+    "NCT07169734": [
+     "PHASE1",
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Amgen",
+   "p": "NCT05094336",
+   "q": "NCT05975073",
+   "shared_sites": 13,
+   "o_pq": 1.0,
+   "o_qp": 0.7679,
+   "overlap_months_estimated": 19.7,
+   "both_recruiting_from": "2023-08-01",
+   "both_recruiting_to": "2025-03-22",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05094336": "ACTIVE_NOT_RECRUITING",
+    "NCT05975073": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05094336": [],
+    "NCT05975073": []
+   },
+   "eligibility_source": {
+    "NCT05094336": "rule-based parse",
+    "NCT05975073": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05094336": 4,
+    "NCT05975073": 2
+   },
+   "eligible_share": {
+    "NCT05094336": 0.3816,
+    "NCT05975073": 0.4969
+   },
+   "containers": [
+    "NCT05975073"
+   ],
+   "container_criteria": 2,
+   "phases": {
+    "NCT05094336": [
+     "PHASE1",
+     "PHASE2"
+    ],
+    "NCT05975073": [
+     "PHASE1",
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Amgen",
+   "p": "NCT05920356",
+   "q": "NCT06430866",
+   "shared_sites": 13,
+   "o_pq": 0.9486,
+   "o_qp": 0.0239,
+   "overlap_months_estimated": 17.6,
+   "both_recruiting_from": "2024-09-12",
+   "both_recruiting_to": "2026-02-28",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05920356": "RECRUITING",
+    "NCT06430866": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT05920356": [
+     "4 restrictions not modeled"
+    ],
+    "NCT06430866": []
+   },
+   "eligibility_source": {
+    "NCT05920356": "hand-encoded",
+    "NCT06430866": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05920356": 7,
+    "NCT06430866": 4
+   },
+   "eligible_share": {
+    "NCT05920356": 0.0088,
+    "NCT06430866": 0.3466
+   },
+   "containers": [
+    "NCT06430866"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT05920356": [
+     "PHASE3"
+    ],
+    "NCT06430866": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Chia Tai Tianqing Pharmaceutical Group Co., Ltd.",
+   "p": "NCT04439890",
+   "q": "NCT04325763",
+   "shared_sites": 13,
+   "o_pq": 0.8077,
+   "o_qp": 0.6459,
+   "overlap_months_estimated": 4.5,
+   "both_recruiting_from": "2020-05-27",
+   "both_recruiting_to": "2020-10-11",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04439890": "UNKNOWN",
+    "NCT04325763": "UNKNOWN"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04439890": [],
+    "NCT04325763": []
+   },
+   "eligibility_source": {
+    "NCT04439890": "rule-based parse",
+    "NCT04325763": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04439890": 4,
+    "NCT04325763": 4
+   },
+   "eligible_share": {
+    "NCT04439890": 0.407,
+    "NCT04325763": 0.509
+   },
+   "containers": [
+    "NCT04325763"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT04439890": [
+     "PHASE3"
+    ],
+    "NCT04325763": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Daiichi Sankyo",
+   "p": "NCT03260491",
+   "q": "NCT05338970",
+   "shared_sites": 13,
+   "o_pq": 0.2355,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 9.4,
+   "both_recruiting_from": "2022-07-08",
+   "both_recruiting_to": "2023-04-20",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03260491": "ACTIVE_NOT_RECRUITING",
+    "NCT05338970": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03260491": [],
+    "NCT05338970": []
+   },
+   "eligibility_source": {
+    "NCT03260491": "rule-based parse",
+    "NCT05338970": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03260491": 8,
+    "NCT05338970": 7
+   },
+   "eligible_share": {
+    "NCT03260491": 0.1017,
+    "NCT05338970": 0.0239
+   },
+   "containers": [
+    "NCT03260491"
+   ],
+   "container_criteria": 8,
+   "phases": {
+    "NCT03260491": [
+     "PHASE1"
+    ],
+    "NCT05338970": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT03178552",
+   "q": "NCT05775289",
+   "shared_sites": 13,
+   "o_pq": 0.3063,
+   "o_qp": 0.9073,
+   "overlap_months_estimated": 9.9,
+   "both_recruiting_from": "2023-03-15",
+   "both_recruiting_to": "2024-01-09",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03178552": "ACTIVE_NOT_RECRUITING",
+    "NCT05775289": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03178552": [],
+    "NCT05775289": []
+   },
+   "eligibility_source": {
+    "NCT03178552": "rule-based parse",
+    "NCT05775289": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03178552": 3,
+    "NCT05775289": 7
+   },
+   "eligible_share": {
+    "NCT03178552": 0.6471,
+    "NCT05775289": 0.2185
+   },
+   "containers": [
+    "NCT03178552"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT03178552": [
+     "PHASE2",
+     "PHASE3"
+    ],
+    "NCT05775289": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT04294810",
+   "q": "NCT04222972",
+   "shared_sites": 13,
+   "o_pq": 0.9874,
+   "o_qp": 0.4137,
+   "overlap_months_estimated": 35.2,
+   "both_recruiting_from": "2020-07-24",
+   "both_recruiting_to": "2023-06-30",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04294810": "COMPLETED",
+    "NCT04222972": "TERMINATED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04294810": [],
+    "NCT04222972": []
+   },
+   "eligibility_source": {
+    "NCT04294810": "rule-based parse",
+    "NCT04222972": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04294810": 8,
+    "NCT04222972": 6
+   },
+   "eligible_share": {
+    "NCT04294810": 0.1472,
+    "NCT04222972": 0.3513
+   },
+   "containers": [
+    "NCT04222972"
+   ],
+   "container_criteria": 6,
+   "phases": {
+    "NCT04294810": [
+     "PHASE3"
+    ],
+    "NCT04222972": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT04294810",
+   "q": "NCT05775289",
+   "shared_sites": 13,
+   "o_pq": 1.0,
+   "o_qp": 0.6736,
+   "overlap_months_estimated": 9.1,
+   "both_recruiting_from": "2023-03-15",
+   "both_recruiting_to": "2023-12-16",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04294810": "COMPLETED",
+    "NCT05775289": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04294810": [],
+    "NCT05775289": []
+   },
+   "eligibility_source": {
+    "NCT04294810": "rule-based parse",
+    "NCT05775289": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04294810": 8,
+    "NCT05775289": 7
+   },
+   "eligible_share": {
+    "NCT04294810": 0.1472,
+    "NCT05775289": 0.2185
+   },
+   "containers": [
+    "NCT05775289"
+   ],
+   "container_criteria": 7,
+   "phases": {
+    "NCT04294810": [
+     "PHASE3"
+    ],
+    "NCT05775289": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT05498428",
+   "q": "NCT05908734",
+   "shared_sites": 13,
+   "o_pq": 0.3012,
+   "o_qp": 0.8811,
+   "overlap_months_estimated": 28.9,
+   "both_recruiting_from": "2023-05-18",
+   "both_recruiting_to": "2025-10-14",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05498428": "RECRUITING",
+    "NCT05908734": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT05498428": [
+     "multi-cohort design: cohorts the single population cannot represent",
+     "8 restrictions not modeled"
+    ],
+    "NCT05908734": []
+   },
+   "eligibility_source": {
+    "NCT05498428": "hand-encoded",
+    "NCT05908734": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05498428": 5,
+    "NCT05908734": 6
+   },
+   "eligible_share": {
+    "NCT05498428": 0.0602,
+    "NCT05908734": 0.0206
+   },
+   "containers": [
+    "NCT05498428"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT05498428": [
+     "PHASE2"
+    ],
+    "NCT05908734": [
+     "PHASE1",
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT03425643",
+   "q": "NCT03924869",
+   "shared_sites": 13,
+   "o_pq": 1.0,
+   "o_qp": 0.1909,
+   "overlap_months_estimated": 26.6,
+   "both_recruiting_from": "2019-06-25",
+   "both_recruiting_to": "2021-09-11",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03425643": "ACTIVE_NOT_RECRUITING",
+    "NCT03924869": "TERMINATED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03425643": [],
+    "NCT03924869": []
+   },
+   "eligibility_source": {
+    "NCT03425643": "rule-based parse",
+    "NCT03924869": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03425643": 6,
+    "NCT03924869": 4
+   },
+   "eligible_share": {
+    "NCT03425643": 0.0765,
+    "NCT03924869": 0.4004
+   },
+   "containers": [
+    "NCT03924869"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT03425643": [
+     "PHASE3"
+    ],
+    "NCT03924869": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT06345729",
+   "q": "NCT06698042",
+   "shared_sites": 13,
+   "o_pq": 1.0,
+   "o_qp": 0.0083,
+   "overlap_months_estimated": 10.2,
+   "both_recruiting_from": "2024-11-21",
+   "both_recruiting_to": "2025-09-26",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT06345729": "RECRUITING",
+    "NCT06698042": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06345729": [
+     "6 restrictions not modeled"
+    ],
+    "NCT06698042": []
+   },
+   "eligibility_source": {
+    "NCT06345729": "hand-encoded",
+    "NCT06698042": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT06345729": 7,
+    "NCT06698042": 2
+   },
+   "eligible_share": {
+    "NCT06345729": 0.0076,
+    "NCT06698042": 0.9068
+   },
+   "containers": [
+    "NCT06698042"
+   ],
+   "container_criteria": 2,
+   "phases": {
+    "NCT06345729": [
+     "PHASE3"
+    ],
+    "NCT06698042": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Mirati Therapeutics Inc.",
+   "p": "NCT02219711",
+   "q": "NCT02544633",
+   "shared_sites": 13,
+   "o_pq": 0.4595,
+   "o_qp": 0.8971,
+   "overlap_months_estimated": 19.8,
+   "both_recruiting_from": "2015-10-15",
+   "both_recruiting_to": "2017-06-09",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT02219711": "COMPLETED",
+    "NCT02544633": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT02219711": [],
+    "NCT02544633": []
+   },
+   "eligibility_source": {
+    "NCT02219711": "rule-based parse",
+    "NCT02544633": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT02219711": 2,
+    "NCT02544633": 4
+   },
+   "eligible_share": {
+    "NCT02219711": 0.4969,
+    "NCT02544633": 0.2545
+   },
+   "containers": [
+    "NCT02219711"
+   ],
+   "container_criteria": 2,
+   "phases": {
+    "NCT02219711": [
+     "PHASE1"
+    ],
+    "NCT02544633": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "Amgen",
+   "p": "NCT05094336",
+   "q": "NCT06131398",
+   "shared_sites": 12,
+   "o_pq": 0.5898,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 12.5,
+   "both_recruiting_from": "2024-03-07",
+   "both_recruiting_to": "2025-03-22",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05094336": "ACTIVE_NOT_RECRUITING",
+    "NCT06131398": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05094336": [],
+    "NCT06131398": []
+   },
+   "eligibility_source": {
+    "NCT05094336": "rule-based parse",
+    "NCT06131398": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05094336": 4,
+    "NCT06131398": 6
+   },
+   "eligible_share": {
+    "NCT05094336": 0.3816,
+    "NCT06131398": 0.2251
+   },
+   "containers": [
+    "NCT05094336"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT05094336": [
+     "PHASE1",
+     "PHASE2"
+    ],
+    "NCT06131398": [
+     "PHASE1"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "Bayer",
+   "p": "NCT05099172",
+   "q": "NCT06914128",
+   "shared_sites": 12,
+   "o_pq": 1.0,
+   "o_qp": 0.0987,
+   "overlap_months_estimated": 18.9,
+   "both_recruiting_from": "2025-03-21",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT05099172": "RECRUITING",
+    "NCT06914128": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT05099172": [
+     "multi-cohort design: cohorts the single population cannot represent",
+     "5 restrictions not modeled"
+    ],
+    "NCT06914128": [
+     "requires a biomarker the synthetic population does not model",
+     "basket design: cohorts the single population cannot represent",
+     "4 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT05099172": "hand-encoded",
+    "NCT06914128": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT05099172": 4,
+    "NCT06914128": 1
+   },
+   "eligible_share": {
+    "NCT05099172": 0.0791,
+    "NCT06914128": 0.8011
+   },
+   "containers": [
+    "NCT06914128"
+   ],
+   "container_criteria": 1,
+   "phases": {
+    "NCT05099172": [
+     "PHASE1",
+     "PHASE2"
+    ],
+    "NCT06914128": [
+     "PHASE1",
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT03178552",
+   "q": "NCT03735121",
+   "shared_sites": 12,
+   "o_pq": 0.3236,
+   "o_qp": 0.9026,
+   "overlap_months_estimated": 26.0,
+   "both_recruiting_from": "2018-12-27",
+   "both_recruiting_to": "2021-02-24",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03178552": "ACTIVE_NOT_RECRUITING",
+    "NCT03735121": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03178552": [],
+    "NCT03735121": []
+   },
+   "eligibility_source": {
+    "NCT03178552": "rule-based parse",
+    "NCT03735121": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03178552": 3,
+    "NCT03735121": 4
+   },
+   "eligible_share": {
+    "NCT03178552": 0.6471,
+    "NCT03735121": 0.232
+   },
+   "containers": [
+    "NCT03178552"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT03178552": [
+     "PHASE2",
+     "PHASE3"
+    ],
+    "NCT03735121": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT03178552",
+   "q": "NCT05170204",
+   "shared_sites": 12,
+   "o_pq": 0.005,
+   "o_qp": 0.8333,
+   "overlap_months_estimated": 14.9,
+   "both_recruiting_from": "2022-11-01",
+   "both_recruiting_to": "2024-01-28",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03178552": "ACTIVE_NOT_RECRUITING",
+    "NCT05170204": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03178552": [],
+    "NCT05170204": []
+   },
+   "eligibility_source": {
+    "NCT03178552": "rule-based parse",
+    "NCT05170204": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03178552": 3,
+    "NCT05170204": 9
+   },
+   "eligible_share": {
+    "NCT03178552": 0.6471,
+    "NCT05170204": 0.0039
+   },
+   "containers": [
+    "NCT03178552"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT03178552": [
+     "PHASE2",
+     "PHASE3"
+    ],
+    "NCT05170204": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT05388669",
+   "q": "NCT05663866",
+   "shared_sites": 12,
+   "o_pq": 0.5721,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 1.6,
+   "both_recruiting_from": "2023-05-18",
+   "both_recruiting_to": "2023-07-06",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05388669": "ACTIVE_NOT_RECRUITING",
+    "NCT05663866": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05388669": [],
+    "NCT05663866": []
+   },
+   "eligibility_source": {
+    "NCT05388669": "rule-based parse",
+    "NCT05663866": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05388669": 5,
+    "NCT05663866": 6
+   },
+   "eligible_share": {
+    "NCT05388669": 0.0437,
+    "NCT05663866": 0.025
+   },
+   "containers": [
+    "NCT05388669"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT05388669": [
+     "PHASE3"
+    ],
+    "NCT05663866": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT05498428",
+   "q": "NCT06667076",
+   "shared_sites": 12,
+   "o_pq": 0.7892,
+   "o_qp": 0.9066,
+   "overlap_months_estimated": 22.0,
+   "both_recruiting_from": "2024-12-16",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT05498428": "RECRUITING",
+    "NCT06667076": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT05498428": [
+     "multi-cohort design: cohorts the single population cannot represent",
+     "8 restrictions not modeled"
+    ],
+    "NCT06667076": [
+     "multi-cohort design: cohorts the single population cannot represent",
+     "5 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT05498428": "hand-encoded",
+    "NCT06667076": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT05498428": 5,
+    "NCT06667076": 5
+   },
+   "eligible_share": {
+    "NCT05498428": 0.0602,
+    "NCT06667076": 0.0524
+   },
+   "containers": [
+    "NCT05498428"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT05498428": [
+     "PHASE2"
+    ],
+    "NCT06667076": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT04725188",
+   "q": "NCT05226598",
+   "shared_sites": 12,
+   "o_pq": 0.4492,
+   "o_qp": 0.8057,
+   "overlap_months_estimated": 2.7,
+   "both_recruiting_from": "2022-03-24",
+   "both_recruiting_to": "2022-06-13",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04725188": "COMPLETED",
+    "NCT05226598": "TERMINATED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04725188": [],
+    "NCT05226598": []
+   },
+   "eligibility_source": {
+    "NCT04725188": "rule-based parse",
+    "NCT05226598": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04725188": 4,
+    "NCT05226598": 4
+   },
+   "eligible_share": {
+    "NCT04725188": 0.4021,
+    "NCT05226598": 0.2241
+   },
+   "containers": [
+    "NCT04725188"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT04725188": [
+     "PHASE2"
+    ],
+    "NCT05226598": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT05226598",
+   "q": "NCT05722015",
+   "shared_sites": 12,
+   "o_pq": 1.0,
+   "o_qp": 0.2355,
+   "overlap_months_estimated": 8.8,
+   "both_recruiting_from": "2023-02-14",
+   "both_recruiting_to": "2023-11-08",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05226598": "TERMINATED",
+    "NCT05722015": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05226598": [],
+    "NCT05722015": []
+   },
+   "eligibility_source": {
+    "NCT05226598": "rule-based parse",
+    "NCT05722015": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05226598": 4,
+    "NCT05722015": 1
+   },
+   "eligible_share": {
+    "NCT05226598": 0.2241,
+    "NCT05722015": 0.9519
+   },
+   "containers": [
+    "NCT05722015"
+   ],
+   "container_criteria": 1,
+   "phases": {
+    "NCT05226598": [
+     "PHASE3"
+    ],
+    "NCT05722015": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT05722015",
+   "q": "NCT06170788",
+   "shared_sites": 12,
+   "o_pq": 0.044,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 1.0,
+   "both_recruiting_from": "2023-12-15",
+   "both_recruiting_to": "2024-01-14",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05722015": "ACTIVE_NOT_RECRUITING",
+    "NCT06170788": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT05722015": [],
+    "NCT06170788": [
+     "4 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT05722015": "rule-based parse",
+    "NCT06170788": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT05722015": 1,
+    "NCT06170788": 11
+   },
+   "eligible_share": {
+    "NCT05722015": 0.9519,
+    "NCT06170788": 0.0418
+   },
+   "containers": [
+    "NCT05722015"
+   ],
+   "container_criteria": 1,
+   "phases": {
+    "NCT05722015": [
+     "PHASE3"
+    ],
+    "NCT06170788": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT06305754",
+   "q": "NCT07431827",
+   "shared_sites": 12,
+   "o_pq": 0.0095,
+   "o_qp": 0.8643,
+   "overlap_months_estimated": 7.0,
+   "both_recruiting_from": "2026-03-18",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT06305754": "ACTIVE_NOT_RECRUITING",
+    "NCT07431827": "RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT06305754": [],
+    "NCT07431827": []
+   },
+   "eligibility_source": {
+    "NCT06305754": "rule-based parse",
+    "NCT07431827": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT06305754": 3,
+    "NCT07431827": 7
+   },
+   "eligible_share": {
+    "NCT06305754": 0.6373,
+    "NCT07431827": 0.007
+   },
+   "containers": [
+    "NCT06305754"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT06305754": [
+     "PHASE3"
+    ],
+    "NCT07431827": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Pfizer",
+   "p": "NCT04543188",
+   "q": "NCT05538130",
+   "shared_sites": 12,
+   "o_pq": 1.0,
+   "o_qp": 0.804,
+   "overlap_months_estimated": 2.2,
+   "both_recruiting_from": "2022-11-30",
+   "both_recruiting_to": "2023-02-05",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04543188": "TERMINATED",
+    "NCT05538130": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04543188": [],
+    "NCT05538130": []
+   },
+   "eligibility_source": {
+    "NCT04543188": "rule-based parse",
+    "NCT05538130": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04543188": 2,
+    "NCT05538130": 1
+   },
+   "eligible_share": {
+    "NCT04543188": 0.443,
+    "NCT05538130": 0.551
+   },
+   "containers": [
+    "NCT05538130",
+    "NCT04543188"
+   ],
+   "container_criteria": 2,
+   "phases": {
+    "NCT04543188": [
+     "PHASE1"
+    ],
+    "NCT05538130": [
+     "PHASE1"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "BeiGene",
+   "p": "NCT04215978",
+   "q": "NCT04746924",
+   "shared_sites": 11,
+   "o_pq": 0.3852,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 23.1,
+   "both_recruiting_from": "2021-05-24",
+   "both_recruiting_to": "2023-04-27",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04215978": "COMPLETED",
+    "NCT04746924": "TERMINATED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04215978": [],
+    "NCT04746924": []
+   },
+   "eligibility_source": {
+    "NCT04215978": "rule-based parse",
+    "NCT04746924": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04215978": 5,
+    "NCT04746924": 9
+   },
+   "eligible_share": {
+    "NCT04215978": 0.1153,
+    "NCT04746924": 0.0444
+   },
+   "containers": [
+    "NCT04215978"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT04215978": [
+     "PHASE1"
+    ],
+    "NCT04746924": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "BeiGene",
+   "p": "NCT04746924",
+   "q": "NCT04866017",
+   "shared_sites": 11,
+   "o_pq": 1.0,
+   "o_qp": 0.1511,
+   "overlap_months_estimated": 18.2,
+   "both_recruiting_from": "2021-06-17",
+   "both_recruiting_to": "2022-12-22",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04746924": "TERMINATED",
+    "NCT04866017": "TERMINATED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04746924": [],
+    "NCT04866017": []
+   },
+   "eligibility_source": {
+    "NCT04746924": "rule-based parse",
+    "NCT04866017": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04746924": 9,
+    "NCT04866017": 7
+   },
+   "eligible_share": {
+    "NCT04746924": 0.0444,
+    "NCT04866017": 0.2939
+   },
+   "containers": [
+    "NCT04866017"
+   ],
+   "container_criteria": 7,
+   "phases": {
+    "NCT04746924": [
+     "PHASE3"
+    ],
+    "NCT04866017": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Blueprint Medicines Corporation",
+   "p": "NCT04862780",
+   "q": "NCT05241873",
+   "shared_sites": 11,
+   "o_pq": 1.0,
+   "o_qp": 0.9538,
+   "overlap_months_estimated": 17.4,
+   "both_recruiting_from": "2022-03-04",
+   "both_recruiting_to": "2023-08-15",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04862780": "TERMINATED",
+    "NCT05241873": "TERMINATED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04862780": [],
+    "NCT05241873": []
+   },
+   "eligibility_source": {
+    "NCT04862780": "rule-based parse",
+    "NCT05241873": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04862780": 6,
+    "NCT05241873": 4
+   },
+   "eligible_share": {
+    "NCT04862780": 0.0486,
+    "NCT05241873": 0.0509
+   },
+   "containers": [
+    "NCT05241873",
+    "NCT04862780"
+   ],
+   "container_criteria": 6,
+   "phases": {
+    "NCT04862780": [
+     "PHASE1"
+    ],
+    "NCT05241873": [
+     "PHASE1"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "Clovis Oncology, Inc.",
+   "p": "NCT02147990",
+   "q": "NCT02322281",
+   "shared_sites": 11,
+   "o_pq": 1.0,
+   "o_qp": 0.5603,
+   "overlap_months_estimated": 24.3,
+   "both_recruiting_from": "2015-02-15",
+   "both_recruiting_to": "2017-02-23",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT02147990": "TERMINATED",
+    "NCT02322281": "TERMINATED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT02147990": [],
+    "NCT02322281": []
+   },
+   "eligibility_source": {
+    "NCT02147990": "rule-based parse",
+    "NCT02322281": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT02147990": 5,
+    "NCT02322281": 4
+   },
+   "eligible_share": {
+    "NCT02147990": 0.0372,
+    "NCT02322281": 0.0663
+   },
+   "containers": [
+    "NCT02322281"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT02147990": [
+     "PHASE2"
+    ],
+    "NCT02322281": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Daiichi Sankyo",
+   "p": "NCT04619004",
+   "q": "NCT04676477",
+   "shared_sites": 11,
+   "o_pq": 0.2997,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 9.8,
+   "both_recruiting_from": "2021-06-11",
+   "both_recruiting_to": "2022-04-05",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT04619004": "ACTIVE_NOT_RECRUITING",
+    "NCT04676477": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT04619004": [],
+    "NCT04676477": []
+   },
+   "eligibility_source": {
+    "NCT04619004": "rule-based parse",
+    "NCT04676477": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT04619004": 6,
+    "NCT04676477": 5
+   },
+   "eligible_share": {
+    "NCT04619004": 0.0783,
+    "NCT04676477": 0.0234
+   },
+   "containers": [
+    "NCT04619004"
+   ],
+   "container_criteria": 6,
+   "phases": {
+    "NCT04619004": [
+     "PHASE2"
+    ],
+    "NCT04676477": [
+     "PHASE1"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT03178552",
+   "q": "NCT04471428",
+   "shared_sites": 11,
+   "o_pq": 0.267,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 15.5,
+   "both_recruiting_from": "2020-10-01",
+   "both_recruiting_to": "2022-01-16",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03178552": "ACTIVE_NOT_RECRUITING",
+    "NCT04471428": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03178552": [],
+    "NCT04471428": []
+   },
+   "eligibility_source": {
+    "NCT03178552": "rule-based parse",
+    "NCT04471428": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03178552": 3,
+    "NCT04471428": 8
+   },
+   "eligible_share": {
+    "NCT03178552": 0.6471,
+    "NCT04471428": 0.1727
+   },
+   "containers": [
+    "NCT03178552"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT03178552": [
+     "PHASE2",
+     "PHASE3"
+    ],
+    "NCT04471428": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT03178552",
+   "q": "NCT04603807",
+   "shared_sites": 11,
+   "o_pq": 0.0063,
+   "o_qp": 0.871,
+   "overlap_months_estimated": 27.9,
+   "both_recruiting_from": "2021-09-30",
+   "both_recruiting_to": "2024-01-28",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03178552": "ACTIVE_NOT_RECRUITING",
+    "NCT04603807": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03178552": [],
+    "NCT04603807": []
+   },
+   "eligibility_source": {
+    "NCT03178552": "rule-based parse",
+    "NCT04603807": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03178552": 3,
+    "NCT04603807": 4
+   },
+   "eligible_share": {
+    "NCT03178552": 0.6471,
+    "NCT04603807": 0.0046
+   },
+   "containers": [
+    "NCT03178552"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT03178552": [
+     "PHASE2",
+     "PHASE3"
+    ],
+    "NCT04603807": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT03191786",
+   "q": "NCT03178552",
+   "shared_sites": 11,
+   "o_pq": 1.0,
+   "o_qp": 0.0529,
+   "overlap_months_estimated": 35.8,
+   "both_recruiting_from": "2017-09-22",
+   "both_recruiting_to": "2020-09-14",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03191786": "COMPLETED",
+    "NCT03178552": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03191786": [],
+    "NCT03178552": []
+   },
+   "eligibility_source": {
+    "NCT03191786": "rule-based parse",
+    "NCT03178552": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03191786": 7,
+    "NCT03178552": 3
+   },
+   "eligible_share": {
+    "NCT03191786": 0.0342,
+    "NCT03178552": 0.6471
+   },
+   "containers": [
+    "NCT03178552"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT03191786": [
+     "PHASE3"
+    ],
+    "NCT03178552": [
+     "PHASE2",
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT03515837",
+   "q": "NCT03516981",
+   "shared_sites": 11,
+   "o_pq": 1.0,
+   "o_qp": 0.6089,
+   "overlap_months_estimated": 32.4,
+   "both_recruiting_from": "2018-10-01",
+   "both_recruiting_to": "2021-06-13",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03515837": "COMPLETED",
+    "NCT03516981": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03515837": [],
+    "NCT03516981": []
+   },
+   "eligibility_source": {
+    "NCT03515837": "rule-based parse",
+    "NCT03516981": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03515837": 8,
+    "NCT03516981": 8
+   },
+   "eligible_share": {
+    "NCT03515837": 0.0246,
+    "NCT03516981": 0.0404
+   },
+   "containers": [
+    "NCT03516981"
+   ],
+   "container_criteria": 8,
+   "phases": {
+    "NCT03515837": [
+     "PHASE3"
+    ],
+    "NCT03516981": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT03976362",
+   "q": "NCT05226598",
+   "shared_sites": 11,
+   "o_pq": 1.0,
+   "o_qp": 0.1793,
+   "overlap_months_estimated": 0.2,
+   "both_recruiting_from": "2022-03-24",
+   "both_recruiting_to": "2022-03-28",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03976362": "COMPLETED",
+    "NCT05226598": "TERMINATED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03976362": [],
+    "NCT05226598": []
+   },
+   "eligibility_source": {
+    "NCT03976362": "rule-based parse",
+    "NCT05226598": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03976362": 7,
+    "NCT05226598": 4
+   },
+   "eligible_share": {
+    "NCT03976362": 0.0402,
+    "NCT05226598": 0.2241
+   },
+   "containers": [
+    "NCT05226598"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT03976362": [
+     "PHASE3"
+    ],
+    "NCT05226598": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT05722015",
+   "q": "NCT06077760",
+   "shared_sites": 11,
+   "o_pq": 0.71,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 1.3,
+   "both_recruiting_from": "2023-12-06",
+   "both_recruiting_to": "2024-01-14",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05722015": "ACTIVE_NOT_RECRUITING",
+    "NCT06077760": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05722015": [],
+    "NCT06077760": []
+   },
+   "eligibility_source": {
+    "NCT05722015": "rule-based parse",
+    "NCT06077760": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT05722015": 1,
+    "NCT06077760": 3
+   },
+   "eligible_share": {
+    "NCT05722015": 0.9519,
+    "NCT06077760": 0.6759
+   },
+   "containers": [
+    "NCT05722015"
+   ],
+   "container_criteria": 1,
+   "phases": {
+    "NCT05722015": [
+     "PHASE3"
+    ],
+    "NCT06077760": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT06077760",
+   "q": "NCT07554339",
+   "shared_sites": 11,
+   "o_pq": 0.0119,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 3.9,
+   "both_recruiting_from": "2026-06-18",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT06077760": "ACTIVE_NOT_RECRUITING",
+    "NCT07554339": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06077760": [],
+    "NCT07554339": [
+     "6 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT06077760": "rule-based parse",
+    "NCT07554339": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT06077760": 3,
+    "NCT07554339": 7
+   },
+   "eligible_share": {
+    "NCT06077760": 0.6759,
+    "NCT07554339": 0.008
+   },
+   "containers": [
+    "NCT06077760"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT06077760": [
+     "PHASE3"
+    ],
+    "NCT07554339": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Pfizer",
+   "p": "NCT03460977",
+   "q": "NCT07144280",
+   "shared_sites": 11,
+   "o_pq": 0.233,
+   "o_qp": 0.9519,
+   "overlap_months_estimated": 12.5,
+   "both_recruiting_from": "2025-09-29",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT03460977": "RECRUITING",
+    "NCT07144280": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT03460977": [],
+    "NCT07144280": [
+     "8 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT03460977": "rule-based parse",
+    "NCT07144280": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT03460977": 1,
+    "NCT07144280": 4
+   },
+   "eligible_share": {
+    "NCT03460977": 0.9516,
+    "NCT07144280": 0.2329
+   },
+   "containers": [
+    "NCT03460977"
+   ],
+   "container_criteria": 1,
+   "phases": {
+    "NCT03460977": [
+     "PHASE1"
+    ],
+    "NCT07144280": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "Pfizer",
+   "p": "NCT07090499",
+   "q": "NCT07144280",
+   "shared_sites": 11,
+   "o_pq": 0.2333,
+   "o_qp": 0.8023,
+   "overlap_months_estimated": 12.5,
+   "both_recruiting_from": "2025-09-29",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT07090499": "RECRUITING",
+    "NCT07144280": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT07090499": [],
+    "NCT07144280": [
+     "8 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT07090499": "rule-based parse",
+    "NCT07144280": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT07090499": 1,
+    "NCT07144280": 4
+   },
+   "eligible_share": {
+    "NCT07090499": 0.8011,
+    "NCT07144280": 0.2329
+   },
+   "containers": [
+    "NCT07090499"
+   ],
+   "container_criteria": 1,
+   "phases": {
+    "NCT07090499": [
+     "PHASE1"
+    ],
+    "NCT07144280": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": false
+  },
+  {
+   "sponsor": "BioNTech SE",
+   "p": "NCT06712316",
+   "q": "NCT07111520",
+   "shared_sites": 10,
+   "o_pq": 0.8604,
+   "o_qp": 0.4473,
+   "overlap_months_estimated": 12.8,
+   "both_recruiting_from": "2025-09-22",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT06712316": "RECRUITING",
+    "NCT07111520": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06712316": [
+     "8 restrictions not modeled"
+    ],
+    "NCT07111520": [
+     "multi-cohort design: cohorts the single population cannot represent",
+     "7 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT06712316": "hand-encoded",
+    "NCT07111520": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT06712316": 4,
+    "NCT07111520": 4
+   },
+   "eligible_share": {
+    "NCT06712316": 0.2701,
+    "NCT07111520": 0.5195
+   },
+   "containers": [
+    "NCT07111520"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT06712316": [
+     "PHASE2",
+     "PHASE3"
+    ],
+    "NCT07111520": [
+     "PHASE1",
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Bristol-Myers Squibb",
+   "p": "NCT06561386",
+   "q": "NCT06618287",
+   "shared_sites": 10,
+   "o_pq": 1.0,
+   "o_qp": 0.1015,
+   "overlap_months_estimated": 20.3,
+   "both_recruiting_from": "2025-02-04",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT06561386": "RECRUITING",
+    "NCT06618287": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06561386": [
+     "5 restrictions not modeled"
+    ],
+    "NCT06618287": [
+     "basket design: cohorts the single population cannot represent",
+     "7 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT06561386": "hand-encoded",
+    "NCT06618287": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT06561386": 12,
+    "NCT06618287": 2
+   },
+   "eligible_share": {
+    "NCT06561386": 0.0614,
+    "NCT06618287": 0.6049
+   },
+   "containers": [
+    "NCT06618287"
+   ],
+   "container_criteria": 2,
+   "phases": {
+    "NCT06561386": [
+     "PHASE3"
+    ],
+    "NCT06618287": [
+     "PHASE1",
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Clovis Oncology, Inc.",
+   "p": "NCT01526928",
+   "q": "NCT02186301",
+   "shared_sites": 10,
+   "o_pq": 1.0,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 17.2,
+   "both_recruiting_from": "2014-11-15",
+   "both_recruiting_to": "2016-04-22",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT01526928": "TERMINATED",
+    "NCT02186301": "TERMINATED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT01526928": [],
+    "NCT02186301": []
+   },
+   "eligibility_source": {
+    "NCT01526928": "rule-based parse",
+    "NCT02186301": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT01526928": 4,
+    "NCT02186301": 4
+   },
+   "eligible_share": {
+    "NCT01526928": 0.0663,
+    "NCT02186301": 0.0663
+   },
+   "containers": [
+    "NCT02186301",
+    "NCT01526928"
+   ],
+   "container_criteria": 4,
+   "phases": {
+    "NCT01526928": [
+     "PHASE1",
+     "PHASE2"
+    ],
+    "NCT02186301": [
+     "PHASE2",
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT03178552",
+   "q": "NCT04140500",
+   "shared_sites": 10,
+   "o_pq": 0.704,
+   "o_qp": 0.9015,
+   "overlap_months_estimated": 50.6,
+   "both_recruiting_from": "2019-11-11",
+   "both_recruiting_to": "2024-01-28",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03178552": "ACTIVE_NOT_RECRUITING",
+    "NCT04140500": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03178552": [],
+    "NCT04140500": []
+   },
+   "eligibility_source": {
+    "NCT03178552": "rule-based parse",
+    "NCT04140500": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03178552": 3,
+    "NCT04140500": 5
+   },
+   "eligible_share": {
+    "NCT03178552": 0.6471,
+    "NCT04140500": 0.5053
+   },
+   "containers": [
+    "NCT03178552"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT03178552": [
+     "PHASE2",
+     "PHASE3"
+    ],
+    "NCT04140500": [
+     "PHASE1",
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Hoffmann-La Roche",
+   "p": "NCT06267001",
+   "q": "NCT06497556",
+   "shared_sites": 10,
+   "o_pq": 0.0654,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 7.4,
+   "both_recruiting_from": "2024-09-23",
+   "both_recruiting_to": "2025-05-07",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT06267001": "TERMINATED",
+    "NCT06497556": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT06267001": [],
+    "NCT06497556": []
+   },
+   "eligibility_source": {
+    "NCT06267001": "rule-based parse",
+    "NCT06497556": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT06267001": 3,
+    "NCT06497556": 3
+   },
+   "eligible_share": {
+    "NCT06267001": 0.6785,
+    "NCT06497556": 0.0444
+   },
+   "containers": [
+    "NCT06267001"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT06267001": [
+     "PHASE3"
+    ],
+    "NCT06497556": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Janssen Research & Development, LLC",
+   "p": "NCT05908734",
+   "q": "NCT06667076",
+   "shared_sites": 10,
+   "o_pq": 1.0,
+   "o_qp": 0.3928,
+   "overlap_months_estimated": 9.9,
+   "both_recruiting_from": "2024-12-16",
+   "both_recruiting_to": "2025-10-14",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05908734": "ACTIVE_NOT_RECRUITING",
+    "NCT06667076": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT05908734": [],
+    "NCT06667076": [
+     "multi-cohort design: cohorts the single population cannot represent",
+     "5 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT05908734": "rule-based parse",
+    "NCT06667076": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT05908734": 6,
+    "NCT06667076": 5
+   },
+   "eligible_share": {
+    "NCT05908734": 0.0206,
+    "NCT06667076": 0.0524
+   },
+   "containers": [
+    "NCT06667076"
+   ],
+   "container_criteria": 5,
+   "phases": {
+    "NCT05908734": [
+     "PHASE1",
+     "PHASE2"
+    ],
+    "NCT06667076": [
+     "PHASE2"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT03829319",
+   "q": "NCT03976375",
+   "shared_sites": 10,
+   "o_pq": 0.9076,
+   "o_qp": 0.972,
+   "overlap_months_estimated": 31.1,
+   "both_recruiting_from": "2019-06-26",
+   "both_recruiting_to": "2022-01-28",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT03829319": "COMPLETED",
+    "NCT03976375": "COMPLETED"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT03829319": [],
+    "NCT03976375": []
+   },
+   "eligibility_source": {
+    "NCT03829319": "rule-based parse",
+    "NCT03976375": "rule-based parse"
+   },
+   "n_criteria": {
+    "NCT03829319": 8,
+    "NCT03976375": 8
+   },
+   "eligible_share": {
+    "NCT03829319": 0.0649,
+    "NCT03976375": 0.0607
+   },
+   "containers": [
+    "NCT03976375",
+    "NCT03829319"
+   ],
+   "container_criteria": 8,
+   "phases": {
+    "NCT03829319": [
+     "PHASE3"
+    ],
+    "NCT03976375": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT06077760",
+   "q": "NCT07190248",
+   "shared_sites": 10,
+   "o_pq": 0.0385,
+   "o_qp": 1.0,
+   "overlap_months_estimated": 12.3,
+   "both_recruiting_from": "2025-10-08",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT06077760": "ACTIVE_NOT_RECRUITING",
+    "NCT07190248": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06077760": [],
+    "NCT07190248": [
+     "3 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT06077760": "rule-based parse",
+    "NCT07190248": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT06077760": 3,
+    "NCT07190248": 7
+   },
+   "eligible_share": {
+    "NCT06077760": 0.6759,
+    "NCT07190248": 0.026
+   },
+   "containers": [
+    "NCT06077760"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT06077760": [
+     "PHASE3"
+    ],
+    "NCT07190248": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT06305754",
+   "q": "NCT07554339",
+   "shared_sites": 10,
+   "o_pq": 0.0111,
+   "o_qp": 0.882,
+   "overlap_months_estimated": 3.9,
+   "both_recruiting_from": "2026-06-18",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT06305754": "ACTIVE_NOT_RECRUITING",
+    "NCT07554339": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT06305754": [],
+    "NCT07554339": [
+     "6 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT06305754": "rule-based parse",
+    "NCT07554339": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT06305754": 3,
+    "NCT07554339": 7
+   },
+   "eligible_share": {
+    "NCT06305754": 0.6373,
+    "NCT07554339": 0.008
+   },
+   "containers": [
+    "NCT06305754"
+   ],
+   "container_criteria": 3,
+   "phases": {
+    "NCT06305754": [
+     "PHASE3"
+    ],
+    "NCT07554339": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Merck Sharp & Dohme LLC",
+   "p": "NCT07190248",
+   "q": "NCT07554339",
+   "shared_sites": 10,
+   "o_pq": 0.2731,
+   "o_qp": 0.882,
+   "overlap_months_estimated": 3.9,
+   "both_recruiting_from": "2026-06-18",
+   "both_recruiting_to": "2026-10-16",
+   "both_recruiting_at_snapshot": true,
+   "status_at_snapshot": {
+    "NCT07190248": "RECRUITING",
+    "NCT07554339": "RECRUITING"
+   },
+   "upper_bound": true,
+   "upper_bound_reasons": {
+    "NCT07190248": [
+     "3 restrictions not modeled"
+    ],
+    "NCT07554339": [
+     "6 restrictions not modeled"
+    ]
+   },
+   "eligibility_source": {
+    "NCT07190248": "hand-encoded",
+    "NCT07554339": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT07190248": 7,
+    "NCT07554339": 7
+   },
+   "eligible_share": {
+    "NCT07190248": 0.026,
+    "NCT07554339": 0.008
+   },
+   "containers": [
+    "NCT07190248"
+   ],
+   "container_criteria": 7,
+   "phases": {
+    "NCT07190248": [
+     "PHASE3"
+    ],
+    "NCT07554339": [
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  },
+  {
+   "sponsor": "Regeneron Pharmaceuticals",
+   "p": "NCT05557591",
+   "q": "NCT05785767",
+   "shared_sites": 10,
+   "o_pq": 1.0,
+   "o_qp": 0.9431,
+   "overlap_months_estimated": 33.1,
+   "both_recruiting_from": "2023-06-30",
+   "both_recruiting_to": "2026-04-03",
+   "both_recruiting_at_snapshot": false,
+   "status_at_snapshot": {
+    "NCT05557591": "ACTIVE_NOT_RECRUITING",
+    "NCT05785767": "ACTIVE_NOT_RECRUITING"
+   },
+   "upper_bound": false,
+   "upper_bound_reasons": {
+    "NCT05557591": [],
+    "NCT05785767": []
+   },
+   "eligibility_source": {
+    "NCT05557591": "hand-encoded",
+    "NCT05785767": "hand-encoded"
+   },
+   "n_criteria": {
+    "NCT05557591": 11,
+    "NCT05785767": 10
+   },
+   "eligible_share": {
+    "NCT05557591": 0.0488,
+    "NCT05785767": 0.0518
+   },
+   "containers": [
+    "NCT05785767",
+    "NCT05557591"
+   ],
+   "container_criteria": 11,
+   "phases": {
+    "NCT05557591": [
+     "PHASE2"
+    ],
+    "NCT05785767": [
+     "PHASE2",
+     "PHASE3"
+    ]
+   },
+   "both_phase2_or_3": true
+  }
+ ]
+}
