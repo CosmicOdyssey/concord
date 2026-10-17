@@ -226,11 +226,15 @@ const offsets = (page, i) =>
       const t0 = performance.now()
       tab.click()
       out.push({ t: 0, o: parseFloat(getComputedStyle(panel).opacity), anims: panel.getAnimations().map((a) => a.animationName) })
+      // Samples for 400 ms after the panel first shows (the fade starts then, and a dev build under load can take
+      // 200 ms to show it), capped at 2 s.
+      let shownAt = null
       await new Promise((res) => {
         const tick = () => {
           const t = performance.now() - t0
+          if (shownAt == null && !panel.hidden) shownAt = t
           out.push({ t: Math.round(t), o: Math.round(parseFloat(getComputedStyle(panel).opacity) * 1000) / 1000, tr: getComputedStyle(panel).transform, anims: panel.getAnimations().map((a) => a.animationName), shown: !panel.hidden })
-          if (t < 400) requestAnimationFrame(tick)
+          if (t < 2000 && (shownAt == null || t - shownAt < 400)) requestAnimationFrame(tick)
           else res()
         }
         requestAnimationFrame(tick)
