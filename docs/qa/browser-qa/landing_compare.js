@@ -114,7 +114,9 @@ const openCard = (page) =>
             }
             const tbl = sec.querySelector('.cmp-tbl')
             const rows = [...tbl.querySelectorAll('tbody tr')]
-            const scroller = sec.querySelector('.cmp-scroll').getBoundingClientRect()
+            const scrollEl = sec.querySelector('.cmp-scroll')
+            const scroller = scrollEl.getBoundingClientRect()
+            const hintEl = sec.querySelector('.cmp-scroll-hint')
             // WCAG contrast of an element's text against the first opaque background behind it.
             const rgb = (s) => (s.match(/[\d.]+/g) || []).map(Number)
             const lum = ([r, g, b]) => {
@@ -164,6 +166,12 @@ const openCard = (page) =>
               links,
               lowContrast,
               scrollerFits: scroller.left >= -1 && scroller.right <= de.clientWidth + 1,
+              // The table inside the box: wider than the box means it scrolls sideways, and the hint must say so.
+              inner: [scrollEl.scrollWidth, scrollEl.clientWidth],
+              innerOverflows: scrollEl.scrollWidth > scrollEl.clientWidth + 1,
+              hint: hintEl && hintEl.getClientRects().length > 0 ? txt(hintEl) : '',
+              capsList: [...sec.querySelectorAll('.cmp-legend .cmp-caps li')].map((li) => txt(li)),
+              simpleCaveats: [...sec.querySelectorAll('.cmp-caveat')].map((x) => txt(x)),
               hscroll: de.scrollWidth > de.clientWidth + 1,
               scrollWidth: de.scrollWidth,
               clientWidth: de.clientWidth,
@@ -215,8 +223,13 @@ const openCard = (page) =>
             })
           } else {
             check(
-              `${tag}: three pain numbers with sources`,
-              r.pain.length === 3 && /^73%/.test(r.pain[0]) && /611 sites/.test(r.pain[0]) && /^53%/.test(r.pain[1]) && /^59%/.test(r.pain[2]),
+              `${tag}: three pain numbers with sources (59% keeps the document's "derived" qualifier)`,
+              r.pain.length === 3 &&
+                /^73%/.test(r.pain[0]) &&
+                /611 sites/.test(r.pain[0]) &&
+                /^53%/.test(r.pain[1]) &&
+                /^59%/.test(r.pain[2]) &&
+                /\(derived: 41% declined none\)/.test(r.pain[2]),
               r.pain,
             )
           }
@@ -224,6 +237,24 @@ const openCard = (page) =>
           check(`${tag}: every link has an href; new-tab links have rel=noopener`, r.links.length > 0 && badLinks.length === 0, { n: r.links.length, bad: badLinks.slice(0, 3) })
           check(`${tag}: text contrast at least 4.5:1`, r.lowContrast.length === 0, r.lowContrast.slice(0, 5))
           check(`${tag}: matrix box fits the screen (scrolls inside it)`, r.scrollerFits)
+          if (width === 1440) check(`${tag}: every column fits inside the matrix box (no clipped column)`, !r.innerOverflows, r.inner)
+          check(
+            `${tag}: the "scroll sideways" hint shows exactly when the table is wider than its box`,
+            r.innerOverflows ? /Scroll the table sideways/.test(r.hint) : r.hint === '',
+            { inner: r.inner, hint: r.hint },
+          )
+          check(
+            `${tag}: the legend lists every column's full name (${detailed ? 'all 13' : 'the 6 shown, in order'})`,
+            detailed
+              ? r.capsList.length === 13
+              : r.capsList.length === 6 &&
+                  /^Builds a per-patient budget/.test(r.capsList[0]) &&
+                  /routine care vs research, NCD 310\.1/.test(r.capsList[2]) &&
+                  /anchored to public rates vs negotiated/.test(r.capsList[4]),
+            r.capsList,
+          )
+          if (!detailed)
+            check(`${tag}: Simple caveats carry no evidence keys`, r.simpleCaveats.length === 4 && r.simpleCaveats.every((c) => !/\([A-Z]+\d+\)/.test(c)), r.simpleCaveats)
           check(`${tag}: no horizontal page scroll`, !r.hscroll, [r.scrollWidth, r.clientWidth])
           if (r.hscroll) console.log('  offenders', JSON.stringify((await layoutCheck(page)).offenders.slice(0, 6)))
 
@@ -288,6 +319,22 @@ const openCard = (page) =>
       await sleep(400)
       const n = await page.evaluate(() => [document.querySelectorAll('#landing-compare .cmp-tbl tbody tr').length, document.querySelectorAll('#landing-compare .cmp-tbl thead .cmp-colh').length])
       check(`density ${theme}: switching to Detailed shows 19 rows x 13 columns`, n[0] === 19 && n[1] === 13, n)
+      // A narrower desktop: the 13 columns no longer fit, so the table scrolls inside its box and the hint appears.
+      await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1 })
+      await sleep(500)
+      const narrow = await page.evaluate(() => {
+        const b = document.querySelector('#landing-compare .cmp-scroll')
+        const h = document.querySelector('#landing-compare .cmp-scroll-hint')
+        const de = document.documentElement
+        return { inner: [b.scrollWidth, b.clientWidth], hint: h && h.getClientRects().length ? h.innerText.trim() : '', hscroll: de.scrollWidth > de.clientWidth + 1 }
+      })
+      check(
+        `density ${theme}: Detailed at 1280 scrolls inside the box and shows the scroll hint, no page scroll`,
+        narrow.inner[0] > narrow.inner[1] && /Scroll the table sideways/.test(narrow.hint) && !narrow.hscroll,
+        narrow,
+      )
+      await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 })
+      await sleep(300)
       // The header link scrolls to the section.
       await page.evaluate(() => window.scrollTo(0, 0))
       await page.click('.lp-nav a[href="#home/compare"]')

@@ -64,7 +64,8 @@ export const CHECKED = '17 Oct 2026'
 /** Concord's own row cites this repository; its cards link to the document on GitHub. */
 export const CONCORD_DOC_URL = 'https://github.com/CosmicOdyssey/concord/blob/main/docs/competitive-landscape.md'
 
-/** Short column labels for the matrix heads (the full capability names stay in the header's hover card). */
+/** Short column labels for the matrix heads. The document's full capability names are listed under the matrix (the
+ *  legend's column list, in Simple and Detailed) and in each head's title tooltip. */
 export const CAPABILITY_SHORT: Record<number, string> = {
   1: 'Per-patient budget from a protocol or SoA',
   2: 'Benchmarks prices against a database',
@@ -117,7 +118,11 @@ export const SIMPLE_PAIN = [
     text: 'of site respondents in Medidata’s own survey named lack of transparency into the itemized budget as their most significant concern',
     row: (p: PainRow) => p.number === '53%',
   },
-  { number: '59%', text: 'of sites declined at least one contract over an unacceptable budget', row: (p: PainRow) => p.number === '#1; 59%' },
+  {
+    number: '59%',
+    text: 'of sites declined at least one contract over an unacceptable budget (derived: 41% declined none)',
+    row: (p: PainRow) => p.number === '#1; 59%',
+  },
 ] as const
 
 /** Simple's "What they have that we don't" line: these leads of the document's "They do; Concord does not" list. */

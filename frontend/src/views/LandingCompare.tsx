@@ -3,7 +3,7 @@
 // differentiators, what they have that we don't, three pain numbers. Detailed: the full matrix (18 rows covering 20
 // products, 13 capabilities), every list of the document's section 3, all verified pain numbers, the method and
 // completeness notes and the sources. Each Yes / Partial mark opens a card with the document's quote and its source.
-import { Fragment, type ReactNode } from 'react'
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useDensity } from '../density'
 import { HoverCard, InfoTip } from '../hovercard'
 import {
@@ -122,49 +122,69 @@ function Mark({ row, n, detailed }: { row: Row; n: number; detailed: boolean }) 
   )
 }
 
+/** True while the box's content is wider than the box (it scrolls sideways). ResizeObserver reports once on observe,
+ *  then on every size change of the box or of the table inside it (density switch, window resize). */
+function useOverflowX<T extends HTMLElement>() {
+  const ref = useRef<T>(null)
+  const [over, setOver] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => setOver(el.scrollWidth > el.clientWidth + 1))
+    ro.observe(el)
+    if (el.firstElementChild) ro.observe(el.firstElementChild)
+    return () => ro.disconnect()
+  }, [])
+  return [ref, over] as const
+}
+
 function Matrix({ rows, cols, detailed }: { rows: readonly Row[]; cols: readonly number[]; detailed: boolean }) {
+  const [box, over] = useOverflowX<HTMLDivElement>()
   return (
-    <div className="table-scroll cmp-scroll">
-      <table className={`cmp-tbl${detailed ? ' cmp-tbl-full' : ''}`}>
-        <caption className="sr-only">
-          What {detailed ? `${PRODUCT_COUNT} products` : `${rows.length - 1} of ${PRODUCT_COUNT} products`} state publicly, next to Concord, for{' '}
-          {cols.length} capabilities. Each Yes or Partial opens the quote and its source; a dash means not stated publicly.
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col" className="cmp-corner">
-              Product <span className="cmp-users">(main users)</span>
-            </th>
-            {cols.map((n) => (
-              <th scope="col" key={n} className="cmp-colh" title={capOf(n).label}>
-                {detailed && <span className="cmp-coln">{n}</span>}
-                {capOf(n).short}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.id} className={r.id === 'concord' ? 'cmp-us' : undefined}>
-              <th scope="row" className="cmp-rowh">
-                <span className="cmp-name">{detailed ? r.name : (SHORT_NAME[r.id] ?? r.name)}</span>
-                {detailed && r.extra && <span className="cmp-extra"> {r.extra}</span>}
-                <span className="cmp-users">{r.users}</span>
+    <>
+      <div className="table-scroll cmp-scroll" ref={box}>
+        <table className={`cmp-tbl${detailed ? ' cmp-tbl-full' : ''}`}>
+          <caption className="sr-only">
+            What {detailed ? `${PRODUCT_COUNT} products` : `${rows.length - 1} of ${PRODUCT_COUNT} products`} state publicly, next to Concord, for{' '}
+            {cols.length} capabilities. Each Yes or Partial opens the quote and its source; a dash means not stated publicly.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" className="cmp-corner">
+                Product <span className="cmp-users">(main users)</span>
               </th>
               {cols.map((n) => (
-                <td key={n}>
-                  <Mark row={r} n={n} detailed={detailed} />
-                </td>
+                <th scope="col" key={n} className="cmp-colh" title={capOf(n).label}>
+                  {detailed && <span className="cmp-coln">{n}</span>}
+                  {capOf(n).short}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id} className={r.id === 'concord' ? 'cmp-us' : undefined}>
+                <th scope="row" className="cmp-rowh">
+                  <span className="cmp-name">{detailed ? r.name : (SHORT_NAME[r.id] ?? r.name)}</span>
+                  {detailed && r.extra && <span className="cmp-extra"> {r.extra}</span>}
+                  <span className="cmp-users">{r.users}</span>
+                </th>
+                {cols.map((n) => (
+                  <td key={n}>
+                    <Mark row={r} n={n} detailed={detailed} />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {over && <p className="cmp-scroll-hint">Scroll the table sideways for every column.</p>}
+    </>
   )
 }
 
-function Legend({ detailed }: { detailed: boolean }) {
+function Legend({ detailed, cols }: { detailed: boolean; cols: readonly number[] }) {
   return (
     <div className="cmp-legend">
       <span className="cmp-legend-item">
@@ -186,12 +206,23 @@ function Legend({ detailed }: { detailed: boolean }) {
         Each Yes or Partial opens the vendor’s own words and the page they come from{detailed ? '; the small code is the document’s evidence key' : ''}.
         Vendor numbers are the vendor’s own claims.
       </span>
-      {detailed && (
+      {detailed ? (
         <ol className="cmp-caps">
           {CAPABILITIES.map((c) => (
             <li key={c.n}>{c.label}</li>
           ))}
         </ol>
+      ) : (
+        // Simple's heads are short labels; the document's full names, in column order, so keyboard and touch readers
+        // get them too (the heads' title tooltip is mouse only).
+        <>
+          <p className="cmp-caps-h">The columns in full, left to right:</p>
+          <ol className="cmp-caps">
+            {cols.map((n) => (
+              <li key={n}>{capOf(n).label}</li>
+            ))}
+          </ol>
+        </>
       )}
     </div>
   )
@@ -211,6 +242,8 @@ function Items({ items, depth = 0 }: { items: readonly ListItem[]; depth?: numbe
 }
 
 const noColumn = (s: string) => s.replace(/ \(column \d+\)\.$/, '.')
+/** Simple shows no evidence keys, so its differentiator text drops the document's "(K5)"-style references. */
+const noKey = (s: string) => s.replace(/\s*\([A-Z]+\d+\)/g, '')
 
 /** Simple: each "Concord does" lead, its one visible limit, and the rest in a hover card. */
 function Differentiators({ detailed }: { detailed: boolean }) {
@@ -236,7 +269,7 @@ function Differentiators({ detailed }: { detailed: boolean }) {
                         {it.text && <span className="cmp-card-p">{inline(it.text)}</span>}
                         {it.subs.map((s, j) => (
                           <span key={j} className="cmp-card-p">
-                            {inline(s.text)}
+                            {inline(noKey(s.text))}
                           </span>
                         ))}
                         <span className="hc-src">From the competitor landscape, checked {CHECKED}.</span>
@@ -244,7 +277,7 @@ function Differentiators({ detailed }: { detailed: boolean }) {
                     }
                   />
                 ) : null}
-                {caveat && <span className="cmp-caveat">{inline(caveat.text)}</span>}
+                {caveat && <span className="cmp-caveat">{inline(noKey(caveat.text))}</span>}
               </li>
             )
           })}
@@ -485,8 +518,7 @@ export default function LandingCompare() {
           </div>
           <div className="lp-win-body">
             <Matrix rows={rows} cols={cols} detailed={detailed} />
-            <p className="cmp-scroll-hint">Scroll the table sideways for every column.</p>
-            <Legend detailed={detailed} />
+            <Legend detailed={detailed} cols={cols} />
           </div>
         </div>
 

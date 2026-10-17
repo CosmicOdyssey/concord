@@ -38,14 +38,15 @@
   min-width: 7.5rem;
 }
 .cmp-tbl-full .cmp-colh {
-  min-width: 5.25rem;
+  min-width: 4.75rem;
   font-weight: 500;
 }
 .cmp-tbl-full th,
 .cmp-tbl-full td {
-  padding: 0.5rem 0.625rem;
+  padding: 0.5rem 0.4375rem;
 }
-/* Detailed: the evidence key sits under the word, so 13 columns fit a wide screen. */
+/* Detailed: the evidence key sits under the word, so all 13 columns fit at 1440 px; narrower screens scroll inside
+   the box, and the hint below the table says so (LandingCompare shows it whenever the table is wider than its box). */
 .cmp-tbl-full .cmp-btn {
   flex-direction: column;
   align-items: flex-start;
@@ -54,6 +55,14 @@
 .cmp-tbl-full .cmp-key {
   padding-left: 1.125rem;
   line-height: 1.2;
+}
+.cmp-caps-h {
+  flex: 1 1 100%;
+  margin: 0.25rem 0 0;
+  color: var(--ink-2);
+}
+.cmp-caps-h + .cmp-caps {
+  margin-top: 0;
 }
 .cmp-caps {
   flex: 1 1 100%;
@@ -179,7 +188,6 @@
   color: var(--caution-ink);
 }
 .cmp-scroll-hint {
-  display: none;
   margin: 0.5rem 0 0;
   font-size: var(--fs-sm);
   color: var(--muted);
@@ -417,9 +425,6 @@ a.cmp-link:hover {
 }
 
 @media (max-width: 640px) {
-  .cmp-scroll-hint {
-    display: block;
-  }
   .cmp-tbl .cmp-rowh,
   .cmp-tbl .cmp-corner,
   .cmp-tbl-full .cmp-rowh,
