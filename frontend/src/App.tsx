@@ -164,7 +164,7 @@ export default function App() {
   }, [])
 
   // Nothing heavy runs on the landing page. The region list loads when Research is first opened, and the
-  // default clear (15-25 s) runs once, the first time a Research sub-tab that needs it is opened.
+  // default clear (about 2 minutes on the rebuilt DB) runs once, the first time a Research sub-tab that needs it is opened.
   const regionsLoaded = useRef(false)
   const autoCleared = useRef(false)
   useEffect(() => {
