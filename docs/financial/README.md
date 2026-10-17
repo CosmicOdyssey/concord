@@ -1,6 +1,6 @@
-# Financial Coordination: sponsor-budget worksheet
+# Sponsor budget: synthetic sponsor-budget worksheet
 
-A sponsor-budget worksheet for one trial. It prices the authored visit schedule, splits each line between sponsor, insurer and participant under explicit coverage assumptions, and compares five budget scenarios at a fixed participant target over a budgeted contract period. No insurance claims, reimbursements, financing commitments or patient-identifiable records are processed.
+The **Sponsor budget** tab (sub-label "Synthetic worksheet"; formerly Financial Coordination) is a sponsor-budget worksheet for one trial. It prices the authored visit schedule, splits each line between sponsor, insurer and participant under explicit coverage assumptions, and compares five budget scenarios at a fixed participant target over a budgeted contract period. No insurance claims, reimbursements, financing commitments or patient-identifiable records are processed.
 
 **Mode: live computation of an explicitly synthetic financial fixture.** A real public Regeneron identifier (NCT05800015) supplies context through Concord's existing **illustrative authored** schedule. Neither the schedule nor the synthetic site network is a sponsor-approved protocol budget. The alternate public context NCT06627647 is also supported. The fixed demo participant target is independent of registered enrollment.
 
@@ -85,7 +85,7 @@ backend/.venv/bin/python -m uvicorn concord.api.main:app --app-dir backend --hos
 (cd frontend && API_TARGET=http://127.0.0.1:8002 npm run dev -- --host 127.0.0.1 --port 5175 --strictPort)
 ```
 
-Open `http://127.0.0.1:5175/#financial`. The Financial view is being restyled and moved to this contract separately; until that lands it still expects the removed fields. No registry crawl, SQLite database, paid model or network service is required for this fixture. An existing rate card, if supplied, is reused and hashed; absent-file prices keep explicit hypothetical labels.
+Open `http://127.0.0.1:5175/#financial` (the Sponsor budget tab). The view follows CONTRACT.md: Simple shows the synthetic banner, the key inputs, scenarios A to E with feasibility, sponsor commitment and the change against A with its cause, the API's payer framing (one sentence, the full four in a hover card) and the coverage worksheet's per-participant totals; Detailed shows everything the API returns except `party_transfer_balances`, whose participant entry nets routine cost sharing against access support (the transfers themselves are shown). Browser QA: `docs/qa/browser-qa/financial.js`. No registry crawl, SQLite database, paid model or network service is required for this fixture. An existing rate card, if supplied, is reused and hashed; absent-file prices keep explicit hypothetical labels.
 
 Reproduce HTML, JSON and the exact request from the CLI:
 
@@ -118,7 +118,7 @@ The original historical leakage and research cache findings remain documented in
 
 ## Three-minute demonstration
 
-1. Open Financial Coordination. Show the synthetic banner and public trial link. In the coverage worksheet, mark one routine procedure UNKNOWN and show it moving into sponsor contingency.
+1. Open the Sponsor budget tab. Show the synthetic banner and public trial link. In the coverage worksheet, mark one routine procedure UNKNOWN and show it moving into sponsor contingency.
 2. Switch the payer between Medicare, Medicaid and commercial, and move the payer share: the insurer and participant lines change; the sponsor commitment does not.
 3. Compare A to E: B's administrative assumption, D's support increase, and C's capacity rule (lower a baseline site's capacity to see it add the cheapest site that covers the target).
 4. Open the three-party ledger: transfers versus resource costs, UNKNOWN downstream costs.

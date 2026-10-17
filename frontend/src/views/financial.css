@@ -1,4 +1,4 @@
-/* Financial Coordination in the Calm skin. Tokens only (index.css), so both themes follow; windows, banners, key
+/* Sponsor budget (the synthetic sponsor-budget worksheet) in the Calm skin. Tokens only (index.css), so both themes follow; windows, banners, key
    figures, sections and disclosures come from calm.css. Class names start with fin- (hover-card content is portalled
    to <body>, so the .fin-tip-* rules are not scoped under .financial). */
 
@@ -70,6 +70,15 @@
 .fin-field input,
 .fin-field select {
   width: 100%;
+}
+.fin-field-note {
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  color: var(--muted);
+}
+.fin-check-off {
+  color: var(--muted);
+  cursor: default;
 }
 .fin-check {
   display: flex;
@@ -150,6 +159,11 @@
 .fin-more .disclosure-body > h3 {
   margin-top: var(--sp-3);
 }
+.fin-h3 {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--ink);
+}
 .fin-h2 {
   font-size: clamp(1.375rem, 1.1rem + 0.8vw, 1.75rem);
   line-height: 1.22;
@@ -204,6 +218,18 @@
 .fin-tbl-coverage td:nth-child(4) {
   min-width: 15rem;
 }
+.fin-tbl-coverage td:nth-child(2) {
+  min-width: 13rem;
+}
+.fin-tbl-scen tbody th[scope='row'] {
+  min-width: 15rem;
+}
+.fin-cell-wide {
+  min-width: 16rem;
+}
+.fin-cell-feas {
+  min-width: 8.5rem;
+}
 .fin-sub {
   margin: 0.125rem 0 0;
   font-size: var(--fs-sm);
@@ -219,8 +245,6 @@
   color: var(--muted);
 }
 .fin-viol {
-  margin: 0.25rem 0 0;
-  padding-left: 1.125rem;
   font-size: var(--fs-ui);
   line-height: 1.45;
   color: var(--ink-2);
@@ -259,6 +283,9 @@
   padding: var(--sp-4) var(--sp-5);
   border-radius: var(--radius-md);
   background: var(--surface-2);
+}
+.fin-cards article > p:first-of-type {
+  margin-top: 0.5rem;
 }
 .fin-cards h3 {
   margin: 0;
@@ -351,7 +378,7 @@
   margin-top: 0.375rem;
 }
 
-/* ---------- Simple: scenarios reduced to feasibility and sponsor commitment ---------- */
+/* ---------- Simple: scenarios A to E as a list (not selectable, not ranked) ---------- */
 .fin-quals {
   margin: 0;
   color: var(--ink-2);
@@ -359,65 +386,42 @@
 .fin-quals .qual {
   white-space: normal;
 }
+.fin-caption {
+  margin: var(--sp-4) 0 0;
+  padding-top: 0.875rem;
+  border-top: 1px solid var(--rule);
+  font-size: var(--fs-ui);
+  line-height: 1.55;
+  color: var(--muted);
+}
 .fin-scen {
-  margin: 0;
+  margin: var(--sp-5) 0 0;
   padding: 0;
   list-style: none;
   border-top: 1px solid var(--rule);
 }
 .fin-scen-row {
-  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
-    'pick amt'
-    'feas share';
+    'name amt'
+    'feas share'
+    'chg chg';
   gap: 0.25rem 1.25rem;
   align-items: baseline;
-  padding: 0.75rem 0.875rem;
+  padding: 0.875rem 0.25rem;
   border-bottom: 1px solid var(--rule);
 }
 .fin-scen-row:last-child {
   border-bottom: 0;
 }
-.fin-scen-row:hover {
-  background: var(--surface-2);
-}
-.fin-scen-on,
-.fin-scen-on:hover {
-  background: var(--accent-soft);
-}
-.fin-scen-pick {
-  grid-area: pick;
-  appearance: none;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--ink);
-  font: inherit;
+.fin-scen-name {
+  grid-area: name;
+  min-width: 0;
   font-size: var(--fs-md);
   font-weight: 600;
   line-height: 1.4;
-  text-align: left;
-  cursor: pointer;
-}
-/* The whole row is the button's hit area. */
-.fin-scen-pick::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-}
-.fin-scen-pick:focus-visible {
-  outline: none;
-}
-.fin-scen-pick:focus-visible::after {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-}
-.fin-scen-sel {
-  font-size: var(--fs-sm);
-  font-weight: 500;
-  color: var(--ink-2);
+  color: var(--ink);
 }
 .fin-scen-amt {
   grid-area: amt;
@@ -442,7 +446,18 @@
   color: var(--ink-2);
   white-space: nowrap;
 }
-/* A meter: the track is the entered budget (a lighter step of the accent), the fill the commitment. */
+.fin-scen-chg {
+  grid-area: chg;
+  min-width: 0;
+  font-size: var(--fs-ui);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.fin-chg strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+/* A meter: the track is the sponsor budget (a lighter step of the accent), the fill the commitment. */
 .fin-meter {
   position: relative;
   display: block;
@@ -459,15 +474,13 @@
   border-radius: 4px;
   background: var(--accent);
 }
-.fin-scen-on .fin-meter {
-  background: var(--surface);
-}
 @media (max-width: 34rem) {
   .fin-scen-row {
     grid-template-areas:
-      'pick amt'
+      'name amt'
       'feas feas'
-      'share share';
+      'share share'
+      'chg chg';
   }
   .fin-scen-share {
     justify-content: flex-start;
@@ -475,16 +488,62 @@
   }
 }
 
-/* ---------- Simple: the selected scenario's ledger ---------- */
-.fin-ledger {
+/* ---------- coverage totals per participant (Simple figure, Detailed worksheet) ---------- */
+.fin-totals {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-5) var(--sp-6);
 }
+.fin-section .fin-totals {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
 @media (max-width: 40rem) {
-  .fin-ledger {
+  .fin-totals {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* ---------- Detailed: the scenario picker for the per-scenario parts ---------- */
+.fin-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-4);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--rule);
+}
+.fin-picker-label {
+  font-size: var(--fs-ui);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.fin-picker-seg .seg-btn {
+  min-width: 2.5rem;
+}
+.fin-picker-name {
+  font-size: var(--fs-md);
+  color: var(--ink-2);
+}
+
+/* ---------- Detailed: participant values side by side, never netted ---------- */
+.fin-split {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+}
+.fin-split > div {
+  display: grid;
+  gap: 0.125rem;
+}
+.fin-split dt {
+  font-size: var(--fs-ui);
+  color: var(--ink-2);
+}
+.fin-split dd {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--ink);
 }
 
 /* ---------- Simple: the remaining inputs and the exports, folded ---------- */
@@ -540,7 +599,8 @@
     width: 1.375rem;
     height: 1.375rem;
   }
-  .fin-scen-row {
+  .fin-picker-seg .seg-btn {
+    min-width: var(--tap);
     min-height: var(--tap);
   }
 }

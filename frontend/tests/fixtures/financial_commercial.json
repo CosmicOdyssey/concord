@@ -1,0 +1,1108 @@
+{
+ "request": {
+  "trial_id": "NCT05800015",
+  "budget": 1500000.0,
+  "target": 60,
+  "budget_period_months": 24.0,
+  "admin_cost": 120000.0,
+  "admin_reduction": 0.25,
+  "support_per_participant": 500.0,
+  "minimum_support": 200.0,
+  "extra_support": 300.0,
+  "seed": 7,
+  "draws": 256,
+  "cost_spread": 0.25,
+  "payer_kind": "commercial",
+  "jurisdiction": "MA",
+  "payer_plan": "UNVERIFIED DEMO",
+  "payer_fraction": 0.8,
+  "commercial_rate_assumption": false,
+  "sponsor_rate_multiplier": 1.0,
+  "payer_admin_per_participant": 30.0,
+  "drug_contingency_per_participant": 2500.0,
+  "coverage_overrides": {},
+  "sites": [
+   {
+    "id": "SYN-A",
+    "name": "Synthetic site A",
+    "baseline_active": true,
+    "feasible": true,
+    "activation_cost": 30000.0,
+    "monthly_cost": 1000.0,
+    "per_participant_cost": 2000.0,
+    "capacity": 60
+   },
+   {
+    "id": "SYN-B",
+    "name": "Synthetic site B",
+    "baseline_active": true,
+    "feasible": true,
+    "activation_cost": 30000.0,
+    "monthly_cost": 1200.0,
+    "per_participant_cost": 2000.0,
+    "capacity": 60
+   },
+   {
+    "id": "SYN-C",
+    "name": "Synthetic site C",
+    "baseline_active": false,
+    "feasible": true,
+    "activation_cost": 35000.0,
+    "monthly_cost": 1600.0,
+    "per_participant_cost": 2400.0,
+    "capacity": 60
+   },
+   {
+    "id": "SYN-D",
+    "name": "Synthetic site D",
+    "baseline_active": false,
+    "feasible": true,
+    "activation_cost": 50000.0,
+    "monthly_cost": 2200.0,
+    "per_participant_cost": 2800.0,
+    "capacity": 60
+   }
+  ]
+ },
+ "input_sha256": "a594d00a1695eae1fc2e9e0f038ad7e50c10914abacd023349c5372fd843c1db",
+ "run_id": "a594d00a1695eae1fc2e9e0f",
+ "execution_mode": "synthetic_financial_demo",
+ "trial": {
+  "id": "NCT05800015",
+  "title": "Fianlimab + cemiplimab + chemotherapy vs placebo + cemiplimab + chemotherapy, first-line advanced NSCLC",
+  "protocol_label": "Illustrative, authored from public trial information",
+  "registry_url": "https://clinicaltrials.gov/study/NCT05800015",
+  "source_type": "existing authored illustrative protocol, real public identifier"
+ },
+ "coverage": {
+  "items": [
+   {
+    "id": "SCR:em_new",
+    "label": "New-patient oncology visit, high complexity",
+    "code": "99205",
+    "trial_id": "NCT05800015",
+    "protocol_reference": "compiler/protocols/NCT05800015.json",
+    "quantity": 1,
+    "frequency": "Screening",
+    "schedule": "Day -28 to -1",
+    "unit_rate": 236.81,
+    "sponsor_unit_rate": 236.81,
+    "rate_kind": "verified_fee_schedule_benchmark",
+    "source": "CMS PFS 2026 National Physician Fee Schedule Relative Value File October Release (nonQPP, non-facility), rvu26d.zip",
+    "year": 2026,
+    "status": "POTENTIALLY_PAYER_COVERED",
+    "coverage_determination_status": "NOT_DETERMINED",
+    "review_status": "REVIEW_REQUIRED",
+    "explanation": "Preliminary authored rule R3; routine care billed per plan coverage rules; commercial allowed amount UNKNOWN (no assumption set); not moved to the sponsor",
+    "sponsor_per_participant": 0.0,
+    "payer_per_participant": null,
+    "patient_per_participant": null,
+    "reserve_per_participant": 0.0,
+    "insurer_amount_known": false,
+    "resource_cost_per_participant": 165.77,
+    "resource_cost_kind": "explicit_synthetic_70_percent_of_benchmark",
+    "jurisdiction": "MA",
+    "payer_plan": "UNVERIFIED DEMO"
+   },
+   {
+    "id": "SCR:ecg",
+    "label": "12-lead ECG with interpretation",
+    "code": "93000",
+    "trial_id": "NCT05800015",
+    "protocol_reference": "compiler/protocols/NCT05800015.json",
+    "quantity": 1,
+    "frequency": "Screening",
+    "schedule": "Day -28 to -1",
+    "unit_rate": 15.36,
+    "sponsor_unit_rate": 15.36,
+    "rate_kind": "verified_fee_schedule_benchmark",
+    "source": "CMS PFS 2026 National Physician Fee Schedule Relative Value File October Release (nonQPP, non-facility), rvu26d.zip",
+    "year": 2026,
+    "status": "SPONSOR",
+    "coverage_determination_status": "NOT_DETERMINED",
+    "review_status": "REVIEW_REQUIRED",
+    "explanation": "Preliminary authored rule R2; research item paid by the sponsor at the negotiated rate (benchmark x sponsor rate multiplier)",
+    "sponsor_per_participant": 15.36,
+    "payer_per_participant": 0.0,
+    "patient_per_participant": 0.0,
+    "reserve_per_participant": 0.0,
+    "insurer_amount_known": true,
+    "resource_cost_per_participant": 10.75,
+    "resource_cost_kind": "explicit_synthetic_70_percent_of_benchmark",
+    "jurisdiction": "MA",
+    "payer_plan": "UNVERIFIED DEMO"
+   },
+   {
+    "id": "drug-contingency",
+    "label": "Investigational supply: hypothetical reserve; acquisition cost UNKNOWN",
+    "code": null,
+    "trial_id": "NCT05800015",
+    "protocol_reference": "compiler/protocols/NCT05800015.json",
+    "quantity": 1,
+    "frequency": "Per participant within the priced visits",
+    "schedule": "Fixed demo schedule",
+    "unit_rate": 2500.0,
+    "sponsor_unit_rate": 2500.0,
+    "rate_kind": "synthetic_contingency",
+    "source": "Operator contingency assumption, not a drug price",
+    "year": 2026,
+    "status": "UNKNOWN",
+    "coverage_determination_status": "UNKNOWN",
+    "review_status": "REVIEW_REQUIRED",
+    "explanation": "Actual manufacturing/acquisition cost unknown; the sponsor supplies the investigational product, so this is a sponsor-side supply proxy (site handling is priced as its own line), assumed consumed. Not a complete supply budget.",
+    "sponsor_per_participant": 0.0,
+    "payer_per_participant": 0.0,
+    "patient_per_participant": 0.0,
+    "reserve_per_participant": 2500.0,
+    "insurer_amount_known": true,
+    "resource_cost_per_participant": 2500.0,
+    "resource_cost_kind": "synthetic_proxy_for_unknown_supply_cost",
+    "jurisdiction": "MA",
+    "payer_plan": "UNVERIFIED DEMO"
+   }
+  ],
+  "totals": {
+   "sponsor": 3159.79,
+   "payer": null,
+   "patient": null,
+   "reserve": 2500.0,
+   "resource": 8952.97
+  },
+  "insurer_amounts_unknown": 68,
+  "warnings": [
+   "Every coverage determination and price requires review. Insurer and participant figures are illustrative splits, not approvals.",
+   "Commercial allowed amounts are UNKNOWN (no assumption set): routine lines show no insurer or participant amount and are not moved to the sponsor.",
+   "In this worksheet, payer type, payer share and the commercial-rate assumption change only the insurer and participant lines; the sponsor commitment does not fall because an insurer pays more for routine care. A line moves onto or off the sponsor only through its coverage status (who is billed), set by coverage review or a contract term, never through the insurer's payment amount. Payer and Medicare amounts can still inform the rate negotiated for research items (benchmark x sponsor_rate_multiplier)."
+  ]
+ },
+ "scenarios": [
+  {
+   "id": "A",
+   "label": "Existing site network",
+   "definition": "Baseline-active sites as entered, with the entered administrative cost and participant support.",
+   "inputs": {
+    "network_rule": "existing_network",
+    "admin_cost": 120000.0,
+    "support_per_participant": 500.0
+   },
+   "plan": {
+    "feasible": true,
+    "costed": true,
+    "violations": [],
+    "selected_ids": [
+     "SYN-A",
+     "SYN-B"
+    ],
+    "participant_split": "proportional_to_stated_capacity",
+    "site_rows": [
+     {
+      "id": "SYN-A",
+      "name": "Synthetic site A",
+      "participants": 30,
+      "capacity": 60,
+      "activation": 0.0,
+      "activation_sunk": true,
+      "operating": 24000.0,
+      "variable": 60000.0,
+      "procedure": 169793.7,
+      "support": 15000.0,
+      "total": 268793.7
+     },
+     {
+      "id": "SYN-B",
+      "name": "Synthetic site B",
+      "participants": 30,
+      "capacity": 60,
+      "activation": 0.0,
+      "activation_sunk": true,
+      "operating": 28800.0,
+      "variable": 60000.0,
+      "procedure": 169793.7,
+      "support": 15000.0,
+      "total": 273593.7
+     }
+    ],
+    "sponsor_total": 662387.4,
+    "breakdown": {
+     "activation": 0.0,
+     "operating": 52800.0,
+     "site_variable": 120000.0,
+     "procedures": 339587.4,
+     "support": 30000.0,
+     "administration": 120000.0
+    },
+    "stated_capacity": 120,
+    "cost_per_participant": 11039.79,
+    "budget_utilization": 0.44159160000000003,
+    "unspent_budget": 837612.6,
+    "assumptions": [
+     "Operator-supplied site costs, stated capacities and feasibility flags; no empirical validation."
+    ],
+    "network_search": null
+   },
+   "economics": {
+    "sponsor": {
+     "expenditure": 512387.4,
+     "contingency_reserve": 150000.0,
+     "budget_commitment": 662387.4,
+     "supply_resource_proxy": 150000.0
+    },
+    "hospital": {
+     "revenue": null,
+     "resource_cost": 525418.2,
+     "net_contribution": null
+    },
+    "insurer": {
+     "payments": null,
+     "administration": 1800.0,
+     "total": null,
+     "downstream_clinical_cost": null
+    },
+    "patient": {
+     "cost_sharing": null,
+     "access_support": 30000.0,
+     "unresolved_exposure": null
+    },
+    "transfers": [
+     {
+      "from": "Sponsor",
+      "to": "Hospital",
+      "amount": 362387.4
+     },
+     {
+      "from": "Sponsor",
+      "to": "Participant",
+      "amount": 30000.0
+     },
+     {
+      "from": "Insurer",
+      "to": "Hospital",
+      "amount": null
+     },
+     {
+      "from": "Participant",
+      "to": "Hospital",
+      "amount": null
+     }
+    ],
+    "party_transfer_balances": {
+     "Sponsor": -392387.4,
+     "Hospital": 362387.4,
+     "Insurer": 0.0,
+     "Participant": 30000.0
+    },
+    "transfer_balance": 0.0,
+    "consolidated_resource_cost": 827218.2,
+    "resource_assumptions": [
+     "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions."
+    ]
+   },
+   "delta": {
+    "sponsor_expenditure": 0.0,
+    "resources": 0.0,
+    "hospital_contribution": null,
+    "insurer_expenditure": null,
+    "patient_cost_sharing": null,
+    "access_support": 0.0
+   },
+   "sensitivity": {
+    "sponsor_total_quantiles": [
+     632120.18,
+     661203.47,
+     689693.69
+    ],
+    "probability_budget_exceeded": 0.0,
+    "seed": 7,
+    "draws": 256,
+    "cost_spread": 0.25,
+    "varied_inputs": [
+     "site activation cost (added sites; baseline activation is sunk)",
+     "site monthly cost",
+     "site per-participant cost"
+    ],
+    "method": "Paired independent mean-one lognormal multipliers on each site's activation, monthly and per-participant costs; the same draws for every scenario; fixed networks and participant split; not calibrated intervals",
+    "calibration_status": "not_established"
+   },
+   "budget_reallocation": {
+    "additional_sites": [],
+    "additional_activations": 0,
+    "added_sites_cost": {
+     "activation": 0.0,
+     "operating": 0.0,
+     "site_variable": 0.0,
+     "site_total": 0.0,
+     "participants": 0
+    },
+    "line_changes": {
+     "activation": 0.0,
+     "operating": 0.0,
+     "site_variable": 0.0,
+     "procedures": 0.0,
+     "support": 0.0,
+     "administration": 0.0
+    },
+    "incremental_cost": 0.0
+   }
+  },
+  {
+   "id": "B",
+   "label": "Lower sponsor administrative cost",
+   "definition": "A with sponsor administration cut by the admin_reduction input. An assumption, not measured savings.",
+   "inputs": {
+    "network_rule": "existing_network",
+    "admin_cost": 90000.0,
+    "support_per_participant": 500.0
+   },
+   "plan": {
+    "feasible": true,
+    "costed": true,
+    "violations": [],
+    "selected_ids": [
+     "SYN-A",
+     "SYN-B"
+    ],
+    "participant_split": "proportional_to_stated_capacity",
+    "site_rows": [
+     {
+      "id": "SYN-A",
+      "name": "Synthetic site A",
+      "participants": 30,
+      "capacity": 60,
+      "activation": 0.0,
+      "activation_sunk": true,
+      "operating": 24000.0,
+      "variable": 60000.0,
+      "procedure": 169793.7,
+      "support": 15000.0,
+      "total": 268793.7
+     },
+     {
+      "id": "SYN-B",
+      "name": "Synthetic site B",
+      "participants": 30,
+      "capacity": 60,
+      "activation": 0.0,
+      "activation_sunk": true,
+      "operating": 28800.0,
+      "variable": 60000.0,
+      "procedure": 169793.7,
+      "support": 15000.0,
+      "total": 273593.7
+     }
+    ],
+    "sponsor_total": 632387.4,
+    "breakdown": {
+     "activation": 0.0,
+     "operating": 52800.0,
+     "site_variable": 120000.0,
+     "procedures": 339587.4,
+     "support": 30000.0,
+     "administration": 90000.0
+    },
+    "stated_capacity": 120,
+    "cost_per_participant": 10539.79,
+    "budget_utilization": 0.4215916,
+    "unspent_budget": 867612.6,
+    "assumptions": [
+     "Operator-supplied site costs, stated capacities and feasibility flags; no empirical validation."
+    ],
+    "network_search": null
+   },
+   "economics": {
+    "sponsor": {
+     "expenditure": 482387.4,
+     "contingency_reserve": 150000.0,
+     "budget_commitment": 632387.4,
+     "supply_resource_proxy": 150000.0
+    },
+    "hospital": {
+     "revenue": null,
+     "resource_cost": 525418.2,
+     "net_contribution": null
+    },
+    "insurer": {
+     "payments": null,
+     "administration": 1800.0,
+     "total": null,
+     "downstream_clinical_cost": null
+    },
+    "patient": {
+     "cost_sharing": null,
+     "access_support": 30000.0,
+     "unresolved_exposure": null
+    },
+    "transfers": [
+     {
+      "from": "Sponsor",
+      "to": "Hospital",
+      "amount": 362387.4
+     },
+     {
+      "from": "Sponsor",
+      "to": "Participant",
+      "amount": 30000.0
+     },
+     {
+      "from": "Insurer",
+      "to": "Hospital",
+      "amount": null
+     },
+     {
+      "from": "Participant",
+      "to": "Hospital",
+      "amount": null
+     }
+    ],
+    "party_transfer_balances": {
+     "Sponsor": -392387.4,
+     "Hospital": 362387.4,
+     "Insurer": 0.0,
+     "Participant": 30000.0
+    },
+    "transfer_balance": 0.0,
+    "consolidated_resource_cost": 797218.2,
+    "resource_assumptions": [
+     "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions."
+    ]
+   },
+   "delta": {
+    "sponsor_expenditure": -30000.0,
+    "resources": -30000.0,
+    "hospital_contribution": null,
+    "insurer_expenditure": null,
+    "patient_cost_sharing": null,
+    "access_support": 0.0
+   },
+   "sensitivity": {
+    "sponsor_total_quantiles": [
+     602120.18,
+     631203.47,
+     659693.69
+    ],
+    "probability_budget_exceeded": 0.0,
+    "seed": 7,
+    "draws": 256,
+    "cost_spread": 0.25,
+    "varied_inputs": [
+     "site activation cost (added sites; baseline activation is sunk)",
+     "site monthly cost",
+     "site per-participant cost"
+    ],
+    "method": "Paired independent mean-one lognormal multipliers on each site's activation, monthly and per-participant costs; the same draws for every scenario; fixed networks and participant split; not calibrated intervals",
+    "calibration_status": "not_established"
+   },
+   "budget_reallocation": {
+    "additional_sites": [],
+    "additional_activations": 0,
+    "added_sites_cost": {
+     "activation": 0.0,
+     "operating": 0.0,
+     "site_variable": 0.0,
+     "site_total": 0.0,
+     "participants": 0
+    },
+    "line_changes": {
+     "activation": 0.0,
+     "operating": 0.0,
+     "site_variable": 0.0,
+     "procedures": 0.0,
+     "support": 0.0,
+     "administration": -30000.0
+    },
+    "incremental_cost": -30000.0
+   }
+  },
+  {
+   "id": "C",
+   "label": "Site network with enough stated capacity",
+   "definition": "The existing network if its stated capacity covers the target; otherwise the capacity-sufficient network of existing plus operator-feasible sites with the lowest sponsor commitment. Identical to A when A has enough capacity.",
+   "inputs": {
+    "network_rule": "capacity_rule",
+    "admin_cost": 120000.0,
+    "support_per_participant": 500.0
+   },
+   "plan": {
+    "feasible": true,
+    "costed": true,
+    "violations": [],
+    "selected_ids": [
+     "SYN-A",
+     "SYN-B"
+    ],
+    "participant_split": "proportional_to_stated_capacity",
+    "site_rows": [
+     {
+      "id": "SYN-A",
+      "name": "Synthetic site A",
+      "participants": 30,
+      "capacity": 60,
+      "activation": 0.0,
+      "activation_sunk": true,
+      "operating": 24000.0,
+      "variable": 60000.0,
+      "procedure": 169793.7,
+      "support": 15000.0,
+      "total": 268793.7
+     },
+     {
+      "id": "SYN-B",
+      "name": "Synthetic site B",
+      "participants": 30,
+      "capacity": 60,
+      "activation": 0.0,
+      "activation_sunk": true,
+      "operating": 28800.0,
+      "variable": 60000.0,
+      "procedure": 169793.7,
+      "support": 15000.0,
+      "total": 273593.7
+     }
+    ],
+    "sponsor_total": 662387.4,
+    "breakdown": {
+     "activation": 0.0,
+     "operating": 52800.0,
+     "site_variable": 120000.0,
+     "procedures": 339587.4,
+     "support": 30000.0,
+     "administration": 120000.0
+    },
+    "stated_capacity": 120,
+    "cost_per_participant": 11039.79,
+    "budget_utilization": 0.44159160000000003,
+    "unspent_budget": 837612.6,
+    "assumptions": [
+     "Operator-supplied site costs, stated capacities and feasibility flags; no empirical validation."
+    ],
+    "network_search": {
+     "rule": "Keep the existing network if its stated capacity covers the target; otherwise add operator-feasible sites, choosing the capacity-sufficient network with the lowest sponsor commitment (ties: fewer sites, then sorted ids), with the existing sites filled to their stated capacity and only the shortfall placed at added sites. Budget does not change the choice.",
+     "base_ids": [
+      "SYN-A",
+      "SYN-B"
+     ],
+     "base_has_capacity": true,
+     "candidate_networks_evaluated": 0,
+     "capacity_sufficient_networks": 0
+    }
+   },
+   "economics": {
+    "sponsor": {
+     "expenditure": 512387.4,
+     "contingency_reserve": 150000.0,
+     "budget_commitment": 662387.4,
+     "supply_resource_proxy": 150000.0
+    },
+    "hospital": {
+     "revenue": null,
+     "resource_cost": 525418.2,
+     "net_contribution": null
+    },
+    "insurer": {
+     "payments": null,
+     "administration": 1800.0,
+     "total": null,
+     "downstream_clinical_cost": null
+    },
+    "patient": {
+     "cost_sharing": null,
+     "access_support": 30000.0,
+     "unresolved_exposure": null
+    },
+    "transfers": [
+     {
+      "from": "Sponsor",
+      "to": "Hospital",
+      "amount": 362387.4
+     },
+     {
+      "from": "Sponsor",
+      "to": "Participant",
+      "amount": 30000.0
+     },
+     {
+      "from": "Insurer",
+      "to": "Hospital",
+      "amount": null
+     },
+     {
+      "from": "Participant",
+      "to": "Hospital",
+      "amount": null
+     }
+    ],
+    "party_transfer_balances": {
+     "Sponsor": -392387.4,
+     "Hospital": 362387.4,
+     "Insurer": 0.0,
+     "Participant": 30000.0
+    },
+    "transfer_balance": 0.0,
+    "consolidated_resource_cost": 827218.2,
+    "resource_assumptions": [
+     "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions."
+    ]
+   },
+   "delta": {
+    "sponsor_expenditure": 0.0,
+    "resources": 0.0,
+    "hospital_contribution": null,
+    "insurer_expenditure": null,
+    "patient_cost_sharing": null,
+    "access_support": 0.0
+   },
+   "sensitivity": {
+    "sponsor_total_quantiles": [
+     632120.18,
+     661203.47,
+     689693.69
+    ],
+    "probability_budget_exceeded": 0.0,
+    "seed": 7,
+    "draws": 256,
+    "cost_spread": 0.25,
+    "varied_inputs": [
+     "site activation cost (added sites; baseline activation is sunk)",
+     "site monthly cost",
+     "site per-participant cost"
+    ],
+    "method": "Paired independent mean-one lognormal multipliers on each site's activation, monthly and per-participant costs; the same draws for every scenario; fixed networks and participant split; not calibrated intervals",
+    "calibration_status": "not_established"
+   },
+   "budget_reallocation": {
+    "additional_sites": [],
+    "additional_activations": 0,
+    "added_sites_cost": {
+     "activation": 0.0,
+     "operating": 0.0,
+     "site_variable": 0.0,
+     "site_total": 0.0,
+     "participants": 0
+    },
+    "line_changes": {
+     "activation": 0.0,
+     "operating": 0.0,
+     "site_variable": 0.0,
+     "procedures": 0.0,
+     "support": 0.0,
+     "administration": 0.0
+    },
+    "incremental_cost": 0.0
+   }
+  },
+  {
+   "id": "D",
+   "label": "Expanded participant access support",
+   "definition": "A with participant support raised by extra_support per participant.",
+   "inputs": {
+    "network_rule": "existing_network",
+    "admin_cost": 120000.0,
+    "support_per_participant": 800.0
+   },
+   "plan": {
+    "feasible": true,
+    "costed": true,
+    "violations": [],
+    "selected_ids": [
+     "SYN-A",
+     "SYN-B"
+    ],
+    "participant_split": "proportional_to_stated_capacity",
+    "site_rows": [
+     {
+      "id": "SYN-A",
+      "name": "Synthetic site A",
+      "participants": 30,
+      "capacity": 60,
+      "activation": 0.0,
+      "activation_sunk": true,
+      "operating": 24000.0,
+      "variable": 60000.0,
+      "procedure": 169793.7,
+      "support": 24000.0,
+      "total": 277793.7
+     },
+     {
+      "id": "SYN-B",
+      "name": "Synthetic site B",
+      "participants": 30,
+      "capacity": 60,
+      "activation": 0.0,
+      "activation_sunk": true,
+      "operating": 28800.0,
+      "variable": 60000.0,
+      "procedure": 169793.7,
+      "support": 24000.0,
+      "total": 282593.7
+     }
+    ],
+    "sponsor_total": 680387.4,
+    "breakdown": {
+     "activation": 0.0,
+     "operating": 52800.0,
+     "site_variable": 120000.0,
+     "procedures": 339587.4,
+     "support": 48000.0,
+     "administration": 120000.0
+    },
+    "stated_capacity": 120,
+    "cost_per_participant": 11339.79,
+    "budget_utilization": 0.45359160000000004,
+    "unspent_budget": 819612.6,
+    "assumptions": [
+     "Operator-supplied site costs, stated capacities and feasibility flags; no empirical validation."
+    ],
+    "network_search": null
+   },
+   "economics": {
+    "sponsor": {
+     "expenditure": 530387.4,
+     "contingency_reserve": 150000.0,
+     "budget_commitment": 680387.4,
+     "supply_resource_proxy": 150000.0
+    },
+    "hospital": {
+     "revenue": null,
+     "resource_cost": 525418.2,
+     "net_contribution": null
+    },
+    "insurer": {
+     "payments": null,
+     "administration": 1800.0,
+     "total": null,
+     "downstream_clinical_cost": null
+    },
+    "patient": {
+     "cost_sharing": null,
+     "access_support": 48000.0,
+     "unresolved_exposure": null
+    },
+    "transfers": [
+     {
+      "from": "Sponsor",
+      "to": "Hospital",
+      "amount": 362387.4
+     },
+     {
+      "from": "Sponsor",
+      "to": "Participant",
+      "amount": 48000.0
+     },
+     {
+      "from": "Insurer",
+      "to": "Hospital",
+      "amount": null
+     },
+     {
+      "from": "Participant",
+      "to": "Hospital",
+      "amount": null
+     }
+    ],
+    "party_transfer_balances": {
+     "Sponsor": -410387.4,
+     "Hospital": 362387.4,
+     "Insurer": 0.0,
+     "Participant": 48000.0
+    },
+    "transfer_balance": 0.0,
+    "consolidated_resource_cost": 845218.2,
+    "resource_assumptions": [
+     "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions."
+    ]
+   },
+   "delta": {
+    "sponsor_expenditure": 18000.0,
+    "resources": 18000.0,
+    "hospital_contribution": null,
+    "insurer_expenditure": null,
+    "patient_cost_sharing": null,
+    "access_support": 18000.0
+   },
+   "sensitivity": {
+    "sponsor_total_quantiles": [
+     650120.18,
+     679203.47,
+     707693.69
+    ],
+    "probability_budget_exceeded": 0.0,
+    "seed": 7,
+    "draws": 256,
+    "cost_spread": 0.25,
+    "varied_inputs": [
+     "site activation cost (added sites; baseline activation is sunk)",
+     "site monthly cost",
+     "site per-participant cost"
+    ],
+    "method": "Paired independent mean-one lognormal multipliers on each site's activation, monthly and per-participant costs; the same draws for every scenario; fixed networks and participant split; not calibrated intervals",
+    "calibration_status": "not_established"
+   },
+   "budget_reallocation": {
+    "additional_sites": [],
+    "additional_activations": 0,
+    "added_sites_cost": {
+     "activation": 0.0,
+     "operating": 0.0,
+     "site_variable": 0.0,
+     "site_total": 0.0,
+     "participants": 0
+    },
+    "line_changes": {
+     "activation": 0.0,
+     "operating": 0.0,
+     "site_variable": 0.0,
+     "procedures": 0.0,
+     "support": 18000.0,
+     "administration": 0.0
+    },
+    "incremental_cost": 18000.0
+   }
+  },
+  {
+   "id": "E",
+   "label": "B + C + D combined",
+   "definition": "B's administrative cost, C's network rule and D's participant support together.",
+   "inputs": {
+    "network_rule": "capacity_rule",
+    "admin_cost": 90000.0,
+    "support_per_participant": 800.0
+   },
+   "plan": {
+    "feasible": true,
+    "costed": true,
+    "violations": [],
+    "selected_ids": [
+     "SYN-A",
+     "SYN-B"
+    ],
+    "participant_split": "proportional_to_stated_capacity",
+    "site_rows": [
+     {
+      "id": "SYN-A",
+      "name": "Synthetic site A",
+      "participants": 30,
+      "capacity": 60,
+      "activation": 0.0,
+      "activation_sunk": true,
+      "operating": 24000.0,
+      "variable": 60000.0,
+      "procedure": 169793.7,
+      "support": 24000.0,
+      "total": 277793.7
+     },
+     {
+      "id": "SYN-B",
+      "name": "Synthetic site B",
+      "participants": 30,
+      "capacity": 60,
+      "activation": 0.0,
+      "activation_sunk": true,
+      "operating": 28800.0,
+      "variable": 60000.0,
+      "procedure": 169793.7,
+      "support": 24000.0,
+      "total": 282593.7
+     }
+    ],
+    "sponsor_total": 650387.4,
+    "breakdown": {
+     "activation": 0.0,
+     "operating": 52800.0,
+     "site_variable": 120000.0,
+     "procedures": 339587.4,
+     "support": 48000.0,
+     "administration": 90000.0
+    },
+    "stated_capacity": 120,
+    "cost_per_participant": 10839.79,
+    "budget_utilization": 0.4335916,
+    "unspent_budget": 849612.6,
+    "assumptions": [
+     "Operator-supplied site costs, stated capacities and feasibility flags; no empirical validation."
+    ],
+    "network_search": {
+     "rule": "Keep the existing network if its stated capacity covers the target; otherwise add operator-feasible sites, choosing the capacity-sufficient network with the lowest sponsor commitment (ties: fewer sites, then sorted ids), with the existing sites filled to their stated capacity and only the shortfall placed at added sites. Budget does not change the choice.",
+     "base_ids": [
+      "SYN-A",
+      "SYN-B"
+     ],
+     "base_has_capacity": true,
+     "candidate_networks_evaluated": 0,
+     "capacity_sufficient_networks": 0
+    }
+   },
+   "economics": {
+    "sponsor": {
+     "expenditure": 500387.4,
+     "contingency_reserve": 150000.0,
+     "budget_commitment": 650387.4,
+     "supply_resource_proxy": 150000.0
+    },
+    "hospital": {
+     "revenue": null,
+     "resource_cost": 525418.2,
+     "net_contribution": null
+    },
+    "insurer": {
+     "payments": null,
+     "administration": 1800.0,
+     "total": null,
+     "downstream_clinical_cost": null
+    },
+    "patient": {
+     "cost_sharing": null,
+     "access_support": 48000.0,
+     "unresolved_exposure": null
+    },
+    "transfers": [
+     {
+      "from": "Sponsor",
+      "to": "Hospital",
+      "amount": 362387.4
+     },
+     {
+      "from": "Sponsor",
+      "to": "Participant",
+      "amount": 48000.0
+     },
+     {
+      "from": "Insurer",
+      "to": "Hospital",
+      "amount": null
+     },
+     {
+      "from": "Participant",
+      "to": "Hospital",
+      "amount": null
+     }
+    ],
+    "party_transfer_balances": {
+     "Sponsor": -410387.4,
+     "Hospital": 362387.4,
+     "Insurer": 0.0,
+     "Participant": 48000.0
+    },
+    "transfer_balance": 0.0,
+    "consolidated_resource_cost": 815218.2,
+    "resource_assumptions": [
+     "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions."
+    ]
+   },
+   "delta": {
+    "sponsor_expenditure": -12000.0,
+    "resources": -12000.0,
+    "hospital_contribution": null,
+    "insurer_expenditure": null,
+    "patient_cost_sharing": null,
+    "access_support": 18000.0
+   },
+   "sensitivity": {
+    "sponsor_total_quantiles": [
+     620120.18,
+     649203.47,
+     677693.69
+    ],
+    "probability_budget_exceeded": 0.0,
+    "seed": 7,
+    "draws": 256,
+    "cost_spread": 0.25,
+    "varied_inputs": [
+     "site activation cost (added sites; baseline activation is sunk)",
+     "site monthly cost",
+     "site per-participant cost"
+    ],
+    "method": "Paired independent mean-one lognormal multipliers on each site's activation, monthly and per-participant costs; the same draws for every scenario; fixed networks and participant split; not calibrated intervals",
+    "calibration_status": "not_established"
+   },
+   "budget_reallocation": {
+    "additional_sites": [],
+    "additional_activations": 0,
+    "added_sites_cost": {
+     "activation": 0.0,
+     "operating": 0.0,
+     "site_variable": 0.0,
+     "site_total": 0.0,
+     "participants": 0
+    },
+    "line_changes": {
+     "activation": 0.0,
+     "operating": 0.0,
+     "site_variable": 0.0,
+     "procedures": 0.0,
+     "support": 18000.0,
+     "administration": -30000.0
+    },
+    "incremental_cost": -12000.0
+   }
+  }
+ ],
+ "comparison": {
+  "reference_scenario_id": "A",
+  "ordering": "Scenarios are listed A to E and are not ranked; none is preferred.",
+  "basis": "Same participant target, budget and budgeted contract period in every scenario; only the inputs listed per scenario differ."
+ },
+ "evidence": {
+  "commit": "78494e1b55729f81ca84f3663696a5c3c761b259",
+  "financial_input_kind": "synthetic",
+  "cache_policy": "No mutable scenario cache; every request fully recomputed from all validated inputs"
+ },
+ "sources": [
+  {
+   "id": "medicare-310.1",
+   "url": "https://www.cms.gov/files/document/r12590ncd.pdf",
+   "title": "CMS NCD 310.1, current manual revision 12590 (2024)",
+   "kind": "verified_policy_reference",
+   "checked": "2026-10-17",
+   "scope": "Which routine costs in qualifying trials Medicare covers; excludes sponsor-free and research-only items. Administration may qualify depending on circumstances; R1 is a conservative sponsor agreement assumption, not an NCD prohibition."
+  },
+  {
+   "id": "medicaid",
+   "url": "https://www.medicaid.gov/federal-policy-guidance/downloads/smd21005.pdf",
+   "title": "CMS SMD 21-005: routine patient costs in qualifying clinical trials",
+   "kind": "verified_policy_reference",
+   "checked": "2026-10-17",
+   "scope": "Federal qualifying-trial benefit; state, beneficiary, service and plan implementation require review."
+  },
+  {
+   "id": "commercial",
+   "url": "https://www.cancer.gov/research/participate/clinical-trials/paying",
+   "title": "NCI: insurance coverage for clinical trials",
+   "kind": "policy_reference",
+   "checked": "2026-10-17",
+   "scope": "Plan and network requirements apply. No commercial allowed amount is inferred without an explicit assumption."
+  }
+ ],
+ "assumptions": {
+  "active_site_activation": "Sunk activation for baseline-active sites is excluded equally from alternatives; activation for added sites is included.",
+  "sponsor_administration": "Sponsor administration is an operator input (for example study management, CRO and coordination costs). Scenario B applies the admin_reduction input to it as an assumption; no source of the reduction is modeled and no saving is claimed.",
+  "contract_period": "The budgeted contract period is an operator input: each selected site's monthly cost is multiplied by it. It is not a forecast of how long the trial runs.",
+  "participant_split": "Participants are split across selected sites in proportion to stated capacity (largest-remainder rounding, ties by site id). When C or E extends an existing network that lacks capacity, existing sites are filled to their stated capacity first and only the shortfall is split across added sites by capacity (plan.participant_split names the rule used). Capacity is an operator input.",
+  "site_per_participant_cost": "Site per-participant cost covers only site costs not itemized in the coverage worksheet (for example coordinator time and data entry); it must exclude every worksheet procedure, or that procedure is counted twice.",
+  "access_support": "Access support reimburses trial-related travel and lodging; it is not netted against, and does not pay, insurer cost sharing. Whether a sponsor may cover a beneficiary's cost sharing is a separate compliance question this worksheet does not model.",
+  "feasibility": "Feasible = stated capacity covers the target, sponsor commitment within budget, every selected site operator-flagged feasible, support at or above the floor. Actual site capabilities UNKNOWN.",
+  "hospital_payment": "Synthetic negotiated site costs for financial mechanics only; no claim of fair compensation or FMV.",
+  "fee_benchmarks": "Fee-schedule amounts are benchmarks. Research items the sponsor pays, and held contingency, are priced at benchmark x sponsor_rate_multiplier, an explicit stand-in for the rate negotiated with the site. Insurer and participant routine amounts use the benchmark, or are UNKNOWN for a commercial plan without the commercial-rate assumption.",
+  "payer_benchmarks": "Medicare and insurer amounts for routine care are benchmarks: they inform fair-market-value reasoning and are inputs to the sponsor's budget negotiation with each site or hospital.",
+  "payer_billing": "Whether an item may be billed to an insurer follows the protocol and coverage rules (for Medicare, NCD 310.1 routine costs in qualifying trials): research-only items are the sponsor's and are never billed to an insurer or participant. The site contract can still have the sponsor pay for a routine item (mark it SPONSOR here), and an item the sponsor pays for or supplies free is then not billed to the insurer. Insurer payment amounts are not a lever over who is billed.",
+  "payer_independence": "In this worksheet, payer type, payer share and the commercial-rate assumption change only the insurer and participant lines; the sponsor commitment does not fall because an insurer pays more for routine care. A line moves onto or off the sponsor only through its coverage status (who is billed), set by coverage review or a contract term, never through the insurer's payment amount. Payer and Medicare amounts can still inform the rate negotiated for research items (benchmark x sponsor_rate_multiplier).",
+  "trial_target": "Fixed demo target within every comparison, unrelated to the registered trial enrollment target.",
+  "resource_costs": "Separate synthetic 80% site/70% procedure cost assumptions, never inferred hospital margins."
+ },
+ "limitations": [
+  "Synthetic financial demonstration: all candidate sites, capacities, costs, margins and payer shares are hypothetical, not registered site facts or negotiated prices.",
+  "The real trial identifier links an existing illustrative authored schedule; the registry does not publish the complete protocol. This is not a sponsor-approved protocol budget.",
+  "Medicare and insurer amounts for routine care are benchmarks: they inform fair-market-value reasoning and are inputs to the sponsor's budget negotiation with each site or hospital.",
+  "Whether an item may be billed to an insurer follows the protocol and coverage rules (for Medicare, NCD 310.1 routine costs in qualifying trials): research-only items are the sponsor's and are never billed to an insurer or participant. The site contract can still have the sponsor pay for a routine item (mark it SPONSOR here), and an item the sponsor pays for or supplies free is then not billed to the insurer. Insurer payment amounts are not a lever over who is billed.",
+  "In this worksheet, payer type, payer share and the commercial-rate assumption change only the insurer and participant lines; the sponsor commitment does not fall because an insurer pays more for routine care. A line moves onto or off the sponsor only through its coverage status (who is billed), set by coverage review or a contract term, never through the insurer's payment amount. Payer and Medicare amounts can still inform the rate negotiated for research items (benchmark x sponsor_rate_multiplier).",
+  "Nothing here models negotiation length, enrollment speed, time to fill sites or trial duration, and no scenario is ranked or recommended; the budgeted contract period is an input that prices monthly site costs.",
+  "Routine coverage is potential, subject to qualifying-trial, beneficiary, jurisdiction, plan, network and service review. No insurer participates or commits funding.",
+  "Unknown responsibility is held as sponsor contingency, not billed to insurers or participants. Unresolved patient exposure is unknown, not evidence of zero liability.",
+  "Only the authored non-repeating visits (screening, cycles 1-8, end of treatment, safety follow-up) are priced. Actual drug acquisition/manufacturing, later treatment, complications and downstream outcomes are unknown; the drug contingency is an assumption, not a complete trial cost.",
+  "Access support reimburses trial-related travel and lodging; it is not netted against, and does not pay, insurer cost sharing. Whether a sponsor may cover a beneficiary's cost sharing is a separate compliance question this worksheet does not model.",
+  "Each worksheet line is assigned to one party (sponsor, insurer, participant or sponsor contingency). That is not a billing-compliance review and does not establish that no item is billed twice. Site per-participant costs must exclude every itemized worksheet procedure, or that procedure is counted twice.",
+  "Participants are split across selected sites in proportion to stated capacity, an operator input; when an existing network that lacks capacity is extended, existing sites are filled to their stated capacity first and only the shortfall goes to added sites. It is not a measured or predicted enrollment.",
+  "Sensitivity varies only site cost inputs (seeded lognormal spread); the ranges are not calibrated intervals.",
+  "Sponsor-to-hospital payments are transfers. Consolidated resource costs use separate explicit cost assumptions; a lower sponsor payment is not automatically a system or payer saving.",
+  "No claims, reimbursements, coverage authorizations, contracts or patient-identifiable records are transmitted. Operator corrections are interpretations, not clinical or payer attestations."
+ ],
+ "result_sha256": "52e9d019cddbab28df4222edab25409c29d27510cf0c3e93b564e7ff233f9feb"
+}
