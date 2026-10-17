@@ -227,3 +227,4 @@ def compile_eligibility(body: EligibilityText) -> dict:
 
 from concord.api.overlap import router as overlap_router  # noqa: E402  portfolio overlap audit
 app.include_router(overlap_router)
+app.include_router(__import__("concord.api.site_scores", fromlist=["router"]).router)  # site scores tab
