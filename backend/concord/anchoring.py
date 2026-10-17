@@ -126,7 +126,9 @@ def _phase(v: dict) -> str | None:
         return "treatment"
     if v["kind"] == "follow_up":
         return "eot" if "end of treatment" in v["label"].lower() or v["visit_id"] == "EOT" else "follow_up"
-    return None  # repeat visits are paid per occurrence, outside the per-participant amount
+    if v["kind"] == "repeat" and v.get("occurrences"):
+        return "treatment"  # a repeating dosing visit with a fixed count is inside the per-participant amount
+    return None  # open-ended repeat visits are paid per occurrence, outside the per-participant amount
 
 
 def annotate(b: dict, band_lo: float = BAND_DEFAULT[0], band_hi: float = BAND_DEFAULT[1]) -> dict:
@@ -167,10 +169,12 @@ def annotate(b: dict, band_lo: float = BAND_DEFAULT[0], band_hi: float = BAND_DE
             v[f"overhead_{side}"] = over
             v[f"visit_{side}"] = _r2(s + coord + over)
 
-    fixed = [v for v in b["visits"] if v["kind"] != "repeat"]
+    # The per-participant schedule: every non-repeating visit once, and a repeating visit whose count the schedule
+    # fixes that many times (terms.budget counts them the same way); open-ended repeats are priced per occurrence.
+    fixed = [(v, v.get("occurrences") or 1) for v in b["visits"] if v["kind"] != "repeat" or v.get("occurrences")]
     t = b["totals"]
-    t["per_participant_low"] = _r2(sum(v["visit_low"] for v in fixed))
-    t["per_participant_high"] = _r2(sum(v["visit_high"] for v in fixed))
+    t["per_participant_low"] = _r2(sum(v["visit_low"] * k for v, k in fixed))
+    t["per_participant_high"] = _r2(sum(v["visit_high"] * k for v, k in fixed))
     for x in t["per_occurrence"]:
         v = next(v for v in b["visits"] if v["visit_id"] == x["visit_id"])
         x["low"], x["high"] = v["visit_low"], v["visit_high"]
@@ -178,7 +182,7 @@ def annotate(b: dict, band_lo: float = BAND_DEFAULT[0], band_hi: float = BAND_DE
     t["screen_failure_low"], t["screen_failure_high"] = scr["visit_low"], scr["visit_high"]
 
     b["band"] = {"lo": lo, "hi": hi, "label": "assumption", "note": BAND_NOTE,
-                 "n_banded_lines": sum(1 for v in fixed for l in v["lines"] if l["banded"]),
+                 "n_banded_lines": sum(1 for v, _ in fixed for l in v["lines"] if l["banded"]),
                  "point_multiplier": b["multiplier"]}
     b["anchoring"] = _anchoring(b, fixed, coord_anchor)
     b["anchoring"]["public_sources"] = _public_sources(b)
@@ -234,13 +238,13 @@ def _share(rows: list[tuple[str, float, float, float, str]]) -> tuple[float, flo
     return a, lo, hi, out
 
 
-def _anchoring(b: dict, fixed: list[dict], coord_anchor: str) -> dict:
+def _anchoring(b: dict, fixed: list[tuple[dict, int]], coord_anchor: str) -> dict:
     """Per-participant sponsor dollars by anchor; the three amounts add up to totals.per_participant."""
     rows: dict[str, list[tuple[str, float, float, float, str]]] = {"public": [], "standard": [], "open": []}
     n_lines = {"public": 0, "standard": 0, "open": 0}
     comp_label = {"PFS": "Physician fee schedule lines", "CLFS": "Lab fee schedule lines",
                   "Standard": "Proposed standard per-visit fees"}
-    for v in fixed:
+    for v, k in fixed:
         for l in v["lines"]:
             if l["anchor"] is None:
                 continue
@@ -251,12 +255,13 @@ def _anchoring(b: dict, fixed: list[dict], coord_anchor: str) -> dict:
                        else "Unpriced or no site charge")
             else:
                 lab = comp_label.get(l["schedule"] or "", l["schedule"] or "Other")
-            rows[l["anchor"]].append((lab, amt, l["low"] or 0.0, l["high"] or 0.0, l["node_id"]))
+            rows[l["anchor"]].append((lab, amt * k, (l["low"] or 0.0) * k, (l["high"] or 0.0) * k, l["node_id"]))
         if v["coordinator"]:
+            c = v["coordinator"] * k
             rows[coord_anchor].append(("Coordinator time" + (" (edited)" if coord_anchor == "open" else ""),
-                                       v["coordinator"], v["coordinator"], v["coordinator"], v["visit_id"]))
-        rows["open"].append(("Overhead % (assumption)", v["overhead"], v["overhead_low"], v["overhead_high"],
-                             v["visit_id"]))
+                                       c, c, c, v["visit_id"]))
+        rows["open"].append(("Overhead % (assumption)", v["overhead"] * k, v["overhead_low"] * k,
+                             v["overhead_high"] * k, v["visit_id"]))
     total = b["totals"]["per_participant"]
     total_lo, total_hi = b["totals"]["per_participant_low"], b["totals"]["per_participant_high"]
     pub = _share(rows["public"])
@@ -278,7 +283,7 @@ def _anchoring(b: dict, fixed: list[dict], coord_anchor: str) -> dict:
                     "three shares add up to the per-participant amount."}
 
 
-def _breakdowns(b: dict, fixed: list[dict]) -> dict:
+def _breakdowns(b: dict, fixed: list[tuple[dict, int]]) -> dict:
     t = b["totals"]
 
     def group(items: dict[str, list[float]], labels: list[tuple[str, str]]) -> list[dict]:
@@ -298,21 +303,21 @@ def _breakdowns(b: dict, fixed: list[dict]) -> dict:
 
     by_type: dict[str, list[float]] = {}
     by_phase: dict[str, list[float]] = {}
-    for v in fixed:
+    for v, k in fixed:
         for l in v["lines"]:
             if l["payer"] != "Sponsor":
                 continue
-            add(by_type, _cost_type(l), l["amount"] or 0.0, l["low"] or 0.0, l["high"] or 0.0)
+            add(by_type, _cost_type(l), (l["amount"] or 0.0) * k, (l["low"] or 0.0) * k, (l["high"] or 0.0) * k)
         if v["coordinator"]:
-            add(by_type, "coordinator", v["coordinator"], v["coordinator"], v["coordinator"])
-        add(by_type, "overhead", v["overhead"], v["overhead_low"], v["overhead_high"])
+            add(by_type, "coordinator", v["coordinator"] * k, v["coordinator"] * k, v["coordinator"] * k)
+        add(by_type, "overhead", v["overhead"] * k, v["overhead_low"] * k, v["overhead_high"] * k)
         ph = _phase(v)
         if ph:
-            add(by_phase, ph, v["visit_total"], v["visit_low"], v["visit_high"],
+            add(by_phase, ph, v["visit_total"] * k, v["visit_low"] * k, v["visit_high"] * k,
                 sum(1 for l in v["lines"] if l["payer"] == "Sponsor"))
     one_time = [i for i in b["standard_schedule"] if i["unit"] == "per_site"]
-    sponsor_n = sum(1 for v in fixed for l in v["lines"] if l["payer"] == "Sponsor")
-    ins_n = sum(1 for v in fixed for l in v["lines"] if l["payer"] == "Insurance")
+    sponsor_n = sum(1 for v, _ in fixed for l in v["lines"] if l["payer"] == "Sponsor")
+    ins_n = sum(1 for v, _ in fixed for l in v["lines"] if l["payer"] == "Insurance")
     anchor_rows = [{"id": s["id"], "label": s["label"], "amount": s["amount"], "low": s["low"], "high": s["high"],
                     "n_lines": s["n_lines"]} for s in b["anchoring"]["shares"]]
     return {

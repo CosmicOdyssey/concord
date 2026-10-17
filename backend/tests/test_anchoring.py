@@ -193,3 +193,22 @@ def test_public_sources_name_files_and_locality():
     assert "RATE column" in b["pricing_basis"]["lab"] and "limitation" not in b["pricing_basis"]["lab"]
     std_def = b["anchoring"]["shares"][1]["definition"]
     assert "published" not in std_def and "not a public rate" in std_def
+
+
+def test_fixed_count_repeat_visits_are_inside_every_share_and_breakdown():
+    """SIENNA's 20 dosing visits (weeks 8-100) are in the per-participant total, so the anchored shares, their
+    components, the band range and each breakdown must count them too (regression: they were dropped)."""
+    import pytest
+    from concord import terms
+    nct = "NCT06541704"
+    b = terms.budget(nct, terms.sites(nct)["default_pair"][0])
+    t, a = b["totals"], b["anchoring"]
+    total = t["per_participant"]
+    assert any(v["kind"] == "repeat" and v.get("occurrences") for v in b["visits"])
+    assert sum(s["amount"] for s in a["shares"]) == pytest.approx(total, abs=0.01)
+    for s in a["shares"]:
+        assert sum(c["amount"] for c in s["components"]) == pytest.approx(s["amount"], abs=0.05)
+    assert t["per_participant_low"] == pytest.approx(total, abs=0.01)  # band floor is 100% of Medicare
+    assert t["per_participant_high"] >= total
+    for g in ("cost_type", "visit"):
+        assert sum(r["amount"] for r in b["breakdowns"][g]) == pytest.approx(total, abs=0.05)
