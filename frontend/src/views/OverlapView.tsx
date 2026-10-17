@@ -1,5 +1,6 @@
 // Portfolio overlap audit: where one sponsor's own concurrent NSCLC trials recruit at the same sites for
-// overlapping patients. Descriptive only (counts, dates, eligibility shares); no forecasts anywhere.
+// overlapping patients. Descriptive only (counts, dates, eligibility shares); no forecasts anywhere, and no
+// date after the registry snapshot.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Criterion } from '../api'
 import { Badge, Caveat, ErrorBox, Loading, Stat } from '../components'
@@ -20,7 +21,10 @@ import './overlap.css'
 const DEEP_LINK = /^#overlap\/regeneron/i
 const UB = '†'
 const UB_TEXT = "upper bound: a required biomarker or cohort restriction the synthetic population can't represent"
+const UNREVIEWED = '‡'
+const UNREVIEWED_TEXT = 'criteria of one or both trials come from the rule-based parse (not reviewed)'
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+const STORE_KEY = 'concord.overlap.v2'
 const BINS: [number, string][] = [
   [0, '0'],
   [1, '1–4'],
@@ -33,8 +37,45 @@ const DESIGN_LABEL: Record<string, string> = {
   basket: 'basket',
   multi_cohort: 'multi-cohort',
 }
+const STATUS_LABEL: Record<string, string> = {
+  RECRUITING: 'Recruiting',
+  ENROLLING_BY_INVITATION: 'Enrolling by invitation',
+  ACTIVE_NOT_RECRUITING: 'Active, not recruiting',
+  NOT_YET_RECRUITING: 'Not yet recruiting',
+  COMPLETED: 'Completed',
+  TERMINATED: 'Terminated',
+  SUSPENDED: 'Suspended',
+  WITHDRAWN: 'Withdrawn',
+  UNKNOWN: 'Unknown status',
+}
+const CONCEPT_LABEL: Record<string, string> = {
+  'driver requirement': 'Required driver mutation (any of)',
+  ecog: 'Performance status (ECOG)',
+  stage: 'Stage',
+  histology: 'Histology',
+  prior_lines: 'Prior treatment',
+  prior_io: 'Prior immunotherapy',
+  pdl1: 'PD-L1 expression',
+  egfr: 'EGFR',
+  alk: 'ALK',
+  ros1: 'ROS1',
+  kras_g12c: 'KRAS G12C',
+  met: 'MET',
+  her2: 'HER2',
+  brain_mets_active: 'Brain metastases',
+  ild_history: 'ILD / pneumonitis history',
+  autoimmune: 'Autoimmune disease',
+  never_smoker: 'Smoking history',
+}
 
 type Pair = [string, string]
+
+interface SharedOriented {
+  concept: string
+  a: string[]
+  b: string[]
+  same: boolean
+}
 
 /** A pair seen from trial a (row) toward trial b (column). */
 interface Oriented {
@@ -46,10 +87,34 @@ interface Oriented {
   o_ba: number
   onlyA: string[]
   onlyB: string[]
+  shared: SharedOriented[]
 }
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10)
+interface Stored {
+  form: OverlapQuery
+  selected: Pair | null
+  mode: 'matrix' | 'list'
+}
+
+function loadStored(): Stored | null {
+  try {
+    const raw = window.sessionStorage.getItem(STORE_KEY)
+    if (!raw) return null
+    const s = JSON.parse(raw) as Partial<Stored>
+    if (!s.form || typeof s.form.sponsor !== 'string' || typeof s.form.as_of !== 'string' || typeof s.form.region !== 'string')
+      return null
+    return { form: s.form, selected: Array.isArray(s.selected) && s.selected.length === 2 ? s.selected : null, mode: s.mode === 'list' ? 'list' : 'matrix' }
+  } catch {
+    return null
+  }
+}
+
+function saveStored(s: Stored) {
+  try {
+    window.sessionStorage.setItem(STORE_KEY, JSON.stringify(s))
+  } catch {
+    /* storage unavailable: the view still works, it just forgets on remount */
+  }
 }
 
 function bin(n: number): number {
@@ -66,6 +131,14 @@ function sitesLabel(n: number): string {
 
 function stripHand(s: string): string {
   return s.replace(/^\[hand-encoded\]\s*/, '')
+}
+
+function statusLabel(s: string): string {
+  return STATUS_LABEL[s] ?? s.replace(/_/g, ' ').toLowerCase()
+}
+
+function conceptLabel(c: string): string {
+  return CONCEPT_LABEL[c] ?? c.replace(/_/g, ' ')
 }
 
 function regionOptions(regions: string[]): { value: string; label: string }[] {
@@ -86,24 +159,33 @@ function setHash(h: string) {
 }
 
 export default function OverlapView({ regions }: { regions?: string[] }) {
-  const deepLinked = DEEP_LINK.test(window.location.hash)
-  const [form, setForm] = useState<OverlapQuery>(() =>
-    deepLinked ? REGENERON_OVERLAP_PRESET : { sponsor: '', as_of: today(), region: 'US' },
-  )
-  const [wantPair, setWantPair] = useState<Pair | null>(() => (deepLinked ? FIANLIMAB_PAIR : null))
+  // Initial state: the deep link wins, else what this tab showed before (sessionStorage), else the snapshot.
+  const [init] = useState(() => {
+    if (DEEP_LINK.test(window.location.hash)) return { form: REGENERON_OVERLAP_PRESET, selected: FIANLIMAB_PAIR as Pair, mode: 'matrix' as const }
+    return loadStored() ?? { form: { sponsor: '', as_of: '', region: 'US' }, selected: null, mode: 'matrix' as const }
+  })
+  const [form, setForm] = useState<OverlapQuery>(init.form)
+  const [wantPair, setWantPair] = useState<Pair | null>(init.selected)
   const [sponsors, setSponsors] = useState<OverlapSponsors | null>(null)
+  const [snapshot, setSnapshot] = useState<string | null>(null)
   const [sponsorErr, setSponsorErr] = useState<string | null>(null)
   const [data, setData] = useState<OverlapAudit | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Pair | null>(null)
-  const [mode, setMode] = useState<'matrix' | 'list'>('matrix')
+  const [mode, setMode] = useState<'matrix' | 'list'>(init.mode)
   const [openTrial, setOpenTrial] = useState<string | null>(null)
   const [reload, setReload] = useState(0)
 
-  const validDate = DATE_RE.test(form.as_of)
+  const afterSnapshot = !!snapshot && DATE_RE.test(form.as_of) && form.as_of > snapshot
+  const validDate = form.as_of === '' || (DATE_RE.test(form.as_of) && !afterSnapshot)
 
-  // Sponsor list for the date and region.
+  // Remember the form across tab switches (App unmounts inactive tabs).
+  useEffect(() => {
+    saveStored({ form, selected: selected ?? wantPair, mode })
+  }, [form, selected, wantPair, mode])
+
+  // Sponsor list for the date and region ('' date = the registry snapshot, returned as as_of).
   useEffect(() => {
     if (!validDate) return
     const ctl = new AbortController()
@@ -112,6 +194,7 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
       .sponsors(form.as_of, form.region, ctl.signal)
       .then((s) => {
         setSponsors(s)
+        setSnapshot(s.snapshot_date)
         setForm((f) => (f.sponsor || s.sponsors.length === 0 ? f : { ...f, sponsor: s.sponsors[0].sponsor }))
       })
       .catch((e: unknown) => {
@@ -130,6 +213,7 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
       .audit(form, ctl.signal)
       .then((d) => {
         setData(d)
+        setSnapshot(d.snapshot_date)
         const ids = new Set(d.trials.map((t) => t.nct_id))
         const has = (p: Pair | null) => !!p && ids.has(p[0]) && ids.has(p[1])
         setSelected((cur) => {
@@ -168,18 +252,52 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
     setForm(P)
   }
 
+  // #overlap/regeneron typed or linked while this tab is already open (App only switches tabs on hashchange).
+  const presetRef = useRef(loadPreset)
+  presetRef.current = loadPreset
+  useEffect(() => {
+    const onHash = () => {
+      if (DEEP_LINK.test(window.location.hash)) presetRef.current()
+    }
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
   const trials = useMemo(() => data?.trials ?? [], [data])
   const tIdx = useMemo(() => new Map(trials.map((t) => [t.nct_id, t])), [trials])
   const pairIdx = useMemo(() => new Map((data?.pairs ?? []).map((p) => [`${p.p}|${p.q}`, p])), [data])
   const orient = (a: string, b: string): Oriented | null => {
     const p = pairIdx.get(`${a}|${b}`)
-    if (p) return { a, b, pair: p, o_ab: p.o_pq, o_ba: p.o_qp, onlyA: p.criteria_diff.only_p, onlyB: p.criteria_diff.only_q }
+    if (p)
+      return {
+        a,
+        b,
+        pair: p,
+        o_ab: p.o_pq,
+        o_ba: p.o_qp,
+        onlyA: p.criteria_diff.only_p,
+        onlyB: p.criteria_diff.only_q,
+        shared: p.criteria_diff.shared.map((s) => ({ concept: s.concept, a: s.p, b: s.q, same: s.same })),
+      }
     const r = pairIdx.get(`${b}|${a}`)
-    if (r) return { a, b, pair: r, o_ab: r.o_qp, o_ba: r.o_pq, onlyA: r.criteria_diff.only_q, onlyB: r.criteria_diff.only_p }
+    if (r)
+      return {
+        a,
+        b,
+        pair: r,
+        o_ab: r.o_qp,
+        o_ba: r.o_pq,
+        onlyA: r.criteria_diff.only_q,
+        onlyB: r.criteria_diff.only_p,
+        shared: r.criteria_diff.shared.map((s) => ({ concept: s.concept, a: s.q, b: s.p, same: s.same })),
+      }
     return null
   }
   const current = selected ? orient(selected[0], selected[1]) : null
 
+  // The sponsor list matches the inputs (not a previous date's list still on screen).
+  const sponsorsFresh =
+    !!sponsors && sponsors.as_of === (form.as_of || sponsors.snapshot_date) && (sponsors.region ?? '') === form.region
   const sponsorOptions = useMemo(() => {
     const list = sponsors?.sponsors ?? []
     const known = list.some((s) => s.sponsor === form.sponsor)
@@ -192,11 +310,13 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
     const sharing = pairs.filter((p) => p.shared_sites > 0).length
     const top = [...pairs].sort((x, y) => y.shared_sites - x.shared_sites)[0]
     const nested = pairs.filter((p) => p.overlap_informative && p.shared_sites >= 10 && Math.max(p.o_pq, p.o_qp) >= 0.8)
-    return { sharing, top, nested: nested.length, nestedUb: nested.filter((p) => p.upper_bound).length }
+    const closedNow = data.trials.filter((t) => !t.recruiting_at_snapshot)
+    return { sharing, top, nested: nested.length, nestedUb: nested.filter((p) => p.upper_bound).length, closedNow }
   }, [data])
 
   const stale = loading && !!data
   const worldwide = !data?.region
+  const registry = data?.basis === 'registry'
 
   return (
     <div className="view">
@@ -204,8 +324,8 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
         <h1>Portfolio overlap audit</h1>
         <p className="lede">
           Where one sponsor's own concurrent NSCLC trials recruit at the same sites for overlapping patients. Everything here
-          is descriptive: registered sites from ClinicalTrials.gov, estimated enrollment windows, and eligibility overlap on
-          a synthetic population. No enrollment forecasts.
+          is descriptive: registered sites and statuses from ClinicalTrials.gov, enrollment windows for past dates, and
+          eligibility overlap on a synthetic population. No enrollment forecasts, and no dates after the registry snapshot.
         </p>
       </div>
 
@@ -213,21 +333,32 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
         <div className="controls-row">
           <label className="field field-wide">
             <span className="field-label">
-              Sponsor{sponsors ? ` · ${sponsors.sponsors.length} with ≥ 2 lung trials recruiting on the date` : ''}
+              Sponsor{sponsorsFresh && sponsors ? ` · ${sponsors.sponsors.length} with ≥ 2 lung trials recruiting on the date` : ''}
             </span>
             <select value={form.sponsor} onChange={(e) => update({ sponsor: e.target.value })}>
               {!form.sponsor && <option value="">Loading sponsors…</option>}
-              {sponsorOptions.extra && <option value={sponsorOptions.extra}>{sponsorOptions.extra} (fewer than 2 on this date)</option>}
+              {sponsorOptions.extra && (
+                <option value={sponsorOptions.extra}>
+                  {sponsorOptions.extra}
+                  {sponsorsFresh ? ' (fewer than 2 on this date)' : ''}
+                </option>
+              )}
               {sponsorOptions.list.map((s) => (
                 <option key={s.sponsor} value={s.sponsor}>
-                  {s.sponsor} ({s.trials})
+                  {s.sponsor}
+                  {sponsorsFresh ? ` (${s.trials})` : ''}
                 </option>
               ))}
             </select>
           </label>
           <label className="field">
-            <span className="field-label">As of</span>
-            <input type="date" value={form.as_of} onChange={(e) => update({ as_of: e.target.value })} />
+            <span className="field-label">As of{snapshot ? ` · snapshot ${snapshot}` : ''}</span>
+            <input
+              type="date"
+              value={form.as_of || snapshot || ''}
+              max={snapshot ?? undefined}
+              onChange={(e) => update({ as_of: e.target.value === snapshot ? '' : e.target.value })}
+            />
           </label>
           <label className="field">
             <span className="field-label">Sites</span>
@@ -243,7 +374,16 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
             Regeneron, 1 Sept 2024
           </button>
         </div>
-        {!validDate && <p className="small neg">Enter a full date (YYYY-MM-DD).</p>}
+        {afterSnapshot ? (
+          <p className="small neg">
+            The registry snapshot is {snapshot}. Later dates would be projections, so this audit does not show them.{' '}
+            <button className="btn btn-small" onClick={() => update({ as_of: '' })}>
+              Use {snapshot}
+            </button>
+          </p>
+        ) : (
+          !validDate && <p className="small neg">Enter a full date (YYYY-MM-DD).</p>
+        )}
         {sponsorErr && <ErrorBox error={sponsorErr} />}
       </section>
 
@@ -259,6 +399,15 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
             <span>
               as of <strong>{data.as_of}</strong>
             </span>
+            {registry ? (
+              <Badge tone="ok" title="On the snapshot date, recruiting means the CT.gov status: a registered fact">
+                CT.gov status at the snapshot
+              </Badge>
+            ) : (
+              <Badge tone="neutral" title={`Earlier than the ${data.snapshot_date} snapshot: estimated from enrollment windows`}>
+                estimated windows · snapshot {data.snapshot_date}
+              </Badge>
+            )}
             <span>{data.region_label}</span>
             <span className="muted">
               synthetic population n = {int(data.population.n)} · eligibility{' '}
@@ -267,6 +416,15 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
             </span>
             {stale && <Badge tone="info">updating…</Badge>}
           </div>
+          {!registry && stats.closedNow.length > 0 && (
+            <Caveat>
+              {stats.closedNow.length === trials.length ? `All ${int(trials.length)}` : `${int(stats.closedNow.length)} of ${int(trials.length)}`}{' '}
+              of these trials are no longer recruiting on ClinicalTrials.gov at the {data.snapshot_date} snapshot (
+              {summarizeStatuses(stats.closedNow)}). The registry does not publish when enrollment closed, so whether each was
+              recruiting on {data.as_of} is estimated from its enrollment window; a window that would run past the snapshot is
+              cut there.
+            </Caveat>
+          )}
           {data.n_sites > 0 && data.n_sites_anonymized / data.n_sites >= 0.2 && (
             <Caveat>
               {int(data.n_sites_anonymized)} of {int(data.n_sites)} registered sites of these trials are anonymized on
@@ -277,16 +435,28 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
           )}
           {data.excluded_open_ended.length > 0 && (
             <Caveat>
-              Left out: {data.excluded_open_ended.join(', ')} started by this date but register no completion date at all, so no
-              enrollment window can be estimated.
+              Left out: {data.excluded_open_ended.join(', ')} started by this date and are no longer recruiting, but register no
+              completion date at all, so no enrollment window can be estimated.
+            </Caveat>
+          )}
+          {data.not_yet_recruiting.length > 0 && (
+            <Caveat>
+              Not counted: {data.not_yet_recruiting.map((t) => t.nct_id).join(', ')}{' '}
+              {data.not_yet_recruiting.length === 1 ? 'is' : 'are'} listed as Not yet recruiting on ClinicalTrials.gov at the{' '}
+              {data.snapshot_date} snapshot
+              {registry ? '' : ', although the registered (anticipated) start is on or before this date'}.
             </Caveat>
           )}
 
           <div className="stats">
             <Stat
-              label="Trials recruiting on the date"
+              label={registry ? 'Trials recruiting (CT.gov status)' : 'Trials recruiting on the date (estimated)'}
               value={int(trials.length)}
-              sub="lung trials of this lead sponsor inside their estimated enrollment windows"
+              sub={
+                registry
+                  ? `lung trials of this lead sponsor listed as Recruiting or Enrolling by invitation at the ${data.snapshot_date} snapshot`
+                  : 'lung trials of this lead sponsor inside their estimated enrollment windows, bounded by the CT.gov status at the snapshot'
+              }
             />
             <Stat
               label="Pairs sharing a site"
@@ -313,7 +483,7 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
 
           {trials.length === 0 ? (
             <div className="empty">
-              No lung trials of {data.sponsor} are inside their estimated enrollment window on {data.as_of}
+              No lung trials of {data.sponsor} are {registry ? 'listed as recruiting at the snapshot' : 'inside their estimated enrollment window on ' + data.as_of}
               {data.region ? ` with a registered site in ${data.region_label}` : ''}.
             </div>
           ) : (
@@ -359,21 +529,27 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
                 <span>
                   <span className="ov-ub">{UB}</span> {UB_TEXT}
                 </span>
+                {data.pairs.some((p) => p.unreviewed_criteria) && (
+                  <span>
+                    <span className="ov-unrev">{UNREVIEWED}</span> {UNREVIEWED_TEXT}
+                  </span>
+                )}
                 {data.pairs.some((p) => !p.overlap_informative) && <span>— no criteria encoded for a trial: overlap not informative</span>}
               </div>
             </section>
           )}
 
-          {current && (
-            <PairDetail o={current} tIdx={tIdx} sites={data.sites} asOf={data.as_of} regionLabel={data.region_label} worldwide={worldwide} />
-          )}
+          {current && <PairDetail o={current} tIdx={tIdx} sites={data.sites} data={data} worldwide={worldwide} />}
 
           {trials.length > 0 && (
             <section className="card" aria-label="Trials">
-              <h2>Trials recruiting on {data.as_of}</h2>
+              <h2>
+                Trials recruiting on {data.as_of} {registry ? '(CT.gov status)' : '(estimated)'}
+              </h2>
               <p className="small muted" style={{ marginTop: 0 }}>
-                Other sponsors' trials: distinct lung trials of other lead sponsors (any sponsor class, any phase) inside their
-                estimated enrollment windows on this date at the trial's identifiable registered sites. A count, not an effect.
+                Other sponsors' trials: distinct lung trials of other lead sponsors (any sponsor class, any phase){' '}
+                {registry ? 'listed as recruiting at the snapshot' : 'recruiting on this date by the same rule'} at the trial's
+                identifiable registered sites. A count, not an effect.
               </p>
               <ul className="ov-tlist">
                 {trials.map((t) => (
@@ -381,6 +557,7 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
                     key={t.nct_id}
                     t={t}
                     sites={data.sites}
+                    snapshot={data.snapshot_date}
                     worldwide={worldwide}
                     open={openTrial === t.nct_id}
                     onToggle={() => setOpenTrial((c) => (c === t.nct_id ? null : t.nct_id))}
@@ -394,24 +571,30 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
             <h2>Where these numbers come from</h2>
             <ul className="ov-prov">
               <li>
-                <strong>Recruiting on a date</strong> means inside the trial's estimated enrollment window: from its registered start
-                to start + 65% of the time to its registered primary completion (the 65% is an assumption). The window end is
-                labelled “estimated” wherever it appears. Withdrawn trials are excluded.
+                <strong>Recruiting on a date.</strong> On the registry snapshot ({data.snapshot_date}, the ClinicalTrials.gov
+                download) it is the CT.gov status: Recruiting or Enrolling by invitation. An earlier date is estimated: from the
+                registered start to start + 65% of the time to the registered primary completion (the 65% is an assumption),
+                bounded by the status at the snapshot. A trial still recruiting then counts from its start; any other status means
+                enrollment closed by the snapshot; withdrawn and not-yet-recruiting trials never count. Later dates are refused:
+                nothing is projected.
               </li>
               <li>
-                <strong>Sites</strong> are the lists registered on ClinicalTrials.gov today (site activation dates are not public).
-                Sites withdrawn from a trial are dropped. Sites registered anonymously (“Research Site”) are collapsed to one
-                pseudo-site per city and are never counted as shared.
+                <strong>Sites</strong> are the lists registered on ClinicalTrials.gov at the snapshot (site activation dates are
+                not public). Sites withdrawn from a trial are dropped. Sites registered anonymously (“Research Site”) are collapsed
+                to one pseudo-site per city and are never counted as shared.
               </li>
               <li>
                 <strong>Eligibility overlap</strong> is computed on a synthetic population of {int(data.population.n)} advanced-NSCLC
                 patients whose prevalences are rounded modeling assumptions, not patient data. Criteria are hand-encoded from each
-                trial's CT.gov text where available (reviewed), otherwise taken from a rule-based parse (unreviewed).
+                trial's CT.gov text where available (reviewed), otherwise taken from a rule-based parse (unreviewed,{' '}
+                <span className="ov-unrev">{UNREVIEWED}</span>). The criteria diff matches criteria by the patient attribute they
+                restrict, not by name.
               </li>
               <li>
                 <span className="ov-ub">{UB}</span> <strong>Upper bound</strong>: a required biomarker or cohort restriction the
                 synthetic population can't represent (or another restriction it does not model), so the overlap shown is a ceiling
-                on the modeled populations, not a measurement.
+                on the modeled populations, not a measurement. The rule-based parse never sets this flag, so an unflagged{' '}
+                <span className="ov-unrev">{UNREVIEWED}</span> pair is unreviewed, not verified.
               </li>
               <li>No speedup, time-to-fill or enrollment rate is shown or implied: this view counts and compares.</li>
             </ul>
@@ -420,6 +603,12 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
       )}
     </div>
   )
+}
+
+function summarizeStatuses(ts: OverlapTrial[]): string {
+  const n = new Map<string, number>()
+  ts.forEach((t) => n.set(t.status_now, (n.get(t.status_now) ?? 0) + 1))
+  return [...n.entries()].map(([s, k]) => `${statusLabel(s)}: ${int(k)}`).join(', ')
 }
 
 function defaultPair(d: OverlapAudit): Pair | null {
@@ -441,13 +630,32 @@ function pctPair(o: Oriented): string {
   return o.pair.overlap_informative ? `${pct(o.o_ab)} / ${pct(o.o_ba)}` : '—'
 }
 
+function monthsText(p: OverlapPair): string {
+  return `${num(p.months_both_recruiting_estimated, 1)} months both recruiting (estimated, through the snapshot at most)`
+}
+
 function cellText(o: Oriented): string {
   const s = `${o.a} × ${o.b}: ${sitesLabel(o.pair.shared_sites)} shared. `
   const ov = o.pair.overlap_informative
     ? `${pct(o.o_ab)} of ${o.a}'s eligible patients also qualify for ${o.b}; ${pct(o.o_ba)} of ${o.b}'s also qualify for ${o.a}. `
     : 'Overlap not informative (no criteria encoded for one trial). '
-  const m = `Both recruiting about ${num(o.pair.months_both_recruiting_estimated, 1)} months (estimated).`
-  return s + ov + m + (o.pair.upper_bound ? ` ${UB} ${UB_TEXT}.` : '')
+  return (
+    s +
+    ov +
+    monthsText(o.pair) +
+    '.' +
+    (o.pair.upper_bound ? ` ${UB} ${UB_TEXT}.` : '') +
+    (o.pair.unreviewed_criteria ? ` ${UNREVIEWED} ${UNREVIEWED_TEXT}.` : '')
+  )
+}
+
+function Marks({ p }: { p: OverlapPair }) {
+  return (
+    <>
+      {p.upper_bound && <span className="ov-ub">{UB}</span>}
+      {p.unreviewed_criteria && <span className="ov-unrev">{UNREVIEWED}</span>}
+    </>
+  )
 }
 
 function Matrix({
@@ -485,7 +693,10 @@ function Matrix({
               <th key={t.nct_id} scope="col" className="ov-colh">
                 <span className="ov-id">{trialShort(t)}</span>
                 <span className="ov-sub">{phaseLabel(t.phases)}</span>
-                <span className="ov-sub">{t.eligibility_source}</span>
+                <span className="ov-sub">
+                  {t.eligibility_source}
+                  {t.eligibility_source !== 'hand-encoded' && <span className="ov-unrev">{UNREVIEWED}</span>}
+                </span>
               </th>
             ))}
           </tr>
@@ -497,6 +708,11 @@ function Matrix({
                 <span className="ov-id">
                   {trialShort(r)}
                   {r.upper_bound && <span className="ov-ub" title={UB_TEXT}>{UB}</span>}
+                  {r.eligibility_source !== 'hand-encoded' && (
+                    <span className="ov-unrev" title="rule-based parse (not reviewed)">
+                      {UNREVIEWED}
+                    </span>
+                  )}
                 </span>
                 <span className="ov-title">{r.title}</span>
               </th>
@@ -526,7 +742,7 @@ function Matrix({
                       </span>
                       <span className="ov-cell-pcts">
                         {pctPair(o)}
-                        {o.pair.upper_bound && <span className="ov-ub">{UB}</span>}
+                        <Marks p={o.pair} />
                       </span>
                     </button>
                   </td>
@@ -593,14 +809,18 @@ function PairList({
                 <td className="num nowrap">{num(p.months_both_recruiting_estimated, 1)} mo</td>
                 <td>
                   {p.upper_bound && <Badge tone="warn" title={UB_TEXT}>{UB} upper bound</Badge>}{' '}
-                  {p.open_ended && <Badge tone="neutral">open-ended window</Badge>}
+                  {p.unreviewed_criteria && <Badge tone="neutral" title={UNREVIEWED_TEXT}>{UNREVIEWED} unreviewed parse</Badge>}{' '}
+                  {p.sparse_criteria.length > 0 && <Badge tone="neutral">few criteria</Badge>}
                 </td>
               </tr>
             )
           })}
         </tbody>
       </table>
-      <p className="small muted">P → Q: share of P's eligible synthetic patients who also qualify for Q.</p>
+      <p className="small muted">
+        P → Q: share of P's eligible synthetic patients who also qualify for Q. Both recruiting: estimated, never past the
+        snapshot.
+      </p>
     </div>
   )
 }
@@ -612,12 +832,27 @@ function SourceBadge({ t }: { t: OverlapTrial }) {
     </Badge>
   ) : (
     <Badge tone="neutral" title="Rule-based parse of the CT.gov eligibility text; not reviewed">
-      rule-based parse
+      {UNREVIEWED} rule-based parse
     </Badge>
   )
 }
 
-function TrialCard({ t, worldwide }: { t: OverlapTrial; worldwide: boolean }) {
+function StatusNote({ t, snapshot }: { t: OverlapTrial; snapshot: string }) {
+  return (
+    <>
+      <span className={t.recruiting_at_snapshot ? '' : 'ov-closed'}>{statusLabel(t.status_now)}</span>
+      {t.status_overrides_estimate && (
+        <span className="muted">
+          {t.recruiting_at_snapshot
+            ? ' · still recruiting after the estimated window end'
+            : ` · enrollment closed by ${snapshot}, before the estimated window end`}
+        </span>
+      )}
+    </>
+  )
+}
+
+function TrialCard({ t, worldwide, snapshot }: { t: OverlapTrial; worldwide: boolean; snapshot: string }) {
   return (
     <div className="ov-tcard">
       <div className="ov-tcard-head">
@@ -639,9 +874,10 @@ function TrialCard({ t, worldwide }: { t: OverlapTrial; worldwide: boolean }) {
         <dt>Start</dt>
         <dd>{t.start_date}</dd>
         <dt>Estimated window end</dt>
+        <dd>{t.estimated_window_end ?? <span className="muted">none (no completion date registered)</span>}</dd>
+        <dt>CT.gov status at {snapshot}</dt>
         <dd>
-          {t.estimated_window_end}
-          {t.open_ended && <span className="muted"> (no completion date registered: open-ended)</span>}
+          <StatusNote t={t} snapshot={snapshot} />
         </dd>
         <dt>Registered sites</dt>
         <dd>
@@ -650,6 +886,11 @@ function TrialCard({ t, worldwide }: { t: OverlapTrial; worldwide: boolean }) {
         </dd>
         <dt>Design</dt>
         <dd>{t.design ? DESIGN_LABEL[t.design] ?? t.design : <span className="muted">not hand-reviewed</span>}</dd>
+        <dt>Encoded criteria</dt>
+        <dd>
+          {int(t.criteria.length)}
+          {t.sparse_criteria && <span className="muted"> (few: most synthetic patients pass them)</span>}
+        </dd>
         <dt>Eligible share</dt>
         <dd>{pct(t.eligible_share, 1)} of the synthetic population</dd>
       </dl>
@@ -658,22 +899,63 @@ function TrialCard({ t, worldwide }: { t: OverlapTrial; worldwide: boolean }) {
   )
 }
 
-function CritItem({ c, other, otherId, differs }: { c: Criterion; other?: Criterion; otherId?: string; differs?: boolean }) {
-  const src = stripHand(c.source)
-  const otherSrc = other ? stripHand(other.source) : null
+function CritItem({ c }: { c: Criterion }) {
   return (
     <li className="ov-crit">
       <div className="ov-crit-head">
         <span>{c.label}</span>
         <Badge tone={c.kind === 'inclusion' ? 'info' : 'neutral'}>{c.kind}</Badge>
-        {differs && <Badge tone="warn">differs in value</Badge>}
       </div>
-      <p className="source">{src}</p>
-      {other && otherSrc && otherSrc !== src && (
+      <p className="source">{stripHand(c.source)}</p>
+    </li>
+  )
+}
+
+function SharedItem({
+  g,
+  a,
+  b,
+  ca,
+  cb,
+}: {
+  g: SharedOriented
+  a: string
+  b: string
+  ca: Map<string, Criterion>
+  cb: Map<string, Criterion>
+}) {
+  const as = g.a.map((id) => ca.get(id)).filter((c): c is Criterion => !!c)
+  const bs = g.b.map((id) => cb.get(id)).filter((c): c is Criterion => !!c)
+  const text = (cs: Criterion[]) => cs.map((c) => stripHand(c.source)).join(' ')
+  const labels = (cs: Criterion[]) => cs.map((c) => c.label).join('; ')
+  const oneLine = g.same && text(as) === text(bs) && labels(as) === labels(bs)
+  return (
+    <li className="ov-crit">
+      <div className="ov-crit-head">
+        <span>{conceptLabel(g.concept)}</span>
+        {g.same ? (
+          <Badge tone="neutral" title="Both trials' criteria on this select the same synthetic patients">
+            same
+          </Badge>
+        ) : (
+          <Badge tone="warn" title="Both trials restrict this, differently">
+            differs
+          </Badge>
+        )}
+      </div>
+      {oneLine ? (
         <p className="source">
-          <b>{otherId}:</b> {other.label !== c.label ? `${other.label} · ` : ''}
-          {otherSrc}
+          {labels(as)} · {text(as)}
         </p>
+      ) : (
+        <>
+          <p className="source">
+            <b>{a}:</b> {labels(as)} · {text(as)}
+          </p>
+          <p className="source">
+            <b>{b}:</b> {labels(bs)} · {text(bs)}
+          </p>
+        </>
       )}
     </li>
   )
@@ -683,15 +965,13 @@ function PairDetail({
   o,
   tIdx,
   sites,
-  asOf,
-  regionLabel,
+  data,
   worldwide,
 }: {
   o: Oriented
   tIdx: Map<string, OverlapTrial>
   sites: Record<string, OverlapSite>
-  asOf: string
-  regionLabel: string
+  data: OverlapAudit
   worldwide: boolean
 }) {
   const A = tIdx.get(o.a)
@@ -699,8 +979,10 @@ function PairDetail({
   if (!A || !B) return null
   const ca = new Map(A.criteria.map((c) => [c.id, c]))
   const cb = new Map(B.criteria.map((c) => [c.id, c]))
-  const differs = new Set(o.pair.criteria_diff.shared_differs)
   const p = o.pair
+  const snap = data.snapshot_date
+  const unrev = [A, B].filter((t) => t.eligibility_source !== 'hand-encoded').map((t) => t.nct_id)
+  const sparse = [A, B].filter((t) => t.sparse_criteria)
   return (
     <section className="card ov-detail" aria-label="Pair detail">
       <div className="section-head" style={{ marginBottom: 0 }}>
@@ -712,18 +994,26 @@ function PairDetail({
             <Badge tone="warn" title={UB_TEXT}>
               {UB} upper bound
             </Badge>
+          )}{' '}
+          {p.unreviewed_criteria && (
+            <Badge tone="neutral" title={UNREVIEWED_TEXT}>
+              {UNREVIEWED} unreviewed parse
+            </Badge>
           )}
         </div>
       </div>
 
       <div className="ov-two">
-        <TrialCard t={A} worldwide={worldwide} />
-        <TrialCard t={B} worldwide={worldwide} />
+        <TrialCard t={A} worldwide={worldwide} snapshot={snap} />
+        <TrialCard t={B} worldwide={worldwide} snapshot={snap} />
       </div>
 
       <div className="ov-facts">
         <div className="ov-fact">
-          <div className="ov-fact-n">{p.overlap_informative ? pct(o.o_ab) : '—'}{p.upper_bound && <span className="ov-ub">{UB}</span>}</div>
+          <div className="ov-fact-n">
+            {p.overlap_informative ? pct(o.o_ab) : '—'}
+            <Marks p={p} />
+          </div>
           <p>
             {p.overlap_informative
               ? `${pct(o.o_ab)} of ${o.a}'s eligible patients also qualify for ${o.b}`
@@ -731,7 +1021,10 @@ function PairDetail({
           </p>
         </div>
         <div className="ov-fact">
-          <div className="ov-fact-n">{p.overlap_informative ? pct(o.o_ba) : '—'}{p.upper_bound && <span className="ov-ub">{UB}</span>}</div>
+          <div className="ov-fact-n">
+            {p.overlap_informative ? pct(o.o_ba) : '—'}
+            <Marks p={p} />
+          </div>
           <p>
             {p.overlap_informative
               ? `${pct(o.o_ba)} of ${o.b}'s eligible patients also qualify for ${o.a}`
@@ -741,7 +1034,7 @@ function PairDetail({
         <div className="ov-fact">
           <div className="ov-fact-n">{int(p.shared_sites)}</div>
           <p>
-            shared registered sites ({worldwide ? 'worldwide' : regionLabel})
+            shared registered sites ({worldwide ? 'worldwide' : data.region_label})
             {p.anonymized_same_city > 0 &&
               ` · plus ${int(p.anonymized_same_city)} ${p.anonymized_same_city === 1 ? 'city' : 'cities'} where both list an anonymized site (facility unknown, not counted)`}
           </p>
@@ -751,9 +1044,9 @@ function PairDetail({
             {num(p.months_both_recruiting_estimated, 1)} <span className="unit">months</span>
           </div>
           <p>
-            both recruiting (estimated windows)
+            both recruiting (estimated windows, cut at the {snap} snapshot)
             {p.both_recruiting_from && p.both_recruiting_to ? `: ${p.both_recruiting_from} to ${p.both_recruiting_to}` : ''}
-            {p.open_ended ? ' · one window is open-ended' : ''}
+            {p.both_recruiting_at_snapshot ? ' · both still recruiting at the snapshot' : ''}
           </p>
         </div>
       </div>
@@ -766,44 +1059,62 @@ function PairDetail({
             .join(' · ')}
         </Caveat>
       )}
+      {(unrev.length > 0 || sparse.length > 0) && (
+        <Caveat>
+          {unrev.length > 0 && (
+            <>
+              {UNREVIEWED} {unrev.join(' and ')} {unrev.length === 1 ? 'uses' : 'use'} the rule-based parse of the CT.gov text,
+              which is not reviewed and can miss restrictions (that inflates overlap; the parse never sets the upper-bound
+              flag).{' '}
+            </>
+          )}
+          {sparse.map((t) => (
+            <span key={t.nct_id}>
+              {t.nct_id} has only {int(t.criteria.length)} encoded {t.criteria.length === 1 ? 'criterion' : 'criteria'} (
+              {pct(t.eligible_share)} of the synthetic population pass), so a high share of the other trial's patients
+              “also qualifying” for it says little.{' '}
+            </span>
+          ))}
+        </Caveat>
+      )}
 
       <div>
         <h3>Criteria diff</h3>
         <p className="small muted" style={{ marginTop: 0 }}>
-          Matched on criterion id. Source sentences from each trial's CT.gov eligibility text ({A.eligibility_source} for {o.a},{' '}
-          {B.eligibility_source} for {o.b}).
+          Matched by the patient attribute each criterion restricts (driver-mutation requirements count as one), not by name:
+          the encoders name the same idea differently. “Same” means both select the same synthetic patients. Source sentences
+          from each trial's CT.gov eligibility text ({A.eligibility_source} for {o.a}, {B.eligibility_source} for {o.b}).
         </p>
         <div className="ov-diff">
           <div className="ov-diff-col">
             <h4>Only {o.a} ({o.onlyA.length})</h4>
             {o.onlyA.length ? (
-              <ul className="ov-crits">
-                {o.onlyA.map((id) => ca.get(id) && <CritItem key={id} c={ca.get(id)!} />)}
-              </ul>
+              <ul className="ov-crits">{o.onlyA.map((id) => ca.get(id) && <CritItem key={id} c={ca.get(id)!} />)}</ul>
             ) : (
-              <p className="ov-empty">None: every criterion of {o.a} is also in {o.b}.</p>
+              <p className="ov-empty">None: {o.b} restricts everything {o.a} does.</p>
             )}
           </div>
           <div className="ov-diff-col">
-            <h4>Both ({p.criteria_diff.shared.length})</h4>
-            {p.criteria_diff.shared.length ? (
+            <h4>
+              Both restrict ({o.shared.length}
+              {o.shared.some((g) => !g.same) ? `, ${o.shared.filter((g) => !g.same).length} differently` : ''})
+            </h4>
+            {o.shared.length ? (
               <ul className="ov-crits">
-                {p.criteria_diff.shared.map(
-                  (id) => ca.get(id) && <CritItem key={id} c={ca.get(id)!} other={cb.get(id)} otherId={o.b} differs={differs.has(id)} />,
-                )}
+                {o.shared.map((g) => (
+                  <SharedItem key={g.concept} g={g} a={o.a} b={o.b} ca={ca} cb={cb} />
+                ))}
               </ul>
             ) : (
-              <p className="ov-empty">No criteria in common.</p>
+              <p className="ov-empty">No restriction in common.</p>
             )}
           </div>
           <div className="ov-diff-col">
             <h4>Only {o.b} ({o.onlyB.length})</h4>
             {o.onlyB.length ? (
-              <ul className="ov-crits">
-                {o.onlyB.map((id) => cb.get(id) && <CritItem key={id} c={cb.get(id)!} />)}
-              </ul>
+              <ul className="ov-crits">{o.onlyB.map((id) => cb.get(id) && <CritItem key={id} c={cb.get(id)!} />)}</ul>
             ) : (
-              <p className="ov-empty">None: every criterion of {o.b} is also in {o.a}.</p>
+              <p className="ov-empty">None: {o.a} restricts everything {o.b} does.</p>
             )}
           </div>
         </div>
@@ -812,23 +1123,23 @@ function PairDetail({
       <div>
         <h3>Shared sites ({int(p.shared_sites)})</h3>
         {p.shared_site_ids.length ? (
-          <SiteTable ids={p.shared_site_ids} sites={sites} asOf={asOf} worldwide={worldwide} />
+          <SiteTable ids={p.shared_site_ids} sites={sites} dateLabel={data.as_of} worldwide={worldwide} />
         ) : (
-          <p className="ov-empty">No identifiable registered site in common{worldwide ? '' : ` in ${regionLabel}`}.</p>
+          <p className="ov-empty">No identifiable registered site in common{worldwide ? '' : ` in ${data.region_label}`}.</p>
         )}
       </div>
     </section>
   )
 }
 
-function SiteTable({ ids, sites, asOf, worldwide }: { ids: string[]; sites: Record<string, OverlapSite>; asOf: string; worldwide: boolean }) {
+function SiteTable({ ids, sites, dateLabel, worldwide }: { ids: string[]; sites: Record<string, OverlapSite>; dateLabel: string; worldwide: boolean }) {
   return (
     <div className="table-scroll">
       <table className="tbl tbl-compact ov-sites-tbl">
         <thead>
           <tr>
             <th>Site</th>
-            <th className="num ov-count-col">Other sponsors' lung trials recruiting here on {asOf}</th>
+            <th className="num ov-count-col">Other sponsors' lung trials recruiting here on {dateLabel}</th>
           </tr>
         </thead>
         <tbody>
@@ -855,12 +1166,14 @@ function SiteTable({ ids, sites, asOf, worldwide }: { ids: string[]; sites: Reco
 function TrialRow({
   t,
   sites,
+  snapshot,
   worldwide,
   open,
   onToggle,
 }: {
   t: OverlapTrial
   sites: Record<string, OverlapSite>
+  snapshot: string
   worldwide: boolean
   open: boolean
   onToggle: () => void
@@ -889,8 +1202,10 @@ function TrialRow({
           {phaseLabel(t.phases)} · started {t.start_date}
         </div>
         <div>
-          Estimated window end {t.estimated_window_end}
-          {t.open_ended && <span className="muted"> (open-ended)</span>}
+          Estimated window end {t.estimated_window_end ?? <span className="muted">none (no completion date registered)</span>}
+        </div>
+        <div>
+          CT.gov status at {snapshot}: <StatusNote t={t} snapshot={snapshot} />
         </div>
         <div>
           {sitesLabel(t.n_sites)} registered {worldwide ? 'worldwide' : 'in region'}
@@ -910,7 +1225,7 @@ function TrialRow({
       </div>
       {open && (
         <div className="ov-trow-sites">
-          <SiteTable ids={t.site_ids} sites={sites} asOf="this date" worldwide={worldwide} />
+          <SiteTable ids={t.site_ids} sites={sites} dateLabel="this date" worldwide={worldwide} />
         </div>
       )}
     </li>

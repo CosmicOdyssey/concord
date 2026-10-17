@@ -137,6 +137,15 @@
   color: var(--warn-ink);
   margin-left: 0.1rem;
 }
+/* Rule-based parse (unreviewed criteria): a second, quieter mark next to the upper-bound dagger. */
+.ov-unrev {
+  font-weight: 700;
+  color: var(--muted);
+  margin-left: 0.1rem;
+}
+.ov-closed {
+  font-weight: 600;
+}
 .ov-sel .ov-cellbtn {
   box-shadow: inset 0 0 0 2px var(--text);
 }
