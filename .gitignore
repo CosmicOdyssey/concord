@@ -22,3 +22,5 @@ Thumbs.db
 
 # Built from CMS files by scripts/pipeline.sh
 data/ratecard.json
+# Per-agent data copies for parallel analyses
+data/work/

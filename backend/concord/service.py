@@ -88,6 +88,8 @@ class Params:
     activation_lag: float = 0.0
     overlap_scale: float = 1.0
     capacity_scale: float = 1.0
+    capacity_add: int = 0  # k_s = round(peak x capacity_scale) + capacity_add
+    capacity_unlimited: bool = False  # capacity never binds
     max_trials: int | None = None
     time_limit: float = 6.0
     calibrate: bool = True  # de-congest busy sites so the registered allocation reproduces history
@@ -148,7 +150,10 @@ def congestion_beta(con: sqlite3.Connection) -> dict:
             "p": r["p"], "source": "within-site regression, concord.analysis.congestion"}
 
 
-def build(params: Params) -> Built:
+def build(params: Params, rates: dict | None = None, movable: np.ndarray | None = None) -> Built:
+    """rates: a table from recruitment.fit_rate_table to use instead of the full-history rates in
+    the DB (choose with one half of history, score with the other). movable: fix which trials may
+    move (otherwise: not flagged, and the sponsor's trials in portfolio mode)."""
     con = _con()
     states = REGIONS[params.region]
     region_sql = "s.country='United States'" + (f" AND s.state IN ({','.join('?' * len(states))})" if states else "")
@@ -213,7 +218,13 @@ def build(params: Params) -> Built:
     level_bias = (bt.get("by_model", {}).get(variant, {}).get("industry_p23", {})
                   .get("median_signed_log_bias", 0.0)) if params.level else 0.0
     col = "lam_mean" if params.low_history == "prior" else "lam_eff"
-    lam = np.array([r[col] for r in srows]) * np.exp(level_bias)
+    if rates is None:
+        lam = np.array([r[col] for r in srows]) * np.exp(level_bias)
+    else:
+        dflt = rates["unseen_mean"] if col == "lam_mean" else rates["unseen"]
+        lam = np.array([rates[col].get(r["site_id"], dflt) for r in srows]) * np.exp(level_bias)
+    # How many lung trials a site has run (structural, not an outcome): defines "experienced" for the
+    # rate cap and low-history for the exclude rule, identically whichever rates are in use.
     n_hist = np.array([r["n_hist"] for r in srows])
     low = n_hist < LOW_HISTORY_N
     anonymized = np.array([bool(r["anonymized"]) for r in srows])
@@ -244,7 +255,9 @@ def build(params: Params) -> Built:
     n_region = x_actual.sum(axis=0)
     N = np.array([max(1.0, (r["enrollment"] or 0) * n / max(r["n_sites"], 1)) for r, n in zip(trows, n_region)])
     k = np.maximum.reduce([np.array([r["k_hist"] for r in srows]), x_actual.sum(axis=1), np.ones(len(srows), int)])
-    k = np.maximum(1, np.round(k * params.capacity_scale)).astype(int)
+    k = np.maximum(1, np.round(k * params.capacity_scale)).astype(int) + params.capacity_add
+    if params.capacity_unlimited:
+        k = np.full(len(srows), len(trial_ids) + 1)
 
     inst = core.Instance(lam=lam, a=np.full(len(srows), params.activation_lag), k=k, f=f_rel, N=N,
                          n_max=np.maximum(n_region, 1), w=np.ones(len(trial_ids)), o=o, feasible=feasible,
@@ -254,9 +267,13 @@ def build(params: Params) -> Built:
     # alone is not a flag: biomarker-selected trials legitimately have one, and f is clipped anyway.)
     T0 = core.evaluate(inst, x_actual)
     flagged = T0 > PLAUSIBLE_T_MONTHS
-    movable = ~flagged
-    if params.sponsor:
-        movable &= np.array([params.sponsor.lower() in (r["sponsor"] or "").lower() for r in trows])
+    if movable is not None:
+        movable = np.asarray(movable, dtype=bool).copy()
+        assert movable.shape == (len(trial_ids),)
+    else:
+        movable = ~flagged
+        if params.sponsor:
+            movable &= np.array([params.sponsor.lower() in (r["sponsor"] or "").lower() for r in trows])
     inst = inst.replace(movable=movable, w=movable.astype(float))
 
     trials = [{
@@ -279,6 +296,9 @@ def build(params: Params) -> Built:
                    "low_history": params.low_history, "low_history_n": LOW_HISTORY_N,
                    "universe": params.universe, "rate_cap_q": params.rate_cap_q,
                    "candidate_sites": int(feasible[:, 0].sum()),
+                   "rates_source": rates["label"] if rates else "full history (DB)",
+                   "capacity": {"scale": params.capacity_scale, "add": params.capacity_add,
+                                "unlimited": params.capacity_unlimited},
                    "activation_lag_months": params.activation_lag, "f_clip": list(params.f_clip),
                    "plausible_T_cap_months": PLAUSIBLE_T_MONTHS}
     con.close()
@@ -320,9 +340,10 @@ def compare(base: np.ndarray, new: np.ndarray, mask: np.ndarray) -> dict:
 _cache: dict[tuple, dict] = {}
 
 
-def solve(params: Params, b: Built | None = None) -> dict:
-    """All four allocations for one parameter setting (cached)."""
-    if params.key() in _cache:
+def solve(params: Params, b: Built | None = None, cache: bool = True) -> dict:
+    """All allocations for one parameter setting. Cached by params unless cache=False, which
+    callers must use when b was built with non-default rates or movable sets."""
+    if cache and params.key() in _cache:
         return _cache[params.key()]
     b = b or build(params)
     inst = b.inst
@@ -341,8 +362,29 @@ def solve(params: Params, b: Built | None = None) -> dict:
                              "coord_nl_indep": x_nli},
            "solver": {"coord_free": st_free, "coord": st_nl, "coord_nl_indep": st_nli}}
     out["T"] = {k: core.evaluate(inst, x) for k, x in out["x"].items()}
-    _cache[params.key()] = out
+    if cache:
+        _cache[params.key()] = out
     return out
+
+
+def rescore(b_score: Built, X: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+    """T for each allocation in X under another Built of the same instance (same trials, sites and
+    order; typically the same params with rates fit on other trials)."""
+    inst = b_score.inst
+    for x in X.values():
+        assert x.shape == (inst.S, inst.P)
+    return {k: core.evaluate(inst, x) for k, x in X.items()}
+
+
+def comparisons(T: dict[str, np.ndarray], mv: np.ndarray) -> dict:
+    """The standard comparison blocks over movable trials (same as /api/clear summary)."""
+    return {
+        "coord_vs_actual": compare(T["actual"], T["coord"], mv),
+        "coordination_no_loser_vs_indep": compare(T["indep"], T["coord_nl_indep"], mv),
+        "coord_free_vs_actual": compare(T["actual"], T["coord_free"], mv),
+        "coord_free_vs_indep": compare(T["indep"], T["coord_free"], mv),
+        "indep_vs_actual": compare(T["actual"], T["indep"], mv),
+    }
 
 
 def clear(params: Params) -> dict:
@@ -358,11 +400,7 @@ def clear(params: Params) -> dict:
     bg = ~mv
     summary = {
         "headline": "coord vs actual, no trial worse off",
-        "coord_vs_actual": head,
-        "coordination_no_loser_vs_indep": compare(T["indep"], T["coord_nl_indep"], mv),
-        "coord_free_vs_actual": compare(T["actual"], T["coord_free"], mv),
-        "coord_free_vs_indep": compare(T["indep"], T["coord_free"], mv),
-        "indep_vs_actual": compare(T["actual"], T["indep"], mv),
+        **comparisons(T, mv),
         "background_trials": int(bg.sum()),
         "background_worse_under_coord_free": int((T["coord_free"][bg] > T["actual"][bg] + 1e-6).sum()),
         "site_counts": {k: {"max_excess_over_registered": int((X[k][:, mv].sum(axis=0) - n_reg[mv]).max(initial=0)),

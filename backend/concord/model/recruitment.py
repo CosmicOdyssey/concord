@@ -160,6 +160,76 @@ def fit(h: History, iters: int = 3) -> SiteRates:
     return SiteRates(h.site_ids, shape, rate, alpha, beta)
 
 
+def subset_history(h: History, keep) -> History:
+    """History restricted to trials for which keep(nct_id) is True. Site indexing is unchanged, so
+    sites with no trials in the subset are simply unseen (no exposure)."""
+    idx = [i for i, t in enumerate(h.trial_ids) if keep(t)]
+    remap = {old: new for new, old in enumerate(idx)}
+    links = [(remap[t], s, e) for t, s, e in h.links if t in remap]
+    return History([h.trial_ids[i] for i in idx], h.N[idx], h.tau[idx], [h.start[i] for i in idx],
+                   [h.end[i] for i in idx], h.f_rel[idx], links, h.site_ids)
+
+
+def fit_rate_table(con: sqlite3.Connection, keep=None, label: str = "full history") -> dict:
+    """Fit site rates on the history trials for which keep(nct_id) is True (all if None), with the
+    same estimator as the build (effective_rates). Used to choose allocations with one set of
+    trials and score them with another (concord.service.build(rates=...))."""
+    hist = load_history(con)
+    if keep is not None:
+        hist = subset_history(hist, keep)
+    rates = fit(hist)
+    n_hist = np.bincount([l[1] for l in hist.links], minlength=len(hist.site_ids))
+    lam_eff, unseen = effective_rates(rates, n_hist)
+    return {"label": label, "n_trials": len(hist.N),
+            "lam_eff": dict(zip(hist.site_ids, map(float, lam_eff))),
+            "lam_mean": dict(zip(hist.site_ids, map(float, rates.mean))),
+            "n_hist": dict(zip(hist.site_ids, map(int, n_hist))),
+            "unseen": float(unseen), "unseen_mean": float(rates.alpha / rates.beta),
+            "prior": {"alpha": rates.alpha, "beta": rates.beta}}
+
+
+def split_alternating(con: sqlite3.Connection) -> dict[str, str]:
+    """Two halves of the fit history such that sites have data in both. Trials are taken in start
+    order; each goes to the half its sites have seen less of (sum over its sites of count_A -
+    count_B), ties alternating. Single-site trials therefore alternate exactly within a site;
+    multi-site trials balance their sites in aggregate. Fixed before any holdout result was seen."""
+    hist = load_history(con)
+    sites_of: dict[int, list[int]] = {}
+    for ti, si, _ in hist.links:
+        sites_of.setdefault(ti, []).append(si)
+    order = sorted(range(len(hist.trial_ids)), key=lambda i: (hist.start[i], hist.trial_ids[i]))
+    bal = np.zeros(len(hist.site_ids))
+    out = {}
+    for k, i in enumerate(order):
+        ss = sites_of.get(i, [])
+        score = float(bal[ss].sum()) if ss else 0.0
+        half = "B" if score > 0 else "A" if score < 0 else ("A" if k % 2 == 0 else "B")
+        out[hist.trial_ids[i]] = half
+        if ss:
+            bal[ss] += 1.0 if half == "A" else -1.0
+    return out
+
+
+def split_time(con: sqlite3.Connection) -> dict[str, str]:
+    """A = fit-history trials that started before the median start date, B = the rest."""
+    hist = load_history(con)
+    cut = sorted(hist.start)[len(hist.start) // 2]
+    return {t: ("A" if s < cut else "B") for t, s in zip(hist.trial_ids, hist.start)}
+
+
+def split_coverage(con: sqlite3.Connection, split: dict[str, str], site_ids=None) -> dict:
+    """How many sites (optionally restricted to site_ids) have fit trials in both halves."""
+    hist = load_history(con)
+    seen: dict[str, set] = {}
+    for ti, si, _ in hist.links:
+        seen.setdefault(hist.site_ids[si], set()).add(split.get(hist.trial_ids[ti]))
+    keys = list(site_ids) if site_ids is not None else list(seen)
+    with_hist = [s for s in keys if s in seen]
+    both = [s for s in with_hist if {"A", "B"} <= seen[s]]
+    return {"sites": len(keys), "sites_with_history": len(with_hist), "sites_in_both_halves": len(both),
+            "trials_A": sum(v == "A" for v in split.values()), "trials_B": sum(v == "B" for v in split.values())}
+
+
 def predict_months(N: float, lam_sum: float) -> float:
     return N / lam_sum if lam_sum > 0 else float("inf")
 
