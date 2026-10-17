@@ -189,3 +189,36 @@
     background: var(--surface-2);
   }
 }
+/* phones: the compact summary above the full table, and a narrower step column so a site column shows in view */
+.lb-phone-summary {
+  display: none;
+}
+@media (max-width: 480px) {
+  .lb-phone-summary {
+    display: block;
+    margin-bottom: var(--sp-3);
+  }
+  .lb-full tbody th,
+  .lb-full thead th.lb-step {
+    min-width: 7rem;
+    width: 7.5rem;
+    max-width: 7.5rem;
+  }
+  .lb-full thead th.num {
+    white-space: normal;
+    min-width: 5.5rem;
+  }
+  .lb-full .lb-units .lb-src {
+    max-width: none;
+  }
+}
+@media (max-width: 480px) {
+  .lb-full thead th.lb-units {
+    min-width: 7.5rem;
+  }
+}
+/* a hover card holding a breakdown can be taller than a phone screen: it scrolls inside instead of running off it */
+.hc-card:has(.lb) {
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+}

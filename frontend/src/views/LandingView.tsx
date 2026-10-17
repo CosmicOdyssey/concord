@@ -749,7 +749,7 @@ export default function LandingView({ focus }: { focus: { id: string | null; n: 
                   Concord reads a protocol's schedule of assessments and marks each item routine care (billable to insurance) or research-only (paid by the sponsor),
                   with the rule and reason shown. It prices physician services from the CMS 2026 physician fee schedule at the site's Medicare locality, lab tests from
                   the CMS 2026 clinical lab fee schedule, and non-procedure fees from a proposed standard schedule, labeled as an assumption. Every term-sheet line keeps
-                  its source; fee-schedule items also show their code, and physician services show the formula, so site and sponsor negotiate from the same numbers.
+                  its source; fee-schedule items also show their code, and physician services show how the price is built, step by step, so site and sponsor negotiate from the same numbers.
                 </p>
               ) : (
                 <p className="lp-body">

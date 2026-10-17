@@ -55,7 +55,17 @@ export function LineBreakdown({
   if (!data.applicable) return <p className="small muted lb-na">{data.reason}</p>
   return (
     <div className={`lb${st.pending ? ' lb-stale' : ''}`} aria-busy={st.pending || undefined}>
-      {full ? <FullTable d={data} scope={editable ? scope : null} /> : <CompactTable d={data} inCard={inCard} />}
+      {full ? (
+        <>
+          {/* phones: the key numbers first, since the full table's site columns start off screen */}
+          <div className="lb-phone-summary">
+            <CompactTable d={data} inCard={inCard} canEdit={!!scope?.mult} />
+          </div>
+          <FullTable d={data} scope={editable ? scope : null} />
+        </>
+      ) : (
+        <CompactTable d={data} inCard={inCard} canEdit={!!scope?.mult} />
+      )}
       {inCard ? <CardNotes d={data} /> : <Notes d={data} full={full} />}
     </div>
   )
@@ -68,7 +78,7 @@ function Tip({ inCard, label, content }: { inCard: boolean; label: string; conte
   return inCard ? null : <InfoTip label={label} content={content} />
 }
 
-function CompactTable({ d, inCard }: { d: LineDetail; inCard: boolean }) {
+function CompactTable({ d, inCard, canEdit }: { d: LineDetail; inCard: boolean; canEdit: boolean }) {
   const sides = sidesOf(d)
   const sponsor = d.payer === 'Sponsor' && !!d.sites.a.sponsor
   const sp = d.sites.a.sponsor
@@ -151,13 +161,16 @@ function CompactTable({ d, inCard }: { d: LineDetail; inCard: boolean }) {
               <th scope="row">
                 Sponsor price{' '}
                 <Tip
-                inCard={inCard}
+                  inCard={inCard}
                   label="How the sponsor price is built (assumptions)"
                   content={
                     <>
                       <span className="hc-title">Sponsor price for this line</span>
                       Medicare rate × {pctText(sp.multiplier)} (the multiplier, an assumption you set) + {pctText(sp.overhead_rate)} overhead (an
-                      assumption you set). Edit both in step 3 or in Detailed view.
+                      assumption you set).{' '}
+                      {canEdit
+                        ? 'Edit both in step 3 or in Detailed view.'
+                        : `Shown at ${pctText(sp.multiplier)} and ${pctText(sp.overhead_rate)} overhead; set both in step 3 of Protocol to terms.`}
                     </>
                   }
                 />
@@ -462,13 +475,19 @@ function Notes({ d, full }: { d: LineDetail; full: boolean }) {
       <div className="lb-notes">
         <p>
           {d.same_note}
-          {a.sponsor && (
-            <>
-              {' '}
-              In Budget, this line adds {usd(a.reconcile.in_research_items + a.reconcile.in_overhead)} (with overhead) to Site A’s{' '}
-              {usd(a.reconcile.per_participant)} per participant.
-            </>
-          )}
+          {a.sponsor &&
+            (a.reconcile.count > 0 ? (
+              <>
+                {' '}
+                In Budget, this line adds {usd(a.reconcile.in_research_items + a.reconcile.in_overhead)} (with overhead) to Site A’s{' '}
+                {usd(a.reconcile.per_participant)} per participant.
+              </>
+            ) : (
+              <>
+                {' '}
+                Priced {a.reconcile.count_text}: each occurrence pays {usd(a.sponsor.sponsor_price)} for this line at Site A, overhead included.
+              </>
+            ))}
         </p>
         <p className="lb-muted">
           {setting} {lookup}
@@ -492,7 +511,8 @@ function Notes({ d, full }: { d: LineDetail; full: boolean }) {
       )}
       <p className="lb-muted">{d.rounding_note}</p>
       <p className="lb-muted">
-        {lookup} Search code {d.code} for 2026 at the site’s Medicare locality and compare the non-facility amount.
+        {lookup} Search code {d.code} for 2026 at the site’s Medicare locality and compare the office-setting price{' '}
+        <InfoTip label="Which CMS column to compare" content="CMS labels it the Non-Facility Price: the office-setting rate used in this table." />.
       </p>
     </div>
   )
@@ -530,8 +550,9 @@ function Recon({ k, s }: { k: string; s: LineSide }): ReactNode {
       {r.count > 0 ? (
         <>
           , so this line puts {usd(r.in_research_items)} into research items and {usd(r.in_overhead)} into overhead. Per participant ({r.scope}):
-          research items {usd(r.per_participant_research_items)} + coordinator time {usd(r.per_participant_coordinator)} + overhead{' '}
-          {usd(r.per_participant_overhead)} = <span className="strong">{usd(r.per_participant)}</span>
+          research items {usd(r.per_participant_research_items)} + coordinator time {usd(r.per_participant_coordinator)} (Concord’s proposed
+          standard schedule, an assumption) + overhead {usd(r.per_participant_overhead)} (at the {pctText(s.sponsor.overhead_rate)} overhead assumption) ={' '}
+          <span className="strong">{usd(r.per_participant)}</span>
           {r.adds_up ? ', the total shown in Budget.' : ' (does not add up to the cent; report this).'}
         </>
       ) : (

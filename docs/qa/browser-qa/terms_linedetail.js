@@ -95,6 +95,18 @@ const check = (name, ok, detail = '') => {
           check(`${name}: GPCI source`, txt.includes('CMS 2026 GPCI file, locality Manhattan (NY 01)'))
           check(`${name}: CF source`, txt.includes('CMS CY 2026 conversion factor'))
           check(`${name}: reconciles`, txt.includes('$6,568.67') && txt.includes('the total shown in Budget'))
+          check(`${name}: assumptions labelled in the reconciliation`, txt.includes('(Concord’s proposed standard schedule, an assumption)') && txt.includes('overhead assumption)'))
+          check(`${name}: no plain 'non-facility' outside the setting note`, !txt.replace('office-setting (non-facility) rate', '').includes('non-facility'))
+          if (width === 390) {
+            // phones: the compact summary sits above the full table, so both sites' rates and sponsor prices are in view
+            const inView = await page.$eval('#tf-step-6 .lb-phone-summary', (e) => {
+              const cells = [...e.querySelectorAll('td.num.strong')]
+              return cells.length >= 4 && cells.every((c) => { const r = c.getBoundingClientRect(); return r.width > 0 && r.right <= window.innerWidth })
+            })
+            check(`${name}: phone summary numbers in view`, inView)
+            const siteB = await page.$eval('#tf-step-6 .lb-full thead th.lb-site', (e) => e.getBoundingClientRect().left)
+            check(`${name}: a site column starts in view`, siteB < 390, String(siteB))
+          }
         }
         const lay = await layoutCheck(page)
         check(`${name}: no horizontal page scroll`, !lay.overflow, `${lay.docScrollWidth} > ${lay.innerWidth}`)
@@ -174,6 +186,62 @@ const check = (name, ok, detail = '') => {
     await page.close()
   }
 
+  // ---- an open-ended visit (TA36: no fixed count): priced per occurrence, outside the per-participant total
+  {
+    const page = await open('TA36', 'NCT05800015', 1440)
+    await waitTable(page)
+    const clicked = await page.evaluate(() => {
+      const b = [...document.querySelectorAll('button.tf-cell')].find((x) => x.title.startsWith('Tumor assessment at week 36, CT chest'))
+      if (!b) return false
+      b.click()
+      return true
+    })
+    check('TA36: grid cell', clicked)
+    await page.waitForFunction(
+      () => (document.querySelector('#tf-step-6 .lb-wrap h3')?.innerText ?? '').includes('week 36') && document.querySelector('#tf-step-6 .lb-tbl') && !document.querySelector('#tf-step-6 .lb-stale'),
+      { timeout: 30000, polling: 300 },
+    )
+    await sleep(300)
+    const txt = await page.$eval('#tf-step-6 .lb-wrap', (e) => e.innerText)
+    check('TA36: no "adds $0.00"', !txt.includes('adds $0.00'), txt.match(/In Budget.{0,80}/)?.[0])
+    check('TA36: priced per occurrence', txt.includes('Priced per occurrence only') && txt.includes('each occurrence pays $239.06'), txt.match(/Priced.{0,160}/)?.[0])
+    notes.push(`TA36 Simple: ${txt.match(/Priced.{0,200}/)?.[0]}`)
+    await shotStep(page, 'simple-light-1440-TA36.png')
+    await page.close()
+  }
+
+  // ---- step 5 site proposal check: no one-line formula; the Medicare amount opens the breakdown
+  {
+    const page = await open('proposal', 'NCT05800015', 1440, { density: 'detailed' })
+    await page.waitForFunction(() => [...document.querySelectorAll('#tf-step-5 button')].some((b) => b.textContent.includes('Load synthetic sample')), { timeout: 60000, polling: 300 })
+    await page.evaluate(() => [...document.querySelectorAll('#tf-step-5 button')].find((x) => x.textContent.includes('Load synthetic sample')).click())
+    await page.waitForSelector('#tf-step-5 .tp-table-full', { timeout: 60000 })
+    await sleep(500)
+    const srcs = await page.$$eval('#tf-step-5 td.tp-src', (els) => els.map((e) => e.innerText))
+    check('proposal: sources shown', srcs.some((t) => t.includes('code 71260')))
+    check('proposal: no one-line formula in sources', !srcs.some((t) => /33\.4009|\) x /.test(t)), srcs.find((t) => /33\.4009/.test(t)))
+    const ok = await page.evaluate(() => {
+      const row = [...document.querySelectorAll('#tf-step-5 .tp-table-full tbody tr')].find((r) => r.innerText.includes('71260'))
+      const b = row?.querySelector('td.num .hc-trigger')
+      if (!b) return false
+      b.scrollIntoView({ block: 'center' })
+      b.click()
+      return true
+    })
+    check('proposal: Medicare amount opens the breakdown', ok)
+    if (ok) {
+      await page.waitForFunction(() => document.querySelector('.hc-card:not([hidden]) .lb-tbl'), { timeout: 30000, polling: 300 })
+      await sleep(300)
+      const card = await page.$('.hc-card:not([hidden])')
+      const ctext = await card.evaluate((e) => e.innerText)
+      check('proposal: card numbers', ctext.includes('$191.25') && ctext.includes('$148.38'))
+      await card.screenshot({ path: path.join(OUT, 'proposal-medicare-breakdown-1440.png') })
+    }
+    const lay = await layoutCheck(page)
+    check('proposal: no horizontal page scroll', !lay.overflow)
+    await page.close()
+  }
+
   // ---- landing, Detailed: the term-sheet line's breakdown (Simple has no term-sheet line)
   for (const theme of ['light', 'dark'])
     for (const width of [1440, 390]) {
@@ -185,6 +253,18 @@ const check = (name, ok, detail = '') => {
       const txt = await el.evaluate((e) => e.innerText)
       check(`${name}: $191.25 and $148.38`, txt.includes('$191.25') && txt.includes('$148.38'))
       check(`${name}: no one-line formula`, !txt.includes('33.4009 = $'))
+      if (width === 1440 && theme === 'light') {
+        // the landing table is not editable: its sponsor-price tip must not send people to a step 3 that is not there
+        const tip = await page.$('.lp-sheet button[aria-label="How the sponsor price is built (assumptions)"]')
+        check(`${name}: sponsor price tip`, !!tip)
+        if (tip) {
+          await tip.click()
+          await page.waitForSelector('.hc-card:not([hidden])', { timeout: 10000 })
+          const t = await page.$eval('.hc-card:not([hidden])', (e) => e.innerText)
+          check(`${name}: tip says where to set them`, t.includes('set both in step 3 of Protocol to terms') && !t.includes('Edit both in step 3 or in Detailed view'), t)
+          await page.keyboard.press('Escape')
+        }
+      }
       const lay = await layoutCheck(page)
       check(`${name}: no horizontal page scroll`, !lay.overflow, `${lay.docScrollWidth} > ${lay.innerWidth}`)
       await el.scrollIntoView()

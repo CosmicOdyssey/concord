@@ -155,3 +155,39 @@ def test_line_detail_api():
     assert c.get("/api/terms-flow/NCT05800015/line-detail", params={"node_id": "NOPE:x", "site_a": a}).status_code == 404
     assert c.get("/api/terms-flow/NCT05800015/line-detail",
                  params={"node_id": CT, "site_a": a, "multiplier": 9}).status_code == 400
+
+
+@needs_db
+@needs_pfs
+def test_open_ended_visit_is_priced_per_occurrence():
+    """TA36 is a repeating visit with no fixed count: the line is priced per occurrence and adds nothing to the
+    per-participant total (the UI must not say it adds $0.00)."""
+    a = _site("NCT05800015", "New York", "NYU")
+    s = ld.line_detail("NCT05800015", "TA36:ct_chest", a)["sites"]["a"]
+    assert s["sponsor"]["sponsor_price"] == 239.06
+    rc = s["reconcile"]
+    assert rc["count"] == 0 and rc["in_research_items"] == 0.0 and rc["in_overhead"] == 0.0
+    assert rc["count_text"].startswith("per occurrence only")
+
+
+@needs_db
+@needs_pfs
+def test_proposal_check_points_to_the_breakdown_not_the_formula():
+    """Step 5's source text names the CMS file, locality and code; how the amount is built is the breakdown of the
+    row's node_id (a sponsor-paid occurrence of the code when there is one). The printable export keeps the formula."""
+    from concord import proposal
+
+    a = _site("NCT05800015", "New York", "NYU")
+    res = proposal.check("NCT05800015", a, "71260,250\n99213,120\n85025,9")
+    ct, em, lab = res["rows"]
+    assert ct["source"]["formula"] and "33.4009" not in ct["source"]["text"] and "=" not in ct["source"]["text"]
+    assert ct["source"]["text"].startswith("CMS PFS 2026") and "code 71260" in ct["source"]["text"]
+    bud = terms.budget("NCT05800015", a)
+    lines = {l["node_id"]: l for v in bud["visits"] for l in v["lines"]}
+    assert lines[ct["node_id"]]["code"] == "71260" and lines[ct["node_id"]]["payer"] == "Sponsor"
+    d = ld.line_detail("NCT05800015", ct["node_id"], a)
+    assert d["applicable"] and d["sites"]["a"]["medicare_rate"] == ct["medicare"]
+    assert lines[em["node_id"]]["code"] == "99213"
+    assert lab["node_id"] and lab["source"]["schedule"] == "CLFS"
+    html = proposal.counter_proposal_html(res, "detailed")
+    assert "x 33.4009 = $191.25" in html  # the export keeps the one-line working

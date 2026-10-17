@@ -42,6 +42,8 @@ export interface ProposalRow {
   placeholder?: boolean
   coverage?: { sponsor_visits: number; insurance_visits: number }
   source: CmsSource | null
+  /** The term-sheet line (protocol node) whose step-by-step price explains this code's Medicare amount. */
+  node_id?: string | null
   notes: string[]
 }
 

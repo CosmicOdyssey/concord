@@ -10,7 +10,8 @@ import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type Rea
 import { Badge, Details, ErrorBox, HoverCard, InfoTip, KeyFigure, Loading, Qualifier } from '../components'
 import { useDensity } from '../density'
 import { usd } from '../format'
-import { DISCLAIMER, formulaText, localityTitle, type Locality, type PriceParams } from '../termsFlowApi'
+import { DISCLAIMER, localityTitle, type Locality, type PriceParams } from '../termsFlowApi'
+import { LineBreakdown } from './LineBreakdown'
 import { BAND_DEFAULT, REF_LABEL, proposalApi, type Flag, type ProposalResult, type ProposalRow, type ProposalSample } from '../termsProposalApi'
 import './termsProposal.css'
 
@@ -456,7 +457,8 @@ function RowSource({ row, r }: { row: ProposalRow; r: ProposalResult }) {
           {row.reference_edited ? ' (edited in step 3)' : ''}
         </Field>
       )}
-      {row.source && (
+      {/* a fee-schedule line's sources are written out under its breakdown below */}
+      {row.source && !(row.source.schedule === 'PFS' && row.node_id) && (
         <Field k="Source">
           {row.source.schedule === 'PFS' || row.source.schedule === 'CLFS' ? (
             <>
@@ -467,9 +469,9 @@ function RowSource({ row, r }: { row: ProposalRow; r: ProposalResult }) {
           )}
         </Field>
       )}
-      {row.source?.formula && (
-        <Field k="Formula">
-          <span className="num tf-formula-text">{formulaText(row.source.formula)}</span>
+      {row.source?.schedule === 'PFS' && row.node_id && (
+        <Field k="How it is built">
+          <LineBreakdown nodeId={row.node_id} variant="compact" editable={false} inCard />
         </Field>
       )}
       {row.coverage && (
@@ -631,7 +633,15 @@ function AllLines({ r }: { r: ProposalResult }) {
                   )}
                 </td>
                 <td className="num">{askText(row)}</td>
-                <td className="num">{row.medicare === null ? '—' : usd(row.medicare)}</td>
+                <td className="num">
+                  {row.medicare === null ? (
+                    '—'
+                  ) : row.source?.schedule === 'PFS' && row.node_id ? (
+                    <HoverCard content={<LineBreakdown nodeId={row.node_id} variant="compact" editable={false} inCard />}>{usd(row.medicare)}</HoverCard>
+                  ) : (
+                    usd(row.medicare)
+                  )}
+                </td>
                 <td>
                   <RangeCell row={row} />
                 </td>
