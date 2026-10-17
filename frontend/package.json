@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
+    "test:compare": "node --experimental-strip-types --test tests/compare.test.mjs",
     "test:financial": "node --experimental-strip-types --test tests/financial.test.mjs",
     "test:portfolio": "node --experimental-strip-types --test tests/portfolio.test.mjs"
   },

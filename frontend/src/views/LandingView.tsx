@@ -33,6 +33,7 @@ import { DISCLAIMER, ILLUSTRATIVE, termsApi } from '../termsFlowApi'
 import { ThemeControl } from '../theme'
 import { LineDetailContext, type LineDetailScope } from '../lineDetailApi'
 import { LineBreakdown } from './LineBreakdown'
+import LandingCompare from './LandingCompare'
 import './landing.css'
 
 // The Detailed term-sheet line: CT chest at cycle 7 day 1, priced step by step at the same two sites and 100% of Medicare.
@@ -44,7 +45,7 @@ const LANDING_LINE_SCOPE: LineDetailScope = {
   params: { multiplier: 1, overrides: {}, standard: {} },
 }
 
-const SECTIONS = ['terms', 'overlap', 'tested'] as const
+const SECTIONS = ['terms', 'overlap', 'compare', 'tested'] as const
 type SectionId = (typeof SECTIONS)[number]
 const sectionId = (s: string) => `landing-${s}`
 /** The primary action everywhere on the page. */
@@ -710,6 +711,9 @@ export default function LandingView({ focus }: { focus: { id: string | null; n: 
             <SectionLink to="overlap" className="lp-navlink">
               Portfolio overlap
             </SectionLink>
+            <SectionLink to="compare" className="lp-navlink">
+              How we compare
+            </SectionLink>
             <SectionLink to="tested" className="lp-navlink">
               What we tested
             </SectionLink>
@@ -828,6 +832,8 @@ export default function LandingView({ focus }: { focus: { id: string | null; n: 
             )}
           </div>
         </section>
+
+        <LandingCompare />
 
         <section id={sectionId('tested')} className="lp-section" aria-labelledby="lp-h-tested">
           <div className="lp-wrap">
