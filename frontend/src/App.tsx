@@ -11,11 +11,13 @@ import './app.css'
 const ResearchView = lazy(() => import('./views/ResearchView'))
 const OverlapView = lazy(() => import('./views/OverlapView'))
 const ProtocolTermsView = lazy(() => import('./views/ProtocolTermsView'))
+const SiteScoresView = lazy(() => import('./views/SiteScoresView'))
 
 const TABS = [
   { id: 'findings', label: 'Findings' },
   { id: 'overlap', label: 'Portfolio overlap' },
   { id: 'terms-flow', label: 'Protocol to terms' },
+  { id: 'site-scores', label: 'Site scores' },
   { id: 'research', label: 'Research' },
 ] as const
 type TabId = (typeof TABS)[number]['id']
@@ -28,7 +30,7 @@ interface Route {
   arg: string | null
 }
 
-/** Hash routes: #findings[/<finding id>] (default), #overlap, #terms-flow, #research/<sub>[/<arg>]. The pre-pivot
+/** Hash routes: #findings[/<finding id>] (default), #overlap, #terms-flow, #site-scores[/<site id>], #research/<sub>[/<arg>]. The pre-pivot
  *  flat links (#clear, #map, #prices/NCT..., #portfolio/regeneron, ...) open the same research sub-tab. */
 function parseHash(hash: string = window.location.hash): Route {
   const [head = '', ...rest] = hash.replace(/^#\/?/, '').split('/').filter(Boolean)
@@ -239,6 +241,11 @@ export default function App() {
         {tab === 'terms-flow' && (
           <Suspense fallback={<Loading label="Loading protocol to terms…" />}>
             <ProtocolTermsView />
+          </Suspense>
+        )}
+        {tab === 'site-scores' && (
+          <Suspense fallback={<Loading label="Loading site scores…" />}>
+            <SiteScoresView />
           </Suspense>
         )}
         {tab === 'research' && (
