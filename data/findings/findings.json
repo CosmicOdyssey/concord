@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-17T08:27:17+00:00",
+ "generated_at": "2026-10-17T15:04:27+00:00",
  "rule": "No view shows a predicted speedup, time-to-fill or ratio as a product claim. Numbers on this page are research findings, labelled with how they were measured.",
  "findings": [
   {
@@ -168,9 +168,9 @@
   },
   {
    "id": "allocation",
-   "title": "Out of sample, coordination gains largely disappear; site-selection gains remain in the model",
+   "title": "Out of sample, coordination gains largely disappear; site-selection gains shrink once scores are calibrated to observed enrollment",
    "status": "final",
-   "headline": "US-Northeast. Coordination (joint optimum vs each trial's best response): 1.42x in-sample, 1.05x held-out on the alternating split and 1.05x on the time split, with 51% of trials slower. Site selection alone (each trial's best response vs its registered sites): 1.76x in-sample, 1.73x and 1.70x held-out. Both are scored by our enrollment model, not observed enrollment.",
+   "headline": "US-Northeast. Coordination (joint optimum vs each trial's best response): 1.42x in-sample, 1.05x held-out on the alternating split and 1.05x on the time split, with 51% of trials slower. Site selection alone (each trial's best response vs its registered sites): 1.76x in-sample, 1.73x and 1.70x held-out. Both are scored by our enrollment model, not observed enrollment. Calibrated to observed enrollment (post hoc, b = 0.33), site selection alone is 1.18x and 1.17x held-out.",
    "tables": [
     {
      "id": "allocation-US-Northeast",
@@ -279,12 +279,95 @@
      "notes": [
       "Ratio = total trial-months, baseline / alternative, under the model."
      ]
+    },
+    {
+     "id": "selection-validation",
+     "title": "Observed-outcome check of the site scores",
+     "columns": [
+      "Completed trials started 2018 or later",
+      "Slope",
+      "95% CI",
+      "p",
+      "Trials"
+     ],
+     "rows": [
+      [
+       "all completed lung trials started 2018 or later",
+       "0.16",
+       "[+0.07, +0.24]",
+       "0.00029",
+       "1,094"
+      ],
+      [
+       "industry Phase II/III subset",
+       "0.33",
+       "[+0.16, +0.50]",
+       "0.00012",
+       "390"
+      ]
+     ],
+     "highlight_row": 1,
+     "notes": [
+      "Actual log per-site enrollment rate regressed on the log mean score of each trial's registered sites (rates fit on pre-2018 trials), with phase, log site count and start-year controls. Slope 1 = scores calibrated; 0 = no signal."
+     ]
+    },
+    {
+     "id": "selection-calibrated",
+     "title": "US-Northeast, re-scored with calibrated site rates (post hoc)",
+     "columns": [
+      "Comparison and calibration",
+      "In-sample (all history)",
+      "Alternating: held-out",
+      "Time: held-out"
+     ],
+     "rows": [
+      [
+       "Site selection alone, b = 1.00 (uncalibrated)",
+       "1.76x",
+       "1.73x",
+       "1.70x"
+      ],
+      [
+       "Coordination, b = 1.00 (uncalibrated)",
+       "1.42x",
+       "1.05x",
+       "1.05x"
+      ],
+      [
+       "Site selection alone, b = 0.33 (industry Phase II/III slope)",
+       "1.22x",
+       "1.18x",
+       "1.17x"
+      ],
+      [
+       "Coordination, b = 0.33 (industry Phase II/III slope)",
+       "1.12x",
+       "1.03x",
+       "1.03x"
+      ],
+      [
+       "Site selection alone, b = 0.16 (all-trials slope)",
+       "1.09x",
+       "1.07x",
+       "1.06x"
+      ],
+      [
+       "Coordination, b = 0.16 (all-trials slope)",
+       "1.06x",
+       "1.03x",
+       "1.02x"
+      ]
+     ],
+     "notes": [
+      "Same allocations as above, not re-solved. Each site's log rate shrunk toward the U.S. mean by b, the observed-outcome slope; b = 1 reproduces the table above exactly. Post hoc, not pre-registered."
+     ]
     }
    ],
    "caveats": [
     "Final rerun of task A's pre-registered script at the current beta: beta 0.0925 (two-way CI 0 to 0.297), database rebuilt with hand-encoded eligibility for 151 trials (basket and multi-cohort trials held out), deterministic solver (500k evaluations), run unchanged from task A's script on 17 Oct.",
     "Held-out means: allocations chosen with site rates fit on one half of history, scored with rates fit on the other half. Scores still come from our enrollment model, not observed enrollment.",
-    "Ratios above are research results. No product view in this app shows a predicted speedup."
+    "Ratios above are research results. No product view in this app shows a predicted speedup.",
+    "The calibrated re-score is post hoc and assumes the trial-level overstatement applies equally to each site."
    ],
    "sources": [
     {
@@ -294,6 +377,14 @@
     {
      "label": "task A script",
      "path": "backend/concord/analysis/selection_holdout.py"
+    },
+    {
+     "label": "observed-outcome check",
+     "path": "data/findings/selection_validation.json"
+    },
+    {
+     "label": "calibrated re-score",
+     "path": "data/findings/selection_calibrated.json"
     }
    ]
   },

@@ -77,3 +77,8 @@ Judgment calls made without being able to ask. Newest last. Each says what and w
     zero. Now: the sponsor list reports each sponsor's share of identifiable site rows; the default is the first
     sponsor with mostly identifiable sites (Merck at the snapshot); anonymized sponsors are labelled in the picker;
     cells involving a trial with no identifiable site read "sites hidden".
+20. **Calibrated re-score of site selection is shown, labelled post hoc** (18 Oct). The observed-outcome check
+    (slope 0.33 industry, 0.16 all) says the model overstates site-list differences, so task A's saved
+    allocations were re-scored, not re-solved, with site log rates shrunk by b. b = 1 reproduces holdout.json
+    exactly. The pre-registered script was not touched; the new script imports its helpers. Findings, README and
+    handoff now lead with the calibrated figure (about 1.2x held-out) alongside the uncalibrated 1.7x.

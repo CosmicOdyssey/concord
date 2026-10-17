@@ -1,0 +1,2069 @@
+{
+ "method": "see backend/concord/analysis/selection_calibrated.py docstring (post hoc)",
+ "allocations": "data/robustness/holdout_alloc.npz",
+ "b_values": {
+  "uncalibrated (b = 1, reproduction check)": 1.0,
+  "industry Phase II/III slope (primary)": 0.3338523991644037,
+  "all-trials slope (sensitivity)": 0.15770376477745798
+ },
+ "results": {
+  "uncalibrated (b = 1, reproduction check)": {
+   "US-Northeast": {
+    "full_data": {
+     "in_sample": {
+      "coord_vs_actual": {
+       "share_faster_material": 0.8260869565217391,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 46,
+       "dividend_trial_months": 987.6805479367968,
+       "ratio": 1.5995276051941445,
+       "median_speedup": 1.4667951257317147,
+       "share_faster": 0.9782608695652174,
+       "share_slower": 0.0,
+       "worst_slowdown_months": 0.0,
+       "median_T_base": 59.4881922745375,
+       "median_T_new": 29.217315743791996
+      },
+      "coordination_no_loser_vs_indep": {
+       "share_faster_material": 0.021739130434782608,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 46,
+       "dividend_trial_months": 1.9907590588379769,
+       "ratio": 1.0013333773514463,
+       "median_speedup": 1.0,
+       "share_faster": 0.06521739130434782,
+       "share_slower": 0.0,
+       "worst_slowdown_months": 0.0,
+       "median_T_base": 21.22901758476101,
+       "median_T_new": 21.22901758476101
+      },
+      "coord_free_vs_actual": {
+       "share_faster_material": 0.9565217391304348,
+       "share_slower_material": 0.021739130434782608,
+       "material_threshold_months": 1.0,
+       "trials": 46,
+       "dividend_trial_months": 1579.3307713554402,
+       "ratio": 2.4958884863550623,
+       "median_speedup": 2.502222135094466,
+       "share_faster": 0.9782608695652174,
+       "share_slower": 0.021739130434782608,
+       "worst_slowdown_months": 1.6441086851668114,
+       "median_T_base": 59.4881922745375,
+       "median_T_new": 23.124123913852124
+      },
+      "coord_free_vs_indep": {
+       "share_faster_material": 0.5434782608695652,
+       "share_slower_material": 0.34782608695652173,
+       "material_threshold_months": 1.0,
+       "trials": 46,
+       "dividend_trial_months": 439.22967677937635,
+       "ratio": 1.4160234374435887,
+       "median_speedup": 1.1471636488651535,
+       "share_faster": 0.6086956521739131,
+       "share_slower": 0.391304347826087,
+       "worst_slowdown_months": 11.404753783776137,
+       "median_T_base": 21.22901758476101,
+       "median_T_new": 23.124123913852124
+      },
+      "indep_vs_actual": {
+       "share_faster_material": 0.8043478260869565,
+       "share_slower_material": 0.15217391304347827,
+       "material_threshold_months": 1.0,
+       "trials": 46,
+       "dividend_trial_months": 1140.1010945760634,
+       "ratio": 1.7626039374468288,
+       "median_speedup": 1.992532108678879,
+       "share_faster": 0.8043478260869565,
+       "share_slower": 0.1956521739130435,
+       "worst_slowdown_months": 23.918795229780862,
+       "median_T_base": 59.4881922745375,
+       "median_T_new": 21.22901758476101
+      }
+     }
+    },
+    "n_movable": 46,
+    "splits": {
+     "alternating": {
+      "summary": {
+       "coord_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.5667794546566909,
+         "median_speedup_geomean": 1.4362878197668494,
+         "share_faster_mean": 0.9784921369102683,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.6869559770890683,
+          1.455164149434534
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.3662848378349095,
+         "median_speedup_geomean": 1.3381537425199956,
+         "share_faster_mean": 0.7421369102682702,
+         "share_slower_mean": 0.23635522664199815,
+         "worst_slowdown_months_max": 51.68455679288356,
+         "ratio_by_direction": [
+          1.2521501203257204,
+          1.49082304732916
+         ]
+        },
+        "retained_log_share": 0.6950552829041572
+       },
+       "indep_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.5900306862121272,
+         "median_speedup_geomean": 1.6749946529496627,
+         "share_faster_mean": 0.8175300647548567,
+         "share_slower_mean": 0.18246993524514338,
+         "worst_slowdown_months_max": 45.355135060173296,
+         "ratio_by_direction": [
+          1.5888418418058698,
+          1.5912204201663467
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.7273201953620636,
+         "median_speedup_geomean": 1.8534906216789484,
+         "share_faster_mean": 0.86054579093432,
+         "share_slower_mean": 0.13945420906567993,
+         "worst_slowdown_months_max": 33.706919407081664,
+         "ratio_by_direction": [
+          1.5167049421782286,
+          1.9671822609219334
+         ]
+        },
+        "retained_log_share": 1.1785817355659998
+       },
+       "coord_free_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.4377133907147095,
+         "median_speedup_geomean": 1.0395362289214982,
+         "share_faster_mean": 0.5913506012950971,
+         "share_slower_mean": 0.40864939870490286,
+         "worst_slowdown_months_max": 10.690368443690733,
+         "ratio_by_direction": [
+          1.681459929982134,
+          1.2293006553313164
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0463788786441923,
+         "median_speedup_geomean": 1.0111352568049374,
+         "share_faster_mean": 0.5265957446808511,
+         "share_slower_mean": 0.4734042553191489,
+         "worst_slowdown_months_max": 230.34710981053695,
+         "ratio_by_direction": [
+          1.1093805525211864,
+          0.9869550671177528
+         ]
+        },
+        "retained_log_share": 0.12487267920933487
+       },
+       "coord_free_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 2.2860084092144737,
+         "median_speedup_geomean": 2.2463231644595196,
+         "share_faster_mean": 0.967622571692877,
+         "share_slower_mean": 0.032377428307123035,
+         "worst_slowdown_months_max": 4.506669561022125,
+         "ratio_by_direction": [
+          2.6715738920755827,
+          1.9560883052870626
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.8074313690824233,
+         "median_speedup_geomean": 2.0376724136595805,
+         "share_faster_mean": 0.9357076780758558,
+         "share_slower_mean": 0.0642923219241443,
+         "worst_slowdown_months_max": 264.0540292176186,
+         "ratio_by_direction": [
+          1.6826029667652973,
+          1.9415205003610596
+         ]
+        },
+        "retained_log_share": 0.7158944343935396
+       },
+       "coordination_no_loser_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.003240674611148,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.10684551341350601,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.0064257158610808,
+          1.0000657130795727
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.00251307996564,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.08533765032377427,
+         "share_slower_mean": 0.02150786308973173,
+         "worst_slowdown_months_max": 2.840482261521224,
+         "ratio_by_direction": [
+          1.0069926555939452,
+          0.9980534315907248
+         ]
+        },
+        "retained_log_share": 0.7757619935512639
+       }
+      }
+     },
+     "time": {
+      "summary": {
+       "coord_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.6715854677643558,
+         "median_speedup_geomean": 1.5280384653702845,
+         "share_faster_mean": 0.9905660377358491,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.4795217275766686,
+          1.8885819139794855
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.227004510656333,
+         "median_speedup_geomean": 1.192184615522461,
+         "share_faster_mean": 0.6677476415094339,
+         "share_slower_mean": 0.3133844339622641,
+         "worst_slowdown_months_max": 73.58112077787004,
+         "ratio_by_direction": [
+          1.3095153583063242,
+          1.1496925634520192
+         ]
+        },
+        "retained_log_share": 0.3981836684828111
+       },
+       "indep_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.7170774069836927,
+         "median_speedup_geomean": 1.872349111777152,
+         "share_faster_mean": 0.8428655660377358,
+         "share_slower_mean": 0.15713443396226415,
+         "worst_slowdown_months_max": 83.56514797384679,
+         "ratio_by_direction": [
+          1.317500906174231,
+          2.2378389326010377
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.7015995561418646,
+         "median_speedup_geomean": 1.797026517947379,
+         "share_faster_mean": 0.8714622641509434,
+         "share_slower_mean": 0.1285377358490566,
+         "worst_slowdown_months_max": 47.81844530717969,
+         "ratio_by_direction": [
+          1.8844347252963594,
+          1.5365037645476596
+         ]
+        },
+        "retained_log_share": 0.9832509374903563
+       },
+       "coord_free_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.3726996323441285,
+         "median_speedup_geomean": 1.116572118350068,
+         "share_faster_mean": 0.6205778301886793,
+         "share_slower_mean": 0.37942216981132076,
+         "worst_slowdown_months_max": 17.787242400198025,
+         "ratio_by_direction": [
+          1.607173026375625,
+          1.1724339879490426
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0500860507668153,
+         "median_speedup_geomean": 0.9759537196759597,
+         "share_faster_mean": 0.4858490566037736,
+         "share_slower_mean": 0.5141509433962264,
+         "worst_slowdown_months_max": 145.89795193983645,
+         "ratio_by_direction": [
+          1.1034578530892307,
+          0.9992957238266884
+         ]
+        },
+        "retained_log_share": 0.15427809978394866
+       },
+       "coord_free_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 2.357031525272925,
+         "median_speedup_geomean": 2.342831014455972,
+         "share_faster_mean": 0.9811320754716981,
+         "share_slower_mean": 0.018867924528301886,
+         "worst_slowdown_months_max": 7.7168896805442095,
+         "ratio_by_direction": [
+          2.1174519186286673,
+          2.623718424137064
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.7868259578955765,
+         "median_speedup_geomean": 1.7436575137604766,
+         "share_faster_mean": 0.8903301886792453,
+         "share_slower_mean": 0.10966981132075472,
+         "worst_slowdown_months_max": 115.94126122253645,
+         "ratio_by_direction": [
+          2.079394296262315,
+          1.5354216415560853
+         ]
+        },
+        "retained_log_share": 0.6769755163364639
+       },
+       "coordination_no_loser_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.0096554507632858,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.24204009433962265,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.0192738973475928,
+          1.0001277692961232
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 0.991567544877221,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.08490566037735849,
+         "share_slower_mean": 0.15713443396226415,
+         "worst_slowdown_months_max": 34.02155596859551,
+         "ratio_by_direction": [
+          0.9832440943320772,
+          0.9999614558801257
+         ]
+        },
+        "retained_log_share": -0.8812665857311127
+       }
+      }
+     }
+    }
+   },
+   "US_Regeneron_2024-09-01": {
+    "full_data": {
+     "in_sample": {
+      "coord_vs_actual": {
+       "share_faster_material": 0.8,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 5,
+       "dividend_trial_months": 45.971208358640055,
+       "ratio": 1.2652830909562802,
+       "median_speedup": 1.4155177790834306,
+       "share_faster": 1.0,
+       "share_slower": 0.0,
+       "worst_slowdown_months": 0.0,
+       "median_T_base": 43.80677650278335,
+       "median_T_new": 30.94752828265351
+      },
+      "coordination_no_loser_vs_indep": {
+       "share_faster_material": 0.0,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 5,
+       "dividend_trial_months": 0.1489636918170465,
+       "ratio": 1.0013897248639754,
+       "median_speedup": 1.0002533999299492,
+       "share_faster": 0.6,
+       "share_slower": 0.0,
+       "worst_slowdown_months": 0.0,
+       "median_T_base": 13.394460291575488,
+       "median_T_new": 13.391066996136722
+      },
+      "coord_free_vs_actual": {
+       "share_faster_material": 1.0,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 5,
+       "dividend_trial_months": 113.15939678717288,
+       "ratio": 2.0665056788046936,
+       "median_speedup": 2.2229781709821115,
+       "share_faster": 1.0,
+       "share_slower": 0.0,
+       "worst_slowdown_months": 0.0,
+       "median_T_base": 43.80677650278335,
+       "median_T_new": 13.442829686961517
+      },
+      "coord_free_vs_indep": {
+       "share_faster_material": 0.2,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 5,
+       "dividend_trial_months": 1.2353561205764327,
+       "ratio": 1.0116429952381139,
+       "median_speedup": 1.0,
+       "share_faster": 0.4,
+       "share_slower": 0.4,
+       "worst_slowdown_months": 0.6374956763745825,
+       "median_T_base": 13.394460291575488,
+       "median_T_new": 13.442829686961517
+      },
+      "indep_vs_actual": {
+       "share_faster_material": 1.0,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 5,
+       "dividend_trial_months": 111.92404066659645,
+       "ratio": 2.0427222731061296,
+       "median_speedup": 2.0851916626163813,
+       "share_faster": 1.0,
+       "share_slower": 0.0,
+       "worst_slowdown_months": 0.0,
+       "median_T_base": 43.80677650278335,
+       "median_T_new": 13.394460291575488
+      }
+     }
+    },
+    "n_movable": 5,
+    "splits": {
+     "alternating": {
+      "summary": {
+       "coord_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.2253788789053297,
+         "median_speedup_geomean": 1.269570381984619,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.2563334191011375,
+          1.1951870212459932
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.19543157712513,
+         "median_speedup_geomean": 1.2524097339912679,
+         "share_faster_mean": 0.8,
+         "share_slower_mean": 0.2,
+         "worst_slowdown_months_max": 5.254748187268678,
+         "ratio_by_direction": [
+          1.145503385801858,
+          1.2475359508322441
+         ]
+        },
+        "retained_log_share": 0.8782641961511765
+       },
+       "indep_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.8999077255292496,
+         "median_speedup_geomean": 2.067537171329634,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          2.0968155288546777,
+          1.7214911449541717
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.6872622170401848,
+         "median_speedup_geomean": 2.001001827029134,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.6045925751932442,
+          1.7741910520236004
+         ]
+        },
+        "retained_log_share": 0.8150559204424865
+       },
+       "coord_free_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.0029369394265966,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.2,
+         "share_slower_mean": 0.2,
+         "worst_slowdown_months_max": 0.10410466203182267,
+         "ratio_by_direction": [
+          1.0029249981762927,
+          1.0029488808190778
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 0.9916647545628193,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.1,
+         "share_slower_mean": 0.30000000000000004,
+         "worst_slowdown_months_max": 2.1373754206418027,
+         "ratio_by_direction": [
+          0.9999541632635437,
+          0.9834440633084861
+         ]
+        },
+        "retained_log_share": -2.8541491572474325
+       },
+       "coord_free_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.9054876394352518,
+         "median_speedup_geomean": 2.0934309370322874,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          2.1029487104526003,
+          1.7265676171717392
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.6731984723442732,
+         "median_speedup_geomean": 1.940125314486964,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.6045190259062552,
+          1.7448176572876473
+         ]
+        },
+        "retained_log_share": 0.7983662881270877
+       },
+       "coordination_no_loser_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.002251410559377,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.4,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.0026372648523014,
+          1.0018657047583752
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 0.990586446844924,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.0,
+         "share_slower_mean": 0.4,
+         "worst_slowdown_months_max": 1.720814461745796,
+         "ratio_by_direction": [
+          0.9958708057804502,
+          0.9853301281423251
+         ]
+        },
+        "retained_log_share": -4.205711718838777
+       }
+      }
+     },
+     "time": {
+      "summary": {
+       "coord_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.2175846609086312,
+         "median_speedup_geomean": 1.197251984675857,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.1923290068675116,
+          1.243375274727942
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.1159640219439155,
+         "median_speedup_geomean": 1.1363839881747018,
+         "share_faster_mean": 0.7,
+         "share_slower_mean": 0.30000000000000004,
+         "worst_slowdown_months_max": 19.84361515033723,
+         "ratio_by_direction": [
+          1.1299867423405876,
+          1.102115318356428
+         ]
+        },
+        "retained_log_share": 0.5573176254288821
+       },
+       "indep_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.8980252351701226,
+         "median_speedup_geomean": 1.9990912313055358,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.6230255814638865,
+          2.2196198473306423
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.4191676227161896,
+         "median_speedup_geomean": 1.6332232650666385,
+         "share_faster_mean": 0.9,
+         "share_slower_mean": 0.1,
+         "worst_slowdown_months_max": 10.150628144891925,
+         "ratio_by_direction": [
+          1.6330238076665555,
+          1.2333174396543545
+         ]
+        },
+        "retained_log_share": 0.5462903757884691
+       },
+       "coord_free_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.0029624828194483,
+         "median_speedup_geomean": 1.001647809922234,
+         "share_faster_mean": 0.6000000000000001,
+         "share_slower_mean": 0.30000000000000004,
+         "worst_slowdown_months_max": 0.03584995976870964,
+         "ratio_by_direction": [
+          1.003406718094257,
+          1.0025184442196031
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0317549662369825,
+         "median_speedup_geomean": 0.998438520278937,
+         "share_faster_mean": 0.4,
+         "share_slower_mean": 0.5,
+         "worst_slowdown_months_max": 3.337020190279574,
+         "ratio_by_direction": [
+          0.9723229161534692,
+          1.0948197277566334
+         ]
+        },
+        "retained_log_share": 10.56798891920747
+       },
+       "coord_free_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.9036481023201939,
+         "median_speedup_geomean": 2.012798832019331,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.6285547720797016,
+          2.225209836104869
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.4642332426601612,
+         "median_speedup_geomean": 1.6356488232572675,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.5878264708183873,
+          1.3502602635198886
+         ]
+        },
+        "retained_log_share": 0.5923396216648905
+       },
+       "coordination_no_loser_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.0017715347646154,
+         "median_speedup_geomean": 1.0007905557776482,
+         "share_faster_mean": 0.7,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.0024408632741686,
+          1.0011026531648701
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 0.9881155197929214,
+         "median_speedup_geomean": 0.9907334820327917,
+         "share_faster_mean": 0.30000000000000004,
+         "share_slower_mean": 0.4,
+         "worst_slowdown_months_max": 3.337020190279574,
+         "ratio_by_direction": [
+          0.9728010854777104,
+          1.0036710433728302
+         ]
+        },
+        "retained_log_share": -6.754737335780443
+       }
+      }
+     }
+    }
+   }
+  },
+  "industry Phase II/III slope (primary)": {
+   "US-Northeast": {
+    "full_data": {
+     "in_sample": {
+      "coord_vs_actual": {
+       "share_faster_material": 0.8478260869565217,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 46,
+       "dividend_trial_months": 867.1644608308056,
+       "ratio": 1.180363620070255,
+       "median_speedup": 1.14967052790709,
+       "share_faster": 0.9782608695652174,
+       "share_slower": 0.0,
+       "worst_slowdown_months": 0.0,
+       "median_T_base": 120.9738406381215,
+       "median_T_new": 93.27649139018641
+      },
+      "coordination_no_loser_vs_indep": {
+       "share_faster_material": 0.043478260869565216,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 46,
+       "dividend_trial_months": 6.300455641360067,
+       "ratio": 1.0013600367230473,
+       "median_speedup": 1.0,
+       "share_faster": 0.06521739130434782,
+       "share_slower": 0.0,
+       "worst_slowdown_months": 0.0,
+       "median_T_base": 86.4726245944373,
+       "median_T_new": 86.4726245944373
+      },
+      "coord_free_vs_actual": {
+       "share_faster_material": 0.9565217391304348,
+       "share_slower_material": 0.021739130434782608,
+       "material_threshold_months": 1.0,
+       "trials": 46,
+       "dividend_trial_months": 1527.9785264077266,
+       "ratio": 1.3684491651695023,
+       "median_speedup": 1.3674807751567433,
+       "share_faster": 0.9782608695652174,
+       "share_slower": 0.021739130434782608,
+       "worst_slowdown_months": 1.6077085707605363,
+       "median_T_base": 120.9738406381215,
+       "median_T_new": 88.30169890420132
+      },
+      "coord_free_vs_indep": {
+       "share_faster_material": 0.5869565217391305,
+       "share_slower_material": 0.34782608695652173,
+       "material_threshold_months": 1.0,
+       "trials": 46,
+       "dividend_trial_months": 491.80949454000665,
+       "ratio": 1.1185925028093928,
+       "median_speedup": 1.0495746303108835,
+       "share_faster": 0.6521739130434783,
+       "share_slower": 0.34782608695652173,
+       "worst_slowdown_months": 14.456073761115867,
+       "median_T_base": 86.4726245944373,
+       "median_T_new": 88.30169890420132
+      },
+      "indep_vs_actual": {
+       "share_faster_material": 0.8478260869565217,
+       "share_slower_material": 0.08695652173913043,
+       "material_threshold_months": 1.0,
+       "trials": 46,
+       "dividend_trial_months": 1036.16903186772,
+       "ratio": 1.2233670096416558,
+       "median_speedup": 1.255282214122039,
+       "share_faster": 0.8478260869565217,
+       "share_slower": 0.15217391304347827,
+       "worst_slowdown_months": 17.60840221741026,
+       "median_T_base": 120.9738406381215,
+       "median_T_new": 86.4726245944373
+      }
+     }
+    },
+    "n_movable": 46,
+    "splits": {
+     "alternating": {
+      "summary": {
+       "coord_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.1792074693254373,
+         "median_speedup_geomean": 1.132291803685502,
+         "share_faster_mean": 0.967622571692877,
+         "share_slower_mean": 0.010869565217391304,
+         "worst_slowdown_months_max": 0.0098372352506928,
+         "ratio_by_direction": [
+          1.2177479285338926,
+          1.1418867756868458
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.1235858781946486,
+         "median_speedup_geomean": 1.1047051815428945,
+         "share_faster_mean": 0.709759481961147,
+         "share_slower_mean": 0.2687326549491212,
+         "worst_slowdown_months_max": 28.99581907739335,
+         "ratio_by_direction": [
+          1.0887317541627657,
+          1.1595558050470014
+         ]
+        },
+        "retained_log_share": 0.7068880514403639
+       },
+       "indep_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.1845269716262223,
+         "median_speedup_geomean": 1.1951307377303575,
+         "share_faster_mean": 0.8283996299722479,
+         "share_slower_mean": 0.17160037002775208,
+         "worst_slowdown_months_max": 27.923509310346248,
+         "ratio_by_direction": [
+          1.2078214620129728,
+          1.1616817473764338
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.180473838475141,
+         "median_speedup_geomean": 1.2196426619739438,
+         "share_faster_mean": 0.8711840888066604,
+         "share_slower_mean": 0.1288159111933395,
+         "worst_slowdown_months_max": 68.38906529177763,
+         "ratio_by_direction": [
+          1.1384827638784267,
+          1.224013685176037
+         ]
+        },
+        "retained_log_share": 0.9797594910547651
+       },
+       "coord_free_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.1218863914808068,
+         "median_speedup_geomean": 1.0336875591879198,
+         "share_faster_mean": 0.5804810360777057,
+         "share_slower_mean": 0.41951896392229415,
+         "worst_slowdown_months_max": 23.683086013636128,
+         "ratio_by_direction": [
+          1.1673807620372345,
+          1.0781649966488664
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0343707414948935,
+         "median_speedup_geomean": 1.0110082100413789,
+         "share_faster_mean": 0.5157261794634598,
+         "share_slower_mean": 0.4842738205365402,
+         "worst_slowdown_months_max": 205.03850062095756,
+         "ratio_by_direction": [
+          1.042587740140476,
+          1.0262185038896936
+         ]
+        },
+        "retained_log_share": 0.29382495573138595
+       },
+       "coord_free_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.3289046898094303,
+         "median_speedup_geomean": 1.3393318025520369,
+         "share_faster_mean": 0.967622571692877,
+         "share_slower_mean": 0.032377428307123035,
+         "worst_slowdown_months_max": 5.66839486671352,
+         "ratio_by_direction": [
+          1.4099875387296308,
+          1.2524845972671619
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.2210475996188548,
+         "median_speedup_geomean": 1.269020087227491,
+         "share_faster_mean": 0.9463459759481961,
+         "share_slower_mean": 0.05365402405180388,
+         "worst_slowdown_months_max": 273.4275659127352,
+         "ratio_by_direction": [
+          1.186968171980892,
+          1.2561054927418631
+         ]
+        },
+        "retained_log_share": 0.7023232766946602
+       },
+       "coordination_no_loser_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.0023160633475998,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.10684551341350601,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.00452269822086,
+          1.0001142757888628
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0021247169008058,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.08533765032377427,
+         "share_slower_mean": 0.02150786308973173,
+         "worst_slowdown_months_max": 3.1478356649371904,
+         "ratio_by_direction": [
+          1.0047663930578585,
+          0.9994899860924105
+         ]
+        },
+        "retained_log_share": 0.9174705069403432
+       }
+      }
+     },
+     "time": {
+      "summary": {
+       "coord_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.2120713903878026,
+         "median_speedup_geomean": 1.167878355679565,
+         "share_faster_mean": 0.9749410377358491,
+         "share_slower_mean": 0.015625,
+         "worst_slowdown_months_max": 0.6402442979567518,
+         "ratio_by_direction": [
+          1.162979968432054,
+          1.2632350472702514
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0833683215969045,
+         "median_speedup_geomean": 1.0450225002188114,
+         "share_faster_mean": 0.6270636792452831,
+         "share_slower_mean": 0.35406839622641506,
+         "worst_slowdown_months_max": 48.1928179392967,
+         "ratio_by_direction": [
+          1.100577339120337,
+          1.0664283903735394
+         ]
+        },
+        "retained_log_share": 0.4163400175294261
+       },
+       "indep_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.2136587812273636,
+         "median_speedup_geomean": 1.2697440856026259,
+         "share_faster_mean": 0.8334316037735849,
+         "share_slower_mean": 0.1665683962264151,
+         "worst_slowdown_months_max": 71.94449215161353,
+         "ratio_by_direction": [
+          1.1125563988018379,
+          1.3239487353958816
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.1667224040903759,
+         "median_speedup_geomean": 1.183494563800792,
+         "share_faster_mean": 0.8369693396226415,
+         "share_slower_mean": 0.16303066037735847,
+         "worst_slowdown_months_max": 37.41269300962534,
+         "ratio_by_direction": [
+          1.1904120188399951,
+          1.1435042209443556
+         ]
+        },
+        "retained_log_share": 0.7963168015152983
+       },
+       "coord_free_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.1074184446247441,
+         "median_speedup_geomean": 1.038013406758182,
+         "share_faster_mean": 0.6394457547169812,
+         "share_slower_mean": 0.3605542452830189,
+         "worst_slowdown_months_max": 21.6148338918197,
+         "ratio_by_direction": [
+          1.1572643418456539,
+          1.0597195188259338
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0279451096344618,
+         "median_speedup_geomean": 1.0058251178269932,
+         "share_faster_mean": 0.5141509433962264,
+         "share_slower_mean": 0.4858490566037736,
+         "worst_slowdown_months_max": 148.3826729947778,
+         "ratio_by_direction": [
+          1.0564113370613415,
+          1.0002459376863437
+         ]
+        },
+        "retained_log_share": 0.2701297973006689
+       },
+       "coord_free_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.3440281198119697,
+         "median_speedup_geomean": 1.3604992615612321,
+         "share_faster_mean": 0.9811320754716981,
+         "share_slower_mean": 0.018867924528301886,
+         "worst_slowdown_months_max": 3.972531743939811,
+         "ratio_by_direction": [
+          1.28752184862558,
+          1.4030143168239275
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.1993265895856644,
+         "median_speedup_geomean": 1.1943080292870953,
+         "share_faster_mean": 0.8652712264150944,
+         "share_slower_mean": 0.13472877358490565,
+         "worst_slowdown_months_max": 108.79456050252975,
+         "ratio_by_direction": [
+          1.2575647524766502,
+          1.1437854517267791
+         ]
+        },
+        "retained_log_share": 0.6147377419219562
+       },
+       "coordination_no_loser_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.0068642955091194,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.24204009433962265,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.0136758615174066,
+          1.00009850096807
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0031429718392018,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.10996462264150944,
+         "share_slower_mean": 0.1320754716981132,
+         "worst_slowdown_months_max": 25.586468082422016,
+         "ratio_by_direction": [
+          1.0062776723843585,
+          1.0000180363397948
+         ]
+        },
+        "retained_log_share": 0.4587216519897006
+       }
+      }
+     }
+    }
+   },
+   "US_Regeneron_2024-09-01": {
+    "full_data": {
+     "in_sample": {
+      "coord_vs_actual": {
+       "share_faster_material": 0.8,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 5,
+       "dividend_trial_months": 45.410882373472134,
+       "ratio": 1.1055423174159245,
+       "median_speedup": 1.1133700604916739,
+       "share_faster": 1.0,
+       "share_slower": 0.0,
+       "worst_slowdown_months": 0.0,
+       "median_T_base": 72.96818533042605,
+       "median_T_new": 65.53812422277879
+      },
+      "coordination_no_loser_vs_indep": {
+       "share_faster_material": 0.0,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 5,
+       "dividend_trial_months": 0.33450800840327233,
+       "ratio": 1.0009303104884153,
+       "median_speedup": 1.0,
+       "share_faster": 0.4,
+       "share_slower": 0.2,
+       "worst_slowdown_months": 0.1476191820016517,
+       "median_T_base": 47.28230149129189,
+       "median_T_new": 47.28230149129189
+      },
+      "coord_free_vs_actual": {
+       "share_faster_material": 1.0,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 5,
+       "dividend_trial_months": 116.84806981600964,
+       "ratio": 1.3256407066845979,
+       "median_speedup": 1.38777301884607,
+       "share_faster": 1.0,
+       "share_slower": 0.0,
+       "worst_slowdown_months": 0.0,
+       "median_T_base": 72.96818533042605,
+       "median_T_new": 48.70808799597198
+      },
+      "coord_free_vs_indep": {
+       "share_faster_material": 0.2,
+       "share_slower_material": 0.2,
+       "material_threshold_months": 1.0,
+       "trials": 5,
+       "dividend_trial_months": 1.0753616006182334,
+       "ratio": 1.0029968959873983,
+       "median_speedup": 0.9981721378172117,
+       "share_faster": 0.2,
+       "share_slower": 0.6,
+       "worst_slowdown_months": 1.4257865046800902,
+       "median_T_base": 47.28230149129189,
+       "median_T_new": 48.70808799597198
+      },
+      "indep_vs_actual": {
+       "share_faster_material": 1.0,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 5,
+       "dividend_trial_months": 115.77270821539139,
+       "ratio": 1.3216797698856022,
+       "median_speedup": 1.342483449938296,
+       "share_faster": 1.0,
+       "share_slower": 0.0,
+       "worst_slowdown_months": 0.0,
+       "median_T_base": 72.96818533042605,
+       "median_T_new": 47.28230149129189
+      }
+     }
+    },
+    "n_movable": 5,
+    "splits": {
+     "alternating": {
+      "summary": {
+       "coord_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.0988995940518087,
+         "median_speedup_geomean": 1.1077356052183878,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.1290012855489027,
+          1.0696004807648412
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0722953277252005,
+         "median_speedup_geomean": 1.0729180062116799,
+         "share_faster_mean": 0.9,
+         "share_slower_mean": 0.1,
+         "worst_slowdown_months_max": 2.706730200033732,
+         "ratio_by_direction": [
+          1.0383052614713355,
+          1.1073980962322594
+         ]
+        },
+        "retained_log_share": 0.7401338950102615
+       },
+       "indep_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.2690205677526163,
+         "median_speedup_geomean": 1.3100025551495744,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.3443326106120108,
+          1.1979276472702896
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.1961089522956228,
+         "median_speedup_geomean": 1.2710280967915417,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.15107944890461,
+          1.242899981511435
+         ]
+        },
+        "retained_log_share": 0.7516357138037449
+       },
+       "coord_free_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.0037385306720923,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.2,
+         "share_slower_mean": 0.2,
+         "worst_slowdown_months_max": 0.2036130144998225,
+         "ratio_by_direction": [
+          1.0034473901550849,
+          1.0040297556606936
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0005052203925167,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.1,
+         "share_slower_mean": 0.30000000000000004,
+         "worst_slowdown_months_max": 0.37531374160650444,
+         "ratio_by_direction": [
+          1.0020281513811515,
+          0.9989846040282694
+         ]
+        },
+        "retained_log_share": 0.13535702160522908
+       },
+       "coord_free_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.2737648400686752,
+         "median_speedup_geomean": 1.3280179141898982,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.3489670496189943,
+          1.2027550029879783
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.1967132509299943,
+         "median_speedup_geomean": 1.2702833130119042,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.1534140122787209,
+          1.2416379458769442
+         ]
+        },
+        "retained_log_share": 0.7421319958066891
+       },
+       "coordination_no_loser_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.002665967842109,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.4,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.002770053483871,
+          1.0025618930042404
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 0.9995553318704683,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.1,
+         "share_slower_mean": 0.30000000000000004,
+         "worst_slowdown_months_max": 0.666215260017573,
+         "ratio_by_direction": [
+          0.9994917442908959,
+          0.9996189234954771
+         ]
+        },
+        "retained_log_share": -0.167053638420549
+       }
+      }
+     },
+     "time": {
+      "summary": {
+       "coord_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.092863016615001,
+         "median_speedup_geomean": 1.082124235203944,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.0852320946381733,
+          1.100547596210788
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0418734479809213,
+         "median_speedup_geomean": 1.072275107809049,
+         "share_faster_mean": 0.7,
+         "share_slower_mean": 0.30000000000000004,
+         "worst_slowdown_months_max": 10.736343566337894,
+         "ratio_by_direction": [
+          1.043275383243907,
+          1.040473396614089
+         ]
+        },
+        "retained_log_share": 0.461937853628725
+       },
+       "indep_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.2640104236696457,
+         "median_speedup_geomean": 1.302648352136672,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.1886924751256354,
+          1.3441006690789814
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.1196762476762394,
+         "median_speedup_geomean": 1.182126851995121,
+         "share_faster_mean": 0.9,
+         "share_slower_mean": 0.1,
+         "worst_slowdown_months_max": 10.462216924710589,
+         "ratio_by_direction": [
+          1.193080124696037,
+          1.0507885209551573
+         ]
+        },
+        "retained_log_share": 0.48247812451340166
+       },
+       "coord_free_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.003835241149555,
+         "median_speedup_geomean": 1.0028614828052096,
+         "share_faster_mean": 0.5,
+         "share_slower_mean": 0.4,
+         "worst_slowdown_months_max": 0.19341806680419182,
+         "ratio_by_direction": [
+          1.0054255587754222,
+          1.00224743898605
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.010652201826349,
+         "median_speedup_geomean": 0.9997399681161742,
+         "share_faster_mean": 0.4,
+         "share_slower_mean": 0.5,
+         "worst_slowdown_months_max": 5.421800090191084,
+         "ratio_by_direction": [
+          0.9868736882683877,
+          1.0350036536577163
+         ]
+        },
+        "retained_log_share": 2.768058723731974
+       },
+       "coord_free_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.2688582084599698,
+         "median_speedup_geomean": 1.315712239633478,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.1951417960153314,
+          1.3471214533238454
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.131603265046656,
+         "median_speedup_geomean": 1.1826797910143254,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.177419383058486,
+          1.0875699584101757
+         ]
+        },
+        "retained_log_share": 0.5192204393648633
+       },
+       "coordination_no_loser_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.002583274539282,
+         "median_speedup_geomean": 1.0013996618559875,
+         "share_faster_mean": 0.6,
+         "share_slower_mean": 0.1,
+         "worst_slowdown_months_max": 0.005850859000631203,
+         "ratio_by_direction": [
+          1.0033782327650282,
+          1.0017889461444012
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 0.9945183024411333,
+         "median_speedup_geomean": 0.9948851767847309,
+         "share_faster_mean": 0.4,
+         "share_slower_mean": 0.3,
+         "worst_slowdown_months_max": 5.421800090191084,
+         "ratio_by_direction": [
+          0.9856955319332683,
+          1.0034200438653844
+         ]
+        },
+        "retained_log_share": -2.130580355249191
+       }
+      }
+     }
+    }
+   }
+  },
+  "all-trials slope (sensitivity)": {
+   "US-Northeast": {
+    "full_data": {
+     "in_sample": {
+      "coord_vs_actual": {
+       "share_faster_material": 0.8043478260869565,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 46,
+       "dividend_trial_months": 532.2686480890252,
+       "ratio": 1.0835825875816942,
+       "median_speedup": 1.0670870653487095,
+       "share_faster": 0.9782608695652174,
+       "share_slower": 0.0,
+       "worst_slowdown_months": 0.0,
+       "median_T_base": 145.1755297349813,
+       "median_T_new": 128.47462185072268
+      },
+      "coordination_no_loser_vs_indep": {
+       "share_faster_material": 0.043478260869565216,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 46,
+       "dividend_trial_months": 8.32399479423487,
+       "ratio": 1.001318002206871,
+       "median_speedup": 1.0,
+       "share_faster": 0.06521739130434782,
+       "share_slower": 0.0,
+       "worst_slowdown_months": 0.0,
+       "median_T_base": 124.85280736376548,
+       "median_T_new": 124.85280736376548
+      },
+      "coord_free_vs_actual": {
+       "share_faster_material": 0.9130434782608695,
+       "share_slower_material": 0.021739130434782608,
+       "material_threshold_months": 1.0,
+       "trials": 46,
+       "dividend_trial_months": 941.4230013760387,
+       "ratio": 1.1579828065245334,
+       "median_speedup": 1.1534745970031977,
+       "share_faster": 0.9565217391304348,
+       "share_slower": 0.043478260869565216,
+       "worst_slowdown_months": 1.7720598676113255,
+       "median_T_base": 145.1755297349813,
+       "median_T_new": 122.0089924717778
+      },
+      "coord_free_vs_indep": {
+       "share_faster_material": 0.6304347826086957,
+       "share_slower_material": 0.34782608695652173,
+       "material_threshold_months": 1.0,
+       "trials": 46,
+       "dividend_trial_months": 364.9173281544252,
+       "ratio": 1.0612377895664376,
+       "median_speedup": 1.0310091614342034,
+       "share_faster": 0.6521739130434783,
+       "share_slower": 0.34782608695652173,
+       "worst_slowdown_months": 9.164822879994261,
+       "median_T_base": 124.85280736376548,
+       "median_T_new": 122.0089924717778
+      },
+      "indep_vs_actual": {
+       "share_faster_material": 0.782608695652174,
+       "share_slower_material": 0.10869565217391304,
+       "material_threshold_months": 1.0,
+       "trials": 46,
+       "dividend_trial_months": 576.5056732216134,
+       "ratio": 1.091162431181065,
+       "median_speedup": 1.09960677814508,
+       "share_faster": 0.8478260869565217,
+       "share_slower": 0.15217391304347827,
+       "worst_slowdown_months": 12.187757039024063,
+       "median_T_base": 145.1755297349813,
+       "median_T_new": 124.85280736376548
+      }
+     }
+    },
+    "n_movable": 46,
+    "splits": {
+     "alternating": {
+      "summary": {
+       "coord_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.085968213127607,
+         "median_speedup_geomean": 1.057397080371837,
+         "share_faster_mean": 0.9354764107308049,
+         "share_slower_mean": 0.04301572617946346,
+         "worst_slowdown_months_max": 1.2792556027497852,
+         "ratio_by_direction": [
+          1.104879066195425,
+          1.067381033821646
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0604724791929587,
+         "median_speedup_geomean": 1.0465610937450207,
+         "share_faster_mean": 0.6880203515263645,
+         "share_slower_mean": 0.29047178538390384,
+         "worst_slowdown_months_max": 17.13312358368387,
+         "ratio_by_direction": [
+          1.0454040974746897,
+          1.0757580555139237
+         ]
+        },
+        "retained_log_share": 0.7119334865021278
+       },
+       "indep_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.0746570892249636,
+         "median_speedup_geomean": 1.085558458854402,
+         "share_faster_mean": 0.7960222016651248,
+         "share_slower_mean": 0.20397779833487512,
+         "worst_slowdown_months_max": 30.58822031080848,
+         "ratio_by_direction": [
+          1.0883861760217743,
+          1.061101183444622
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0682297650447112,
+         "median_speedup_geomean": 1.0937230337507269,
+         "share_faster_mean": 0.8496762257169288,
+         "share_slower_mean": 0.15032377428307123,
+         "worst_slowdown_months_max": 57.34925247919239,
+         "ratio_by_direction": [
+          1.0525962674152796,
+          1.0840954563990262
+         ]
+        },
+        "retained_log_share": 0.9166856191740055
+       },
+       "coord_free_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.063372834093338,
+         "median_speedup_geomean": 1.0286198707006138,
+         "share_faster_mean": 0.5804810360777057,
+         "share_slower_mean": 0.41951896392229415,
+         "worst_slowdown_months_max": 19.58022303291341,
+         "ratio_by_direction": [
+          1.0810812915395958,
+          1.0459544468458526
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0259337789634133,
+         "median_speedup_geomean": 1.0031238096699218,
+         "share_faster_mean": 0.5265957446808511,
+         "share_slower_mean": 0.4734042553191489,
+         "worst_slowdown_months_max": 115.7007861075931,
+         "ratio_by_direction": [
+          1.0279316808287131,
+          1.0239397602470988
+         ]
+        },
+        "retained_log_share": 0.416679609643745
+       },
+       "coord_free_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.1427611546476466,
+         "median_speedup_geomean": 1.1400447716585722,
+         "share_faster_mean": 0.967622571692877,
+         "share_slower_mean": 0.032377428307123035,
+         "worst_slowdown_months_max": 3.830982066643614,
+         "ratio_by_direction": [
+          1.1766339328674615,
+          1.109863501377299
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0959329996535196,
+         "median_speedup_geomean": 1.1109900234563073,
+         "share_faster_mean": 0.9246068455134135,
+         "share_slower_mean": 0.07539315448658648,
+         "worst_slowdown_months_max": 173.0500385867855,
+         "ratio_by_direction": [
+          1.0819970503982181,
+          1.110048441710188
+         ]
+        },
+        "retained_log_share": 0.6864581502266603
+       },
+       "coordination_no_loser_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.0020640720935472,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.10684551341350601,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.0040104647251744,
+          1.0001214527734634
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.001979852372007,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.08533765032377427,
+         "share_slower_mean": 0.02150786308973173,
+         "worst_slowdown_months_max": 1.6122973080344707,
+         "ratio_by_direction": [
+          1.0041251487482168,
+          0.9998391393851761
+         ]
+        },
+        "retained_log_share": 0.9592376211233595
+       }
+      }
+     },
+     "time": {
+      "summary": {
+       "coord_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.0992242118137312,
+         "median_speedup_geomean": 1.0763966693867018,
+         "share_faster_mean": 0.9655070754716981,
+         "share_slower_mean": 0.02505896226415094,
+         "worst_slowdown_months_max": 0.344637027293615,
+         "ratio_by_direction": [
+          1.0800070114345264,
+          1.1187833551493287
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0410741892426298,
+         "median_speedup_geomean": 1.0172825805609123,
+         "share_faster_mean": 0.586379716981132,
+         "share_slower_mean": 0.394752358490566,
+         "worst_slowdown_months_max": 23.102576934116428,
+         "ratio_by_direction": [
+          1.0505241814569113,
+          1.0317092044507632
+         ]
+        },
+        "retained_log_share": 0.42548697439371164
+       },
+       "indep_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.0891299947514297,
+         "median_speedup_geomean": 1.111870967189313,
+         "share_faster_mean": 0.8334316037735849,
+         "share_slower_mean": 0.1665683962264151,
+         "worst_slowdown_months_max": 50.70556036543928,
+         "ratio_by_direction": [
+          1.0439831401597757,
+          1.1362292165807464
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.06351150900831,
+         "median_speedup_geomean": 1.0632613567820635,
+         "share_faster_mean": 0.7712264150943396,
+         "share_slower_mean": 0.22877358490566038,
+         "worst_slowdown_months_max": 19.98920775579529,
+         "ratio_by_direction": [
+          1.0708988347703459,
+          1.056175142851554
+         ]
+        },
+        "retained_log_share": 0.7212081157319077
+       },
+       "coord_free_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.0559516831721867,
+         "median_speedup_geomean": 1.0267190398766834,
+         "share_faster_mean": 0.633254716981132,
+         "share_slower_mean": 0.3667452830188679,
+         "worst_slowdown_months_max": 14.054618136661517,
+         "ratio_by_direction": [
+          1.078798960191031,
+          1.0335882757958228
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0218276703151312,
+         "median_speedup_geomean": 1.0081035927708133,
+         "share_faster_mean": 0.5330188679245282,
+         "share_slower_mean": 0.4669811320754717,
+         "worst_slowdown_months_max": 82.28972140615986,
+         "ratio_by_direction": [
+          1.037722454097997,
+          1.0061763467662674
+         ]
+        },
+        "retained_log_share": 0.396618182772497
+       },
+       "coord_free_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.1500686511510871,
+         "median_speedup_geomean": 1.1426815666786638,
+         "share_faster_mean": 0.9716981132075472,
+         "share_slower_mean": 0.02830188679245283,
+         "worst_slowdown_months_max": 1.4007780238750485,
+         "ratio_by_direction": [
+          1.1262479260613334,
+          1.1743931968745323
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.086725487603291,
+         "median_speedup_geomean": 1.0787226899035673,
+         "share_faster_mean": 0.8027712264150944,
+         "share_slower_mean": 0.19722877358490565,
+         "worst_slowdown_months_max": 58.74260061924576,
+         "ratio_by_direction": [
+          1.1112957669085688,
+          1.0626984467797171
+         ]
+        },
+        "retained_log_share": 0.5948223506723902
+       },
+       "coordination_no_loser_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.006260807064608,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.24204009433962265,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.012469307211735,
+          1.0000903776755794
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0048524968260184,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.13826650943396226,
+         "share_slower_mean": 0.10377358490566038,
+         "worst_slowdown_months_max": 15.633269488272674,
+         "ratio_by_direction": [
+          1.0096787975345287,
+          1.000049266007245
+         ]
+        },
+        "retained_log_share": 0.7756027514680903
+       }
+      }
+     }
+    }
+   },
+   "US_Regeneron_2024-09-01": {
+    "full_data": {
+     "in_sample": {
+      "coord_vs_actual": {
+       "share_faster_material": 0.8,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 5,
+       "dividend_trial_months": 28.352200123382424,
+       "ratio": 1.0529967388823798,
+       "median_speedup": 1.035653019596148,
+       "share_faster": 1.0,
+       "share_slower": 0.0,
+       "worst_slowdown_months": 0.0,
+       "median_T_base": 81.13508431111443,
+       "median_T_new": 78.34195698357833
+      },
+      "coordination_no_loser_vs_indep": {
+       "share_faster_material": 0.0,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 5,
+       "dividend_trial_months": 0.2943183134045668,
+       "ratio": 1.0005983257235844,
+       "median_speedup": 1.0,
+       "share_faster": 0.4,
+       "share_slower": 0.2,
+       "worst_slowdown_months": 0.32603529243858276,
+       "median_T_base": 66.82066298724092,
+       "median_T_new": 66.82066298724092
+      },
+      "coord_free_vs_actual": {
+       "share_faster_material": 1.0,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 5,
+       "dividend_trial_months": 71.7383865809068,
+       "ratio": 1.1459301795678403,
+       "median_speedup": 1.1756699372361223,
+       "share_faster": 1.0,
+       "share_slower": 0.0,
+       "worst_slowdown_months": 0.0,
+       "median_T_base": 81.13508431111443,
+       "median_T_new": 68.3578450085549
+      },
+      "coord_free_vs_indep": {
+       "share_faster_material": 0.2,
+       "share_slower_material": 0.2,
+       "material_threshold_months": 1.0,
+       "trials": 5,
+       "dividend_trial_months": 0.6035737979836995,
+       "ratio": 1.0012277894293435,
+       "median_speedup": 0.9966001071982423,
+       "share_faster": 0.2,
+       "share_slower": 0.6,
+       "worst_slowdown_months": 1.5371820213139813,
+       "median_T_base": 66.82066298724092,
+       "median_T_new": 68.3578450085549
+      },
+      "indep_vs_actual": {
+       "share_faster_material": 1.0,
+       "share_slower_material": 0.0,
+       "material_threshold_months": 1.0,
+       "trials": 5,
+       "dividend_trial_months": 71.1348127829231,
+       "ratio": 1.1445249439400507,
+       "median_speedup": 1.1482111980800025,
+       "share_faster": 1.0,
+       "share_slower": 0.0,
+       "worst_slowdown_months": 0.0,
+       "median_T_base": 81.13508431111443,
+       "median_T_new": 66.82066298724092
+      }
+     }
+    },
+    "n_movable": 5,
+    "splits": {
+     "alternating": {
+      "summary": {
+       "coord_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.0509612517937517,
+         "median_speedup_geomean": 1.043592166713513,
+         "share_faster_mean": 0.9,
+         "share_slower_mean": 0.1,
+         "worst_slowdown_months_max": 0.026888655685326057,
+         "ratio_by_direction": [
+          1.069042049375925,
+          1.0331862562531335
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0362217743857576,
+         "median_speedup_geomean": 1.0313489037212344,
+         "share_faster_mean": 0.8,
+         "share_slower_mean": 0.2,
+         "worst_slowdown_months_max": 1.6743006934059963,
+         "ratio_by_direction": [
+          1.016231138330992,
+          1.056605653192886
+         ]
+        },
+        "retained_log_share": 0.7158440607307714
+       },
+       "indep_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.1180048277901835,
+         "median_speedup_geomean": 1.1257838841854337,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.1539953325899845,
+          1.083136785446827
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0837981074034941,
+         "median_speedup_geomean": 1.1026519290848245,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.0580164951831459,
+          1.1102079626916082
+         ]
+        },
+        "retained_log_share": 0.7214230845836239
+       },
+       "coord_free_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.0037783538160998,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.2,
+         "share_slower_mean": 0.2,
+         "worst_slowdown_months_max": 0.227055056357095,
+         "ratio_by_direction": [
+          1.0033744278281367,
+          1.0041824424115595
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0023197788515832,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.2,
+         "share_slower_mean": 0.2,
+         "worst_slowdown_months_max": 0.4760971635765472,
+         "ratio_by_direction": [
+          1.002661014426904,
+          1.0019786594089497
+         ]
+        },
+        "retained_log_share": 0.6144122751664763
+       },
+       "coord_free_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.1222290455976824,
+         "median_speedup_geomean": 1.1357735342922068,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.157889406553816,
+          1.0876669426758
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0863122793324347,
+         "median_speedup_geomean": 1.1100459171884962,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.0608318923407305,
+          1.1124046861228787
+         ]
+        },
+        "retained_log_share": 0.7179234875227792
+       },
+       "coordination_no_loser_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.0026396859078606,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.4,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.0026116872509685,
+          1.0026676853466352
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0012935231908084,
+         "median_speedup_geomean": 1.0,
+         "share_faster_mean": 0.2,
+         "share_slower_mean": 0.2,
+         "worst_slowdown_months_max": 0.5193766212691528,
+         "ratio_by_direction": [
+          1.0009575706287588,
+          1.00162958850901
+         ]
+        },
+        "retained_log_share": 0.49035860713100426
+       }
+      }
+     },
+     "time": {
+      "summary": {
+       "coord_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.0460338627357906,
+         "median_speedup_geomean": 1.0331209816901066,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.0422583347629173,
+          1.0498230673673181
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0197321114019422,
+         "median_speedup_geomean": 1.0306410146604776,
+         "share_faster_mean": 0.7,
+         "share_slower_mean": 0.30000000000000004,
+         "worst_slowdown_months_max": 1.658062045288034,
+         "ratio_by_direction": [
+          1.0221984239672641,
+          1.0172717494402674
+         ]
+        },
+        "retained_log_share": 0.43416589745777345
+       },
+       "indep_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.114972310970102,
+         "median_speedup_geomean": 1.1201964472896913,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.0802195434369113,
+          1.1508431427510226
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0493702888917438,
+         "median_speedup_geomean": 1.0784056863894815,
+         "share_faster_mean": 0.9,
+         "share_slower_mean": 0.1,
+         "worst_slowdown_months_max": 8.012383933595572,
+         "ratio_by_direction": [
+          1.084729561012024,
+          1.01516363413326
+         ]
+        },
+        "retained_log_share": 0.44280482575352753
+       },
+       "coord_free_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.0039888381012383,
+         "median_speedup_geomean": 1.0032606589689028,
+         "share_faster_mean": 0.5,
+         "share_slower_mean": 0.4,
+         "worst_slowdown_months_max": 0.5907881217349882,
+         "ratio_by_direction": [
+          1.0061034378786988,
+          1.0018786827298403
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0066014767091345,
+         "median_speedup_geomean": 1.000450950862848,
+         "share_faster_mean": 0.5,
+         "share_slower_mean": 0.4,
+         "worst_slowdown_months_max": 3.6540373475751267,
+         "ratio_by_direction": [
+          0.9959649545765841,
+          1.0173515928015489
+         ]
+        },
+        "retained_log_share": 1.6528363285296113
+       },
+       "coord_free_vs_actual": {
+        "in_sample": {
+         "ratio_geomean": 1.1194197550059253,
+         "median_speedup_geomean": 1.1297290640869087,
+         "share_faster_mean": 1.0,
+         "share_slower_mean": 0.0,
+         "worst_slowdown_months_max": 0.0,
+         "ratio_by_direction": [
+          1.086812596315635,
+          1.153005211888064
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 1.0562976824131203,
+         "median_speedup_geomean": 1.0673517137990118,
+         "share_faster_mean": 0.9,
+         "share_slower_mean": 0.1,
+         "worst_slowdown_months_max": 1.6418978097934485,
+         "ratio_by_direction": [
+          1.0803526279612186,
+          1.0327783401396806
+         ]
+        },
+        "retained_log_share": 0.4855049293955402
+       },
+       "coordination_no_loser_vs_indep": {
+        "in_sample": {
+         "ratio_geomean": 1.0028063965594174,
+         "median_speedup_geomean": 1.0016066451514223,
+         "share_faster_mean": 0.6,
+         "share_slower_mean": 0.1,
+         "worst_slowdown_months_max": 0.013706525939333858,
+         "ratio_by_direction": [
+          1.0036990570005975,
+          1.001914530024197
+         ]
+        },
+        "held_out": {
+         "ratio_geomean": 0.9984095570697333,
+         "median_speedup_geomean": 0.998502196798448,
+         "share_faster_mean": 0.4,
+         "share_slower_mean": 0.3,
+         "worst_slowdown_months_max": 3.6540373475751267,
+         "ratio_by_direction": [
+          0.994017544410371,
+          1.0028209755990507
+         ]
+        },
+        "retained_log_share": -0.5679672967273999
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "reproduction_check": {
+  "max_abs_ratio_difference": 4.440892098500626e-16,
+  "reproduces": true
+ },
+ "validation_source": {
+  "industry_phase2_3": {
+   "label": "industry Phase II/III subset",
+   "n": 390,
+   "slope": 0.3338523991644037,
+   "se": 0.0867625412274017,
+   "ci95": [
+    0.16379781835869636,
+    0.503906979970111
+   ],
+   "p": 0.00011914129102633663,
+   "median_share_of_sites_seen_before_cutoff": 0.6849838969404187
+  },
+  "all_trials": {
+   "label": "all completed lung trials started 2018 or later",
+   "n": 1094,
+   "slope": 0.15770376477745798,
+   "se": 0.043548355676241234,
+   "ci95": [
+    0.07234898765202517,
+    0.24305854190289078
+   ],
+   "p": 0.0002930716111311843,
+   "median_share_of_sites_seen_before_cutoff": 0.75
+  }
+ }
+}

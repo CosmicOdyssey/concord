@@ -17,9 +17,13 @@ script, unchanged, beta 0.093, 46 US-Northeast trials) shows:
 - **The data doesn't support:** "choosing sites from registry data doesn't beat sponsors' own choices out
   of sample". In our model it does, by about 1.7x held-out. That is still scored by our enrollment model,
   which typically misses by about 2x, not by observed enrollment.
+- **Update (18 Oct): calibrated to observed enrollment, it is about 1.2x.** Re-scoring the same allocations
+  with site rates shrunk by the observed-outcome slope (post hoc, not pre-registered): site selection alone is
+  1.18x (alternating) and 1.17x (time) held-out at b = 0.33, and 1.07x / 1.06x at b = 0.16. Coordination is
+  1.03x held-out either way. b = 1 reproduces the table above exactly.
 
-The Findings page and README state both rows as measured, and the finding's title says "coordination gains
-largely disappear; site-selection gains remain in the model". The product rule is unaffected: no product
+The Findings page and README state all of these as measured. The finding's title now says "coordination gains
+largely disappear; site-selection gains shrink once scores are calibrated to observed enrollment". The product rule is unaffected: no product
 view shows a predicted speedup.
 
 ## What works end to end
@@ -103,4 +107,6 @@ in-sample is 1.76x. Regeneron (5 trials): 1.69x alternating, 1.42x time split (1
 ## Observed-outcome check of site-rate scores (added before you left)
 
 Completed trials started 2018+ (n = 1,094; industry Phase II/III n = 390), registered site lists scored with pre-2018 rates: slope of actual log enrollment rate on the score 0.16 [0.07, 0.24], p 0.0003 (industry Phase II/III 0.33 [0.16, 0.50], p 0.0001), with phase, log site count and start-year controls.
-Reading: the scores carry real signal on observed enrollment, but predicted differences between site lists are about 3-6x larger than observed ones, so the model's ~1.7x site-selection gains are likely overstated. Script `analysis/selection_validation.py`, output `data/findings/selection_validation.json` (not yet on the Findings page).
+Reading: the scores carry real signal on observed enrollment, but predicted differences between site lists are about 3-6x larger than observed ones, so the model's ~1.7x site-selection gains are likely overstated. Script `analysis/selection_validation.py`, output `data/findings/selection_validation.json`. Now on the Findings page, with the calibrated re-score
+(`analysis/selection_calibrated.py`, `data/findings/selection_calibrated.json`) and a unit test
+(`tests/test_selection_validation.py`).

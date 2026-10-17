@@ -159,6 +159,24 @@ not just a conservative choice. Calibration slope of actual on predicted rate: 0
 dates, the model's times for the same trials are within 15-40% of what they actually took (June 2019:
 31 vs 37 months).
 
+**Observed-outcome check of the site scores** (`analysis/selection_validation.py`, 18 Oct). Completed trials
+started 2018 or later: each trial's registered site list is scored with rates fit only on pre-2018 trials,
+and the actual log per-site enrollment rate is regressed on that score with phase, log site count and
+start-year controls:
+
+| completed trials started 2018+ | slope | 95% CI | p | n |
+|---|---|---|---|---|
+| all lung trials | 0.16 | [0.07, 0.24] | 0.0003 | 1,094 |
+| industry Phase II/III | 0.33 | [0.16, 0.50] | 0.0001 | 390 |
+
+- **The scores carry real signal.** Registered site lists that pre-2018 data scored higher did enroll
+  faster per site.
+- **Predicted differences between site lists are about 3-6x larger than observed.** The slope is far below
+  1.
+- **Why the backtest slope above is 0.95.** It compares raw predicted and actual rates across trials, and
+  much of that variation is explained by phase, site count and start year. Net of those, the site scores
+  add less, which is what selection depends on.
+
 ### 3. Clearing, US-Northeast: final rerun of the holdout
 
 Task A's pre-registered script (`analysis/selection_holdout.py`), run unchanged on the current database:
@@ -176,6 +194,25 @@ of trials slower than the baseline. Output: `data/robustness/holdout.json`; earl
 | Coordination capped at registered times, vs registered | 1.60x (0% slower) | 1.57x (0% slower) | 1.37x (24% slower) | 1.67x (0% slower) | 1.23x (31% slower) |
 | Coordination capped at best-response times, vs best response | 1.00x (0% slower) | 1.00x (0% slower) | 1.00x (2% slower) | 1.01x (0% slower) | 0.99x (16% slower) |
 
+**Re-scored with calibrated site rates (post hoc, not pre-registered; `analysis/selection_calibrated.py`,
+18 Oct).** The observed-outcome check in section 2 says the scores overstate differences between site
+lists. So the same saved allocations, not re-solved, are re-scored with every site's log rate shrunk
+toward the U.S. mean by b, the observed-outcome slope. b = 1 reproduces the table above exactly (largest
+difference 4e-16). Output: `data/findings/selection_calibrated.json`.
+
+| US-Northeast | in-sample, all history | alternating: held-out | time: held-out |
+|---|---|---|---|
+| Site selection alone, b = 1 (uncalibrated, as above) | 1.76x | 1.73x | 1.70x |
+| Site selection alone, b = 0.33 (industry Phase II/III slope) | 1.22x | 1.18x | 1.17x |
+| Site selection alone, b = 0.16 (all-trials slope) | 1.09x | 1.07x | 1.06x |
+| Coordination, b = 0.33 | 1.12x | 1.03x | 1.03x |
+| Coordination, b = 0.16 | 1.06x | 1.03x | 1.02x |
+
+- **Calibrated, site selection alone is worth about 1.2x held-out, not 1.7x.** That uses the industry Phase
+  II/III slope, whose 95% CI (0.16 to 0.50) spans roughly 1.06x to 1.3x.
+- **Caveat.** b was estimated on trial-level scores (the mean score of a registered list). Applying it to
+  each site's rate assumes the overstatement is the same at site level.
+
 ### 4. Portfolio clearing: Regeneron, as of 1 Sept 2024
 
 Same script and settings, 5 movable trials (Regeneron's), everyone else held fixed.
@@ -186,6 +223,9 @@ Same script and settings, 5 movable trials (Regeneron's), everyone else held fix
 | Coordination: joint optimum vs best response | 1.01x (40% slower) | 1.00x (20% slower) | 0.99x (30% slower) | 1.00x (30% slower) | 1.03x (50% slower) |
 | Coordination capped at registered times, vs registered | 1.27x (0% slower) | 1.23x (0% slower) | 1.20x (20% slower) | 1.22x (0% slower) | 1.12x (30% slower) |
 | Coordination capped at best-response times, vs best response | 1.00x (0% slower) | 1.00x (0% slower) | 0.99x (40% slower) | 1.00x (0% slower) | 0.99x (40% slower) |
+
+Calibrated re-score (post hoc, as in section 3): site selection alone is 1.32x in-sample, 1.20x and 1.12x
+held-out at b = 0.33, and 1.15x, 1.08x and 1.05x at b = 0.16.
 
 Observed fact, no model needed: Regeneron's two fianlimab Phase 2/3 trials (NCT05785767, NCT05800015) shared
 16 registered U.S. sites. Under hand-encoded eligibility on the synthetic population, every patient eligible

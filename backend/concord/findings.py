@@ -55,7 +55,7 @@ def _x(v, d=2):
     return "—" if v is None else f"{v:.{d}f}x"
 
 
-def _ci(lo, hi, d=3):
+def _ci(lo, hi, d=3):  # noqa: D103
     return f"[{lo:+.{d}f}, {hi:+.{d}f}]"
 
 
@@ -198,9 +198,60 @@ def allocation() -> dict:
                 f"trial's best response vs its registered sites): {_x(se.get('full'))} in-sample, "
                 f"{_x(se.get('alternating'))} and {_x(se.get('time'))} held-out. Both are scored by our enrollment "
                 f"model, not observed enrollment.")
+    title = "Out of sample, coordination gains largely disappear; site-selection gains remain in the model"
+    extra_caveats, extra_sources = [], []
+
+    # Observed-outcome check of the site scores (analysis/selection_validation.py).
+    vp = FINDINGS_DIR / "selection_validation.json"
+    if vp.exists():
+        v = json.loads(vp.read_text(encoding="utf-8"))
+        vrows = [[r["label"], f"{r['slope']:.2f}", _ci(*r["ci95"], d=2), f"{r['p']:.2g}", f"{r['n']:,}"]
+                 for r in (v["primary"], v["industry_phase2_3"]) if "slope" in r]
+        tables.append({"id": "selection-validation", "title": "Observed-outcome check of the site scores",
+                       "columns": ["Completed trials started 2018 or later", "Slope", "95% CI", "p", "Trials"],
+                       "rows": vrows, "highlight_row": 1,
+                       "notes": ["Actual log per-site enrollment rate regressed on the log mean score of each trial's "
+                                 "registered sites (rates fit on pre-2018 trials), with phase, log site count and "
+                                 "start-year controls. Slope 1 = scores calibrated; 0 = no signal."]})
+        extra_sources.append({"label": "observed-outcome check", "path": "data/findings/selection_validation.json"})
+
+    # Post-hoc calibrated re-score of the same allocations (analysis/selection_calibrated.py).
+    cp = FINDINGS_DIR / "selection_calibrated.json"
+    cal_se = None
+    if cp.exists():
+        c = json.loads(cp.read_text(encoding="utf-8"))
+        if c.get("reproduction_check", {}).get("reproduces"):
+            crow = []
+            for lab, res in c["results"].items():
+                ne = res.get("US-Northeast")
+                if not ne:
+                    continue
+                b = c["b_values"][lab]
+                for key, name in (("indep_vs_actual", "Site selection alone"), ("coord_free_vs_indep", "Coordination")):
+                    alt = ne["splits"]["alternating"]["summary"][key]["held_out"]["ratio_geomean"]
+                    tim = ne["splits"]["time"]["summary"][key]["held_out"]["ratio_geomean"]
+                    crow.append([f"{name}, b = {b:.2f} ({lab.split(' (')[0]})", _x(ne["full_data"]["in_sample"][key]["ratio"]),
+                                 _x(alt), _x(tim)])
+                    if key == "indep_vs_actual" and "primary" in lab:
+                        cal_se = (b, alt, tim)
+            tables.append({"id": "selection-calibrated", "title": "US-Northeast, re-scored with calibrated site rates (post hoc)",
+                           "columns": ["Comparison and calibration", "In-sample (all history)", "Alternating: held-out",
+                                       "Time: held-out"], "rows": crow,
+                           "notes": ["Same allocations as above, not re-solved. Each site's log rate shrunk toward the "
+                                     "U.S. mean by b, the observed-outcome slope; b = 1 reproduces the table above "
+                                     "exactly. Post hoc, not pre-registered."]})
+            extra_caveats.append("The calibrated re-score is post hoc and assumes the trial-level overstatement applies "
+                                 "equally to each site.")
+            extra_sources.append({"label": "calibrated re-score", "path": "data/findings/selection_calibrated.json"})
+    if cal_se:
+        b, alt, tim = cal_se
+        headline += (f" Calibrated to observed enrollment (post hoc, b = {b:.2f}), site selection alone is {_x(alt)} and "
+                     f"{_x(tim)} held-out.")
+        title = ("Out of sample, coordination gains largely disappear; site-selection gains shrink once scores are "
+                 "calibrated to observed enrollment")
     return {
         "id": "allocation",
-        "title": "Out of sample, coordination gains largely disappear; site-selection gains remain in the model",
+        "title": title,
         "status": status,
         "headline": headline,
         "tables": tables,
@@ -209,9 +260,11 @@ def allocation() -> dict:
             "Held-out means: allocations chosen with site rates fit on one half of history, scored with rates fit on "
             "the other half. Scores still come from our enrollment model, not observed enrollment.",
             "Ratios above are research results. No product view in this app shows a predicted speedup.",
+            *extra_caveats,
         ],
         "sources": [{"label": "task A holdout output", "path": path},
-                    {"label": "task A script", "path": "backend/concord/analysis/selection_holdout.py"}],
+                    {"label": "task A script", "path": "backend/concord/analysis/selection_holdout.py"},
+                    *extra_sources],
     }
 
 
