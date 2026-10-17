@@ -30,3 +30,11 @@ Judgment calls made without being able to ask. Newest last. Each says what and w
    reading" in the Model view, findings notes) was applied as prepared.
 9. **The final rerun will use beta 0.0925**, the default the congestion regression now writes, as the
    re-estimate's notes require; not the older 0.087.
+10. **Final rerun = task A's pre-registered script, unchanged, on main** (beta 0.0925, rebuilt database with
+    task E). Its fixed method (deviation 1) searches until no improvement remains; on main the solver now stops
+    at the deterministic 500k-evaluation default the user asked for. Calibration showed every US-Northeast
+    solve objective identical from 500k to 4M evaluations, and A's own check found the light search
+    (patience 0) gives the same allocations as its full search, so the two should coincide. Only the
+    pre-registered script runs (no post-hoc additions). A's earlier outputs on the pre-E database are kept as
+    `data/robustness/holdout_preE.json` (and `_alloc_preE.npz`, `_posthoc_preE.json`), labelled beta 0.026,
+    pre-E.
