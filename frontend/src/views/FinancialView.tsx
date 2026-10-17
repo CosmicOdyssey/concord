@@ -1,105 +1,1738 @@
-import { useEffect, useRef, useState } from 'react'
-import { COVERAGE_STATUSES, financialApi, type FinanceRequest, type FinancialDemo, type FinancialResult, type FinancialScenario } from '../financialApi'
+// Sponsor budget: a sponsor-budget worksheet on SYNTHETIC site inputs (docs/financial/CONTRACT.md), in the Calm skin.
+// It prices an authored visit schedule, says who pays for each protocol item, and compares five budget scenarios at a
+// fixed participant target over a budgeted contract period. Scenarios are listed A to E; none is ranked or preferred.
+// There is no time model: the contract period is an input that prices monthly site costs.
+// Simple: the synthetic banner, the key inputs, scenarios A to E with feasibility, sponsor commitment and the change
+// against A with its cause, the API's payer framing in one line (full sentences in a hover card) and the coverage
+// worksheet's per-participant totals. Every other input and the exports stay one "Details" click away.
+// Detailed: everything the API returns, in seven sections. Both modes run the same computation and exports.
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Banner, Details, ErrorBox, HoverCard, InfoTip, KeyFigure, Loading, PageHead, Qualifier, Section, Segmented, Window } from '../components'
+import { useDensity } from '../density'
+import {
+  commitment,
+  financialApi,
+  finite,
+  firstSentence,
+  lineKind,
+  NONFINITE_MESSAGE,
+  participantAssigned,
+  payerFraming,
+  pct,
+  responsibilityOptions,
+  sameCoverageInputs,
+  scenarioChange,
+  signedUsd,
+  splitWords,
+  usd,
+  usd2,
+  type ChangeCause,
+  type CoverageResult,
+  type FinanceRequest,
+  type FinancialDemo,
+  type FinancialResult,
+  type FinancialScenario,
+  type FinancialSite,
+  type PayerFraming,
+  type ScenarioChange,
+  type ScenarioId,
+} from '../financialApi'
 import './financial.css'
 
-const SECTIONS = ['Overview', 'Allocation Comparison', 'Three-Party Economics', 'Cost Sensitivity', 'Coverage Review', 'Evidence Report'] as const
-const amount = (value: number | null | undefined) => typeof value === 'number' && Number.isFinite(value) ? value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : 'UNKNOWN'
-const number = (value: number | null | undefined, digits = 1) => typeof value === 'number' && Number.isFinite(value) ? value.toFixed(digits) : 'UNKNOWN'
-const pct = (value: number | null | undefined) => typeof value === 'number' && Number.isFinite(value) ? `${(value * 100).toFixed(1)}%` : 'UNKNOWN'
-const signed = (value: number | null | undefined) => typeof value === 'number' && Number.isFinite(value) ? `${value > 0 ? '+' : ''}${amount(value)}` : 'UNKNOWN'
+const SECTIONS = ['Scenarios', 'Sites and network', 'Ledger', 'Budget reallocation', 'Cost sensitivity', 'Coverage worksheet', 'Report'] as const
+type SectionName = (typeof SECTIONS)[number]
 
-function Numeric({ label, value, onChange, min = 0, max, step = 1 }: { label: string; value: number; onChange: (value: number) => void; min?: number; max?: number; step?: number }) {
-  return <label className="financial-field">{label}<input type="number" min={min} max={max} step={step} value={Number.isFinite(value) ? value : ''} onChange={event => onChange(event.target.value === '' ? NaN : Number(event.target.value))} required /></label>
+const PUBLIC_NOTE =
+  'The public registry record does not verify this illustrative procedure schedule, the synthetic site network or any financial term. It is not a sponsor-approved protocol budget.'
+const TARGET_NOTE = 'The participant target is a demo value, the same in every scenario, and unrelated to the registered trial target.'
+const PERIOD_NOTE = 'The budgeted contract period is an input that prices each site’s monthly cost. It is not a forecast.'
+const TRANSFER_NOTE =
+  'Sponsor-to-hospital, insurer-to-hospital and participant-to-hospital payments are transfers. Consolidated resource cost counts delivery, the supply proxy, administration and access support once; it is not the sum of every party’s spending.'
+const PAYER_INPUT_NOTE = 'Payer type, payer share and the commercial-rate assumption change only the insurer and participant lines.'
+
+/** SNAKE_CASE codes from the service, as words: "POTENTIALLY_PAYER_COVERED" -> "Potentially payer covered". */
+const words = (code: string) => {
+  const s = code.replace(/_/g, ' ').toLowerCase()
+  return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
-function ScenarioTable({ scenarios, selected, select }: { scenarios: FinancialScenario[]; selected: string; select: (id: string) => void }) {
-  return <div className="financial-scroll"><table><caption>Fixed-target financial and allocation scenarios. All figures are synthetic assumptions.</caption><thead><tr><th>Scenario</th><th>Feasibility</th><th>Sponsor commitment incl. contingency</th><th>Sites</th><th>Stated participant capacity</th><th>Unspent budget</th></tr></thead><tbody>{scenarios.map(s => <tr key={s.id} className={s.id === selected ? 'financial-selected' : ''}><th scope="row"><button className="financial-text-button" onClick={() => select(s.id)} aria-pressed={s.id === selected}>{s.id}. {s.label}</button></th><td>{s.plan.feasible ? 'Feasible under assumptions' : <><strong>INFEASIBLE</strong><ul>{s.plan.violations.map(v => <li key={v}>{v}</li>)}</ul></>}</td><td>{amount(s.plan.sponsor_total)}</td><td>{s.plan.selected_ids.length}</td><td>{number(s.plan.stated_capacity)}</td><td>{amount(s.plan.unspent_budget)}</td></tr>)}</tbody></table></div>
+/** Everything the parts below read or change; built once per render of FinancialView. */
+interface Ctx {
+  request: FinanceRequest
+  demo: FinancialDemo | null
+  result: FinancialResult | null
+  /** Worksheet lines for display and responsibility edits. */
+  coverage: CoverageResult | undefined
+  /** The worksheet amounts match the current inputs (a fresh comparison, or the demo's worksheet for unchanged inputs). */
+  coverageCurrent: boolean
+  selected: ScenarioId
+  select: (id: ScenarioId) => void
+  field: <K extends keyof FinanceRequest>(key: K, value: FinanceRequest[K]) => void
+  hasOverrides: boolean
+  exporting: boolean
+  download: (format: 'html' | 'json') => void
+  limitations: string[]
+  framing: PayerFraming
 }
+
+/* ---------------------------------------------------------------- inputs ---------------------------------------------------------------- */
+
+function Numeric({
+  label,
+  value,
+  onChange,
+  min = 0,
+  max,
+  step = 1,
+  disabled,
+  note,
+}: {
+  label: string
+  value: number
+  onChange: (value: number) => void
+  min?: number
+  max?: number
+  step?: number
+  disabled?: boolean
+  note?: ReactNode
+}) {
+  return (
+    <label className="field fin-field">
+      <span className="field-label">{label}</span>
+      <input
+        type="number"
+        min={min}
+        max={max}
+        step={step}
+        value={Number.isFinite(value) ? value : ''}
+        onChange={(event) => onChange(event.target.value === '' ? NaN : Number(event.target.value))}
+        disabled={disabled}
+        required
+      />
+      {note && <span className="fin-field-note">{note}</span>}
+    </label>
+  )
+}
+
+function Check({ checked, onChange, disabled, children }: { checked: boolean; onChange: (checked: boolean) => void; disabled?: boolean; children: ReactNode }) {
+  return (
+    <label className={`fin-check${disabled ? ' fin-check-off' : ''}`}>
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
+      <span>{children}</span>
+    </label>
+  )
+}
+
+function Empty({ children }: { children: ReactNode }) {
+  return <p className="fin-empty">{children}</p>
+}
+
+/** The four inputs shown in both modes. */
+function KeyInputs({ c }: { c: Ctx }) {
+  const r = c.request
+  return (
+    <div className="fin-inputs">
+      <Numeric label="Sponsor budget (USD)" value={r.budget} step={10000} onChange={(v) => c.field('budget', v)} />
+      <Numeric label="Participant target (demo value)" value={r.target} min={1} max={1000} onChange={(v) => c.field('target', v)} />
+      <Numeric label="Budgeted contract period (months)" value={r.budget_period_months} min={1} max={60} onChange={(v) => c.field('budget_period_months', v)} />
+      <Numeric label="Sponsor administration (USD)" value={r.admin_cost} step={1000} onChange={(v) => c.field('admin_cost', v)} />
+    </div>
+  )
+}
+
+/** What B and D change, and the access-support floor. */
+function ScenarioInputs({ c }: { c: Ctx }) {
+  const r = c.request
+  return (
+    <>
+      <div className="fin-inputs">
+        <Numeric
+          label="Scenario B: assumed administration cut (fraction)"
+          value={r.admin_reduction}
+          max={1}
+          step={0.05}
+          onChange={(v) => c.field('admin_reduction', v)}
+        />
+        <Numeric
+          label="Participant access support, each (USD)"
+          value={r.support_per_participant}
+          step={50}
+          onChange={(v) => c.field('support_per_participant', v)}
+        />
+        <Numeric label="Access-support floor, each (USD)" value={r.minimum_support} step={50} onChange={(v) => c.field('minimum_support', v)} />
+        <Numeric label="Scenario D: added support, each (USD)" value={r.extra_support} step={50} onChange={(v) => c.field('extra_support', v)} />
+      </div>
+      <p className="fin-text">
+        Scenario B’s cut is an input with no modeled source; it is not a measured result. Access support reimburses trial-related travel and lodging.
+      </p>
+    </>
+  )
+}
+
+const SITE_NUMBERS: { key: keyof FinancialSite & ('activation_cost' | 'monthly_cost' | 'per_participant_cost' | 'capacity'); label: string; step: number }[] = [
+  { key: 'activation_cost', label: 'Activation (USD)', step: 1000 },
+  { key: 'monthly_cost', label: 'Monthly cost (USD)', step: 100 },
+  { key: 'per_participant_cost', label: 'Site per-participant cost, not itemized (USD)', step: 100 },
+  { key: 'capacity', label: 'Stated capacity', step: 1 },
+]
+
+function SiteInputs({ c }: { c: Ctx }) {
+  const r = c.request
+  const setSite = (index: number, patch: Partial<FinancialSite>) =>
+    c.field(
+      'sites',
+      r.sites.map((s, i) => (i === index ? { ...s, ...patch } : s)),
+    )
+  return (
+    <>
+      <p className="fin-text">
+        Every site is synthetic and every number is an operator input. Activation of an existing site is sunk and left out. The site per-participant cost
+        covers only costs the coverage worksheet does not itemize (coordinator time, data entry), so no procedure is counted twice.
+      </p>
+      <div className="table-scroll">
+        <table className="tbl fin-tbl fin-tbl-inputs">
+          <caption>Synthetic site network. Existing sites are part of the fixture; the others are candidates.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Site</th>
+              <th scope="col">Operator-feasible</th>
+              {SITE_NUMBERS.map((n) => (
+                <th scope="col" key={n.key}>
+                  {n.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {r.sites.map((site, index) => (
+              <tr key={site.id}>
+                <th scope="row">
+                  {site.name}
+                  <div className="fin-sub">
+                    {site.id} · {site.baseline_active ? 'Existing site' : 'Candidate site'}
+                  </div>
+                </th>
+                <td>
+                  <label className="fin-cellcheck">
+                    <input type="checkbox" aria-label={`${site.name} operator-feasible`} checked={site.feasible} onChange={(e) => setSite(index, { feasible: e.target.checked })} />
+                  </label>
+                </td>
+                {SITE_NUMBERS.map((n) => (
+                  <td key={n.key}>
+                    <input
+                      type="number"
+                      aria-label={`${site.name}: ${n.label}`}
+                      min={n.key === 'capacity' ? 1 : 0}
+                      step={n.step}
+                      value={Number.isFinite(site[n.key]) ? site[n.key] : ''}
+                      onChange={(e) => setSite(index, { [n.key]: e.target.value === '' ? NaN : Number(e.target.value) })}
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  )
+}
+
+function SensitivityInputs({ c }: { c: Ctx }) {
+  const r = c.request
+  return (
+    <div className="fin-inputs">
+      <Numeric label="Cost spread (log scale, 0 to 1)" value={r.cost_spread} max={1} step={0.05} onChange={(v) => c.field('cost_spread', v)} />
+      <Numeric label="Seed" value={r.seed} onChange={(v) => c.field('seed', v)} />
+      <Numeric label="Draws" value={r.draws} min={100} max={1000} step={10} onChange={(v) => c.field('draws', v)} />
+    </div>
+  )
+}
+
+/** Payer and sponsor-pricing inputs, then the worksheet lines with their responsibility selects. */
+function CoverageWorksheet({ c }: { c: Ctx }) {
+  const r = c.request
+  const coverage = c.coverage
+  const medicaid = r.payer_kind === 'Medicaid'
+  const commercial = r.payer_kind === 'commercial'
+  return (
+    <>
+      <h3 className="fin-h3">Payer inputs</h3>
+      <p className="fin-text">{PAYER_INPUT_NOTE} Amounts the worksheet cannot know show as Unknown, never 0.</p>
+      <div className="fin-inputs">
+        <label className="field fin-field">
+          <span className="field-label">Payer type</span>
+          <select value={r.payer_kind} onChange={(e) => c.field('payer_kind', e.target.value as FinanceRequest['payer_kind'])}>
+            <option value="Medicare">Medicare</option>
+            <option value="commercial">Commercial</option>
+            <option value="Medicaid">Medicaid</option>
+          </select>
+        </label>
+        <Numeric
+          label="Insurer share of the routine benchmark (0 to 1)"
+          value={r.payer_fraction}
+          max={1}
+          step={0.05}
+          disabled={medicaid}
+          onChange={(v) => c.field('payer_fraction', v)}
+          note={
+            medicaid ? 'Not applied for Medicaid: the insurer amount is the Medicare benchmark as a stand-in and the participant share on insurer-billed lines is 0.' : undefined
+          }
+        />
+        <Numeric
+          label="Insurer administration per participant (USD)"
+          value={r.payer_admin_per_participant}
+          step={5}
+          onChange={(v) => c.field('payer_admin_per_participant', v)}
+        />
+        <label className="field fin-field">
+          <span className="field-label">Jurisdiction (label)</span>
+          <input type="text" value={r.jurisdiction} onChange={(e) => c.field('jurisdiction', e.target.value)} />
+        </label>
+        <label className="field fin-field">
+          <span className="field-label">Plan (label)</span>
+          <input type="text" value={r.payer_plan} onChange={(e) => c.field('payer_plan', e.target.value)} />
+        </label>
+      </div>
+      <Check checked={r.commercial_rate_assumption} disabled={!commercial} onChange={(v) => c.field('commercial_rate_assumption', v)}>
+        Commercial only: assume the allowed amount equals the Medicare benchmark (unverified, not a negotiated rate). Without it, commercial routine amounts
+        are Unknown and stay off the sponsor.
+      </Check>
+      <h3 className="fin-h3">Sponsor-side pricing</h3>
+      <p className="fin-text">
+        The sponsor pays research items, and holds contingency, at the benchmark times the negotiated rate below: an explicit stand-in for the rate negotiated
+        with each site. Insurer and participant amounts use the benchmark.
+      </p>
+      <div className="fin-inputs">
+        <Numeric
+          label="Sponsor-site negotiated rate (x benchmark)"
+          value={r.sponsor_rate_multiplier}
+          min={0.1}
+          max={5}
+          step={0.05}
+          onChange={(v) => c.field('sponsor_rate_multiplier', v)}
+        />
+        <Numeric
+          label="Investigational-supply reserve per participant (USD)"
+          value={r.drug_contingency_per_participant}
+          step={100}
+          onChange={(v) => c.field('drug_contingency_per_participant', v)}
+        />
+      </div>
+      {coverage && (
+        <div className="table-scroll">
+          <table className="tbl fin-tbl fin-tbl-coverage">
+            <caption>
+              {coverage.items.length} protocol items, per participant ({coverage.items[0]?.jurisdiction ?? r.jurisdiction} · {coverage.items[0]?.payer_plan ?? r.payer_plan}).
+              Each line is assigned to one party. Who may be billed follows the coverage analysis and billing grid (protocol, contract, consent form); an edit
+              here is an operator interpretation, not a coverage decision. Compare again to update the amounts.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Protocol item</th>
+                <th scope="col">Benchmark / sponsor rate</th>
+                <th scope="col">Responsibility</th>
+                <th scope="col">Review</th>
+                <th scope="col" className="num">
+                  Sponsor
+                </th>
+                <th scope="col" className="num">
+                  Insurer (illustrative)
+                </th>
+                <th scope="col" className="num">
+                  Participant (illustrative)
+                </th>
+                <th scope="col" className="num">
+                  Held as contingency
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {coverage.items.map((item) => (
+                <tr key={item.id}>
+                  <th scope="row">
+                    {item.label}
+                    <div className="fin-sub">
+                      {item.code ?? 'No code'} · {item.frequency}
+                      {item.schedule ? ` · ${item.schedule}` : ''}
+                    </div>
+                  </th>
+                  <td>
+                    <span className="num fin-nowrap">
+                      {usd2(item.unit_rate)} / {usd2(item.sponsor_unit_rate)}
+                    </span>
+                    <div className="fin-sub">
+                      {words(item.rate_kind)} · {item.source}
+                      {item.year ? ` (${item.year})` : ''}
+                    </div>
+                    <div className="fin-sub">
+                      Resource cost {usd2(item.resource_cost_per_participant)} ({words(item.resource_cost_kind)})
+                    </div>
+                  </td>
+                  <td>
+                    <select
+                      aria-label={`Responsibility for ${item.label}`}
+                      value={r.coverage_overrides[item.id] ?? item.status}
+                      onChange={(e) => c.field('coverage_overrides', { ...r.coverage_overrides, [item.id]: e.target.value as typeof item.status })}
+                    >
+                      {responsibilityOptions(item, r.payer_kind).map(({ status, disabled }) => (
+                        <option key={status} value={status} disabled={disabled}>
+                          {words(status)}
+                        </option>
+                      ))}
+                    </select>
+                    {LINE_NOTE[lineKind(item)] && <div className="fin-sub">{LINE_NOTE[lineKind(item)]}</div>}
+                  </td>
+                  <td>
+                    <strong>{words(item.review_status)}</strong>
+                    <div className="fin-sub">Coverage determination: {words(item.coverage_determination_status).toLowerCase()}</div>
+                    <p className="fin-sub">{item.explanation}</p>
+                  </td>
+                  {c.coverageCurrent ? (
+                    [item.sponsor_per_participant, item.payer_per_participant, item.patient_per_participant, item.reserve_per_participant].map((v, i) => (
+                      <td key={i} className="num fin-nowrap">
+                        {usd2(v)}
+                      </td>
+                    ))
+                  ) : (
+                    <td colSpan={4} className="fin-sub-inline">
+                      Compare again for current amounts
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {c.hasOverrides && !c.result && <p role="status">Responsibility edits are pending. Compare again for consistent amounts.</p>}
+      {!coverage && <Empty>Compare to load the selected trial’s coverage worksheet.</Empty>}
+      {coverage?.warnings.map((w) => (
+        <p className="note small" key={w}>
+          {w}
+        </p>
+      ))}
+    </>
+  )
+}
+
+const LINE_NOTE: Record<ReturnType<typeof lineKind>, string | null> = {
+  research: 'Research item: sponsor only; never billed to an insurer or participant (coverage rules).',
+  supply: 'Investigational supply: sponsor only.',
+  routine: null,
+}
+
+/** Provenance, the two exports and the sources. `full` adds every assumption and limitation (Detailed); in Simple
+ *  they sit in hover cards. */
+function Report({ c, full }: { c: Ctx; full: boolean }) {
+  const result = c.result
+  return (
+    <>
+      <p className="fin-text">
+        The exports recompute the same inputs: the budget comparison, budget lines, ledger, cost sensitivity, the coverage worksheet with the payer framing,
+        sources and hashes. They are not a saved record of a past run.
+      </p>
+      {result ? (
+        <>
+          <dl className="fin-prov">
+            <div>
+              <dt>Execution mode</dt>
+              <dd>
+                <code>{result.execution_mode}</code>
+              </dd>
+            </div>
+            <div>
+              <dt>Trial context</dt>
+              <dd>
+                <a href={result.trial.registry_url} target="_blank" rel="noreferrer">
+                  {result.trial.id}
+                </a>{' '}
+                · {result.trial.title}
+                <div className="fin-sub">
+                  {result.trial.protocol_label} · {result.trial.source_type}
+                </div>
+              </dd>
+            </div>
+            <div>
+              <dt>Run</dt>
+              <dd>
+                <code>{result.run_id}</code>
+              </dd>
+            </div>
+            <div>
+              <dt>Result SHA-256</dt>
+              <dd>
+                <code>{result.result_sha256}</code>
+              </dd>
+            </div>
+            <div>
+              <dt>Input SHA-256</dt>
+              <dd>
+                <code>{result.input_sha256}</code>
+              </dd>
+            </div>
+          </dl>
+          <div className="fin-actions">
+            <button type="button" className="btn" onClick={() => c.download('html')} disabled={c.exporting}>
+              Download HTML report
+            </button>
+            <button type="button" className="btn" onClick={() => c.download('json')} disabled={c.exporting}>
+              Download JSON
+            </button>
+          </div>
+          <Details summary="Source and execution evidence">
+            <pre className="fin-pre" tabIndex={0} role="region" aria-label="Source and execution evidence (JSON)">
+              {JSON.stringify(result.evidence, null, 2)}
+            </pre>
+          </Details>
+          <h3 className="fin-h3">Sources</h3>
+          <ul className="fin-list">
+            {result.sources.map((source) => (
+              <li key={source.id}>
+                <a href={source.url} target="_blank" rel="noreferrer">
+                  {source.title}
+                </a>{' '}
+                — {source.scope} <span className="fin-sub-inline">(checked {source.checked})</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <Empty>Compare before exporting. Any edit clears the previous comparison and its exports.</Empty>
+      )}
+      {full && result && (
+        <>
+          <h3 className="fin-h3">Assumptions</h3>
+          <AssumptionList assumptions={result.assumptions} />
+        </>
+      )}
+      {full && (
+        <>
+          <h3 className="fin-h3">Limitations</h3>
+          <ul className="fin-list">
+            {c.limitations.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </>
+      )}
+    </>
+  )
+}
+
+function AssumptionList({ assumptions, keys }: { assumptions: Record<string, string>; keys?: string[] }) {
+  const entries = Object.entries(assumptions).filter(([k]) => !keys || keys.includes(k))
+  return (
+    <ul className="fin-list">
+      {entries.map(([key, value]) => (
+        <li key={key}>
+          <strong>{words(key)}.</strong> {value}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/* ------------------------------------------------------------- cards (portalled) ------------------------------------------------------------- */
+
+/** The payer framing, verbatim from the API: benchmarks, billing, independence and the no-time sentence. */
+function FramingCard({ framing }: { framing: PayerFraming }) {
+  const lines = [framing.benchmarks, framing.billing, framing.independence, framing.noTime].filter((x): x is string => !!x)
+  return (
+    <div className="fin-tip-scroll" tabIndex={0} role="region" aria-label="Payer framing">
+      <span className="hc-title">How payer amounts are used</span>
+      <ul className="fin-tip-list">
+        {lines.map((l) => (
+          <li key={l}>{l}</li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function LimitationsCard({ limitations }: { limitations: string[] }) {
+  return (
+    <div className="fin-tip-scroll" tabIndex={0} role="region" aria-label="Limitations">
+      <span className="hc-title">Limitations</span>
+      <ul className="fin-tip-list">
+        {limitations.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+const SCENARIO_ASSUMPTIONS = ['sponsor_administration', 'contract_period', 'participant_split', 'feasibility', 'active_site_activation', 'site_per_participant_cost', 'access_support']
+
+function AssumptionsCard({ assumptions, keys }: { assumptions: Record<string, string>; keys?: string[] }) {
+  const entries = Object.entries(assumptions).filter(([k]) => !keys || keys.includes(k))
+  return (
+    <div className="fin-tip-scroll" tabIndex={0} role="region" aria-label="Assumptions">
+      <span className="hc-title">Assumptions</span>
+      <ul className="fin-tip-list">
+        {entries.map(([key, value]) => (
+          <li key={key}>{value}</li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+/* ---------------------------------------------------------------- results --------------------------------------------------------------- */
+
+function Feasibility({ scenario }: { scenario: FinancialScenario }) {
+  if (scenario.plan.feasible) return <span>Feasible under these inputs</span>
+  return (
+    <>
+      <Qualifier>Not feasible</Qualifier>
+      {scenario.plan.violations.length > 0 && <span className="fin-viol">: {scenario.plan.violations.join('; ')}.</span>}
+    </>
+  )
+}
+
+function causeText(cause: ChangeCause, ch: ScenarioChange): string {
+  switch (cause.key) {
+    case 'administration':
+      return ch.adminReduction !== null ? `assumed ${pct(ch.adminReduction, 0)} cut in sponsor administration` : 'sponsor administration'
+    case 'support':
+      return ch.supportIncrease !== null ? `participant access support ${signedUsd(ch.supportIncrease)} each` : 'participant access support'
+    case 'sites':
+      return 'site costs of a different network'
+    case 'procedures':
+      return 'procedures and held contingency'
+  }
+}
+
+/** The change in sponsor commitment against A and its cause, in the API's numbers (budget_reallocation). */
+function ChangeVsA({ s, c }: { s: FinancialScenario; c: Ctx }) {
+  const r = c.result
+  if (!r) return null
+  const reference = r.scenarios.find((x) => x.id === r.comparison.reference_scenario_id)
+  const ch = scenarioChange(s, reference, r.request)
+  const several = ch.causes.length > 1
+  const parts = ch.causes.map((cause) => `${causeText(cause, ch)}${several ? ` (${signedUsd(cause.amount)})` : ''}`)
+  if (ch.noSitesAdded) parts.push('no sites added, because the existing network’s stated capacity covers the target')
+  const added = ch.addedSites
+    ? `Adds ${ch.addedSites.ids.join(', ')}: site costs ${usd(ch.addedSites.cost.site_total)} for ${ch.addedSites.cost.participants} participants.`
+    : null
+  switch (ch.kind) {
+    case 'reference':
+      return <span className="fin-chg">Reference: B to E are compared with A.</span>
+    case 'not_costed':
+      return <span className="fin-chg">No change to state: not costed.</span>
+    case 'reference_not_costed':
+      return (
+        <span className="fin-chg">
+          No change against A to state: A is not costed.{added && ` ${added}`}
+        </span>
+      )
+    case 'change':
+      return (
+        <span className="fin-chg">
+          <strong className="num">{signedUsd(ch.incremental)}</strong> against A{parts.length ? `: ${parts.join('; ')}.` : ': the same budget lines as A.'}
+          {added && ` ${added}`}
+        </span>
+      )
+  }
+}
+
+/** Simple: A to E as a list. Each row: feasibility, sponsor commitment (with its share of the budget) and the change
+ *  against A with its cause. The scenario name opens its definition. Not selectable, not ranked. */
+function ScenarioList({ c }: { c: Ctx }) {
+  if (!c.result) return null
+  return (
+    <ul className="fin-scen" aria-label="Scenarios A to E">
+      {c.result.scenarios.map((s) => {
+        const share = s.plan.budget_utilization
+        return (
+          <li key={s.id} className="fin-scen-row">
+            <span className="fin-scen-name">
+              <HoverCard content={s.definition}>
+                {s.id}. {s.label}
+              </HoverCard>
+            </span>
+            <span className="fin-scen-amt num">{commitment(s.plan)}</span>
+            <div className="fin-scen-feas">
+              <Feasibility scenario={s} />
+            </div>
+            {finite(share) && (
+              <span className="fin-scen-share">
+                <span className="fin-meter" aria-hidden="true">
+                  <span style={{ width: `${Math.min(Math.max(share, 0), 1) * 100}%` }} />
+                </span>
+                <span>{pct(share)} of budget</span>
+              </span>
+            )}
+            <div className="fin-scen-chg">
+              <ChangeVsA s={s} c={c} />
+            </div>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
+function ScenarioName({ s, c }: { s: FinancialScenario; c: Ctx }) {
+  return (
+    <button type="button" className="fin-pick" onClick={() => c.select(s.id)} aria-pressed={s.id === c.selected}>
+      {s.id}. {s.label}
+    </button>
+  )
+}
+
+/** Detailed: A to E with every plan figure. A row's name selects the scenario the per-scenario sections show. */
+function ScenarioTable({ c }: { c: Ctx }) {
+  if (!c.result) return null
+  return (
+    <div className="table-scroll">
+      <table className="tbl fin-tbl fin-tbl-scen">
+        <caption>Scenarios A to E: sponsor commitment includes held contingency. Select a name to show that scenario in the other sections.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Scenario</th>
+            <th scope="col">Feasibility</th>
+            <th scope="col" className="num">
+              Sponsor commitment
+            </th>
+            <th scope="col">Change against A</th>
+            <th scope="col" className="num">
+              Sites
+            </th>
+            <th scope="col" className="num">
+              Stated capacity
+            </th>
+            <th scope="col" className="num">
+              Per participant
+            </th>
+            <th scope="col" className="num">
+              Share of budget
+            </th>
+            <th scope="col" className="num">
+              Unspent budget
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {c.result.scenarios.map((s) => (
+            <tr key={s.id} className={s.id === c.selected ? 'row-on' : undefined}>
+              <th scope="row">
+                <ScenarioName s={s} c={c} />
+                <p className="fin-sub">{s.definition}</p>
+              </th>
+              <td className="fin-cell-feas">
+                <Feasibility scenario={s} />
+              </td>
+              <td className="num">{commitment(s.plan)}</td>
+              <td className="fin-cell-wide">
+                <ChangeVsA s={s} c={c} />
+              </td>
+              <td className="num">{s.plan.selected_ids.length}</td>
+              <td className="num">{s.plan.stated_capacity}</td>
+              <td className="num">{s.plan.costed ? usd(s.plan.cost_per_participant) : '—'}</td>
+              <td className="num">{s.plan.costed ? pct(s.plan.budget_utilization) : '—'}</td>
+              <td className="num">{s.plan.costed ? usd(s.plan.unspent_budget) : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+const LINES = [
+  ['activation', 'Activation (added sites)'],
+  ['operating', 'Operating (monthly x period)'],
+  ['site_variable', 'Site per-participant'],
+  ['procedures', 'Procedures and contingency'],
+  ['support', 'Access support'],
+  ['administration', 'Administration'],
+] as const
+
+function BudgetLinesTable({ c }: { c: Ctx }) {
+  if (!c.result) return null
+  return (
+    <div className="table-scroll">
+      <table className="tbl fin-tbl">
+        <caption>Budget lines by scenario (sponsor commitment = their sum).</caption>
+        <thead>
+          <tr>
+            <th scope="col">Scenario</th>
+            {LINES.map(([k, label]) => (
+              <th scope="col" className="num" key={k}>
+                {label}
+              </th>
+            ))}
+            <th scope="col" className="num">
+              Sponsor commitment
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {c.result.scenarios.map((s) => (
+            <tr key={s.id} className={s.id === c.selected ? 'row-on' : undefined}>
+              <th scope="row">
+                {s.id}. {s.label}
+              </th>
+              {LINES.map(([k]) => (
+                <td className="num" key={k}>
+                  {s.plan.breakdown ? usd(s.plan.breakdown[k]) : '—'}
+                </td>
+              ))}
+              <td className="num">{commitment(s.plan)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+/** Detailed: which scenario the per-scenario parts show. */
+function ScenarioPicker({ c }: { c: Ctx }) {
+  if (!c.result) return null
+  const s = c.result.scenarios.find((x) => x.id === c.selected)
+  return (
+    <div className="fin-picker">
+      <span className="fin-picker-label">Scenario shown</span>
+      <Segmented
+        label="Scenario shown"
+        options={c.result.scenarios.map((x) => ({ value: x.id, label: x.id, hint: x.label }))}
+        value={c.selected}
+        onChange={c.select}
+        className="fin-picker-seg"
+      />
+      {s && <span className="fin-picker-name">{s.label}</span>}
+    </div>
+  )
+}
+
+function selectedOf(c: Ctx): FinancialScenario | null {
+  return c.result?.scenarios.find((s) => s.id === c.selected) ?? null
+}
+
+function NotCosted({ s }: { s: FinancialScenario }) {
+  return (
+    <Empty>
+      {s.id}. {s.label} is not costed: {s.plan.violations[0] ?? 'stated capacity of the selected sites is below the participant target'}. No price is
+      invented for it.
+    </Empty>
+  )
+}
+
+function SiteRowsTable({ s }: { s: FinancialScenario }) {
+  return (
+    <div className="table-scroll">
+      <table className="tbl fin-tbl">
+        <caption>
+          {s.id}. {s.label}: sponsor funds by site
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Site</th>
+            {['Participants', 'Stated capacity', 'Activation', 'Operating', 'Site per-participant', 'Procedures and contingency', 'Access support', 'Total'].map(
+              (h) => (
+                <th scope="col" className="num" key={h}>
+                  {h}
+                </th>
+              ),
+            )}
+          </tr>
+        </thead>
+        <tbody>
+          {s.plan.site_rows.map((row) => (
+            <tr key={row.id}>
+              <th scope="row">
+                {row.name}
+                <div className="fin-sub">{row.id}</div>
+              </th>
+              <td className="num">{row.participants}</td>
+              <td className="num">{row.capacity}</td>
+              <td className="num">{row.activation_sunk ? <span className="fin-sub-inline">Sunk</span> : usd(row.activation)}</td>
+              {[row.operating, row.variable, row.procedure, row.support, row.total].map((v, i) => (
+                <td className="num" key={i}>
+                  {usd(v)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function NetworkBlock({ s }: { s: FinancialScenario }) {
+  const ns = s.plan.network_search
+  const re = s.budget_reallocation
+  return (
+    <div className="fin-panel">
+      <h3>Network</h3>
+      <p>
+        Sites: {s.plan.selected_ids.join(', ')} · stated capacity {s.plan.stated_capacity}.{' '}
+        {s.inputs.network_rule === 'existing_network' ? 'The existing network, as entered.' : 'Chosen by the capacity rule below.'}
+      </p>
+      {splitWords(s.plan.participant_split) && <p>{splitWords(s.plan.participant_split)}</p>}
+      {ns && (
+        <>
+          <p>{ns.rule}</p>
+          {ns.base_has_capacity ? (
+            <p>
+              {s.id} adds no sites: the existing network’s stated capacity covers the target. Existing network: {ns.base_ids.join(', ')}.
+            </p>
+          ) : (
+            <p>
+              The existing network ({ns.base_ids.join(', ')}) lacks stated capacity. Networks evaluated: <span className="num">{ns.candidate_networks_evaluated}</span>;
+              with enough capacity: <span className="num">{ns.capacity_sufficient_networks}</span>.
+            </p>
+          )}
+        </>
+      )}
+      {re && re.additional_sites.length > 0 && (
+        <p>
+          Added sites {re.additional_sites.join(', ')} ({re.additional_activations} activation{re.additional_activations === 1 ? '' : 's'}): activation{' '}
+          {usd(re.added_sites_cost.activation)}, operating {usd(re.added_sites_cost.operating)}, site per-participant {usd(re.added_sites_cost.site_variable)}
+          ; site costs {usd(re.added_sites_cost.site_total)} for {re.added_sites_cost.participants} participants.
+        </p>
+      )}
+    </div>
+  )
+}
+
+/** Detailed: one party card. */
+function Party({ title, value, children }: { title: string; value: ReactNode; children: ReactNode }) {
+  return (
+    <article>
+      <h3>{title}</h3>
+      {value !== null && <strong className="fin-card-value">{value}</strong>}
+      {children}
+    </article>
+  )
+}
+
+/** Detailed: the selected scenario's four parties, transfers and resource costs. Participant cost sharing and
+ *  sponsor access support are two separate values, never netted. */
+function PartyLedger({ s, c }: { s: FinancialScenario; c: Ctx }) {
+  const e = s.economics
+  if (!e) return <NotCosted s={s} />
+  return (
+    <>
+      <div className="fin-cards">
+        <Party title="Sponsor commitment" value={usd(e.sponsor.budget_commitment)}>
+          <p>
+            Spending {usd(e.sponsor.expenditure)} · held as contingency {usd(e.sponsor.contingency_reserve)}
+          </p>
+          <p>
+            Investigational-supply resource proxy {usd(e.sponsor.supply_resource_proxy)}: a sponsor-side resource (the sponsor supplies the product), not a
+            hospital cost.
+          </p>
+        </Party>
+        <Party title="Hospital revenue minus assumed cost" value={usd(e.hospital.net_contribution)}>
+          <p>
+            Revenue {usd(e.hospital.revenue)} · assumed resource cost {usd(e.hospital.resource_cost)} (synthetic: 80% of site payments, 70% of procedure
+            benchmarks; excludes the investigational supply). Not a margin estimate or a fair-market-value test.
+          </p>
+        </Party>
+        <Party title="Insurer payments and administration" value={usd(e.insurer.total)}>
+          <p>
+            Payments {usd(e.insurer.payments)} · administration {usd(e.insurer.administration)}
+          </p>
+          <p>Downstream clinical cost: Unknown</p>
+        </Party>
+        <Party title="Participant" value={null}>
+          <dl className="fin-split">
+            <div>
+              <dt>Participant routine cost sharing (illustrative)</dt>
+              <dd className="num">{usd(e.patient.cost_sharing)}</dd>
+            </div>
+            <div>
+              <dt>Sponsor access support</dt>
+              <dd className="num">{usd(e.patient.access_support)}</dd>
+            </div>
+          </dl>
+          <p>Shown separately, never netted. Unresolved exposure: Unknown.</p>
+        </Party>
+      </div>
+      {c.result?.assumptions.access_support && <p className="fin-text">{c.result.assumptions.access_support}</p>}
+      <div className="table-scroll">
+        <table className="tbl fin-tbl fin-tbl-narrow">
+          <caption>
+            Transfers in {s.id}. {s.label}
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">From</th>
+              <th scope="col">To</th>
+              <th scope="col" className="num">
+                Payment
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {e.transfers.map((t, i) => (
+              <tr key={i}>
+                <td>{t.from}</td>
+                <td>{t.to}</td>
+                <td className="num">{usd(t.amount)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="fin-text">
+        Transfers balance to <span className="num">{usd(e.transfer_balance)}</span> (Unknown amounts are left out, not set to 0). Consolidated resource cost{' '}
+        <strong className="num">{usd(e.consolidated_resource_cost)}</strong>.
+      </p>
+      <ul className="fin-list">
+        {e.resource_assumptions.map((a) => (
+          <li key={a}>{a}</li>
+        ))}
+      </ul>
+    </>
+  )
+}
+
+/** Detailed: every scenario's ledger in one table (the report's columns), then the change against A by party. */
+function LedgerTables({ c }: { c: Ctx }) {
+  if (!c.result) return null
+  const cols: [string, (s: FinancialScenario) => number | null | undefined][] = [
+    ['Sponsor spending', (s) => s.economics?.sponsor.expenditure],
+    ['Held contingency', (s) => s.economics?.sponsor.contingency_reserve],
+    ['Supply resource proxy (sponsor-side)', (s) => s.economics?.sponsor.supply_resource_proxy],
+    ['Hospital revenue minus assumed cost', (s) => s.economics?.hospital.net_contribution],
+    ['Insurer payments and administration', (s) => s.economics?.insurer.total],
+    ['Participant routine cost sharing (illustrative)', (s) => s.economics?.patient.cost_sharing],
+    ['Sponsor access support', (s) => s.economics?.patient.access_support],
+    ['Consolidated resource cost', (s) => s.economics?.consolidated_resource_cost],
+  ]
+  const deltas: [string, keyof NonNullable<FinancialScenario['delta']>][] = [
+    ['Sponsor spending', 'sponsor_expenditure'],
+    ['Resource cost', 'resources'],
+    ['Hospital revenue minus assumed cost', 'hospital_contribution'],
+    ['Insurer', 'insurer_expenditure'],
+    ['Participant routine cost sharing', 'patient_cost_sharing'],
+    ['Sponsor access support', 'access_support'],
+  ]
+  return (
+    <>
+      <div className="table-scroll">
+        <table className="tbl fin-tbl fin-tbl-ledger">
+          <caption>Ledger by scenario. Participant cost sharing and sponsor access support are separate columns, never netted.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Scenario</th>
+              {cols.map(([label]) => (
+                <th scope="col" className="num" key={label}>
+                  {label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {c.result.scenarios.map((s) => (
+              <tr key={s.id} className={s.id === c.selected ? 'row-on' : undefined}>
+                <th scope="row">
+                  {s.id}. {s.label}
+                </th>
+                {cols.map(([label, get]) => (
+                  <td className="num" key={label}>
+                    {s.economics ? usd(get(s)) : '—'}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="table-scroll">
+        <table className="tbl fin-tbl">
+          <caption>Change against A by party (Unknown where an insurer or participant amount is unknown; blank where a scenario or A is not costed).</caption>
+          <thead>
+            <tr>
+              <th scope="col">Scenario</th>
+              {deltas.map(([label]) => (
+                <th scope="col" className="num" key={label}>
+                  {label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {c.result.scenarios.map((s) => (
+              <tr key={s.id}>
+                <th scope="row">
+                  {s.id}. {s.label}
+                </th>
+                {deltas.map(([label, key]) => (
+                  <td className="num" key={label}>
+                    {s.delta ? signedUsd(s.delta[key]) : '—'}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  )
+}
+
+/** Detailed: budget reallocation, cost only. */
+function ReallocationTables({ c }: { c: Ctx }) {
+  if (!c.result) return null
+  return (
+    <>
+      <div className="table-scroll">
+        <table className="tbl fin-tbl">
+          <caption>Sites added beyond the existing network, and their own site costs (stated even when A is not costed).</caption>
+          <thead>
+            <tr>
+              <th scope="col">Scenario</th>
+              <th scope="col">Added sites</th>
+              {['Activation', 'Operating', 'Site per-participant', 'Site costs', 'Participants placed'].map((h) => (
+                <th scope="col" className="num" key={h}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {c.result.scenarios.map((s) => {
+              const re = s.budget_reallocation
+              const a = re?.added_sites_cost
+              return (
+                <tr key={s.id}>
+                  <th scope="row">
+                    {s.id}. {s.label}
+                  </th>
+                  <td>{re ? re.additional_sites.join(', ') || 'None' : 'Not costed'}</td>
+                  {a ? (
+                    <>
+                      <td className="num">{usd(a.activation)}</td>
+                      <td className="num">{usd(a.operating)}</td>
+                      <td className="num">{usd(a.site_variable)}</td>
+                      <td className="num">{usd(a.site_total)}</td>
+                      <td className="num">{a.participants}</td>
+                    </>
+                  ) : (
+                    <td colSpan={5} className="num">
+                      —
+                    </td>
+                  )}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="table-scroll">
+        <table className="tbl fin-tbl">
+          <caption>Budget line changes against A, and the total change in sponsor commitment.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Scenario</th>
+              {LINES.map(([k, label]) => (
+                <th scope="col" className="num" key={k}>
+                  {label}
+                </th>
+              ))}
+              <th scope="col" className="num">
+                Commitment change
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {c.result.scenarios.map((s) => {
+              const lc = s.budget_reallocation?.line_changes
+              return (
+                <tr key={s.id}>
+                  <th scope="row">
+                    {s.id}. {s.label}
+                  </th>
+                  {LINES.map(([k]) => (
+                    <td className="num" key={k}>
+                      {lc ? signedUsd(lc[k]) : '—'}
+                    </td>
+                  ))}
+                  <td className="num">
+                    <strong>{lc ? signedUsd(s.budget_reallocation?.incremental_cost) : '—'}</strong>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
+  )
+}
+
+function SensitivityTable({ c }: { c: Ctx }) {
+  if (!c.result) return null
+  const first = c.result.scenarios.find((s) => s.sensitivity)?.sensitivity
+  return (
+    <>
+      <div className="table-scroll">
+        <table className="tbl fin-tbl">
+          <caption>Sponsor commitment under varied site cost inputs (10th, 50th and 90th percentiles of the draws), and the share of draws over budget.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Scenario</th>
+              {['10th percentile', 'Median', '90th percentile', 'Share of draws over budget'].map((h) => (
+                <th scope="col" className="num" key={h}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {c.result.scenarios.map((s) => {
+              const q = s.sensitivity
+              return (
+                <tr key={s.id}>
+                  <th scope="row">
+                    {s.id}. {s.label}
+                  </th>
+                  {q ? (
+                    <>
+                      {q.sponsor_total_quantiles.map((v, i) => (
+                        <td className="num" key={i}>
+                          {usd(v)}
+                        </td>
+                      ))}
+                      <td className="num">{pct(q.probability_budget_exceeded)}</td>
+                    </>
+                  ) : (
+                    <td colSpan={4} className="num">
+                      Not costed
+                    </td>
+                  )}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      {first && (
+        <div className="fin-panel">
+          <h3>Method</h3>
+          <p>{first.method}.</p>
+          <p>
+            Varied inputs: {first.varied_inputs.join('; ')}. Seed <span className="num">{first.seed}</span>, <span className="num">{first.draws}</span> draws, cost
+            spread <span className="num">{first.cost_spread}</span>. Calibration: {words(first.calibration_status).toLowerCase()}; these are not calibrated
+            intervals.
+          </p>
+        </div>
+      )}
+    </>
+  )
+}
+
+/** The coverage worksheet's totals per participant: sponsor, insurer, participant and held contingency. Each
+ *  sub-label says what the figure rests on: the negotiated-rate assumption, pending coverage analysis, the stated
+ *  coinsurance share, and how much of the contingency is the investigational-supply reserve. */
+function CoverageTotals({ c, resource }: { c: Ctx; resource?: boolean }) {
+  const t = c.coverage?.totals
+  const current = c.coverageCurrent && !!t
+  const show = (v: number | null | undefined) => (current ? usd2(v) : 'Compare to update')
+  const inputs = c.result?.request ?? c.request
+  const multiplier = inputs.sponsor_rate_multiplier
+  const supply = c.coverage?.items.find((i) => i.id === 'drug-contingency')?.reserve_per_participant
+  const reserveSub =
+    current && t && finite(supply)
+      ? `Investigational-supply reserve ${usd2(supply)} (operator assumption, not a drug price); unknown, conditional or review-required lines ${usd2(Math.round((t.reserve - supply) * 100) / 100)}`
+      : 'Investigational-supply reserve (operator assumption) and unknown, conditional or review-required lines'
+  return (
+    <div className="fin-totals">
+      <KeyFigure
+        label="Sponsor pays"
+        value={show(t?.sponsor)}
+        sub={
+          finite(multiplier)
+            ? `Research items at ${multiplier.toFixed(2)}x the fee-schedule benchmark (synthetic negotiated rate, not an FMV finding)`
+            : 'Research items at the sponsor-site negotiated rate (synthetic, not an FMV finding)'
+        }
+      />
+      <KeyFigure label="Insurer (illustrative)" value={show(t?.payer)} sub="Routine care that may be billed to insurance, pending coverage analysis" />
+      <KeyFigure
+        label="Participant cost sharing (illustrative)"
+        value={show(t?.patient)}
+        sub={
+          inputs.payer_kind === 'Medicaid'
+            ? 'Medicaid: 0 on insurer-billed lines'
+            : 'Routine-care coinsurance at the stated share, before deductibles and secondary coverage'
+        }
+      />
+      <KeyFigure label="Held as sponsor contingency" value={show(t?.reserve)} sub={reserveSub} />
+      {resource && <KeyFigure label="Resource cost (assumed)" value={show(t?.resource)} sub="Delivery cost assumption, not a payment" />}
+    </div>
+  )
+}
+
+function payerLine(r: FinanceRequest): string {
+  if (r.payer_kind === 'Medicaid')
+    return 'Payer: Medicaid; insurer amount uses the Medicare benchmark as a stand-in (state Medicaid rates differ); participant cost sharing shown as 0 on insurer-billed lines.'
+  if (r.payer_kind === 'commercial')
+    return r.commercial_rate_assumption
+      ? `Payer: commercial, allowed amount assumed equal to the Medicare benchmark; insurer share ${pct(r.payer_fraction, 0)}.`
+      : 'Payer: commercial, allowed amounts unknown (no rate assumption).'
+  return `Payer: Medicare; insurer share ${pct(r.payer_fraction, 0)} of the benchmark (clinical lab tests: 100% of the CLFS amount).`
+}
+
+/** Under Medicaid, the lines the operator put on the participant in full. */
+function medicaidPatientNote(r: FinanceRequest): string | null {
+  const n = participantAssigned(r)
+  if (r.payer_kind !== 'Medicaid' || n === 0) return null
+  return `${n} line${n === 1 ? '' : 's'} assigned to the participant: Medicaid generally bars billing an enrollee beyond nominal cost sharing for a covered service (42 CFR 447.15); review before use.`
+}
+
+/** The payer line; in Simple, the first sentence of the API's PAYER_INDEPENDENCE verbatim (the sponsor commitment
+ *  does not fall because an insurer pays more); and any Medicaid or unknown-amount qualifier. */
+function PayerQualifiers({ c, independence }: { c: Ctx; independence: boolean }) {
+  const coverage = c.coverage
+  const guard = independence ? firstSentence(c.framing.independence) : null
+  const medicaid = medicaidPatientNote(c.request)
+  return (
+    <p className="fin-quals">
+      {payerLine(c.request)}
+      {guard && ` ${guard}`}
+      {medicaid && (
+        <>
+          {' '}
+          <Qualifier>{medicaid}</Qualifier>
+        </>
+      )}
+      {coverage && c.coverageCurrent && coverage.insurer_amounts_unknown > 0 && (
+        <>
+          {' '}
+          <Qualifier>
+            {coverage.insurer_amounts_unknown} routine line{coverage.insurer_amounts_unknown === 1 ? '' : 's'}: insurer amount unknown
+          </Qualifier>
+        </>
+      )}
+    </p>
+  )
+}
+
+/* ----------------------------------------------------------------- view ----------------------------------------------------------------- */
 
 export default function FinancialView() {
+  const { density } = useDensity()
+  const simple = density === 'simple'
   const [demo, setDemo] = useState<FinancialDemo | null>(null)
   const [request, setRequest] = useState<FinanceRequest | null>(null)
   const [result, setResult] = useState<FinancialResult | null>(null)
-  const [selected, setSelected] = useState('A')
-  const [section, setSection] = useState<typeof SECTIONS[number]>('Overview')
+  const [selected, setSelected] = useState<ScenarioId>('A')
+  const [section, setSection] = useState<SectionName>('Scenarios')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState(false)
   const [notice, setNotice] = useState('')
+  const [attempt, setAttempt] = useState(0)
   const pending = useRef({ controller: null as AbortController | null, revision: 0 })
 
   useEffect(() => {
     const lifecycle = pending.current
     const controller = new AbortController()
-    financialApi.demo(controller.signal).then(data => {
-      if (!controller.signal.aborted) { setDemo(data); setRequest(data.request); setError(null) }
-    }).catch((e: unknown) => { if (!controller.signal.aborted) setError(e instanceof Error ? e.message : String(e)) }).finally(() => { if (!controller.signal.aborted) setLoading(false) })
-    return () => { controller.abort(); lifecycle.controller?.abort(); lifecycle.revision++ }
-  }, [])
+    financialApi
+      .demo(controller.signal)
+      .then((data) => {
+        if (!controller.signal.aborted) {
+          setDemo(data)
+          setRequest(data.request)
+          setError(null)
+        }
+      })
+      .catch((e: unknown) => {
+        if (!controller.signal.aborted) setError(e instanceof Error ? e.message : String(e))
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false)
+      })
+    return () => {
+      controller.abort()
+      lifecycle.controller?.abort()
+      lifecycle.revision++
+    }
+  }, [attempt])
+
+  function retryDemo() {
+    setError(null)
+    setLoading(true)
+    setAttempt((n) => n + 1)
+  }
 
   function change(next: FinanceRequest) {
     pending.current.revision++
     pending.current.controller?.abort()
     pending.current.controller = null
-    setRequest(next); setResult(null); setError(null); setLoading(false); setExporting(false)
-    setNotice('Inputs changed. Previous results and exports cleared; compare again.')
+    setRequest(next)
+    setResult(null)
+    setError(null)
+    setLoading(false)
+    setExporting(false)
+    setNotice('Inputs changed. The previous comparison and its exports are cleared; compare again.')
   }
-  function field<K extends keyof FinanceRequest>(key: K, value: FinanceRequest[K]) { if (request) change({ ...request, [key]: value }) }
+  function field<K extends keyof FinanceRequest>(key: K, value: FinanceRequest[K]) {
+    if (request) change({ ...request, [key]: value })
+  }
   async function compare() {
     if (!request) return
     pending.current.controller?.abort()
-    const controller = new AbortController(), revision = ++pending.current.revision
-    pending.current.controller = controller; setLoading(true); setError(null); setResult(null); setNotice('')
+    const controller = new AbortController(),
+      revision = ++pending.current.revision
+    pending.current.controller = controller
+    setLoading(true)
+    setError(null)
+    setResult(null)
+    setNotice('')
     try {
       const output = await financialApi.compare(request, controller.signal)
       if (pending.current.revision !== revision || controller.signal.aborted) return
       if (!output.scenarios?.length || !output.input_sha256) throw new Error('The financial service returned an incomplete comparison.')
-      setResult(output); setSelected(output.scenarios[0].id)
-      setNotice('Comparison computed from these inputs. Figures remain synthetic and conditional.')
-    } catch (e) { if (!controller.signal.aborted && pending.current.revision === revision) setError(e instanceof Error ? e.message : String(e)) }
-    finally { if (pending.current.revision === revision) { setLoading(false); pending.current.controller = null } }
+      setResult(output)
+      setSelected(output.comparison?.reference_scenario_id ?? output.scenarios[0].id)
+      setNotice('Comparison computed from these inputs. Every figure rests on synthetic inputs.')
+    } catch (e) {
+      if (!controller.signal.aborted && pending.current.revision === revision) setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      if (pending.current.revision === revision) {
+        setLoading(false)
+        pending.current.controller = null
+      }
+    }
   }
   async function download(format: 'html' | 'json') {
     if (!result || !request) return
-    const revision = pending.current.revision, controller = new AbortController()
-    pending.current.controller?.abort(); pending.current.controller = controller; setExporting(true); setError(null)
+    const revision = pending.current.revision,
+      controller = new AbortController()
+    pending.current.controller?.abort()
+    pending.current.controller = controller
+    setExporting(true)
+    setError(null)
     try {
       const blob = await financialApi.report(result.request, format, controller.signal)
       if (revision !== pending.current.revision || controller.signal.aborted) return
-      const url = URL.createObjectURL(blob), anchor = document.createElement('a')
-      anchor.href = url; anchor.download = `concord-financial-${result.run_id}.${format}`
-      document.body.appendChild(anchor); anchor.click(); anchor.remove()
+      const url = URL.createObjectURL(blob),
+        anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = `concord-sponsor-budget-${result.run_id}.${format}`
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
       window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-      setNotice(`${format.toUpperCase()} report prepared for input ${result.input_sha256.slice(0, 12)}.`)
-    } catch (e) { if (!controller.signal.aborted && revision === pending.current.revision) setError(e instanceof Error ? e.message : String(e)) }
-    finally { if (revision === pending.current.revision) { setExporting(false); pending.current.controller = null } }
+      setNotice(`${format.toUpperCase()} report downloaded for input ${result.input_sha256.slice(0, 12)}.`)
+    } catch (e) {
+      if (!controller.signal.aborted && revision === pending.current.revision) setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      if (revision === pending.current.revision) {
+        setExporting(false)
+        pending.current.controller = null
+      }
+    }
   }
-  const scenario = result?.scenarios.find(s => s.id === selected)
-  const coverage = result?.coverage ?? (request?.trial_id === demo?.request.trial_id ? demo?.coverage : undefined)
-  const selectedScenario = scenario && scenario.plan.feasible ? scenario : null
-  const hasOverrides = request && Object.keys(request.coverage_overrides).length > 0
 
-  return <div className="financial">
-    <div className="financial-heading"><div><p className="financial-eyebrow">Sponsor-funded planning pilot</p><h1>Financial Coordination</h1><p>Compare five sponsor-budget scenarios, site resources and coverage responsibilities at a fixed participant target. Scenarios are listed, not ranked.</p></div><span className="financial-tag">SYNTHETIC FINANCIAL DEMO</span></div>
-    <div className="financial-warning"><strong>No verified financial inputs or insurer partnership.</strong> Public trial identifiers provide context only. All site budgets, site identities, capacities and payer assumptions in this financial exercise are synthetic. Coverage classifications require human review. No realized savings, clinical benefit, or validated acceleration is claimed.</div>
-    {error && <div className="financial-error" role="alert">{error}{!request && <p>The financial service or its demo fixture is unavailable. Check the backend, then reload this page.</p>}</div>}
-    {!request ? <p role="status">{loading ? 'Loading financial demo…' : 'Financial demo not loaded.'}</p> : <>
-      <div className="financial-toolbar"><label className="financial-field">Public trial context<select value={request.trial_id} onChange={e => change({ ...request, trial_id: e.target.value, coverage_overrides: {} })}>{demo?.trials.map(t => <option key={t.id} value={t.id}>{t.id} · {t.title}</option>)}</select></label><a href={`https://clinicaltrials.gov/study/${request.trial_id}`} target="_blank" rel="noreferrer">View public registry record ↗</a><button className="financial-primary" onClick={compare} disabled={loading || exporting}>{loading ? 'Computing comparison…' : 'Compare funding scenarios'}</button></div>
-      <p className="small muted">The public record does not verify this illustrative procedure schedule, synthetic site network, or financial terms. Original Concord research and protocol-to-terms views remain available in the top navigation.</p>
-      <div className="financial-status" role="status" aria-live="polite">{notice || 'Review assumptions, then compute a fresh comparison.'}</div>
-      <nav className="financial-sections" aria-label="Financial sections">{SECTIONS.map(s => <button key={s} onClick={() => setSection(s)} aria-current={s === section ? 'page' : undefined}>{s}</button>)}</nav>
+  const limitations = result?.limitations ?? demo?.limitations ?? []
+  const framing = payerFraming(limitations, result?.assumptions)
 
-      {section === 'Overview' && <section aria-label="Overview"><h2>Overview</h2><div className="financial-inputs"><Numeric label="Total sponsor budget (USD)" value={request.budget} step={10000} onChange={v => field('budget', v)} /><Numeric label="Assumed demo target (participants)" value={request.target} min={1} onChange={v => field('target', v)} /><Numeric label="Budgeted contract period (months)" value={request.budget_period_months} min={1} onChange={v => field('budget_period_months', v)} /><Numeric label="Sponsor administration (USD)" value={request.admin_cost} step={1000} onChange={v => field('admin_cost', v)} /></div><p className="financial-warning">Changing enrollment is an assumption only. Actual protocol expansion requires clinical, statistical, ethics, and regulatory review. Stated capacity is an operator input. This worksheet produces no time or speed estimate.</p>{result && <><ScenarioTable scenarios={result.scenarios} selected={selected} select={setSelected} /><p>{result.scenarios.filter(s => s.plan.feasible).length} of {result.scenarios.length} scenarios meet the entered model constraints. Select a row for detailed economics.</p></>}{selectedScenario && <div className="financial-cards"><article><h3>Sponsor commitment</h3><strong>{amount(selectedScenario.plan.sponsor_total)}</strong><p>{pct(selectedScenario.plan.budget_utilization)} of entered budget, including contingency</p></article><article><h3>Activation / per participant</h3><strong>{amount(selectedScenario.plan.breakdown?.activation)}</strong><p>Total modeled commitment per participant {amount(selectedScenario.plan.cost_per_participant)}</p></article><article><h3>Procedure attribution / participant</h3><p>Sponsor {amount(coverage?.totals.sponsor)} · potential payer {amount(coverage?.totals.payer)} · potential patient {amount(coverage?.totals.patient)} · unresolved reserve {amount(coverage?.totals.reserve)}</p></article><article><h3>Uncertainty assumptions</h3><p>Seed {request.seed} · {request.draws} paired draws · log-cost spread {request.cost_spread}. See Cost Sensitivity; ranges are not calibrated intervals.</p></article></div>}{!result && <p className="financial-empty">No current comparison. Enter assumptions and select “Compare funding scenarios”.</p>}</section>}
+  const banner = (
+    <Banner title="Synthetic worksheet.">
+      Every site, cost, capacity and payer share here is a synthetic input, not a registered site fact or a negotiated price, and no insurer takes part.
+      Coverage classifications need human review. The public trial identifier gives context only.
+      {limitations.length > 0 && (
+        <>
+          {' '}
+          <HoverCard content={<LimitationsCard limitations={limitations} />}>All {limitations.length} limitations</HoverCard>
+        </>
+      )}
+    </Banner>
+  )
 
-      {section === 'Coverage Review' && <section aria-label="Coverage Review"><h2>Preliminary coverage worksheet</h2><p>Classifications are editable planning assumptions, never reimbursement authorization. Unknown or review-required expenses remain reserved rather than silently charged to a payer.</p><div className="financial-inputs"><label className="financial-field">Payer type<select value={request.payer_kind} onChange={e => field('payer_kind', e.target.value as FinanceRequest['payer_kind'])}><option>Medicare</option><option value="commercial">Commercial</option><option>Medicaid</option></select></label><label className="financial-field">Jurisdiction<input value={request.jurisdiction} onChange={e => field('jurisdiction', e.target.value)} /></label><label className="financial-field">Plan assumption<input value={request.payer_plan} onChange={e => field('payer_plan', e.target.value)} /></label><Numeric label="Payer fraction of allowed routine amount" value={request.payer_fraction} max={1} step={.05} onChange={v => field('payer_fraction', v)} /><Numeric label="Sponsor negotiated-rate multiplier" value={request.sponsor_rate_multiplier} min={.1} max={5} step={.1} onChange={v => field('sponsor_rate_multiplier', v)} /></div><label className="financial-check"><input type="checkbox" checked={request.commercial_rate_assumption} onChange={e => field('commercial_rate_assumption', e.target.checked)} />Explicitly assume Medicare-derived commercial allowed amounts (unverified, not a negotiated rate)</label><div className="financial-scroll"><table><caption>Illustrative procedures; amounts per modeled participant. Edit responsibility and recompute to update attribution.</caption><thead><tr><th>Procedure / source</th><th>Quantity / hypothetical rate</th><th>Responsibility assumption</th><th>Review and explanation</th><th>Sponsor / payer / patient / reserve</th></tr></thead><tbody>{coverage?.items.map(item => <tr key={item.id}><th scope="row">{item.label}<div className="small muted">{item.code ?? 'Code unavailable'} · {item.source}</div></th><td>{number(item.quantity, 0)} × {amount(item.unit_rate)}<div className="small">{item.rate_kind}</div></td><td><select aria-label={`Responsibility for ${item.label}`} value={request.coverage_overrides[item.id] ?? item.status} onChange={e => field('coverage_overrides', { ...request.coverage_overrides, [item.id]: e.target.value as typeof item.status })}>{COVERAGE_STATUSES.map(status => <option key={status}>{status}</option>)}</select></td><td><strong>{result ? item.review_status : 'REVIEW_REQUIRED'}</strong><p>{item.explanation}</p></td><td>{result ? [item.sponsor_per_participant, item.payer_per_participant, item.patient_per_participant, item.reserve_per_participant].map(amount).join(' / ') : 'Recompute for current attribution'}</td></tr>)}</tbody></table></div>{hasOverrides && !result && <p role="status">Coverage edits are pending. Recompute to obtain consistent costs and review warnings.</p>}{!coverage && <p className="financial-empty">Compute a comparison to load the selected trial’s illustrative worksheet.</p>}{coverage?.warnings.map(w => <p className="financial-warning" key={w}>{w}</p>)}</section>}
+  const errorBox =
+    error &&
+    (error === NONFINITE_MESSAGE ? (
+      <div className="error" role="alert">
+        <strong>Check the inputs.</strong> <span>{error}</span>
+      </div>
+    ) : (
+      <div className="fin-error">
+        <ErrorBox error={error} onRetry={request ? undefined : retryDemo} />
+        {!request && <p className="small">The financial service or its demo inputs are unavailable. Check the backend, then try again.</p>}
+      </div>
+    ))
 
-      {section === 'Allocation Comparison' && <section aria-label="Allocation Comparison"><h2>Allocation and site assumptions</h2><p>Every site below is synthetic. Stated capacity constrains the selected network; it is not a recruitment forecast. Actual clinical capabilities remain UNKNOWN. Per-participant site costs must exclude itemized worksheet procedures.</p><div className="financial-scroll"><table><caption>Synthetic candidate network. Baseline-active status is part of the fixture.</caption><thead><tr><th>Site</th><th>Available</th><th>Activation USD</th><th>Monthly USD</th><th>Per participant USD</th><th>Stated participant capacity</th></tr></thead><tbody>{request.sites.map((site, index) => <tr key={site.id}><th scope="row">{site.name}<div className="small muted">{site.id} · {site.baseline_active ? 'Baseline active' : 'Candidate activation'}</div></th><td><input type="checkbox" aria-label={`${site.name} feasible`} checked={site.feasible} onChange={e => field('sites', request.sites.map((s, i) => i === index ? { ...s, feasible: e.target.checked } : s))} /></td>{(['activation_cost', 'monthly_cost', 'per_participant_cost', 'capacity'] as const).map(key => <td key={key}><input type="number" aria-label={`${site.name} ${key.replaceAll('_', ' ')}`} min={0} step={1} value={Number.isFinite(site[key]) ? site[key] : ''} onChange={e => field('sites', request.sites.map((s, i) => i === index ? { ...s, [key]: e.target.value === '' ? NaN : Number(e.target.value) } : s))} /></td>)}</tr>)}</tbody></table></div>{result && <><ScenarioTable scenarios={result.scenarios} selected={selected} select={setSelected} />{selectedScenario && <div className="financial-scroll"><table><caption>{selectedScenario.label}: sponsor funds by site</caption><thead><tr><th>Site</th><th>Participants</th><th>Activation</th><th>Operating</th><th>Variable</th><th>Procedures</th><th>Support</th><th>Total</th></tr></thead><tbody>{selectedScenario.plan.site_rows.map(row => <tr key={row.id}><th>{row.name}</th><td>{number(row.participants, 0)}</td>{[row.activation, row.operating, row.variable, row.procedure, row.support, row.total].map((v, i) => <td key={i}>{amount(v)}</td>)}</tr>)}</tbody></table></div>}</>}</section>}
+  const head = (
+    <PageHead
+      title="Sponsor budget"
+      lede="A sponsor-budget worksheet on synthetic site inputs: who pays for each protocol item, and what changes the sponsor’s commitment."
+      meta="Synthetic worksheet"
+    />
+  )
 
-      {section === 'Three-Party Economics' && <section aria-label="Three-Party Economics"><h2>Payments, economic effects, and resource costs</h2><p>Sponsor-to-hospital and payer-to-hospital payments are transfers. Consolidated resource costs count delivery and administration once. They are not the sum of every party’s expenditure.</p>{result && <ScenarioTable scenarios={result.scenarios} selected={selected} select={setSelected} />}{selectedScenario?.economics ? <><div className="financial-cards"><article><h3>Sponsor</h3><strong>{amount(selectedScenario.economics.sponsor.expenditure)}</strong><p>Modeled spending excluding held reserve · change {signed(selectedScenario.delta?.sponsor_expenditure)} vs A</p><p>Contingency held {amount(selectedScenario.economics.sponsor.contingency_reserve)} · total commitment {amount(selectedScenario.economics.sponsor.budget_commitment)}</p></article><article><h3>Hospital</h3><strong>{amount(selectedScenario.economics.hospital.net_contribution)}</strong><p>Operating contribution</p><p>Revenue {amount(selectedScenario.economics.hospital.revenue)} · resource costs {amount(selectedScenario.economics.hospital.resource_cost)}</p></article><article><h3>Insurer</h3><strong>{amount(selectedScenario.economics.insurer.total)}</strong><p>Payments {amount(selectedScenario.economics.insurer.payments)} · administration {amount(selectedScenario.economics.insurer.administration)}</p><p>Downstream clinical expenditure: UNKNOWN</p></article><article><h3>Patient</h3><strong>{amount(selectedScenario.economics.patient.cost_sharing)}</strong><p>Specified cost sharing {amount(selectedScenario.economics.patient.cost_sharing)} · access support {amount(selectedScenario.economics.patient.access_support)}</p><p>Unresolved exposure: UNKNOWN. Access support pays travel/lodging and is not netted against cost sharing.</p></article></div><div className="financial-scroll"><table><caption>Gross financial transfers in {selectedScenario.label}</caption><thead><tr><th>From</th><th>To</th><th>Payment</th></tr></thead><tbody>{selectedScenario.economics.transfers.map((t, i) => <tr key={i}><td>{t.from}</td><td>{t.to}</td><td>{amount(t.amount)}</td></tr>)}</tbody></table></div><p><strong>Consolidated resource costs {amount(selectedScenario.economics.consolidated_resource_cost)}</strong> · change vs A {signed(selectedScenario.delta?.resources)} · transfer balance {amount(selectedScenario.economics.transfer_balance)}</p><p>No promise that every party benefits; a transfer reduction does not establish a resource saving.</p></> : <p className="financial-empty">Compute a comparison and select a feasible scenario to inspect its ledger.</p>}</section>}
+  if (!request)
+    return (
+      <div className="view financial">
+        {head}
+        {banner}
+        {errorBox}
+        {loading ? <Loading label="Loading the worksheet…" /> : !error && <p role="status">Worksheet not loaded.</p>}
+      </div>
+    )
 
-      {section === 'Cost Sensitivity' && <section aria-label="Cost Sensitivity"><h2>Paired cost-input sensitivity</h2><div className="financial-inputs"><Numeric label="Administrative reduction fraction" value={request.admin_reduction} max={1} step={.05} onChange={v => field('admin_reduction', v)} /><Numeric label="Baseline support per participant (USD)" value={request.support_per_participant} step={50} onChange={v => field('support_per_participant', v)} /><Numeric label="Minimum access support (USD)" value={request.minimum_support} step={50} onChange={v => field('minimum_support', v)} /><Numeric label="Additional support per participant (USD)" value={request.extra_support} step={50} onChange={v => field('extra_support', v)} /><Numeric label="Insurer administration per participant (USD)" value={request.payer_admin_per_participant} onChange={v => field('payer_admin_per_participant', v)} /><Numeric label="Unverified drug supply reserve per participant (USD)" value={request.drug_contingency_per_participant} onChange={v => field('drug_contingency_per_participant', v)} /><Numeric label="Cost log-scale spread" value={request.cost_spread} max={1} step={.05} onChange={v => field('cost_spread', v)} /><Numeric label="Reproducible seed" value={request.seed} onChange={v => field('seed', v)} /><Numeric label="Sensitivity draws" value={request.draws} min={100} max={1000} onChange={v => field('draws', v)} /></div><p>Only entered site costs vary. No enrollment-time model, ranking or recommended scenario is produced here. Administrative reductions are hypothetical; access support is separate from cost sharing.</p>{result && <ScenarioTable scenarios={result.scenarios} selected={selected} select={setSelected} />}{selectedScenario?.budget_reallocation && <p>Added sites: {selectedScenario.budget_reallocation.additional_sites.join(', ') || 'none'} · incremental cost {signed(selectedScenario.budget_reallocation.incremental_cost)}.</p>}{selectedScenario?.sensitivity && <div className="financial-panel"><h3>Matched cost draws</h3><p>{selectedScenario.sensitivity.method}</p><p>Seed {selectedScenario.sensitivity.seed}; {selectedScenario.sensitivity.draws} draws. Sponsor commitment P10 / median / P90: {selectedScenario.sensitivity.sponsor_total_quantiles.map(amount).join(' / ')}.</p><p>Fraction above budget: {pct(selectedScenario.sensitivity.probability_budget_exceeded)}. These are assumed sensitivity draws.</p></div>}</section>}
+  const sameTrial = !result && demo !== null && request.trial_id === demo.request.trial_id
+  const coverage = result?.coverage ?? (sameTrial ? demo?.coverage : undefined)
+  const coverageCurrent = !!result || (demo !== null && sameCoverageInputs(request, demo.request))
+  const hasOverrides = Object.keys(request.coverage_overrides).length > 0
 
-      {section === 'Evidence Report' && <section aria-label="Evidence Report"><h2>Traceable evidence report</h2><p>Exports include trial context, synthetic site identifiers, responsibility assumptions, baseline comparison, ledger, uncertainty, limitations, and source references. Exporting recomputes the same deterministic input; this is not a saved historical allocation replay.</p>{result ? <><dl className="financial-provenance"><dt>Execution mode</dt><dd>{result.execution_mode}</dd><dt>Trial context</dt><dd>{result.trial.id} · {result.trial.title}</dd><dt>Run</dt><dd><code>{result.run_id}</code></dd><dt>Result SHA-256</dt><dd><code>{result.result_sha256}</code></dd><dt>Input SHA-256</dt><dd><code>{result.input_sha256}</code></dd></dl><div className="financial-actions"><button onClick={() => download('html')} disabled={exporting}>Download readable HTML report</button><button onClick={() => download('json')} disabled={exporting}>Download JSON evidence</button></div><details><summary>Source and execution evidence</summary><pre>{JSON.stringify(result.evidence, null, 2)}</pre></details></> : <p className="financial-empty">Compute a fresh comparison before exporting. Edits immediately invalidate the previous report.</p>}{result && <><h3>Policy and protocol references</h3><ul>{result.sources.map(source => <li key={source.id}><a href={source.url} target="_blank" rel="noreferrer">{source.title}</a> — {source.scope}</li>)}</ul><h3>Explicit modeling assumptions</h3><ul>{Object.entries(result.assumptions).map(([key, value]) => <li key={key}>{value}</li>)}</ul></>}<h3>Limitations</h3><ul>{(result?.limitations ?? demo?.limitations ?? []).map(item => <li key={item}>{item}</li>)}</ul><p>Human coverage review, site feasibility confirmation, validated prices, and operational recruitment evidence are required before real decisions.</p></section>}
-    </>}
-  </div>
+  const c: Ctx = {
+    request,
+    demo,
+    result,
+    coverage,
+    coverageCurrent,
+    selected,
+    select: setSelected,
+    field,
+    hasOverrides,
+    exporting,
+    download,
+    limitations,
+    framing,
+  }
+
+  const setup = (
+    <Window label="Worksheet inputs" className="fin-setup">
+      <div className="fin-setup-top">
+        <label className="field fin-trial">
+          <span className="field-label">Public trial context</span>
+          <select value={request.trial_id} onChange={(e) => change({ ...request, trial_id: e.target.value, coverage_overrides: {} })}>
+            {demo?.trials.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.id} · {t.title}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="fin-registry">
+          <a href={`https://clinicaltrials.gov/study/${request.trial_id}`} target="_blank" rel="noreferrer">
+            Public registry record ↗
+          </a>
+          <InfoTip label="About the public record" content={PUBLIC_NOTE} />
+        </p>
+      </div>
+      <KeyInputs c={c} />
+      <p className="fin-hint">
+        {TARGET_NOTE} {PERIOD_NOTE}
+      </p>
+      <div className="fin-run">
+        <button type="button" className="btn btn-primary" onClick={compare} disabled={loading || exporting}>
+          {loading ? 'Computing…' : 'Compare budget scenarios'}
+        </button>
+        <p className="fin-status" role="status" aria-live="polite">
+          {notice || 'Review the inputs, then compare.'}
+        </p>
+      </div>
+    </Window>
+  )
+
+  const framingTrigger = (framing.benchmarks || framing.billing || framing.independence || framing.noTime) && (
+    <HoverCard content={<FramingCard framing={framing} />}>How payer amounts are used</HoverCard>
+  )
+
+  return (
+    <div className="view financial">
+      {head}
+      {banner}
+      {errorBox}
+      {setup}
+      {simple ? (
+        <>
+          <Section
+            title="Budget scenarios"
+            lede={result ? result.comparison.basis : 'Compare to price five budget scenarios, A to E, at the same participant target, budget and contract period.'}
+            qualifiers={
+              result && (
+                <p className="fin-quals">
+                  {result.comparison.ordering} <Qualifier>Synthetic inputs</Qualifier>
+                </p>
+              )
+            }
+            info={result ? <AssumptionsCard assumptions={result.assumptions} keys={SCENARIO_ASSUMPTIONS} /> : undefined}
+          >
+            {result ? <ScenarioList c={c} /> : null}
+            {result && <p className="fin-caption">Sponsor commitment includes held contingency. Bar: share of the sponsor budget. Hover a name for its definition.</p>}
+          </Section>
+          <Section
+            title="Who pays, per participant"
+            lede={
+              <>
+                {framing.benchmarks} {framingTrigger}
+              </>
+            }
+            qualifiers={<PayerQualifiers c={c} independence />}
+            figure={coverage ? <CoverageTotals c={c} /> : <Empty>Compare to load the selected trial’s coverage worksheet.</Empty>}
+            caption={
+              coverage
+                ? `From the coverage worksheet: ${coverage.items.length} protocol items for ${request.trial_id}, per participant${hasOverrides ? `, with ${Object.keys(request.coverage_overrides).length} responsibility edit${Object.keys(request.coverage_overrides).length === 1 ? '' : 's'}` : ''}.`
+                : undefined
+            }
+          />
+          <Section
+            title="Other inputs, the worksheet and the report"
+            lede="Scenario, site, coverage and sensitivity inputs, and the exports. Any edit clears the comparison until you compare again."
+          >
+            <div className="fin-more">
+              <Details summary="Scenario inputs">
+                <ScenarioInputs c={c} />
+              </Details>
+              <Details summary={`Synthetic sites (${request.sites.length})`}>
+                <SiteInputs c={c} />
+              </Details>
+              <Details summary={coverage ? `Coverage worksheet (${coverage.items.length} protocol items)` : 'Coverage worksheet'}>
+                <CoverageWorksheet c={c} />
+              </Details>
+              <Details summary="Cost sensitivity inputs">
+                <SensitivityInputs c={c} />
+                <p className="fin-text">The commitment ranges these inputs give are in the Detailed view, under Cost sensitivity.</p>
+              </Details>
+              <Details summary="Report and exports">
+                <Report c={c} full={false} />
+              </Details>
+            </div>
+          </Section>
+        </>
+      ) : (
+        <>
+          <nav className="fin-nav" aria-label="Worksheet sections">
+            {SECTIONS.map((s) => (
+              <button type="button" key={s} onClick={() => setSection(s)} aria-current={s === section ? 'page' : undefined}>
+                {s}
+              </button>
+            ))}
+          </nav>
+          <DetailedSection name={section} c={c} />
+        </>
+      )}
+    </div>
+  )
+}
+
+function DetailedSection({ name, c }: { name: SectionName; c: Ctx }) {
+  const result = c.result
+  const s = selectedOf(c)
+  const none = <Empty>No current comparison. Review the inputs and select “Compare budget scenarios”.</Empty>
+  let body: ReactNode = null
+  switch (name) {
+    case 'Scenarios':
+      body = (
+        <>
+          <ScenarioInputs c={c} />
+          {result ? (
+            <>
+              <p className="fin-text">
+                {result.comparison.basis} {result.comparison.ordering}
+              </p>
+              <ScenarioTable c={c} />
+              <BudgetLinesTable c={c} />
+            </>
+          ) : (
+            none
+          )}
+        </>
+      )
+      break
+    case 'Sites and network':
+      body = (
+        <>
+          <SiteInputs c={c} />
+          {result && s ? (
+            <>
+              <ScenarioPicker c={c} />
+              {s.plan.costed ? <SiteRowsTable s={s} /> : <NotCosted s={s} />}
+              <NetworkBlock s={s} />
+              <h3 className="fin-h3">Plan assumptions</h3>
+              <ul className="fin-list">
+                {s.plan.assumptions.map((a) => (
+                  <li key={a}>{a}</li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            none
+          )}
+        </>
+      )
+      break
+    case 'Ledger':
+      body = result ? (
+        <>
+          <p className="fin-text">{TRANSFER_NOTE}</p>
+          <LedgerTables c={c} />
+          {s && (
+            <>
+              <ScenarioPicker c={c} />
+              <PartyLedger s={s} c={c} />
+            </>
+          )}
+        </>
+      ) : (
+        none
+      )
+      break
+    case 'Budget reallocation':
+      body = result ? (
+        <>
+          <p className="fin-text">
+            Cost only: the sites each scenario adds beyond the existing network and what they cost, then each budget line’s change against A. When A is not
+            costed there is no change against A to state, and the added sites’ own costs still are.
+          </p>
+          <ReallocationTables c={c} />
+        </>
+      ) : (
+        none
+      )
+      break
+    case 'Cost sensitivity':
+      body = (
+        <>
+          <SensitivityInputs c={c} />
+          {result ? <SensitivityTable c={c} /> : none}
+        </>
+      )
+      break
+    case 'Coverage worksheet':
+      body = (
+        <>
+          <div className="fin-panel">
+            <h3>How payer amounts are used</h3>
+            {[c.framing.benchmarks, c.framing.billing, c.framing.independence, c.framing.noTime]
+              .filter((x): x is string => !!x)
+              .map((l) => (
+                <p key={l}>{l}</p>
+              ))}
+          </div>
+          <PayerQualifiers c={c} independence={false} />
+          {c.coverage && <CoverageTotals c={c} resource />}
+          {c.coverage && c.coverageCurrent && (
+            <p className="fin-text">
+              Routine lines with an unknown insurer amount: <span className="num">{c.coverage.insurer_amounts_unknown}</span>.
+            </p>
+          )}
+          <CoverageWorksheet c={c} />
+        </>
+      )
+      break
+    case 'Report':
+      body = <Report c={c} full />
+      break
+  }
+  return (
+    <section className="win fin-section" aria-label={name}>
+      <div className="win-body fin-stack">
+        <h2 className="fin-h2">{name}</h2>
+        {body}
+      </div>
+    </section>
+  )
 }

@@ -2,8 +2,9 @@
 
 Five scenarios are compared at a fixed participant target over a budgeted contract period.
 They are listed, not ranked. In this worksheet payer assumptions (payer type, payer share, the
-commercial-rate assumption) change only the insurer and participant lines; a line moves onto or off
-the sponsor only through its coverage status.
+commercial-rate assumption) change only the insurer and participant lines; a line moves onto the sponsor
+through coverage review or a contract term, and off it only when coverage analysis finds it billable
+routine care, never through the insurer's payment amount.
 """
 from __future__ import annotations
 
@@ -43,10 +44,12 @@ PAYER_BILLING = ("Whether an item may be billed to an insurer follows the protoc
                  "is then not billed to the insurer. Insurer payment amounts are not a lever over who is billed.")
 PAYER_INDEPENDENCE = ("In this worksheet, payer type, payer share and the commercial-rate assumption change only the "
                       "insurer and participant lines; the sponsor commitment does not fall because an insurer pays "
-                      "more for routine care. A line moves onto or off the sponsor only through its coverage status "
-                      "(who is billed), set by coverage review or a contract term, never through the insurer's "
-                      "payment amount. Payer and Medicare amounts can still inform the rate negotiated for research "
-                      "items (benchmark x sponsor_rate_multiplier).")
+                      "more for routine care. A line moves onto the sponsor through coverage review or a contract term "
+                      "(for example, the site contract has the sponsor pay for a routine item), and off the sponsor "
+                      "only when coverage analysis finds it is billable routine care that the contract and consent "
+                      "form do not promise to provide free; never through the insurer's payment amount. Payer and "
+                      "Medicare amounts can still inform the rate negotiated for research items (benchmark x the "
+                      "sponsor-site negotiated rate).")
 ACCESS_SUPPORT = ("Access support reimburses trial-related travel and lodging; it is not netted against, and does not "
                   "pay, insurer cost sharing. Whether a sponsor may cover a beneficiary's cost sharing is a separate "
                   "compliance question this worksheet does not model.")
@@ -90,6 +93,15 @@ class Responsibility(StrEnum):
     REVIEW = "REVIEW_REQUIRED"
 
 
+# Statuses an operator may give a line. Research items (authored SPONSOR) and the investigational-supply
+# reserve stay on the sponsor side: never billed to an insurer or participant (coverage rules).
+ALL_STATUSES = [str(r) for r in Responsibility]
+SPONSOR_SIDE_STATUSES = [str(r) for r in (Responsibility.SPONSOR, Responsibility.CONDITIONAL, Responsibility.UNKNOWN,
+                                          Responsibility.REVIEW)]
+CLFS_MEDICARE = ("; Medicare pays clinical diagnostic lab tests at 100% of the CLFS amount (no Part B deductible or "
+                 "coinsurance), so the participant share is 0")
+
+
 class Site(Strict):
     id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,40}$")
     name: str = Field(min_length=1, max_length=120)
@@ -124,7 +136,7 @@ class FinanceRequest(Strict):
     payer_kind: Literal["Medicare","commercial","Medicaid"] = "Medicare"
     jurisdiction: str = Field("MA",min_length=2,max_length=80)
     payer_plan: str = Field("UNVERIFIED DEMO",min_length=1,max_length=120)
-    payer_fraction: float = Field(.8,ge=0,le=1,description="Insurer share of the routine-care benchmark (Medicare, assumed commercial); not applied to Medicaid, whose enrollee cost sharing is shown as 0")
+    payer_fraction: float = Field(.8,ge=0,le=1,description="Insurer share of the routine-care benchmark (Medicare, assumed commercial); not applied to Medicaid, whose enrollee cost sharing is shown as 0, nor to Medicare clinical diagnostic lab tests (CLFS), paid at 100%")
     commercial_rate_assumption: bool = False
     sponsor_rate_multiplier: float = Field(1, ge=.1, le=5, description="Sponsor-site negotiated rate for research items as a multiple of the fee-schedule benchmark")
     payer_admin_per_participant: float = Field(30,ge=0,le=10000)
@@ -177,10 +189,12 @@ def coverage(req: FinanceRequest):
         if default==Responsibility.SPONSOR and status in (Responsibility.PAYER,Responsibility.PATIENT):
             raise ValueError("Authored research services cannot be shifted to insurers or participants by this worksheet")
         price=terms._price_code(proc['code'],None) if proc.get('code') else None
+        clfs=False
         if price and price.get('amount') is not None:
             benchmark=float(price['amount'])
             verified=not price.get('placeholder',True)
             source=price.get('source') or 'Existing Concord ratecard fallback'
+            clfs=price.get('schedule')=='CLFS'
         else:
             pricing=proc.get('pricing','')
             benchmark=float(std.get(pricing.removeprefix('standard:'),{}).get('amount') or 75)
@@ -198,6 +212,10 @@ def coverage(req: FinanceRequest):
             payer,patient=money(benchmark),0.
             reason+=('; routine care billed per coverage rules; illustrative Medicaid payment at the benchmark; enrollee '
                      'cost sharing shown as 0 (nominal or zero for many services, 42 CFR 447.50-447.57)')
+        elif status==Responsibility.PAYER and req.payer_kind=='Medicare' and clfs:
+            # SSA 1833(a)(1)(D) and (b)(3): no Part B deductible or coinsurance on CLFS clinical lab tests.
+            payer,patient=money(benchmark),0.
+            reason+='; routine care billed per coverage rules'+CLFS_MEDICARE
         elif status==Responsibility.PAYER and insurer_amount_assumed:
             payer=money(benchmark*req.payer_fraction)
             patient=money(benchmark-payer)
@@ -222,6 +240,7 @@ def coverage(req: FinanceRequest):
             'explanation':reason,'sponsor_per_participant':money(sponsor),'payer_per_participant':maybe_money(payer),
             'patient_per_participant':maybe_money(patient),'reserve_per_participant':money(reserve),
             'insurer_amount_known':payer is not None,
+            'allowed_statuses':SPONSOR_SIDE_STATUSES if default==Responsibility.SPONSOR else ALL_STATUSES,
             'resource_cost_per_participant':money(benchmark*.7),'resource_cost_kind':'explicit_synthetic_70_percent_of_benchmark',
             'jurisdiction':req.jurisdiction,'payer_plan':req.payer_plan})
     if set(req.coverage_overrides)-{i['id'] for i in items}-{'drug-contingency'}:
@@ -239,7 +258,7 @@ def coverage(req: FinanceRequest):
         'explanation':'Actual manufacturing/acquisition cost unknown; the sponsor supplies the investigational product, so this is a sponsor-side supply proxy (site handling is priced as its own line), assumed consumed. Not a complete supply budget.',
         'sponsor_per_participant':drug if status==Responsibility.SPONSOR else 0.,'payer_per_participant':0.,
         'patient_per_participant':0.,'reserve_per_participant':0. if status==Responsibility.SPONSOR else drug,
-        'insurer_amount_known':True,
+        'insurer_amount_known':True,'allowed_statuses':SPONSOR_SIDE_STATUSES,
         'resource_cost_per_participant':drug,'resource_cost_kind':'synthetic_proxy_for_unknown_supply_cost',
         'jurisdiction':req.jurisdiction,'payer_plan':req.payer_plan})
 
@@ -254,7 +273,8 @@ def coverage(req: FinanceRequest):
         payer_note=('Medicaid amounts use the Medicare benchmark as a stand-in; state rates and qualifying-trial, service and beneficiary eligibility remain unverified. '
                     'Medicaid enrollee cost sharing is nominal or zero for many services (42 CFR 447.50-447.57); the participant share is shown as 0 and payer_fraction is not applied.')
     else:
-        payer_note='Medicare qualifying-trial, service and beneficiary eligibility remain unverified.'
+        payer_note=('Medicare qualifying-trial, service and beneficiary eligibility remain unverified. Clinical diagnostic lab '
+                    'tests priced from the CLFS are paid at 100% with no participant share; the payer share applies to the other routine lines.')
     return {'items':items,'totals':totals,'insurer_amounts_unknown':sum(1 for i in items if not i['insurer_amount_known']),
         'warnings':['Every coverage determination and price requires review. Insurer and participant figures are illustrative splits, not approvals.',
                     payer_note, PAYER_INDEPENDENCE]}
@@ -490,7 +510,7 @@ def report_html(req: FinanceRequest, result: dict) -> str:
     <h2>Sponsor budget comparison</h2><p>Fixed sponsor budget {e(usd(req.budget))} · participant target {e(req.target)} · budgeted contract period of {e(f'{req.budget_period_months:g}')} months. {e(result['comparison']['ordering'])} Commitments include held contingency. Changes are against scenario A.</p>
     <table><tr><th>Scenario</th><th>Sites</th><th>Stated capacity</th><th>Feasible</th><th>Sponsor commitment</th><th>Change vs A</th><th>Added sites</th><th>Unspent budget</th></tr>{rows}</table>
     <h3>Budget lines (USD)</h3><p>Operating = each site's monthly cost x the budgeted contract period. Site per-participant costs are only those not itemized in the coverage worksheet. Procedures include held contingency. Baseline-site activation is sunk.</p><table><tr><th>Scenario</th><th>Activation</th><th>Operating</th><th>Site per-participant (not itemized)</th><th>Procedures and contingency</th><th>Participant support</th><th>Administration</th><th>Total</th></tr>{line_rows}</table>
-    <h2>Three-party economics</h2><p>Payments are transfers. Resource costs are separately modeled once. The investigational-supply reserve is a sponsor-side supply proxy, outside the hospital's revenue and costs. {e(ACCESS_SUPPORT)} Unknown downstream clinical costs, unresolved participant exposure and any insurer amount not assumed remain UNKNOWN.</p><table><tr><th>Scenario</th><th>Sponsor cash spending</th><th>Held contingency</th><th>Hospital contribution</th><th>Conditional insurer costs</th><th>Participant routine cost sharing (illustrative)</th><th>Sponsor access support</th></tr>{ledger_rows}</table>
+    <h2>Three-party economics</h2><p>Payments are transfers. Resource costs are separately modeled once. The investigational-supply reserve is a sponsor-side supply proxy, outside the hospital's revenue and costs. {e(ACCESS_SUPPORT)} Unknown downstream clinical costs, unresolved participant exposure and any insurer amount not assumed remain UNKNOWN.</p><table><tr><th>Scenario</th><th>Sponsor cash spending</th><th>Held contingency</th><th>Hospital revenue minus assumed cost</th><th>Conditional insurer costs</th><th>Participant routine cost sharing (illustrative)</th><th>Sponsor access support</th></tr>{ledger_rows}</table>
     <h2>Cost-input sensitivity</h2><p>Seed {e(req.seed)}, {e(req.draws)} paired draws; log spread {e(req.cost_spread)} on site activation, monthly and per-participant costs. Fixed networks and participant split. Ranges are q10 / q50 / q90, not calibrated intervals.</p><table><tr><th>Scenario</th><th>Sponsor commitment q10 / q50 / q90</th><th>Share of draws over budget</th></tr>{uncertainty_rows}</table>
     <h2>Preliminary coverage worksheet (per participant)</h2><p>{e(PAYER_BENCHMARKS)} {e(PAYER_BILLING)} {e(PAYER_INDEPENDENCE)}</p><p>Only the authored non-repeating visits are priced. No binding coverage determination and no claims. {e(NOT_A_BILLING_REVIEW)}</p><table><tr><th>Procedure / code</th><th>Responsibility / review</th><th>Benchmark / sponsor negotiated rate</th><th>Sponsor / potential insurer / potential participant / reserve</th><th>Price provenance</th></tr>{coverage_rows}</table>
     <h2>Sources</h2><ul>{''.join('<li><a href="'+e(s['url'])+'">'+e(s['title'])+'</a>: '+e(s['scope'])+'</li>' for s in SOURCES)}</ul>

@@ -171,7 +171,7 @@ async function tabTo(page, sel) {
 
     const tabs = await texts(page, 'nav.tabs .tab-label')
     const at = tabs.indexOf('Site scores')
-    // Other tabs may sit between Site scores and Research (Financial Coordination, from PR #1).
+    // Other tabs may sit between Site scores and Research (Sponsor budget).
     check('tab order: Site scores after Protocol to terms, before Research', at > 0 && tabs[at - 1] === 'Protocol to terms' && tabs.indexOf('Research') > at, tabs)
     const title = await text(page, '.ss-bd-title')
     check('preset opens the richest-history Dana-Farber / MSK site', /dana|sloan/i.test(title), title)

@@ -255,6 +255,60 @@ def test_coverage_status_not_insurer_payment_moves_a_line_onto_the_sponsor(clien
     assert by_id(paid)["A"]["plan"]["sponsor_total"] > by_id(base)["A"]["plan"]["sponsor_total"]
 
 
+def test_medicare_pays_clinical_lab_tests_in_full_with_no_participant_share(client, request_body):
+    """SSA 1833(a)(1)(D) and (b)(3): CLFS clinical diagnostic lab tests carry no Part B deductible or coinsurance."""
+    from concord import terms
+    result = compare(client, request_body)
+    routine = [i for i in result["coverage"]["items"] if i["status"] == "POTENTIALLY_PAYER_COVERED"]
+    clfs = [i for i in routine if (terms._price_code(i["code"], None) or {}).get("schedule") == "CLFS"]
+    other = [i for i in routine if i not in clfs]
+    assert clfs and other
+    for item in clfs:
+        assert item["payer_per_participant"] == item["unit_rate"] and item["patient_per_participant"] == 0
+        assert item["explanation"].endswith("Medicare pays clinical diagnostic lab tests at 100% of the CLFS amount "
+                                            "(no Part B deductible or coinsurance), so the participant share is 0")
+    fraction = request_body["payer_fraction"]
+    for item in other:  # the stated payer share still splits the other routine lines
+        assert item["payer_per_participant"] == pytest.approx(item["unit_rate"] * fraction, abs=0.01)
+    # Default demo, per participant: insurer 4,807.30 and participant 976.20; ledger A 288,438.00 / 58,572.00.
+    assert result["coverage"]["totals"]["payer"] == pytest.approx(4807.30, abs=0.01)
+    assert result["coverage"]["totals"]["patient"] == pytest.approx(976.20, abs=0.01)
+    a = by_id(result)["A"]["economics"]
+    assert a["insurer"]["payments"] == pytest.approx(288438.00, abs=0.01)
+    assert a["patient"]["cost_sharing"] == pytest.approx(58572.00, abs=0.01)
+    assert a["hospital"]["net_contribution"] == pytest.approx(194163.60, abs=0.01)  # payer + patient is unchanged
+    # Commercial (with the rate assumption) still splits lab tests by the stated share.
+    request_body.update(payer_kind="commercial", commercial_rate_assumption=True)
+    commercial = {i["id"]: i for i in compare(client, request_body)["coverage"]["items"]}
+    assert all(commercial[i["id"]]["patient_per_participant"] > 0 for i in clfs if i["unit_rate"] >= 1)
+
+
+def test_research_items_and_the_supply_reserve_offer_only_sponsor_side_statuses(client, request_body):
+    items = compare(client, request_body)["coverage"]["items"]
+    sponsor_side = ["SPONSOR", "CONDITIONAL", "UNKNOWN", "REVIEW_REQUIRED"]
+    research = [i for i in items if i["status"] == "SPONSOR"]
+    routine = [i for i in items if i["status"] == "POTENTIALLY_PAYER_COVERED"]
+    drug = next(i for i in items if i["id"] == "drug-contingency")
+    assert research and routine
+    assert all(i["allowed_statuses"] == sponsor_side for i in research) and drug["allowed_statuses"] == sponsor_side
+    assert all(len(i["allowed_statuses"]) == 6 for i in routine)
+    # The offered statuses are exactly the ones the API accepts.
+    for item in (research[0], drug, routine[0]):
+        for status in ("SPONSOR", "POTENTIALLY_PAYER_COVERED", "POTENTIALLY_PATIENT_COST_SHARING", "CONDITIONAL",
+                       "UNKNOWN", "REVIEW_REQUIRED"):
+            request_body["coverage_overrides"] = {item["id"]: status}
+            code = client.post("/api/financial/compare", json=request_body).status_code
+            assert code == (200 if status in item["allowed_statuses"] else 422), (item["id"], status, code)
+
+
+def test_payer_independence_does_not_say_a_contract_term_moves_a_line_off_the_sponsor():
+    assert "onto or off" not in PAYER_INDEPENDENCE and "sponsor_rate_multiplier" not in PAYER_INDEPENDENCE
+    assert "off the sponsor only when coverage analysis finds it is billable routine care" in PAYER_INDEPENDENCE
+    assert PAYER_INDEPENDENCE.startswith("In this worksheet, payer type, payer share and the commercial-rate assumption "
+                                         "change only the insurer and participant lines; the sponsor commitment does "
+                                         "not fall because an insurer pays more for routine care.")
+
+
 def test_sponsor_rate_multiplier_prices_research_items_not_insurer_payments(client, request_body):
     base = compare(client, request_body)
     request_body["sponsor_rate_multiplier"] = 1.5
