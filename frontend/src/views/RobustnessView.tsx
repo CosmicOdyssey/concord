@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { api, ApiError, DEFAULT_SCENARIO, REGENERON_PRESET, scenarioKey, type Robustness, type RobustnessRow, type Scenario } from '../api'
 import type { ClearState } from '../App'
 import { Badge, Caveat, ErrorBox, Loading } from '../components'
-import { int, num, pct, times } from '../format'
+import { int, isNum, num, times } from '../format'
+import { atLeast, betaInfo, isFullSampleBeta, materialMonths, ShareCell } from '../summary'
 
 type Async<T> =
   | { status: 'loading' }
@@ -76,6 +77,12 @@ export default function RobustnessView({ clear }: { clear: ClearState }) {
   }, [rows])
 
   const params = state.status === 'ok' ? state.data.params : undefined
+  const slowerThr = atLeast(materialMonths(rows[0]?.coord_free_vs_actual))
+  // The grid stores the β it was computed at. If the default (full-sample estimate) has moved since,
+  // say so: the "data estimate" rows are then not at the current default.
+  const curBeta = clear.result && clear.result.params.beta === null ? betaInfo(clear.result.summary.assumptions) : null
+  const gridBeta = rows.find(isData)?.beta
+  const staleBeta = isFullSampleBeta(curBeta) && isNum(gridBeta) && Math.abs(curBeta.beta - gridBeta) > 5e-4 ? curBeta : null
 
   return (
     <section className="view">
@@ -84,8 +91,9 @@ export default function RobustnessView({ clear }: { clear: ClearState }) {
           <h1>Robustness</h1>
           <p className="lede tagline">We tried to break our own result.</p>
           <p className="lede">
-            The same clearing, re-run under every combination of congestion elasticity β (data estimate, its 95% CI ends,
-            and the β = 1 the master doc assumed), site-rate rule for low-history sites, and site universe.
+            The same clearing, re-run under every combination of congestion elasticity β (the default β = full-sample
+            estimate, its 95% CI ends, and the β = 1 the master doc assumed), site-rate rule for low-history sites, and site
+            universe.
           </p>
         </div>
       </div>
@@ -138,7 +146,8 @@ export default function RobustnessView({ clear }: { clear: ClearState }) {
               <ul className="findings">
                 <li>
                   <strong>Pure coordination</strong> (joint allocation on top of each trial’s own best response, no losers):{' '}
-                  <span className="tnum strong">{summary.pureData}</span> with β from the data or either end of its CI
+                  <span className="tnum strong">{summary.pureData}</span> with{' '}
+                  {staleBeta ? 'the earlier full-sample β' : 'the default β (full-sample estimate)'} or either end of its CI
                   {summary.hasAssumed && (
                     <>
                       , against <span className="tnum strong">{summary.pureAssumed}</span> under the assumed β = 1. The
@@ -166,6 +175,13 @@ export default function RobustnessView({ clear }: { clear: ClearState }) {
                 </span>
               )}
             </div>
+            {staleBeta && (
+              <p className="note small">
+                This grid was computed at β = {num(gridBeta, 3)}, an earlier full-sample estimate. The current default β =
+                full-sample estimate is {num(staleBeta.beta, 3)} (95% CI {num(staleBeta.ci95[0], 3)} to{' '}
+                {num(staleBeta.ci95[1], 3)}), so these rows are not at the current default until the grid is regenerated.
+              </p>
+            )}
             <div className="table-scroll">
               <table className="tbl tbl-robust">
                 <thead>
@@ -182,7 +198,12 @@ export default function RobustnessView({ clear }: { clear: ClearState }) {
                     <th className="num" title="Joint optimum with losers allowed, vs registered">
                       Joint optimum
                     </th>
-                    <th className="num">Share slower</th>
+                    <th
+                      className="num"
+                      title={`Joint optimum with losers allowed: share of trials slower by ${slowerThr}; below it, slower by any amount. — = not in this precomputed grid`}
+                    >
+                      Slower {slowerThr}
+                    </th>
                     <th className="num" title="Best response vs registered">
                       Site selection
                     </th>
@@ -201,6 +222,11 @@ export default function RobustnessView({ clear }: { clear: ClearState }) {
                         <td className="nowrap">
                           <div className="strong">{r.beta_label}</div>
                           <div className="muted small tnum">β = {num(r.beta, 3)}</div>
+                          {isData(r) && (
+                            <div className="muted small">
+                              {staleBeta ? 'earlier full-sample estimate' : 'default β = full-sample estimate'}
+                            </div>
+                          )}
                           {assumed && (
                             <Badge tone="bad" title="This elasticity was assumed, not estimated; it manufactured the earlier dividend">
                               assumed in master doc
@@ -218,7 +244,12 @@ export default function RobustnessView({ clear }: { clear: ClearState }) {
                           {times(r.coordination_no_loser_vs_indep.ratio, 3)}
                         </td>
                         <td className="num">{times(r.coord_free_vs_actual.ratio)}</td>
-                        <td className="num">{pct(r.coord_free_vs_actual.share_slower)}</td>
+                        <td className="num">
+                          <ShareCell
+                            material={r.coord_free_vs_actual.share_slower_material}
+                            any={r.coord_free_vs_actual.share_slower}
+                          />
+                        </td>
                         <td className="num">{times(r.indep_vs_actual.ratio)}</td>
                         <td className="num">{int(r.coord_vs_actual.trials)}</td>
                       </tr>

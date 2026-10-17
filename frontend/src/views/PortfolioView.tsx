@@ -3,7 +3,7 @@ import { api, REGENERON_PRESET, type Scenario, type SponsorCount } from '../api'
 import type { ClearState } from '../App'
 import { Badge, Caveat, ErrorBox, Loading, RunLine } from '../components'
 import { ALLOC_HINT, ALLOC_LABEL, ctgovUrl, int, num, phaseLabel, signedMonths, siteName, trialName } from '../format'
-import { DecompositionTable, HeadlineBlock } from '../summary'
+import { atLeast, backgroundSlowerMaterial, DecompositionTable, HeadlineBlock, materialMonths } from '../summary'
 import { EligBadge, saved } from './ClearView'
 
 interface Props {
@@ -156,9 +156,10 @@ export default function PortfolioView({ clear, regions, form, setForm, onOpenTri
                 <DecompositionTable r={r} compact />
                 <p className="note small">
                   {int(r.summary.background_trials)} other trials are held fixed at their registered sites. Under the joint
-                  optimum with losers allowed, <strong>{int(r.summary.background_worse_under_coord_free)}</strong> of them would
-                  enroll more slowly because this portfolio moves onto their sites. The headline allocation caps every trial,
-                  background included, at its registered time.
+                  optimum with losers allowed, <strong>{int(backgroundSlowerMaterial(r))}</strong> of them would enroll more
+                  slowly by {atLeast(materialMonths(r.summary.coord_free_vs_actual), true)} (
+                  {int(r.summary.background_worse_under_coord_free)} by any amount) because this portfolio moves onto their
+                  sites. The headline allocation caps every trial, background included, at its registered time.
                 </p>
               </div>
 

@@ -14,6 +14,12 @@ Exclusion Criteria:
 - Prior treatment with an immune checkpoint inhibitor
 - History of interstitial lung disease`
 
+/** Backend notes are bare clauses: capitalize and end with one period. */
+function sentence(s: string): string {
+  const t = s.trim().replace(/\.+$/, '')
+  return t ? `${t[0].toUpperCase()}${t.slice(1)}.` : ''
+}
+
 function fmtValue(v: unknown): string {
   if (v === null || v === undefined) return '—'
   if (typeof v === 'object') return JSON.stringify(v)
@@ -426,6 +432,15 @@ function CongestionCard({ data, error }: { data: CongestionTest | null; error: s
   const x = (v: number) => ((v - lo) / (hi - lo)) * 100
   const outside = prim ? implied < prim.ci95[0] || implied > prim.ci95[1] : false
   const pooled = data.results.pooled_overlap
+  // The default β is the full-sample within-site estimate (β = −coef, floored at 0 as the backend does).
+  const defBeta =
+    data.default_beta ??
+    (prim
+      ? { value: Math.max(0, -prim.coef), ci95: [Math.max(0, -prim.ci95[1]), Math.max(0, -prim.ci95[0])] as [number, number], note: undefined }
+      : null)
+  const subsets = data.subsets ? Object.entries(data.subsets) : []
+  const mc = data.multiple_comparisons
+  const parsers = data.parser_sensitivity ?? []
   return (
     <div className="card">
       <div className="section-head">
@@ -461,8 +476,15 @@ function CongestionCard({ data, error }: { data: CongestionTest | null; error: s
               <div className="stat-label">Within-site estimate</div>
               <div className="stat-value tnum">{num(prim.coef, 3)}</div>
               <div className="stat-sub tnum">
-                95% CI {num(prim.ci95[0], 3)} to {num(prim.ci95[1], 3)} · p = {num(prim.p, 2)}
+                95% CI {num(prim.ci95[0], 3)} to {num(prim.ci95[1], 3)}
+                {data.se_method && <> ({data.se_method})</>} · p = {num(prim.p, 2)}
               </div>
+              {prim.ci95_trial_only && (
+                <div className="stat-sub tnum muted">
+                  trial-clustered only: 95% CI {num(prim.ci95_trial_only[0], 3)} to {num(prim.ci95_trial_only[1], 3)} · p ={' '}
+                  {num(prim.p_trial_only, 2)}
+                </div>
+              )}
             </div>
             <div className="stat">
               <div className="stat-label">Model had assumed</div>
@@ -475,6 +497,18 @@ function CongestionCard({ data, error }: { data: CongestionTest | null; error: s
               <div className="stat-sub">{prim.clusters ? `${int(prim.clusters)} clusters` : 'rows'}</div>
             </div>
           </div>
+          {defBeta && (
+            <p className="small">
+              <strong>default β = full-sample estimate</strong>{' '}
+              <span className="tnum">
+                = {num(defBeta.value, 3)} (−1 × the within-site coefficient; 95% CI {num(defBeta.ci95[0], 3)} to{' '}
+                {num(defBeta.ci95[1], 3)}
+                {data.se_method && <>, {data.se_method}</>})
+              </span>
+              . Clear it uses it when the β box is blank.
+              {defBeta.note && <span className="muted"> {sentence(defBeta.note)}</span>}
+            </p>
+          )}
           <p className="note small">
             Plain reading: within the same site, busy periods with overlapping competitors don’t measurably slow enrollment.
             Across sites, busier sites are slower per trial
@@ -486,6 +520,111 @@ function CongestionCard({ data, error }: { data: CongestionTest | null; error: s
             )}
             , but that comparison is confounded with site type.
           </p>
+        </>
+      )}
+      {subsets.length > 0 && (
+        <>
+          <h3>Subset estimates (not the default)</h3>
+          <p className="muted small">
+            The same regressions on subsets of the trials. Reported separately; none of them is used as the default β.
+            {mc && (
+              <>
+                {' '}
+                {sentence(mc.note)} ({mc.method}, k = {int(mc.k)}, α = {num(mc.alpha, 2)}.)
+              </>
+            )}
+          </p>
+          <div className="table-scroll">
+            <table className="tbl tbl-compact">
+              <thead>
+                <tr>
+                  <th>Subset</th>
+                  <th className="num">Within-site coef</th>
+                  <th className="num">95% CI</th>
+                  <th className="num">p</th>
+                  {mc && <th className="num">{mc.method} 95% CI</th>}
+                  <th className="num" title="Site fixed effects / pooled designs on the same subset">
+                    Site FE · pooled
+                  </th>
+                  <th className="num">n</th>
+                </tr>
+              </thead>
+              <tbody>
+                {subsets.map(([key, sub]) => {
+                  const w = sub.within
+                  const bci = mc?.bonferroni_ci95?.[key]
+                  return (
+                    <tr key={key}>
+                      <td>
+                        <div className="strong">
+                          {sub.label} {sub.is_default && <Badge tone="info">default</Badge>}
+                        </div>
+                        <div className="muted small">{sub.definition}</div>
+                      </td>
+                      <td className="num">{num(w?.coef, 3)}</td>
+                      <td className="num nowrap">{w ? `${num(w.ci95[0], 3)} to ${num(w.ci95[1], 3)}` : '—'}</td>
+                      <td className="num">{num(w?.p, 3)}</td>
+                      {mc && <td className="num nowrap">{bci ? `${num(bci[0], 3)} to ${num(bci[1], 3)}` : '—'}</td>}
+                      <td className="num nowrap">
+                        {num(sub.site_fe?.coef, 3)} · {num(sub.pooled?.coef, 3)}
+                      </td>
+                      <td className="num">
+                        {int(w?.n_rows)}
+                        {isNum(w?.clusters) && <div className="muted small nowrap">{int(w.clusters)} clusters</div>}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+      {parsers.length > 0 && (
+        <>
+          <h3>β under each parser version</h3>
+          <p className="muted small">
+            The primary within-site estimate re-run with each version of the eligibility parser, oldest first, so the
+            dependence on parsing is visible. β = −coefficient.
+          </p>
+          <div className="table-scroll">
+            <table className="tbl tbl-compact">
+              <thead>
+                <tr>
+                  <th>Parser version</th>
+                  <th className="num">Coef</th>
+                  <th className="num">95% CI</th>
+                  <th className="num">p</th>
+                  <th className="num" title="β = −coefficient">Beta</th>
+                  <th className="num" title="Trials whose compiled criteria left no eligible synthetic patients">
+                    Empty masks
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {parsers.map((ps) => {
+                  const w = ps.within_overlap
+                  const current = !!prim && isNum(w?.coef) && Math.abs(w.coef - prim.coef) < 1e-9
+                  return (
+                    <tr key={`${ps.parser_version}-${ps.commit}`} className={current ? 'row-on' : ''}>
+                      <td>
+                        <div className="strong">
+                          {ps.parser_version} <code className="small">{ps.commit}</code>
+                          {current && <> (current)</>}
+                        </div>
+                        <div className="muted small">{ps.description}</div>
+                      </td>
+                      <td className="num">{num(w?.coef, 3)}</td>
+                      <td className="num nowrap">{w ? `${num(w.ci95[0], 3)} to ${num(w.ci95[1], 3)}` : '—'}</td>
+                      <td className="num">{num(w?.p, 3)}</td>
+                      <td className="num strong">{isNum(w?.coef) ? num(-w.coef, 3) : '—'}</td>
+                      <td className="num">{int(ps.empty_masks)}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
       <details>
@@ -530,6 +669,7 @@ function CongestionCard({ data, error }: { data: CongestionTest | null; error: s
         </div>
         <p className="muted small">
           Only the overlap exposure is on the same scale as the model’s assumed −1; competitor counts are per trial.
+          {data.se_method && <> Confidence intervals and p-values: {data.se_method}.</>}
         </p>
       </details>
     </div>
