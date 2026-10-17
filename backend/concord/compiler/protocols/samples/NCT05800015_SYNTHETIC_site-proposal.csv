@@ -1,0 +1,25 @@
+# SYNTHETIC sample site proposal for NCT05800015 (fianlimab + cemiplimab + chemotherapy, first-line NSCLC).
+# Invented by Concord to demonstrate the site proposal check. NOT a real site's prices and NOT market data.
+# Columns: item or code, amount (the site's proposed price per occurrence of that item).
+item_or_code,amount
+71260,$275.00
+"CT abdomen and pelvis with contrast","$1,150.00"
+93000,$95.00
+99213 Established-patient visit,150
+96417,$210.00
+85025,6.50
+80053,$14.00
+87340,$45.00
+Hepatitis C antibody,12.00
+81003,3.00
+70553,$640.00
+Study start-up fee,"$15,000"
+IRB fee,"$3,500"
+Investigational pharmacy setup,$4000
+Coordinator time and data entry,$350
+Blinded study drug preparation and dispensing,$150
+Scan upload for blinded central review,$125
+Institutional overhead,30%
+Screen failure,"$1,200"
+Record archiving,$2500
+"78815, PET/CT skull base to mid-thigh","$2,400.00"
