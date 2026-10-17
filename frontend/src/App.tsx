@@ -13,6 +13,7 @@ const OverlapView = lazy(() => import('./views/OverlapView'))
 const ProtocolTermsView = lazy(() => import('./views/ProtocolTermsView'))
 const SiteScoresView = lazy(() => import('./views/SiteScoresView'))
 const FinancialView = lazy(() => import('./views/FinancialView'))
+const PortfolioCommandView = lazy(() => import('./views/PortfolioCommandView'))
 
 const TABS = [
   { id: 'findings', label: 'Findings' },
@@ -20,6 +21,7 @@ const TABS = [
   { id: 'terms-flow', label: 'Protocol to terms' },
   { id: 'site-scores', label: 'Site scores' },
   { id: 'financial', label: 'Financial Coordination' },
+  { id: 'portfolio-command', label: 'Portfolio Command' },
   { id: 'research', label: 'Research' },
 ] as const
 type TabId = (typeof TABS)[number]['id']
@@ -234,6 +236,11 @@ export default function App() {
         ))}
       </nav>
       <main className="main">
+        {tab === 'portfolio-command' && (
+          <Suspense fallback={<Loading label="Loading Portfolio Command…" />}>
+            <PortfolioCommandView />
+          </Suspense>
+        )}
         {tab === 'findings' && <FindingsView focus={findingFocus} />}
         {tab === 'overlap' && (
           <Suspense fallback={<Loading label="Loading portfolio overlap…" />}>

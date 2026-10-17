@@ -1,0 +1,39 @@
+{
+  "campaign": "CONCORD-PORTFOLIO-COMMAND",
+  "baseline_commit": "f51b13fa7c84dbd9f06b331b906500c28403e40b",
+  "prior_financial_pr": "https://github.com/CosmicOdyssey/concord/pull/1",
+  "prior_pr_state": "MERGED",
+  "branch": "codex/concord-portfolio-command",
+  "implementation_agent": "Existing Codex conversation; conventional implementation",
+  "fleet_cli": "node /Users/sadius/engineering-fleet/dist/cli.js",
+  "provider_state": {
+    "codex-existing": "enabled manual coding adapter",
+    "capability_routes": [],
+    "economic_executors": [],
+    "accounts_with_usage_budget": [],
+    "automatic_dispatch": false,
+    "provider_invocations_in_campaign": 0,
+    "claude_invocations": 0,
+    "astra_invocations": 0,
+    "premium_escalations": 0,
+    "conversation_token_cost": "not available from Fleet; not claimed zero"
+  },
+  "tasks": [
+    {"id": "concord-portfolio-command", "owner": "codex", "scope": "integration and final verification", "depends_on": ["portfolio-engine", "portfolio-workspace", "portfolio-acceptance"]},
+    {"id": "portfolio-engine", "owner": "codex", "scope": "backend/concord/portfolio*, API router, backend portfolio tests, data/portfolio, scripts/portfolio_context.py", "depends_on": []},
+    {"id": "portfolio-workspace", "owner": "codex", "scope": "frontend", "depends_on": ["portfolio-engine contract"]},
+    {"id": "portfolio-acceptance", "owner": "codex", "scope": "docs/portfolio, .fleet/config.json, README", "depends_on": ["portfolio-engine", "portfolio-workspace"]}
+  ],
+  "concurrency": "Sequential implementation by one Codex; no concurrent file writers or automatic model dispatch",
+  "lineage": "Human Portfolio Command directive -> existing Codex -> manual Fleet task records -> source commit -> Fleet deterministic verification -> browser acceptance -> draft PR",
+  "failures_and_recovery": [
+    "Fleet rejected draft -> in-progress transition; recovered through ready -> assigned -> in-progress. No policy override.",
+    "Existing routine-worker quota failure from preceding mission was not retried or escalated. No workers launched in this campaign.",
+    "Review found joint strategy unnecessarily funded zero-effect support; changed intervention search to omit dominated support and added regression assertion before acceptance."
+  ],
+  "fleet_status_location": ".fleet/state (ignored mutable task and verification records)",
+  "dependency_tracking": "Explicit objectives and this manifest; installed task CLI has no dependency scheduler used here",
+  "verification": "See VERIFICATION.md; final exact commit and PR tracked by Fleet after commit",
+  "merge": "not performed",
+  "production_deploy": "not performed"
+}

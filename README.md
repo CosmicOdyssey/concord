@@ -341,3 +341,11 @@ Two findings from D that the final numbers must handle:
 ## Sponsor-funded Financial Coordination pilot
 
 The additive **Financial Coordination** tab provides a live, explicitly synthetic financial demonstration linked to existing illustrative public-trial protocols. Coverage review, budget-constrained site alternatives, a three-party transfer/resource ledger, reinvestment and HTML/JSON evidence exports are available without a registry database. No insurer partnership, coverage approval, observed savings or clinical benefit is claimed. See [demo setup, equations, limitations and verification](docs/financial/README.md).
+# Portfolio Command
+
+Budget-constrained multi-trial planning with shared site capacity, financial
+coordination, paired sensitivity and immutable evidence exports is available at
+`#portfolio-command`. The demo computes live on explicitly synthetic operational
+inputs; ClinicalTrials.gov supplies registry context only. See
+[reproduction and assumptions](docs/portfolio/README.md) and
+[verification evidence](docs/portfolio/VERIFICATION.md).

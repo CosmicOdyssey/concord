@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "project": {
-    "name": "concord-financial-coordination",
+    "name": "CONCORD-PORTFOLIO-COMMAND",
     "languages": [],
     "metadata": {}
   },
@@ -35,6 +35,17 @@
         "args": [
           "run",
           "test:financial"
+        ],
+        "cwd": "frontend",
+        "required": true
+      },
+      {
+        "id": "portfolio-client",
+        "label": "Portfolio client contracts",
+        "command": "npm",
+        "args": [
+          "run",
+          "test:portfolio"
         ],
         "cwd": "frontend",
         "required": true
