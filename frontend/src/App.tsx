@@ -36,6 +36,8 @@ const TABS = [
     label: 'Sponsor budget',
     sub: 'Synthetic worksheet',
     hint: "A sponsor-budget worksheet on synthetic site inputs: who pays for each protocol item, and what changes the sponsor's commitment.",
+    // Kept out of the main navigation (mentor feedback: Protocol to terms is the product); reachable at #financial.
+    navHidden: true,
   },
   { id: 'research', label: 'Research', sub: 'In-sample model outputs', hint: 'The earlier site-clearing views, kept for reference. Not product claims.' },
 ] as const
@@ -243,7 +245,7 @@ export default function App() {
             </div>
           </div>
           <nav className="tabs" role="tablist" aria-label="Views" ref={tabBar}>
-            {TABS.map((t) => (
+            {TABS.filter((t) => !('navHidden' in t)).map((t) => (
               <button
                 key={t.id}
                 role="tab"
