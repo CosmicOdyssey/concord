@@ -101,3 +101,8 @@ so nothing was rerun. US-Northeast, best response vs registered sites:
 
 The "~1.7x" quoted overnight is either: 1.73x on the alternating split or 1.70x on the time split. Full-history
 in-sample is 1.76x. Regeneron (5 trials): 1.69x alternating, 1.42x time split (1.63x / 1.23x by direction).
+
+## Observed-outcome check of site-rate scores (added before you left)
+
+Completed trials started 2018+ (n = 1,094; industry Phase II/III n = 390), registered site lists scored with pre-2018 rates: slope of actual log enrollment rate on the score 0.16 [0.07, 0.24], p 0.0003 (industry Phase II/III 0.33 [0.16, 0.50], p 0.0001), with phase, log site count and start-year controls.
+Reading: the scores carry real signal on observed enrollment, but predicted differences between site lists are about 3-6x larger than observed ones, so the model's ~1.7x site-selection gains are likely overstated. Script `analysis/selection_validation.py`, output `data/findings/selection_validation.json` (not yet on the Findings page).

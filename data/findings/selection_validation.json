@@ -1,0 +1,36 @@
+{
+ "method": "see backend/concord/analysis/selection_validation.py docstring",
+ "cutoff": "2018-01-01",
+ "rates": {
+  "label": "trials started before 2018-01-01",
+  "n_trials": 2348
+ },
+ "outcome": "log(actual enrollment / (enrollment window months x registered sites)), completed trials",
+ "score": "log mean pre-cutoff site rate over the trial's registered sites (unseen sites get the unseen rate)",
+ "controls": "phase dummies, log registered sites, start-year fixed effects; HC1 robust SEs",
+ "primary": {
+  "label": "all completed lung trials started 2018 or later",
+  "n": 1094,
+  "slope": 0.15770376477745798,
+  "se": 0.043548355676241234,
+  "ci95": [
+   0.07234898765202517,
+   0.24305854190289078
+  ],
+  "p": 0.0002930716111311843,
+  "median_share_of_sites_seen_before_cutoff": 0.75
+ },
+ "industry_phase2_3": {
+  "label": "industry Phase II/III subset",
+  "n": 390,
+  "slope": 0.3338523991644037,
+  "se": 0.0867625412274017,
+  "ci95": [
+   0.16379781835869636,
+   0.503906979970111
+  ],
+  "p": 0.00011914129102633663,
+  "median_share_of_sites_seen_before_cutoff": 0.6849838969404187
+ },
+ "interpretation": "Slope near 1: registry-based site rates are calibrated on observed enrollment. Near 0: no signal. Observational check of the scores, not a test of choosing different sites."
+}
