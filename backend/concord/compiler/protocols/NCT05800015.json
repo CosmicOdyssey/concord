@@ -1,0 +1,164 @@
+{
+  "schema": "concord.protocol/v1",
+  "nct_id": "NCT05800015",
+  "label": "Illustrative, authored from public trial information",
+  "authored": "2026-10-17",
+  "short_title": "Fianlimab + cemiplimab + chemotherapy vs placebo + cemiplimab + chemotherapy, first-line advanced NSCLC",
+  "why_chosen": "Regeneron's first-line NSCLC trial and the reference case for this demo. The registry gives every drug as IV every 3 weeks, so a 21-day cycle is public information.",
+  "arms": [
+    {"label": "Phase 2, Arm A", "text": "Fianlimab (higher dose) + cemiplimab + platinum-doublet chemotherapy"},
+    {"label": "Phase 2, Arm B", "text": "Fianlimab (lower dose) + cemiplimab + platinum-doublet chemotherapy"},
+    {"label": "Phase 2, Arm C", "text": "Placebo + cemiplimab + platinum-doublet chemotherapy"}
+  ],
+  "dosing": "All study drugs IV every 3 weeks (registry: \"Administered intravenously (IV) every 3 weeks (Q3W)\")",
+  "masking": "Double-blind (registry: quadruple masking, placebo-controlled)",
+  "registry_notes": ["Registry detailed description: \"Phase 3 was not initiated\". The schedule below describes the Phase 2 design."],
+  "sources": [
+    {"field": "armsInterventionsModule.interventions", "quote": "fianlimab: Administered intravenously (IV) every 3 weeks (Q3W)", "used_for": "21-day cycle; fianlimab or placebo infusion on Day 1 of every cycle (rule R1)"},
+    {"field": "armsInterventionsModule.interventions", "quote": "cemiplimab: Administered IV Q3W", "used_for": "Cemiplimab infusion on Day 1 of every cycle, given in every arm (rule R5)"},
+    {"field": "armsInterventionsModule.interventions", "quote": "Pemetrexed: IV Infusion, Q3W; Carboplatin: IV Infusion, Q3W; Cisplatin: IV infusion, Q3W", "used_for": "Platinum doublet on Day 1 of each cycle (rule R5)"},
+    {"field": "armsInterventionsModule.armGroups", "quote": "Randomized 1:1:1 cemiplimab + platinum-doublet chemotherapy + placebo", "used_for": "Blinded fianlimab-or-placebo infusion; cemiplimab and chemotherapy in every arm"},
+    {"field": "designModule.maskingInfo", "quote": "QUADRUPLE (participant, care provider, investigator, outcomes assessor)", "used_for": "Study drug prepared blinded by the pharmacy"},
+    {"field": "outcomesModule.primaryOutcomes", "quote": "Objective response rate (ORR) as assessed by blinded independent review committee (BICR) using RECIST 1.1", "used_for": "Scans uploaded for central review at every tumor assessment (rule R2)"},
+    {"field": "outcomesModule.secondaryOutcomes", "quote": "Concentrations of cemiplimab in serum; Concentrations of fianlimab in serum; Immunogenicity, as measured by anti-drug antibodies (ADA) ... neutralizing antibodies (NAb)", "used_for": "PK / ADA / NAb serum samples (rule R2)"},
+    {"field": "outcomesModule.secondaryOutcomes", "quote": "EORTC QLQ-C30 ... EORTC QLQ-LC13 ... EQ-5D-5L ... PRO-CTCAE (Up to 108 weeks)", "used_for": "Questionnaires at treatment visits (rule R2)"},
+    {"field": "eligibilityModule", "quote": "Availability of an archival or on-study formalin-fixed, paraffin-embedded (FFPE) tumor tissue sample", "used_for": "Tissue retrieval and shipment at screening (rule R2)"},
+    {"field": "eligibilityModule", "quote": "For enrollment in phase 2, patients should have PD-L1 expression results ... determined by a CAP/CLIA accredited laboratory", "used_for": "Local PD-L1 test as standard work-up (rule R3)"},
+    {"field": "eligibilityModule", "quote": "Patients with tumors tested positive for actionable EGFR gene mutations, ALK gene translocations, or ROS1 fusions [excluded]", "used_for": "Driver-gene testing as standard work-up (rule R3)"},
+    {"field": "eligibilityModule", "quote": "Active or untreated brain metastases or spinal cord compression [excluded]", "used_for": "Brain MRI at screening as standard staging (rule R3)"}
+  ],
+  "assumptions": [
+    "The registry does not publish a schedule of assessments. Visit windows, lab panels and imaging cadence are authored from standard NSCLC practice and common first-line industry protocol design, not copied from the protocol.",
+    "Priced reference regimen: carboplatin or cisplatin + pemetrexed for 4 cycles, then pemetrexed maintenance (non-squamous). Squamous participants receive paclitaxel; its 3-hour infusion would add two extra-hour infusion lines per induction cycle and is not modelled.",
+    "Study drugs supplied by the sponsor are never billed; only their administration appears.",
+    "Tumor assessments every 6 weeks to week 48, then every 9 weeks (common first-line design; the registry is silent on cadence)."
+  ],
+  "visits": [
+    {"id": "SCR", "label": "Screening", "short": "Scr", "kind": "screening", "day": -28, "day_end": -1, "window": "Day -28 to -1"},
+    {"id": "C1D1", "label": "Cycle 1 Day 1", "short": "C1", "kind": "treatment", "day": 1, "minus": 0, "plus": 0, "window": "Day 1 (within 3 days of randomization)"},
+    {"id": "C2D1", "label": "Cycle 2 Day 1", "short": "C2", "kind": "treatment", "day": 22, "minus": 3, "plus": 3, "window": "Day 22 ±3"},
+    {"id": "C3D1", "label": "Cycle 3 Day 1", "short": "C3", "kind": "treatment", "day": 43, "minus": 3, "plus": 3, "window": "Day 43 ±3"},
+    {"id": "C4D1", "label": "Cycle 4 Day 1", "short": "C4", "kind": "treatment", "day": 64, "minus": 3, "plus": 3, "window": "Day 64 ±3"},
+    {"id": "C5D1", "label": "Cycle 5 Day 1", "short": "C5", "kind": "treatment", "day": 85, "minus": 3, "plus": 3, "window": "Day 85 ±3"},
+    {"id": "C6D1", "label": "Cycle 6 Day 1", "short": "C6", "kind": "treatment", "day": 106, "minus": 3, "plus": 3, "window": "Day 106 ±3"},
+    {"id": "C7D1", "label": "Cycle 7 Day 1", "short": "C7", "kind": "treatment", "day": 127, "minus": 3, "plus": 3, "window": "Day 127 ±3"},
+    {"id": "C8D1", "label": "Cycle 8 Day 1", "short": "C8", "kind": "treatment", "day": 148, "minus": 3, "plus": 3, "window": "Day 148 ±3"},
+    {"id": "CX", "label": "Each later cycle (C9 on)", "short": "C9+", "kind": "repeat", "day": 169, "repeat": "every 21 days (±3) until treatment stops", "window": "every 21 days ±3"},
+    {"id": "TAX", "label": "Each later tumor assessment", "short": "TA+", "kind": "repeat", "day": 169, "repeat": "every 6 weeks (±7 days) to week 48, then every 9 weeks", "window": "q6w ±7 d to wk 48, then q9w", "coordinator": false},
+    {"id": "EOT", "label": "End of treatment", "short": "EOT", "kind": "follow_up", "anchor": "decision to stop treatment", "window": "within 7 days of stopping"},
+    {"id": "SFU", "label": "Safety follow-up", "short": "SFU", "kind": "follow_up", "anchor": "last dose", "window": "30 days (±7) after last dose"},
+    {"id": "LTFU", "label": "Survival follow-up", "short": "Surv", "kind": "repeat", "repeat": "every 12 weeks (±14 days), by phone", "window": "every 12 weeks ±14 d", "coordinator": false}
+  ],
+  "procedures": [
+    {"id": "em_new", "label": "New-patient oncology visit, high complexity", "code": "99205", "category": "Visits"},
+    {"id": "em_est", "label": "Established-patient visit, moderate complexity", "code": "99214", "category": "Visits"},
+    {"id": "em_low", "label": "Established-patient visit, low complexity", "code": "99213", "category": "Visits"},
+    {"id": "ecg", "label": "12-lead ECG with interpretation", "code": "93000", "category": "Visits"},
+    {"id": "cbc", "label": "Blood count with differential", "code": "85025", "category": "Labs"},
+    {"id": "cmp", "label": "Comprehensive chemistry panel", "code": "80053", "category": "Labs"},
+    {"id": "tsh", "label": "Thyroid-stimulating hormone", "code": "84443", "category": "Labs"},
+    {"id": "ft4", "label": "Free T4", "code": "84439", "category": "Labs"},
+    {"id": "hcg", "label": "Serum pregnancy test (if of childbearing potential)", "code": "84702", "category": "Labs"},
+    {"id": "hbv", "label": "Hepatitis B surface antigen", "code": "87340", "category": "Labs"},
+    {"id": "hcv", "label": "Hepatitis C antibody", "code": "86803", "category": "Labs"},
+    {"id": "ua", "label": "Urinalysis, automated", "code": "81003", "category": "Labs"},
+    {"id": "pdl1", "label": "PD-L1 stain, local lab (if not on file)", "code": "88360", "category": "Tumor tissue"},
+    {"id": "ngs", "label": "Tumor gene panel for EGFR/ALK/ROS1 (if not on file)", "code": "81445", "category": "Tumor tissue"},
+    {"id": "tissue", "label": "Archival tumor tissue: retrieve and ship", "pricing": "standard:tissue", "category": "Tumor tissue"},
+    {"id": "ct_chest", "label": "CT chest with contrast", "code": "71260", "category": "Imaging"},
+    {"id": "ct_abd", "label": "CT abdomen and pelvis with contrast", "code": "74177", "category": "Imaging"},
+    {"id": "mri", "label": "MRI brain without and with contrast", "code": "70553", "category": "Imaging"},
+    {"id": "img_upload", "label": "Scan upload for blinded central review", "pricing": "standard:image_upload", "category": "Imaging"},
+    {"id": "inf_first", "label": "IV infusion, first hour: platinum (C1-4), pemetrexed (C5 on)", "code": "96413", "category": "Treatment"},
+    {"id": "inf_pem", "label": "Added sequential infusion: pemetrexed (C1-4)", "code": "96417", "category": "Treatment"},
+    {"id": "inf_cemi", "label": "Added sequential infusion: cemiplimab", "code": "96417", "category": "Treatment"},
+    {"id": "inf_ip", "label": "Added sequential infusion: fianlimab or placebo (blinded)", "code": "96417", "category": "Treatment"},
+    {"id": "ip_disp", "label": "Blinded study drug preparation and dispensing", "pricing": "standard:ip_dispense", "category": "Treatment"},
+    {"id": "pk", "label": "PK, ADA and NAb serum samples: process and ship", "pricing": "standard:sample_kit", "category": "Research samples and data"},
+    {"id": "pro", "label": "Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE)", "pricing": "standard:pro", "category": "Research samples and data"},
+    {"id": "survival", "label": "Survival status contact", "pricing": "standard:survival_contact", "category": "Research samples and data"}
+  ],
+  "schedule": [
+    {"proc": "em_new", "at": [
+      {"visits": ["SCR"], "rule": "R3", "reason": "An oncology evaluation before first-line therapy is standard care."}]},
+    {"proc": "em_est", "at": [
+      {"visits": ["C1D1", "C2D1", "C3D1", "C4D1", "C5D1", "C6D1", "C7D1", "C8D1", "CX"], "rule": "R3", "reason": "A pre-dose history, exam and toxicity check before each cycle is standard care."},
+      {"visits": ["EOT"], "rule": "R3", "reason": "An evaluation when treatment stops is standard care."}]},
+    {"proc": "em_low", "at": [
+      {"visits": ["SFU"], "rule": "R2", "reason": "A visit fixed at 30 days after the last dose exists because the protocol times it, not because care requires it then."}]},
+    {"proc": "ecg", "at": [
+      {"visits": ["SCR", "EOT"], "rule": "R2", "reason": "Protocol ECGs; an ECG is not part of the standard work-up for this regimen."}]},
+    {"proc": "cbc", "at": [
+      {"visits": ["SCR"], "rule": "R3", "reason": "Blood counts before starting chemotherapy are standard care."},
+      {"visits": ["C1D1", "C2D1", "C3D1", "C4D1", "C5D1", "C6D1", "C7D1", "C8D1", "CX"], "rule": "R3", "reason": "Blood counts before each chemotherapy cycle are standard care."},
+      {"visits": ["EOT"], "rule": "R3", "reason": "Labs when treatment stops are standard care."},
+      {"visits": ["SFU"], "rule": "R2", "reason": "Labs at a protocol-timed safety visit."}]},
+    {"proc": "cmp", "at": [
+      {"visits": ["SCR"], "rule": "R3", "reason": "Chemistry before starting chemotherapy is standard care."},
+      {"visits": ["C1D1", "C2D1", "C3D1", "C4D1", "C5D1", "C6D1", "C7D1", "C8D1", "CX"], "rule": "R3", "reason": "Kidney and liver chemistry before each cycle is standard care (platinum and pemetrexed dosing)."},
+      {"visits": ["EOT"], "rule": "R3", "reason": "Labs when treatment stops are standard care."},
+      {"visits": ["SFU"], "rule": "R2", "reason": "Labs at a protocol-timed safety visit."}]},
+    {"proc": "tsh", "at": [
+      {"visits": ["SCR"], "rule": "R3", "reason": "Baseline thyroid function before PD-1 therapy is standard care."},
+      {"visits": ["C3D1", "C5D1", "C7D1", "TAX"], "rule": "R3", "reason": "Thyroid tests about every 6 weeks on PD-1 therapy match the standard-care reference."}]},
+    {"proc": "ft4", "at": [
+      {"visits": ["SCR"], "rule": "R3", "reason": "Baseline thyroid function before PD-1 therapy is standard care."},
+      {"visits": ["C3D1", "C5D1", "C7D1", "TAX"], "rule": "R3", "reason": "Thyroid tests about every 6 weeks on PD-1 therapy match the standard-care reference."}]},
+    {"proc": "hcg", "at": [
+      {"visits": ["SCR"], "rule": "R3", "reason": "A pregnancy test before chemotherapy is standard care for people who could become pregnant."}]},
+    {"proc": "hbv", "at": [
+      {"visits": ["SCR"], "rule": "R2", "reason": "Hepatitis serology to check eligibility is required by the protocol, not by standard care."}]},
+    {"proc": "hcv", "at": [
+      {"visits": ["SCR"], "rule": "R2", "reason": "Hepatitis serology to check eligibility is required by the protocol, not by standard care."}]},
+    {"proc": "ua", "at": [
+      {"visits": ["SCR"], "rule": "R2", "reason": "Protocol baseline urinalysis; not part of the standard work-up."}]},
+    {"proc": "pdl1", "at": [
+      {"visits": ["SCR"], "rule": "R3", "reason": "Phase 2 accepts a local PD-L1 result (registry); PD-L1 testing is standard first-line work-up."}]},
+    {"proc": "ngs", "at": [
+      {"visits": ["SCR"], "rule": "R3", "reason": "EGFR/ALK/ROS1 status is standard first-line work-up (the registry excludes actionable drivers)."}]},
+    {"proc": "tissue", "at": [
+      {"visits": ["SCR"], "rule": "R2", "reason": "The registry requires an archival or on-study FFPE tumor sample for the trial."}]},
+    {"proc": "ct_chest", "at": [
+      {"visits": ["SCR"], "rule": "R3", "reason": "Baseline staging CT is standard care."},
+      {"visits": ["C3D1"], "window": "Week 6: up to 7 days before dosing", "rule": "R3", "reason": "Response imaging about every 6 weeks during induction is standard care."},
+      {"visits": ["C5D1"], "window": "Week 12: up to 7 days before dosing", "rule": "R3", "reason": "Response imaging at the end of induction is standard care."},
+      {"visits": ["C7D1"], "window": "Week 18: up to 7 days before dosing", "rule": "R4", "reason": "Week 18 comes 6 weeks after week 12; the standard-care reference in maintenance is about every 9 weeks, so this scan is extra."},
+      {"visits": ["TAX"], "rule": "R4", "reason": "Every 6 weeks to week 48 is more often than the standard-care reference (about every 9 weeks in maintenance). After week 48 (every 9 weeks) a reviewer can relabel these routine."}]},
+    {"proc": "ct_abd", "at": [
+      {"visits": ["SCR"], "rule": "R3", "reason": "Baseline staging CT is standard care."},
+      {"visits": ["C3D1"], "window": "Week 6: up to 7 days before dosing", "rule": "R3", "reason": "Response imaging about every 6 weeks during induction is standard care."},
+      {"visits": ["C5D1"], "window": "Week 12: up to 7 days before dosing", "rule": "R3", "reason": "Response imaging at the end of induction is standard care."},
+      {"visits": ["C7D1"], "window": "Week 18: up to 7 days before dosing", "rule": "R4", "reason": "Week 18 comes 6 weeks after week 12; the standard-care reference in maintenance is about every 9 weeks, so this scan is extra."},
+      {"visits": ["TAX"], "rule": "R4", "reason": "Every 6 weeks to week 48 is more often than the standard-care reference (about every 9 weeks in maintenance). After week 48 (every 9 weeks) a reviewer can relabel these routine."}]},
+    {"proc": "mri", "at": [
+      {"visits": ["SCR"], "rule": "R3", "reason": "Brain MRI is standard staging for stage IIIB-IV NSCLC (the registry excludes active brain metastases)."}]},
+    {"proc": "img_upload", "at": [
+      {"visits": ["SCR", "C3D1", "C5D1", "C7D1", "TAX"], "rule": "R2", "reason": "The primary outcome is read by a blinded independent central review (registry); uploading scans exists only for the trial."}]},
+    {"proc": "inf_first", "at": [
+      {"visits": ["C1D1", "C2D1", "C3D1", "C4D1"], "rule": "R5", "reason": "Platinum-doublet chemotherapy is standard first-line care and is given in every arm."},
+      {"visits": ["C5D1", "C6D1", "C7D1", "C8D1", "CX"], "rule": "R5", "reason": "Pemetrexed maintenance is standard care and is given in every arm."}]},
+    {"proc": "inf_pem", "at": [
+      {"visits": ["C1D1", "C2D1", "C3D1", "C4D1"], "rule": "R5", "reason": "Pemetrexed is part of the standard platinum doublet given in every arm."}]},
+    {"proc": "inf_cemi", "at": [
+      {"visits": ["C1D1", "C2D1", "C3D1", "C4D1", "C5D1", "C6D1", "C7D1", "C8D1", "CX"], "rule": "R5", "reason": "Cemiplimab with platinum chemotherapy is an approved first-line regimen given in every arm. The sponsor supplies the drug (never billed); its administration is routine."}]},
+    {"proc": "inf_ip", "at": [
+      {"visits": ["C1D1", "C2D1", "C3D1", "C4D1", "C5D1", "C6D1", "C7D1", "C8D1", "CX"], "rule": "R1", "reason": "Fianlimab is investigational (blinded against placebo); the sponsor pays for its administration."}]},
+    {"proc": "ip_disp", "at": [
+      {"visits": ["C1D1", "C2D1", "C3D1", "C4D1", "C5D1", "C6D1", "C7D1", "C8D1", "CX"], "rule": "R1", "reason": "Preparing blinded investigational product is research pharmacy work."}]},
+    {"proc": "pk", "at": [
+      {"visits": ["C1D1", "C2D1", "C4D1", "C8D1", "EOT", "SFU"], "rule": "R2", "reason": "Registry outcomes include cemiplimab and fianlimab serum concentrations and anti-drug antibodies."}]},
+    {"proc": "pro", "at": [
+      {"visits": ["C1D1", "C2D1", "C3D1", "C4D1", "C5D1", "C6D1", "C7D1", "C8D1", "CX", "EOT", "SFU"], "rule": "R2", "reason": "Registry outcomes include EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L and PRO-CTCAE scores."}]},
+    {"proc": "survival", "at": [
+      {"visits": ["LTFU"], "rule": "R2", "reason": "Survival contacts serve the overall-survival endpoint and exist only for the trial."}]}
+  ],
+  "compare_default": [
+    {"facility": "NYU Langone", "city": "New York"},
+    {"facility": "Hattiesburg Clinic", "city": "Hattiesburg"}
+  ],
+  "compare_presets": [
+    {"label": "Manhattan vs Mississippi", "sites": [{"facility": "NYU Langone", "city": "New York"}, {"facility": "Hattiesburg Clinic", "city": "Hattiesburg"}]},
+    {"label": "Manhattan vs the Bronx (same city, different locality)", "sites": [{"facility": "NYU Langone", "city": "New York"}, {"facility": "Montefiore", "city": "The Bronx"}]},
+    {"label": "Orange County vs Riverside County, California", "sites": [{"facility": "Crosson", "city": "Fullerton"}, {"facility": "Desert Hematology", "city": "Rancho Mirage"}]}
+  ]
+}

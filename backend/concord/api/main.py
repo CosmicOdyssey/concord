@@ -25,6 +25,7 @@ from concord.ratecard import medicare
 app = FastAPI(title="Concord", version="0.2.0",
               description="Clearing mechanism for clinical-trial enrollment capacity (HackHarvard 2026)")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.include_router(__import__("concord.api.terms", fromlist=["router"]).router)  # protocol to terms (W2)
 
 
 class Scenario(BaseModel):
