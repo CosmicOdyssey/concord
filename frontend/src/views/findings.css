@@ -126,6 +126,12 @@
 .fd-table td {
   white-space: nowrap;
 }
+/* prose cells (a parser change, a context note) wrap instead of widening the table */
+.fd-table td.fd-text {
+  white-space: normal;
+  min-width: 11rem;
+  max-width: 40rem;
+}
 /* The row-header column stays in view while a wide table scrolls sideways. */
 .fd-table tbody th,
 .fd-table thead th:first-child {

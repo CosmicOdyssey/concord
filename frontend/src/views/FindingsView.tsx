@@ -270,7 +270,7 @@ function FTable({ table }: { table: FindingTable }) {
                       {cell}
                     </th>
                   ) : (
-                    <td key={j} className={numericCol[j] ? 'num' : undefined}>
+                    <td key={j} className={numericCol[j] ? 'num' : 'fd-text'}>
                       {cell.trim() ? cell : <span className="muted" aria-label="none">—</span>}
                     </td>
                   )
