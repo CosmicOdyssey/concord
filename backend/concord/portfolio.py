@@ -314,6 +314,7 @@ def run(req: PortfolioRequest):
     evidence['executed_source_sha256'] = EXECUTED_SOURCES
     evidence['algorithm'] = 'Event simulation; original allocator Instance feasibility contract; deterministic beam width 3 / depth 3 / at most 96 visited networks per search'
     evidence['cache_policy'] = 'No scenario result lookup during computation; immutable saved evidence verified by complete result digest'
+    evidence['delivery_policy'] = 'Computation metadata records origin. Saved-run and report GET endpoints replay an immutable snapshot without new simulation.'
     evidence['runtime'] = {'python':platform.python_version(),'numpy':np.__version__,'pydantic':version('pydantic'),'fastapi':version('fastapi')}
     evidence['distribution'] = 'Independent mean-one lognormal edge shocks; shared common draw bank across every candidate; optimization uses same bank, so results are in-sample assumption sensitivity'
     request = req.model_dump(mode='json')
@@ -374,7 +375,7 @@ def load(ident):
 def report_html(result):
     esc = html.escape
     rows = ''.join(f"<tr><td>{esc(s['label'])}</td><td>{s['feasible']}</td><td>{s['expected_makespan']}</td><td>{s['ledger']['expected_commitment']:,.2f}</td><td>{s['ledger']['budget_commitment']:,.2f}</td></tr>" for s in result['scenarios'])
-    return '<!doctype html><html lang="en"><meta charset="utf-8"><title>Concord portfolio evidence</title><style>body{font:16px system-ui;max-width:1100px;margin:40px auto;padding:20px}td,th{padding:12px;border:1px solid #ccc}pre{white-space:pre-wrap;overflow-wrap:anywhere}h1{color:#165e63}</style><h1>Concord · Portfolio Command</h1><p>Live computation · synthetic operations · registry context only</p><p>Run '+esc(result['run_id'])+'</p><table><tr><th>Scenario</th><th>Feasible</th><th>Expected months (capped)</th><th>Expected USD incl. reserve</th><th>Conservative commitment USD</th></tr>'+rows+'</table><h2>Limitations</h2><ul>'+''.join('<li>'+esc(x)+'</li>' for x in result['limitations'])+'</ul><h2>Complete immutable evidence</h2><pre>'+esc(json.dumps(result,indent=2))+'</pre></html>'
+    return '<!doctype html><html lang="en"><meta charset="utf-8"><title>Concord portfolio evidence</title><style>body{font:16px system-ui;max-width:1100px;margin:40px auto;padding:20px}td,th{padding:12px;border:1px solid #ccc}pre{white-space:pre-wrap;overflow-wrap:anywhere}h1{color:#165e63}</style><h1>Concord · Portfolio Command</h1><p>Computation evidence snapshot · synthetic operations · registry context only</p><p>Exporting or reopening this snapshot does not run a new simulation.</p><p>Run '+esc(result['run_id'])+'</p><table><tr><th>Scenario</th><th>Feasible</th><th>Expected months (capped)</th><th>Expected USD incl. reserve</th><th>Conservative commitment USD</th></tr>'+rows+'</table><h2>Limitations</h2><ul>'+''.join('<li>'+esc(x)+'</li>' for x in result['limitations'])+'</ul><h2>Complete immutable evidence</h2><pre>'+esc(json.dumps(result,indent=2))+'</pre></html>'
 
 
 @router.get('/demo')
@@ -394,13 +395,13 @@ def validate(req: PortfolioRequest):
 
 @router.get('/runs/{ident}')
 def saved(ident: str):
-    return load(ident)
+    return JSONResponse(load(ident),headers={'X-Concord-Delivery-Mode':'artifact-replay'})
 
 
 @router.get('/runs/{ident}/report/{format}')
 def report(ident: str, format: Literal['json','html']):
     result = load(ident)
-    headers = {'Content-Disposition':f'attachment; filename="concord-portfolio-{ident}.{format}"'}
+    headers = {'Content-Disposition':f'attachment; filename="concord-portfolio-{ident}.{format}"','X-Concord-Delivery-Mode':'artifact-replay'}
     return JSONResponse(result,headers=headers) if format=='json' else HTMLResponse(report_html(result),headers=headers)
 
 

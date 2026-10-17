@@ -1,0 +1,30 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________________ test_saved_delivery_is_labeled_as_replay ___________________
+
+tmp_path = PosixPath('/private/var/folders/63/q6glc8w91w3d_3j6d7gzyyrc0000gn/T/pytest-of-sadius/pytest-26/test_saved_delivery_is_labeled0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1102549d0>
+
+    def test_saved_delivery_is_labeled_as_replay(tmp_path,monkeypatch):
+        monkeypatch.setattr(p,'STORE',tmp_path)
+        client=TestClient(app)
+        result=client.post('/api/portfolio-command/compare',json=cases()['one_trial_two_sites']).json()
+        base='/api/portfolio-command/runs/'+result['run_id']
+        saved=client.get(base)
+        assert saved.json()==result
+>       assert saved.headers.get('x-concord-delivery-mode')=='artifact-replay'
+E       AssertionError: assert None == 'artifact-replay'
+E        +  where None = get('x-concord-delivery-mode')
+E        +    where get = Headers({'content-length': '130153', 'content-type': 'application/json', 'vary': 'Origin'}).get
+E        +      where Headers({'content-length': '130153', 'content-type': 'application/json', 'vary': 'Origin'}) = <Response [200 OK]>.headers
+
+backend/tests/test_acceptance_independent.py:123: AssertionError
+=============================== warnings summary ===============================
+backend/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /Users/sadius/concord-independent-acceptance/backend/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED backend/tests/test_acceptance_independent.py::test_saved_delivery_is_labeled_as_replay
+1 failed, 26 deselected, 1 warning in 0.43s

@@ -9,7 +9,9 @@ JSON body (POST /api/clear) or as query parameters (GET endpoints).
 from __future__ import annotations
 
 import json
+import hashlib
 import sqlite3
+from dataclasses import asdict
 
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -155,7 +157,16 @@ def robustness(sc: Scenario = Depends(scenario_q), compute: bool = False) -> dic
     p = sc.params()
     path = path_for(p)
     if path.exists() and not compute:
-        return json.loads(path.read_text())
+        raw = path.read_bytes()
+        artifact = json.loads(raw)
+        # The legacy filename omits parameters. Never reuse an incompatible run.
+        requested = json.loads(json.dumps(asdict(p)))
+        if artifact.get('params') != requested:
+            raise HTTPException(409, 'Saved robustness artifact does not match all requested inputs; regenerate explicitly with the required dataset')
+        return {**artifact, 'execution_mode':'artifact_replay',
+                'artifact_evidence':{'sha256':hashlib.sha256(raw).hexdigest(),
+                                     'params_match':True,
+                                     'historical_predictive_status':'UNVERIFIED'}}
     if not compute:
         raise HTTPException(404, f"not precomputed; run python -m concord.analysis.robustness --region {p.region}"
                                  + (f" --sponsor '{p.sponsor}'" if p.sponsor else "")

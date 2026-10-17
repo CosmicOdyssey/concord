@@ -13,6 +13,7 @@ export default function PortfolioCommandView() {
   const [demo, setDemo] = useState<PortfolioDemo | null>(null)
   const [request, setRequest] = useState<PortfolioRequest | null>(null)
   const [result, setResult] = useState<PortfolioResult | null>(null)
+  const [restored, setRestored] = useState(false)
   const [section, setSection] = useState<typeof SECTIONS[number]>('Executive Overview')
   const [selected, setSelected] = useState('F')
   const [busy, setBusy] = useState(false)
@@ -45,7 +46,7 @@ export default function PortfolioCommandView() {
     try {
       const r = load ? await portfolioApi.load(savedId.trim(), controller.signal) : await portfolioApi.compare(request, controller.signal)
       if (epoch.current !== token) return
-      setResult(r); setRequest(r.request); setSavedId(r.run_id); setSelected(r.recommended_scenario_id ?? 'A')
+      setResult(r); setRestored(load); setRequest(r.request); setSavedId(r.run_id); setSelected(r.recommended_scenario_id ?? 'A')
       setNotice(load ? 'Loaded immutable saved evidence; original inputs restored.' : 'Comparison computed and saved. Report links export this exact result.')
     } catch (e) { if (epoch.current === token && !controller.signal.aborted) setError(String(e)) }
     finally { if (epoch.current === token) setBusy(false) }
@@ -82,7 +83,7 @@ export default function PortfolioCommandView() {
   const viewing = result?.request ?? request
   const table = (headers: string[], rows: React.ReactNode[][]) => <div className="pc-scroll"><table><thead><tr>{headers.map(h => <th key={h}>{h}</th>)}</tr></thead><tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j}>{c}</td>)}</tr>)}</tbody></table></div>
   return <div className="pc">
-    <header className="pc-hero"><div><p className="pc-eyebrow">CONCORD / SPONSOR PLANNING</p><h1>Portfolio Command</h1><p>Where should the next dollar go?</p></div><span className="pc-badge">LIVE COMPUTATION<br />SYNTHETIC OPERATIONS</span></header>
+    <header className="pc-hero"><div><p className="pc-eyebrow">CONCORD / SPONSOR PLANNING</p><h1>Portfolio Command</h1><p>Where should the next dollar go?</p></div><span className="pc-badge">{restored ? 'SAVED EVIDENCE REPLAY' : 'LIVE COMPUTATION'}<br />SYNTHETIC OPERATIONS</span></header>
     <p className="pc-context">Regeneron registry context · hypothetical hospitals, enrollment progress, financial inputs and recruitment effects. Planning tool; no live sponsor or payer relationship.</p>
     <div className="pc-controls">
       <NumberInput label="Sponsor budget (USD)" value={request.budget} min={1} onChange={v => field('budget', v)} />

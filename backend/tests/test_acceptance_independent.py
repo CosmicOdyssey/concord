@@ -91,3 +91,36 @@ def test_future_completed_trial_is_in_legacy_training_sample():
     con.execute("INSERT INTO trial_sites VALUES('SYN-FUTURE','SYN-SITE')")
     # Audit evidence of unresolved leakage, not an endorsement or a historical-data repair.
     assert 'SYN-FUTURE' in load_history(con,before='2018-01-01').trial_ids
+
+
+def test_legacy_robustness_rejects_incompatible_artifact():
+    client=TestClient(app)
+    accepted=client.get('/api/robustness',params={'region':'US-Northeast'})
+    assert accepted.status_code==200
+    assert accepted.json()['execution_mode']=='artifact_replay'
+    assert accepted.json()['artifact_evidence']['historical_predictive_status']=='UNVERIFIED'
+    for changes in [{'activation_lag':25},{'capacity_scale':10},{'overlap_scale':2},{'max_trials':1},{'low_history':'exclude'}]:
+        changed=client.get('/api/robustness',params={'region':'US-Northeast',**changes})
+        assert changed.status_code==409
+
+
+def test_unverified_historical_speedups_not_used_as_headlines():
+    result=TestClient(app).get('/api/findings').json()
+    finding=next(f for f in result['findings'] if f['id']=='allocation')
+    assert finding['validation_status']=='UNVERIFIED'
+    assert 'UNVERIFIED' in finding['headline']
+    assert '1.05x' not in finding['headline']
+    assert '1.05x' in finding['archived_headline']
+
+
+def test_saved_delivery_is_labeled_as_replay(tmp_path,monkeypatch):
+    monkeypatch.setattr(p,'STORE',tmp_path)
+    client=TestClient(app)
+    result=client.post('/api/portfolio-command/compare',json=cases()['one_trial_two_sites']).json()
+    base='/api/portfolio-command/runs/'+result['run_id']
+    saved=client.get(base)
+    assert saved.json()==result
+    assert saved.headers.get('x-concord-delivery-mode')=='artifact-replay'
+    report=client.get(base+'/report/html')
+    assert 'Computation evidence snapshot' in report.text
+    assert report.headers.get('x-concord-delivery-mode')=='artifact-replay'
