@@ -1,158 +1,246 @@
-/* Site scores (SiteScoresView). Uses the app's color tokens from index.css (light + dark). */
+/* Site scores (SiteScoresView), Calm skin. Tokens only (index.css), so both themes follow. Windows, sections, key
+   figures, qualifiers and disclosures come from calm.css; this file styles what is particular to the tab. */
 
 .ss {
   /* Two series in the histogram: sites whose score comes from 3+ fitted trials (accent) and low-history sites
-     (de-emphasis gray). Validated with the dataviz palette script against both surfaces. */
-  --ss-rich: var(--bar-coord);
-  --ss-low: var(--bar-indep);
-  --ss-cap: var(--warn-ink);
+     (the control grey, at least 3:1 on the surfaces). The cap is marked in the caution ink, the selected site in ink. */
+  --ss-rich: var(--accent);
+  --ss-low: var(--ctl);
+  --ss-cap: var(--caution-ink);
 }
 
 .ss h3 {
-  margin-top: 0.75rem;
+  font-size: var(--fs-h3);
+  margin: var(--sp-5) 0 var(--sp-3);
+}
+/* File paths and commands (the validation source) wrap on a phone rather than run past the window. */
+.ss code {
+  overflow-wrap: anywhere;
 }
 
 .ss-stale {
   opacity: 0.55;
-  transition: opacity 0.15s;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ss-stale {
+    transition: opacity 150ms ease-out;
+  }
 }
 
-/* ---------- top ---------- */
-.ss-top {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
-  gap: 1rem;
+/* A number cell that holds a range or a date reads left to right, like the text column it belongs to. */
+.ss .tbl .ss-left {
+  text-align: left;
 }
+
+/* ---------- key figures inside a section's figure column ---------- */
+.ss-kfs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.ss-kfs .kf-inline .kf-value {
+  font-size: 1.375rem;
+}
+.ss-kfs .kf {
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--rule);
+}
+.ss-kfs .kf:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+/* Always-visible qualifier lines under a section's lede. */
+.ss-q {
+  margin: 0;
+  color: var(--ink-2);
+}
+.ss-quals {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  color: var(--ink-2);
+}
+.ss-quals li {
+  padding-left: 0.875rem;
+  position: relative;
+}
+.ss-quals li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.68em;
+  width: 0.3125rem;
+  height: 0.3125rem;
+  border-radius: 50%;
+  background: var(--ctl);
+}
+.ss-quals strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.ss-missing {
+  display: block;
+  background: var(--caution-bg);
+  color: var(--caution-ink);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+}
+
+/* ---------- how a score is formed ---------- */
 .ss-mini {
-  margin: 0.25rem 0 0.5rem;
-  padding-left: 1.2rem;
-  font-size: 0.9rem;
-  color: var(--text-2);
+  margin: 0 0 var(--sp-3);
+  padding-left: 1.25rem;
+  font-size: var(--fs-md);
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-width: 62rem;
 }
 .ss-mini li {
-  padding: 0.2rem 0;
+  padding: 0.25rem 0;
 }
 .ss-mini strong {
-  color: var(--text);
+  color: var(--ink);
 }
-.ss-details summary {
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: var(--text-2);
-  margin: 0.35rem 0;
+.ss-method {
+  margin-top: var(--sp-3);
+  max-width: 62rem;
 }
 .ss-consistency {
-  margin-top: 0.5rem;
+  margin: var(--sp-3) 0 0;
 }
+
+/* ---------- validation ---------- */
 .ss-valid-how {
-  color: var(--text-2);
+  color: var(--ink-2);
+  max-width: 62rem;
+  margin-top: 0;
 }
 .ss-reading {
-  font-size: 0.92rem;
-  margin: 0.6rem 0;
+  font-size: var(--fs-md);
+  line-height: 1.6;
+  margin: var(--sp-3) 0;
+  max-width: 62rem;
 }
 .ss-calib-def {
   background: var(--surface-2);
-  border-radius: 6px;
-  padding: 0.45rem 0.65rem;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  max-width: 62rem;
 }
 
-/* slope (forest) plot */
+/* Slope (forest) plot: one lane per sample, a 95% CI band and the estimate; references at 0 and (dashed) at 1. */
 .ss-slope {
-  margin: 0.75rem 0 0.25rem;
-  padding: 0 0.5rem;
+  padding-top: 0.25rem;
 }
-.ss-slope-row {
-  margin-bottom: 0.6rem;
+.ss-slope-row + .ss-slope-row {
+  margin-top: var(--sp-3);
 }
 .ss-slope-head {
   display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
   flex-wrap: wrap;
-  font-size: 0.86rem;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.125rem var(--sp-3);
+  font-size: var(--fs-ui);
+  color: var(--ink-2);
+  line-height: 1.4;
+}
+.ss-slope-val {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.ss-slope-ci-text {
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  color: var(--ink-2);
 }
 .ss-slope-track {
   position: relative;
   display: block;
-  height: 18px;
-  margin-top: 0.15rem;
+  height: 2rem;
 }
 .ss-slope-track::before {
   content: '';
   position: absolute;
   left: 0;
   right: 0;
-  top: 8px;
+  top: 50%;
   height: 1px;
-  background: var(--border);
+  background: var(--rule-strong);
+}
+.ss-slope-ref,
+.ss-slope-one {
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  width: 0;
 }
 .ss-slope-ref {
-  position: absolute;
-  top: 0;
-  width: 1px;
-  height: 18px;
-  background: var(--muted);
+  border-left: 1px solid var(--ctl);
 }
-.ss-slope-ref-one {
-  background: var(--text-2);
+.ss-slope-one {
+  border-left: 1.5px dashed var(--ink-2);
 }
 .ss-slope-ci {
   position: absolute;
-  top: 6px;
-  height: 6px;
-  border-radius: 3px;
+  top: calc(50% - 4px);
+  height: 8px;
+  border-radius: 4px;
   background: var(--accent);
-  opacity: 0.4;
+  opacity: 0.35;
 }
 .ss-slope-dot {
   position: absolute;
-  top: 3px;
-  width: 12px;
-  height: 12px;
-  margin-left: -6px;
+  top: 50%;
+  width: 0.875rem;
+  height: 0.875rem;
+  margin: -0.4375rem 0 0 -0.4375rem;
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 0 2px var(--surface);
 }
-.ss-slope-row:not(.ss-slope-primary) .ss-slope-ci,
-.ss-slope-row:not(.ss-slope-primary) .ss-slope-dot {
-  background: var(--text-2);
+.ss-slope-second .ss-slope-ci {
+  background: var(--series-2);
+}
+.ss-slope-second .ss-slope-dot {
+  background: var(--series-2);
+  border-radius: 2px;
+  transform: rotate(45deg) scale(0.9);
 }
 .ss-slope-axis {
   position: relative;
-  height: 1.2rem;
+  height: 1.375rem;
+  margin-top: 0.25rem;
+  border-top: 1px solid var(--rule);
+  font-size: var(--fs-xs);
+  color: var(--muted);
 }
 .ss-slope-axis span {
   position: absolute;
-  top: 0;
+  top: 0.25rem;
   transform: translateX(-50%);
   white-space: nowrap;
 }
 .ss-slope-axis span:first-child {
   transform: none;
 }
-.ss-slope-axis span:last-child {
-  transform: translateX(-70%);
+.ss-slope-anchors {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  color: var(--ink-2);
+  margin-top: 0.125rem;
 }
 
 /* ---------- distribution ---------- */
-.ss-dist-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-  gap: 1rem 1.5rem;
-  align-items: start;
-  margin-bottom: 0.75rem;
-}
-@media (max-width: 900px) {
-  .ss-dist-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
 .ss-hist {
   position: relative;
-  margin: 0;
   min-width: 0;
 }
 .ss-hist svg {
@@ -162,33 +250,38 @@
 .ss-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem 1rem;
-  margin-bottom: 0.35rem;
-  color: var(--text-2);
+  gap: 0.375rem 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--ink-2);
 }
 .ss-legend span {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.375rem;
+}
+.ss-sw-rich,
+.ss-sw-low {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 3px;
 }
 .ss-sw-rich {
   background: var(--ss-rich);
-  border-radius: 2px;
 }
 .ss-sw-low {
   background: var(--ss-low);
-  border-radius: 2px;
 }
 .ss-grid {
-  stroke: var(--border);
+  stroke: var(--rule);
   stroke-width: 1;
 }
 .ss-axis {
-  stroke: var(--border-strong);
+  stroke: var(--rule-strong);
   stroke-width: 1;
 }
 .ss-axis-text {
   fill: var(--muted);
+  font-family: var(--mono);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
@@ -200,7 +293,7 @@
 }
 .ss-bin-on .ss-bar-rich,
 .ss-bin-on .ss-bar-low {
-  filter: brightness(1.15);
+  opacity: 0.8;
 }
 .ss-hit {
   fill: transparent;
@@ -216,37 +309,43 @@
   stroke-width: 1.5;
 }
 .ss-mark-site {
-  stroke: var(--text);
+  stroke: var(--ink);
   stroke-width: 1.5;
 }
 .ss-mark-text {
-  fill: var(--text-2);
-  font-size: 11px;
+  fill: var(--ink-2);
+  font-size: 12px;
   font-weight: 600;
+}
+.ss-mark-cap-text {
+  fill: var(--ss-cap);
 }
 .ss-tip {
   position: absolute;
-  top: 2.2rem;
+  top: 2.5rem;
   transform: translateX(-50%);
   background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  padding: 0.4rem 0.6rem;
-  font-size: 0.8rem;
-  box-shadow: 0 4px 14px rgba(16, 24, 40, 0.12);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.875rem;
+  font-size: var(--fs-ui);
+  line-height: 1.5;
+  box-shadow: var(--lift);
   pointer-events: none;
   white-space: nowrap;
   z-index: 2;
 }
 .ss-tip-title {
-  color: var(--muted);
-  margin-bottom: 0.15rem;
+  color: var(--ink-2);
+  margin-bottom: 0.25rem;
 }
 .ss-key {
   display: inline-block;
-  width: 12px;
-  height: 2px;
-  vertical-align: 3px;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 2px;
+  vertical-align: -1px;
 }
 .ss-key-rich {
   background: var(--ss-rich);
@@ -254,34 +353,62 @@
 .ss-key-low {
   background: var(--ss-low);
 }
+.ss-buckets {
+  max-width: 46rem;
+}
 .ss-buckets h3 {
   margin-top: 0;
 }
-.ss-buckets .badge {
-  margin-left: 0.25rem;
+.ss-buckets + .caveat {
+  margin-top: var(--sp-4);
+  max-width: 62rem;
+}
+.ss-hist-table {
+  margin-top: var(--sp-4);
+  max-width: 46rem;
+}
+/* A text mark in a table: caution ink, no pill. */
+.ss-mark {
+  color: var(--caution-ink);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  white-space: nowrap;
 }
 
 /* ---------- master / detail ---------- */
+/* Side by side only where the site table fits its window without scrolling sideways. */
 .ss-md {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 1rem;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: var(--sp-5);
   align-items: start;
 }
-@media (max-width: 1080px) {
+@media (max-width: 1279px) {
   .ss-md {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+.ss-win-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-1) var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+.ss-win-head h2 {
+  margin: 0;
+  font-size: clamp(1.375rem, 1.1rem + 0.8vw, 1.75rem);
+}
 .ss-breakdown {
-  scroll-margin-top: 56px;
+  scroll-margin-top: calc(var(--sticky-h) + 0.75rem);
 }
 .ss-filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6rem 0.75rem;
+  gap: var(--sp-3) var(--sp-4);
   align-items: flex-end;
-  margin-bottom: 0.6rem;
+  margin-bottom: var(--sp-4);
 }
 .ss-filters select {
   max-width: 13rem;
@@ -293,91 +420,126 @@
   width: 100%;
 }
 .ss-sortnote {
-  background: var(--warn-bg);
-  color: var(--warn-ink);
-  padding: 0.4rem 0.65rem;
-  border-radius: 6px;
+  background: var(--caution-bg);
+  color: var(--caution-ink);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  margin: 0 0 var(--sp-3);
+  line-height: 1.55;
 }
+
+/* site table: tighter cell padding; the first column flush with the window's edge. The right edge keeps its padding:
+   the column info buttons' hit areas reach past the icon and must stay inside the table. */
 .ss-sites td {
   vertical-align: top;
 }
+.ss .ss-sites th,
+.ss .ss-sites td {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+.ss .ss-sites th:first-child,
+.ss .ss-sites td:first-child {
+  padding-left: 0;
+}
 .ss-site-cell {
-  min-width: 11rem;
+  min-width: 10.5rem;
 }
 .ss-site-name {
   font-weight: 600;
   overflow-wrap: anywhere;
 }
-.ss-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  margin-top: 0.2rem;
+.ss-marks {
+  margin-top: 0.25rem;
+  font-size: var(--fs-sm);
 }
 .ss-sites td.num div {
   white-space: nowrap;
 }
+.ss-score {
+  font-weight: 600;
+  color: var(--ink);
+}
 .ss-iv-capped {
   text-decoration: line-through;
-  text-decoration-color: var(--warn-ink);
+  text-decoration-color: var(--caution-ink);
+}
+.ss-th {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.ss-th .hc-info {
+  font-size: var(--fs-ui);
 }
 .ss-pager {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--sp-2);
   justify-content: flex-end;
-  margin-top: 0.5rem;
+  margin-top: var(--sp-3);
 }
 .ss-pager .muted {
   margin-right: auto;
 }
-.ss-calnote {
-  margin-top: 0.5rem;
+.ss-calnote,
+.ss-legend-s {
+  margin: var(--sp-3) 0 0;
+  line-height: 1.55;
 }
 
-/* breakdown */
+/* ---------- breakdown ---------- */
 .ss-bd-head {
-  margin-bottom: 0.6rem;
+  margin-bottom: var(--sp-4);
 }
 .ss-bd-title {
-  font-size: 1.2rem;
-  margin: 0.1rem 0 0;
+  font-size: clamp(1.375rem, 1.1rem + 0.8vw, 1.75rem);
+  margin: 0.25rem 0 0.125rem;
+  overflow-wrap: anywhere;
 }
 .ss-figs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr));
-  gap: 0.5rem;
-  margin: 0.5rem 0 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  gap: var(--sp-3);
+  margin: 0 0 var(--sp-2);
 }
 .ss-fig {
   background: var(--surface-2);
-  border-radius: 8px;
-  padding: 0.5rem 0.65rem;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
   min-width: 0;
 }
-.ss-fig-value {
-  font-size: 1.35rem;
-  font-weight: 650;
-  letter-spacing: -0.01em;
+.ss-fig .kf-sub {
+  color: var(--ink-2);
+  line-height: 1.45;
+}
+.ss-fig-line {
+  display: block;
+}
+.ss-fig-range {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  white-space: nowrap;
 }
 
 .ss-strip {
-  margin: 0.25rem 0 0.5rem;
+  margin: var(--sp-4) 0 var(--sp-2);
 }
 .ss-strip-row {
   display: grid;
-  grid-template-columns: 5.2rem minmax(0, 1fr) 6.2rem;
+  grid-template-columns: 5.5rem minmax(0, 1fr) 6.75rem;
   align-items: center;
-  gap: 0.5rem;
-  min-height: 20px;
+  gap: var(--sp-2);
+  min-height: 1.5rem;
 }
 .ss-strip-label {
-  color: var(--text-2);
+  color: var(--ink-2);
 }
 .ss-strip-track {
   position: relative;
   display: block;
-  height: 16px;
+  height: 1rem;
 }
 .ss-strip-track::before {
   content: '';
@@ -386,15 +548,14 @@
   right: 0;
   top: 7px;
   height: 1px;
-  background: var(--border);
+  background: var(--rule-strong);
 }
 .ss-strip-cap {
   position: absolute;
-  top: -2px;
+  top: -3px;
   width: 1.5px;
-  height: 20px;
+  height: 22px;
   background: var(--ss-cap);
-  opacity: 0.8;
 }
 .ss-strip-band {
   position: absolute;
@@ -405,7 +566,7 @@
 }
 .ss-band-prior {
   background: var(--ss-low);
-  opacity: 0.55;
+  opacity: 0.6;
 }
 .ss-band-post {
   background: var(--accent);
@@ -413,7 +574,7 @@
 }
 .ss-band-cal {
   background: var(--accent);
-  opacity: 0.18;
+  opacity: 0.2;
 }
 .ss-strip-dot {
   position: absolute;
@@ -425,24 +586,28 @@
   box-shadow: 0 0 0 2px var(--surface);
 }
 .ss-dot-prior {
-  background: var(--text-2);
+  background: var(--ink-2);
 }
 .ss-dot-post {
   background: var(--accent);
 }
 .ss-dot-score {
-  background: var(--text);
+  background: var(--ink);
 }
 .ss-dot-cal {
   background: var(--surface);
   border: 2.5px solid var(--accent);
 }
 .ss-strip-note {
-  color: var(--text-2);
+  color: var(--ink-2);
   white-space: nowrap;
 }
 .ss-strip-axis {
-  min-height: 1.1rem;
+  min-height: 1.25rem;
+}
+.ss-strip-ticks {
+  color: var(--muted);
+  font-size: var(--fs-xs);
 }
 .ss-strip-ticks::before {
   display: none;
@@ -454,76 +619,104 @@
   white-space: nowrap;
 }
 .ss-strip-legend {
-  margin: 0.15rem 0 0;
+  margin: var(--sp-1) 0 0;
 }
 
-.ss-steps {
+/* The steps: soft surfaces, no boxes. Detailed lists all six (.ss-steps), Simple three (.ss-brief). */
+.ss-steps,
+.ss-brief {
   list-style: none;
-  margin: 0.25rem 0 0.75rem;
+  margin: 0 0 var(--sp-4);
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.25rem;
 }
-.ss-step {
+.ss-step,
+.ss-brief-step {
   display: grid;
-  grid-template-columns: 1.6rem minmax(0, 1fr);
-  gap: 0.55rem;
-  padding: 0.5rem 0.6rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  grid-template-columns: 1.75rem minmax(0, 1fr);
+  gap: var(--sp-3);
+  padding: 0.75rem 0.875rem;
+  border-radius: var(--radius-md);
+}
+.ss-step + .ss-step,
+.ss-brief-step + .ss-brief-step {
+  box-shadow: 0 -1px 0 var(--rule);
 }
 .ss-step-num {
   display: inline-grid;
   place-items: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.75rem;
+  height: 1.75rem;
   border-radius: 50%;
   background: var(--surface-2);
-  color: var(--text-2);
-  font-size: 0.78rem;
-  font-weight: 650;
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
 }
 .ss-step-head {
   display: flex;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: var(--sp-1) var(--sp-3);
   flex-wrap: wrap;
   align-items: baseline;
 }
 .ss-step-title {
-  font-weight: 620;
+  font-weight: 600;
+  color: var(--ink);
 }
 .ss-step-value {
-  font-weight: 650;
+  font-weight: 600;
+  color: var(--ink);
 }
 .ss-step-text {
-  color: var(--text-2);
-  margin-top: 0.1rem;
+  color: var(--ink-2);
+  margin-top: 0.25rem;
+  line-height: 1.55;
   overflow-wrap: anywhere;
 }
+.ss-step-aside {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--muted);
+}
 .ss-step-warn {
-  border-color: var(--warn-ink);
-  background: var(--warn-bg);
+  background: var(--caution-bg);
 }
 .ss-step-warn .ss-step-text,
 .ss-step-warn .ss-step-value {
-  color: var(--warn-ink);
+  color: var(--caution-ink);
 }
-.ss-step-emph {
-  border-color: var(--accent);
+.ss-step-emph,
+.ss-brief-emph {
   background: var(--accent-soft);
 }
-.ss-step-emph .ss-step-num {
+.ss-step-warn + .ss-step,
+.ss-step + .ss-step-warn,
+.ss-step-emph + .ss-step,
+.ss-step + .ss-step-emph,
+.ss-brief-emph + .ss-brief-step,
+.ss-brief-step + .ss-brief-emph {
+  box-shadow: none;
+}
+.ss-step-emph .ss-step-num,
+.ss-brief-emph .ss-step-num {
   background: var(--accent);
   color: var(--accent-ink);
 }
-
-/* contributing trials */
-.ss-contrib-lede {
-  color: var(--text-2);
-  max-width: 110ch;
+.ss-brief .ss-step-title .hc-info {
+  margin-left: 0.125rem;
 }
+.ss-bd-note {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  color: var(--ink-2);
+}
+
+/* ---------- contributing trials ---------- */
 .ss-trials {
   min-width: 920px;
 }
@@ -566,26 +759,30 @@
   width: 2px;
   height: 14px;
   margin-left: -1px;
-  background: var(--text);
+  background: var(--ink);
 }
 .ss-more {
-  margin-top: 0.5rem;
+  margin-top: var(--sp-3);
 }
 .ss-notfit {
-  margin-top: 0.75rem;
+  margin-top: var(--sp-5);
+}
+.ss-notfit h3 {
+  margin-top: 0;
 }
 .ss-notfit ul {
-  margin: 0.25rem 0 0;
-  padding-left: 1.2rem;
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--ink-2);
 }
 .ss-notfit li {
-  padding: 0.15rem 0;
+  padding: 0.25rem 0;
 }
 .ss-notfit-none {
-  margin-top: 0.75rem;
+  margin-top: var(--sp-4);
 }
 
-/* Horizontal table scrollers: a fade on the side where columns are hidden, and a hint above the table. */
+/* Horizontal table scrollers: a solid edge mark on the side where columns are hidden, and a hint above the table. */
 .ss-scrollx {
   position: relative;
 }
@@ -595,27 +792,26 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 32px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--ctl);
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.15s;
   z-index: 1;
 }
 .ss-scrollx::before {
   left: 0;
-  background: linear-gradient(to right, var(--surface), transparent);
 }
 .ss-scrollx::after {
   right: 0;
-  background: linear-gradient(to left, var(--surface), transparent);
 }
 .ss-scrollx.ss-more-l::before,
 .ss-scrollx.ss-more-r::after {
-  opacity: 1;
+  opacity: 0.6;
 }
 .ss-scroll-hint {
   text-align: right;
-  margin: 0 0 0.2rem;
+  margin: 0 0 0.25rem;
 }
 .ss-scrollx .table-scroll:focus-visible {
   outline: 2px solid var(--accent);
@@ -624,50 +820,91 @@
 
 /* Capped sites: no percentile, they all tie at the cap. */
 .ss-atcap {
-  color: var(--warn-ink);
+  color: var(--caution-ink);
+  font-weight: 600;
   white-space: nowrap;
   cursor: help;
 }
 /* Calibrated and percentile folded into the score cell on narrow screens (see the media query below). */
 .ss-stack {
   display: none;
-  margin-top: 0.15rem;
-  color: var(--text-2);
+  margin-top: 0.25rem;
+  color: var(--ink-2);
 }
 
 .ss-h-short {
   display: none;
 }
 
-@media (max-width: 560px) {
+/* Touch: sort buttons at least 44 px tall; room for the info buttons' 44 px hit areas inside the header cell. */
+@media (pointer: coarse) {
+  .ss th.sortable button {
+    min-height: var(--tap);
+  }
+  .ss .ss-sites th:has(.hc-info) {
+    padding-right: 0.875rem;
+  }
+}
+
+/* Below 700 px the site table's Calibrated and Pctile columns fold into the score cell, so the table fits its window. */
+@media (max-width: 700px) {
   .ss-sites .ss-col-wide {
     display: none;
   }
+  .ss-stack {
+    display: block;
+  }
+}
+
+@media (max-width: 560px) {
   .ss-h-long {
     display: none;
   }
   .ss-h-short {
     display: inline;
   }
-  .ss-stack {
-    display: block;
+  .ss-site-cell {
+    min-width: 8rem;
+  }
+  .ss .ss-sites th,
+  .ss .ss-sites td {
+    padding-left: 0.375rem;
+    padding-right: 0.375rem;
+  }
+  .ss-sites td.num .small {
+    font-size: var(--fs-sm);
+  }
+  .ss-figs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .ss-strip-row {
-    grid-template-columns: 4.4rem minmax(0, 1fr) 4.6rem;
-    gap: 0.35rem;
+    grid-template-columns: 4.5rem minmax(0, 1fr) 4.75rem;
+    gap: 0.375rem;
   }
-  /* "0.0757 (capped)" is wider than the 4.6rem note column: let it wrap instead of running past the card. */
+  /* "0.0757 (capped)" is wider than the note column: let it wrap instead of running past the window. */
   .ss-strip-note {
     white-space: normal;
     line-height: 1.25;
-  }
-  .ss-fig-value {
-    font-size: 1.15rem;
   }
   .ss-filters select {
     max-width: 100%;
   }
   .ss-filters .field {
     flex: 1 1 45%;
+  }
+  .ss-step,
+  .ss-brief-step {
+    padding: 0.625rem 0.5rem;
+    gap: var(--sp-2);
+  }
+}
+
+/* Small phones (360 px): narrower site names and smaller range text keep the folded table inside its window. */
+@media (max-width: 400px) {
+  .ss-site-cell {
+    min-width: 6.5rem;
+  }
+  .ss-sites td.num .small {
+    font-size: var(--fs-xs);
   }
 }
