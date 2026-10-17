@@ -511,9 +511,8 @@ function CongestionCard({ data, error }: { data: CongestionTest | null; error: s
           )}
           <p className="note small">
             Plain reading: within the same site, at the resolution of public registry data, busy periods with overlapping
-            competitors slow enrollment a little at most. The full-sample estimate is not significant. Subset estimates
-            (for example, sites with many earlier lung trials) are reported on <a href="#findings/congestion">Findings</a>{' '}
-            and are never used as the default.
+            competitors slow enrollment a little at most. The full-sample estimate is not significant; at sites with ≥ 10
+            lung trials it is about 8.5% per doubling of overlapping load (a subset estimate, not the default).
             Across sites, busier sites are slower per trial
             {pooled && (
               <>
