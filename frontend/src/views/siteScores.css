@@ -656,6 +656,11 @@
     grid-template-columns: 4.4rem minmax(0, 1fr) 4.6rem;
     gap: 0.35rem;
   }
+  /* "0.0757 (capped)" is wider than the 4.6rem note column: let it wrap instead of running past the card. */
+  .ss-strip-note {
+    white-space: normal;
+    line-height: 1.25;
+  }
   .ss-fig-value {
     font-size: 1.15rem;
   }

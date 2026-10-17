@@ -116,12 +116,24 @@ export interface Heterogeneity {
   inv_k: number | null
   inv_k_ci95: [number, number] | null
   sites_used: number
-  /** Site-trial pairs at those sites. */
+  /** Distinct trials behind the estimate. */
   trials_used: number
-  distinct_trials: number
+  /** Site-trial pairs at those sites (each one observation). */
+  site_trials_used: number
   min_trials: number
   excluded: string
   bootstrap: { draws: number; seed: number; over: string }
+  /** How concentrated the pooled 1/k is: weights are each site's share of sum mu^2, so high-volume sites dominate. */
+  concentration: {
+    top10_weight: number
+    top50_weight: number
+    inv_k_top50: number | null
+    inv_k_others: number | null
+    largest_site_id: string
+    largest_weight: number
+    largest_inv_k: number
+    inv_k_without_largest: number | null
+  } | null
   cross_check: {
     sites: number
     min_trials: number
@@ -130,6 +142,13 @@ export interface Heterogeneity {
     iqr: [number, number]
     median_width_ratio_poisson: number
     iqr_poisson: [number, number]
+    share_wider_than_bootstrap: number
+    by_patients_per_trial: {
+      patients_per_trial: [number, number]
+      sites: number
+      median_width_ratio: number
+      median_width_ratio_poisson: number
+    }[]
     definition: string
   } | null
 }

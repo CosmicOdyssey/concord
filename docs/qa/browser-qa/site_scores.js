@@ -101,9 +101,11 @@ async function elementShot(page, sel, name) {
     const het = sum.heterogeneity
     out.heterogeneity = het
     check('summary: heterogeneity estimated (not the Poisson fallback)', het && !het.fallback && het.inv_k > 0 && het.sites_used > 0, het && { k: het.k, inv_k: het.inv_k, ci: het.inv_k_ci95, sites: het.sites_used })
-    check('table note: ranges include trial-to-trial variation, leave out systematic error in the split',
+    // No undefined symbol (1/k) in the note; it says the amount is set mostly by the high-volume sites.
+    check('table note: ranges include trial-to-trial variation (mostly set by high-volume sites), leave out systematic error in the split',
       /varies from one trial to the next/.test(out.preset.calnote) && /systematic error in that split/.test(out.preset.calnote) &&
-        out.preset.calnote.includes(`1/k = ${het.inv_k.toFixed(2)}`) && !/narrower than the real uncertainty/.test(out.preset.calnote),
+        !/1\/k/.test(out.preset.calnote) && !/narrower than the real uncertainty/.test(out.preset.calnote) &&
+        out.preset.calnote.includes(`50 of them carry ${Math.round(het.concentration.top50_weight * 100)}% of its weight`),
       out.preset.calnote)
     const apiRows = (await (await fetch(`${APP}/api/site-scores?region=US&min_trials=1&sort=-n_fit&limit=20&offset=0`)).json()).rows
     const ivText = await page.$$eval('.ss-sites tbody tr > td:nth-child(3) > div:nth-child(2)', (es) => es.map((e) => e.textContent.trim()))
@@ -124,7 +126,8 @@ async function elementShot(page, sel, name) {
     out.preset.bdCaveat = await text(page, '.ss-breakdown .caveat')
     check('breakdown caveat: what the range includes and leaves out; historical, not a forecast',
       /varies from trial to trial/.test(out.preset.bdCaveat) && /systematic error in that split/.test(out.preset.bdCaveat) &&
-        /not a forecast for a new trial/.test(out.preset.bdCaveat) && !/treats the allocated patients as observed/.test(out.preset.bdCaveat),
+        /not a forecast for a new trial/.test(out.preset.bdCaveat) && !/treats the allocated patients as observed/.test(out.preset.bdCaveat) &&
+        !/suggests that error is large/.test(out.preset.bdCaveat),
       out.preset.bdCaveat)
     check('method paragraph: one sentence on trial-to-trial variation', /varies from one trial to the next/.test(sum.method), sum.method)
     check('reading: overstatement explained on the log scale', /on the log scale, not a division of ratios/.test(out.preset.reading), out.preset.reading)

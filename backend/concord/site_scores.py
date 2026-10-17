@@ -76,10 +76,17 @@ METHOD = (
     "exposure months (65% of each trial's start-to-primary-completion time, the assumed enrollment window). Sites "
     "with fewer than 3 fitted trials are capped at the prior's 25th percentile, the same rate used for sites with "
     "no history. The calibrated score shrinks each site's distance from the U.S. average, on the log scale, by the "
-    "slope measured when pre-2018 scores were checked against how 2018+ trials actually enrolled. Each score's "
-    "10th-90th interval also counts how much a site's rate varies from one trial to the next (one amount for all "
-    "sites, measured on sites with 5 or more fitted trials), so it is wider than a pure count-based interval. These "
+    "slope measured when pre-2018 scores were checked against how 2018+ trials actually enrolled. {interval} These "
     "are historical, registry-based estimates, not forecasts for a new trial."
+)
+METHOD_INTERVAL = (
+    "Each score's 10th-90th interval also counts how much a site's rate typically varies from one trial to the next "
+    "(one amount for all sites, estimated from sites with 5 or more fitted trials and set mostly by the "
+    "high-volume ones), so it is wider than a pure count-based interval."
+)
+METHOD_INTERVAL_FALLBACK = (
+    "Each score's 10th-90th interval treats the allocated patients as exact counts (trial-to-trial variation could "
+    "not be measured), so it is narrower than the real uncertainty."
 )
 
 
@@ -246,6 +253,28 @@ def trial_bootstrap_log_widths(f: _Fit, sites, links_of: dict[int, list[int]], d
     return np.array(out)
 
 
+def weight_concentration(sites: np.ndarray, num: np.ndarray, den: np.ndarray, site_ids: list[str]) -> dict:
+    """How concentrated the pooled 1/k is. Each site's weight is its share of sum den (den_s = sum_t mu_ts^2, so
+    high-volume sites dominate). Reported, not used: top-10 and top-50 shares, the 1/k of the top 50 alone and of
+    everyone else, and the largest site with the 1/k left when it is dropped."""
+    order = np.argsort(-den, kind="stable")
+    total = float(den.sum())
+    top50, rest = order[:50], order[50:]
+    big = int(order[0])
+    others = np.ones(len(den), dtype=bool)
+    others[big] = False
+    return {
+        "top10_weight": float(den[order[:10]].sum() / total),
+        "top50_weight": float(den[top50].sum() / total),
+        "inv_k_top50": inv_k_from_terms(num[top50], den[top50]),
+        "inv_k_others": inv_k_from_terms(num[rest], den[rest]),
+        "largest_site_id": site_ids[int(sites[big])],
+        "largest_weight": float(den[big] / total),
+        "largest_inv_k": float(num[big] / den[big]),
+        "inv_k_without_largest": inv_k_from_terms(num[others], den[others]),
+    }
+
+
 @dataclass
 class _Het:
     inv_k: float | None  # None: no qualifying site, the interval falls back to the Poisson one
@@ -259,10 +288,39 @@ class _Het:
     lo: np.ndarray  # the interval shown with each score
     hi: np.ndarray
     cross_check: dict | None
+    concentration: dict | None = None
 
     @property
     def fallback(self) -> bool:
         return self.inv_k is None
+
+
+def _cross_check(f: _Fit, deep: np.ndarray, links_of: dict[int, list[int]], lo: np.ndarray, hi: np.ndarray) -> dict:
+    """Shown interval vs a trial-level bootstrap at the deep-history sites, overall and by thirds of allocated
+    patients per trial (at low-volume sites smoothed EM shares vary less than counts, so the bootstrap is not a
+    clean reference there; at high-volume sites it is)."""
+    boot = trial_bootstrap_log_widths(f, deep, links_of)
+    ratio = np.log(hi[deep] / lo[deep]) / boot
+    ratio_old = np.log(f.hi[deep] / f.lo[deep]) / boot
+    ppt = f.sum_n[deep] / f.n_fit[deep]
+    cuts = np.quantile(ppt, [1 / 3, 2 / 3])
+    thirds = [ppt <= cuts[0], (ppt > cuts[0]) & (ppt <= cuts[1]), ppt > cuts[1]]
+    return {
+        "sites": int(len(deep)), "min_trials": CROSS_CHECK_MIN_TRIALS, "draws": BOOT_DRAWS,
+        "median_width_ratio": float(np.median(ratio)),
+        "iqr": [float(x) for x in np.percentile(ratio, [25, 75])],
+        "median_width_ratio_poisson": float(np.median(ratio_old)),
+        "iqr_poisson": [float(x) for x in np.percentile(ratio_old, [25, 75])],
+        "share_wider_than_bootstrap": float(np.mean(ratio > 1)),
+        "by_patients_per_trial": [
+            {"patients_per_trial": [float(ppt[k].min()), float(ppt[k].max())], "sites": int(k.sum()),
+             "median_width_ratio": float(np.median(ratio[k])),
+             "median_width_ratio_poisson": float(np.median(ratio_old[k]))}
+            for k in thirds if k.any()
+        ],
+        "definition": "log(p90/p10) of the shown interval divided by log(p90/p10) of a trial-level bootstrap "
+                      "of (alpha + sum n) / (beta + sum e), per site",
+    }
 
 
 def heterogeneity(f: _Fit, eligible: np.ndarray, links_of: dict[int, list[int]]) -> _Het:
@@ -278,22 +336,10 @@ def heterogeneity(f: _Fit, eligible: np.ndarray, links_of: dict[int, list[int]])
     n_eff, cv2, N_eff = effective_patients(f.sum_n, f.sum_e, sum_e2, inv_k)
     lo, hi = het_interval(f.alpha, f.mean, N_eff)
     het = _Het(inv_k, inv_k_ci95(num, den), int(len(sites)), int(used.sum()), int(len(np.unique(f.ti[used]))),
-               n_eff, cv2, N_eff, lo, hi, None)
+               n_eff, cv2, N_eff, lo, hi, None, weight_concentration(sites, num, den, f.hist.site_ids))
     deep = np.flatnonzero((f.n_fit >= CROSS_CHECK_MIN_TRIALS) & eligible)
     if len(deep):
-        boot = trial_bootstrap_log_widths(f, deep, links_of)
-        new = np.log(hi[deep] / lo[deep])
-        old = np.log(f.hi[deep] / f.lo[deep])
-        ratio, ratio_old = new / boot, old / boot
-        het.cross_check = {
-            "sites": int(len(deep)), "min_trials": CROSS_CHECK_MIN_TRIALS, "draws": BOOT_DRAWS,
-            "median_width_ratio": float(np.median(ratio)),
-            "iqr": [float(x) for x in np.percentile(ratio, [25, 75])],
-            "median_width_ratio_poisson": float(np.median(ratio_old)),
-            "iqr_poisson": [float(x) for x in np.percentile(ratio_old, [25, 75])],
-            "definition": "log(p90/p10) of the shown interval divided by log(p90/p10) of a trial-level bootstrap "
-                          "of (alpha + sum n) / (beta + sum e), per site",
-        }
+        het.cross_check = _cross_check(f, deep, links_of, lo, hi)
     return het
 
 
@@ -735,7 +781,7 @@ def summary() -> dict:
             states[r["state"]] = states.get(r["state"], 0) + 1
     prior_q = {f"p{int(q * 100)}": float(gamma_dist.ppf(q, f.alpha, scale=1.0 / f.beta)) for q in (0.1, 0.5, 0.9)}
     return {
-        "method": METHOD,
+        "method": METHOD.format(interval=METHOD_INTERVAL_FALLBACK if het.fallback else METHOD_INTERVAL),
         "prior": {"alpha": f.alpha, "beta": f.beta, "mean": f.alpha / f.beta, "p25": f.floor, **prior_q,
                   "trials_used": f.prior_trials, "trim": list(f.prior_trim)},
         "fit": {"history_trials": len(f.hist.N), "fitted_sites": len(f.hist.site_ids), "links": len(f.e),
@@ -752,9 +798,11 @@ def summary() -> dict:
             "fallback": het.fallback,
             "k": (1.0 / het.inv_k) if het.inv_k else None,  # None also when 1/k is clipped to 0 (k infinite)
             "inv_k": het.inv_k, "inv_k_ci95": het.ci95,
-            "sites_used": het.sites_used, "trials_used": het.links_used, "distinct_trials": het.distinct_trials,
+            # trials_used: distinct trials; site_trials_used: site-trial pairs, each one observation
+            "sites_used": het.sites_used, "trials_used": het.distinct_trials, "site_trials_used": het.links_used,
             "min_trials": HET_MIN_TRIALS, "excluded": "anonymized pseudo-sites (several real sites pooled)",
             "bootstrap": {"draws": BOOT_DRAWS, "seed": BOOT_SEED, "over": "sites"},
+            "concentration": het.concentration,
             "cross_check": het.cross_check,
         },
         "histogram": {"bin_log10": HIST_BIN, "bins": hist},

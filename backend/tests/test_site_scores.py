@@ -257,6 +257,36 @@ def _nb2_sites(seed: int, inv_k: float, n_sites: int = 400, m_range=(8, 40), e_r
     return rng.poisson(lam[si] * eps * e).astype(float), e, si, n_sites
 
 
+def test_inv_k_terms_match_hand_computed_values():
+    """The estimator in the spec, on fixed inputs worked out by hand, so the m/(m-1) correction, the -n Poisson term
+    and pooling (sum num / sum den, not a mean of per-site ratios) are all pinned down.
+
+    Site 0: n = 2, 5, 11; e = 1, 2, 3 -> d = 18/6 = 3, mu = 3, 6, 9;
+            sum((n - mu)^2 - n) = (1 - 2) + (1 - 5) + (4 - 11) = -12, num = 3/2 * -12 = -18, den = 9 + 36 + 81 = 126
+    Site 1: n = 0, 10, 26; e = 2, 2, 4 -> d = 36/8 = 4.5, mu = 9, 9, 18;
+            sum = (81 - 0) + (1 - 10) + (64 - 26) = 110, num = 3/2 * 110 = 165, den = 81 + 81 + 324 = 486
+    Site 2: two trials, below min_trials = 3, left out.
+    Pooled 1/k = (-18 + 165) / (126 + 486) = 147 / 612."""
+    n = np.array([2, 5, 11, 0, 10, 26, 4, 9], dtype=float)
+    e = np.array([1, 2, 3, 2, 2, 4, 1, 1], dtype=float)
+    si = np.array([0, 0, 0, 1, 1, 1, 2, 2])
+    sites, num, den = S.inv_k_terms(n, e, si, 3, min_trials=3)
+    assert sites.tolist() == [0, 1]
+    assert np.allclose(num, [-18.0, 165.0], rtol=0, atol=1e-12) and np.allclose(den, [126.0, 486.0], rtol=0, atol=1e-12)
+    assert math.isclose(S.inv_k_from_terms(num, den), 147 / 612, rel_tol=1e-12)
+    # Site 0 alone has less spread than Poisson: clipped at 0. Not eligible -> left out.
+    assert S.inv_k_from_terms(num[:1], den[:1]) == 0.0
+    assert S.inv_k_terms(n, e, si, 3, np.array([False, True, True]), min_trials=3)[0].tolist() == [1]
+    # Effective patients for site 0 at 1/k = 0.5: n_eff = 36/14, CV2 = 1/18 + 0.5 * 14/36 = 1/4, N_eff = 4.
+    n_eff, cv2, N_eff = S.effective_patients(np.array([18.0]), np.array([6.0]), np.array([14.0]), 0.5)
+    assert math.isclose(n_eff[0], 36 / 14) and math.isclose(cv2[0], 0.25) and math.isclose(N_eff[0], 4.0)
+    # Concentration: weights 126/612 and 486/612; dropping the largest (site 1) leaves site 0, clipped to 0.
+    c = S.weight_concentration(sites, num, den, ["a", "b", "c"])
+    assert c["largest_site_id"] == "b" and math.isclose(c["largest_weight"], 486 / 612)
+    assert math.isclose(c["largest_inv_k"], 165 / 486) and c["inv_k_without_largest"] == 0.0
+    assert math.isclose(c["top10_weight"], 1.0) and c["inv_k_others"] is None
+
+
 def test_moment_estimator_recovers_known_k_on_simulated_nb2():
     """The pooled moment estimator, on several hundred sites with varied exposures. It runs a few percent low with
     unequal exposures (d_s^2 inflates the denominator; m/(m-1) is exact only for equal exposures), so the band is
@@ -337,12 +367,19 @@ def test_unfitted_site_interval_is_the_prior(st, con):
     assert d["posterior"]["interval_poisson"] == [d["prior"]["p10"], d["prior"]["p90"]]
 
 
-def test_heterogeneity_falls_back_to_poisson_without_qualifying_sites(st):
+def test_heterogeneity_falls_back_to_poisson_without_qualifying_sites(st, monkeypatch):
     f = st.fit
     het = S.heterogeneity(f, np.zeros(len(f.hist.site_ids), dtype=bool), st.links_of)
     assert het.fallback and het.inv_k is None and het.cross_check is None and het.sites_used == 0
     assert np.array_equal(het.lo, f.lo) and np.array_equal(het.hi, f.hi)
     assert np.array_equal(het.N_eff, f.sum_n)
+    # Every text that describes the range switches with it (summary method; the view reads interval_method).
+    monkeypatch.setattr(S, "_state", lambda: S._State(**{**st.__dict__, "het": het}))
+    s = S.summary()
+    d = S.site_detail(f.hist.site_ids[int(st.us_idx[0])])
+    assert s["heterogeneity"]["fallback"] and "exact counts" in s["method"] and "trial to the next" not in s["method"]
+    assert d["posterior"]["interval_method"] == "poisson_fallback"
+    assert d["posterior"]["interval"] == d["posterior"]["interval_poisson"]
 
 
 def test_breakdown_reports_effective_patients(st):
@@ -364,7 +401,9 @@ def test_summary_heterogeneity_block(st):
     h = s["heterogeneity"]
     assert not h["fallback"] and math.isclose(h["k"] * h["inv_k"], 1.0)
     assert h["inv_k_ci95"][0] <= h["inv_k"] <= h["inv_k_ci95"][1]
-    assert h["sites_used"] > 0 and h["trials_used"] >= S.HET_MIN_TRIALS * h["sites_used"]
+    assert h["sites_used"] > 0 and h["site_trials_used"] >= S.HET_MIN_TRIALS * h["sites_used"]
+    assert 0 < h["trials_used"] <= h["site_trials_used"]
+    assert "varies from one trial to the next" in s["method"]
     cc = h["cross_check"]
     assert cc["sites"] > 0 and cc["iqr"][0] <= cc["median_width_ratio"] <= cc["iqr"][1]
     for b in s["buckets"]:
@@ -374,4 +413,15 @@ def test_summary_heterogeneity_block(st):
     elig = np.array([not (st.sites.get(x) or {}).get("anonymized") for x in f.hist.site_ids])
     sites, num, den = S.inv_k_terms(f.n_hat, f.e, f.si, len(f.hist.site_ids), elig)
     assert len(sites) == h["sites_used"] and math.isclose(S.inv_k_from_terms(num, den), h["inv_k"], rel_tol=1e-12)
-    assert int(f.n_fit[sites].sum()) == h["trials_used"]
+    assert int(f.n_fit[sites].sum()) == h["site_trials_used"]
+    assert len(np.unique(f.ti[np.isin(f.si, sites)])) == h["trials_used"]
+    # Concentration: shares and the leave-largest-out 1/k, recomputed from the same terms.
+    c = h["concentration"]
+    order = np.argsort(-den, kind="stable")
+    assert math.isclose(c["top50_weight"], den[order[:50]].sum() / den.sum(), rel_tol=1e-12)
+    assert c["largest_site_id"] == f.hist.site_ids[int(sites[order[0]])]
+    keep = np.ones(len(den), dtype=bool)
+    keep[order[0]] = False
+    assert math.isclose(c["inv_k_without_largest"], S.inv_k_from_terms(num[keep], den[keep]), rel_tol=1e-12)
+    cc = h["cross_check"]
+    assert sum(b["sites"] for b in cc["by_patients_per_trial"]) == cc["sites"] and 0 <= cc["share_wider_than_bootstrap"] <= 1
