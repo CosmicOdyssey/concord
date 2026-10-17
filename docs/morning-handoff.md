@@ -71,15 +71,13 @@ its last columns. Fixing it would be a restyle, so I left it.
 | Findings: implication | typical held-out miss 1.9x (site model) vs 2.8x (naive); 7,486 of 11,710 U.S. sites (64%) with < 3 lung trials; 0 site-level enrollment counts in the registry | DB meta `backtest`; `site_model` |
 | Findings: related note | 21 same-sponsor pairs (10 sponsors), >= 10 shared sites and >= 80% overlap one way, 19 upper bounds; broad count 134 with caveats | `data/findings/self_overlap.json` (`python -m concord.overlap`) |
 | Portfolio overlap | 37 sponsors; 5 trials; 5 of 10 pairs share a site; 16 shared sites; 100% / 26%; 31.8 months both recruiting (estimated, past); site counts 8 / 9 / 23 / 29 / 8; other sponsors' trials per site | `/api/overlap`: CT.gov registered sites and dates, synthetic population (n = 20,000), hand-encoded eligibility |
-| Protocol to terms | NCT05800015 at NYU Langone (Manhattan, GPCI 1.064 / 1.162 / 1.586, CF 33.4009): $6,328.54 per participant through cycle 8; each later cycle $471.21; per site $18,000 (proposed standard); vs Mississippi $6,007.11 (-$321.43) | CMS 2026 PFS RVU26D (real); GPCI 2026 (real); lab codes are placeholders until CLFS loads; non-procedure items are the proposed standard schedule |
+| Protocol to terms | NCT05800015 at NYU Langone (Manhattan, GPCI 1.064 / 1.162 / 1.586, CF 33.4009), no reviewer overrides: $6,568.67 per participant through cycle 8; vs a Mississippi site $6,193.66 (-$375.01). With QA's one override (cycle-7 CT chest -> routine): $6,329.61 vs $6,008.18 (-$321.43, unchanged by the lab file; lab prices moved the total by +$1.07). Per site $18,000 (proposed standard) | CMS 2026 PFS RVU26D, GPCI 2026 and CLFS Q4 2026 (all real); non-procedure items are the proposed standard schedule |
 | Research | in-sample model results, each labelled "not a claim" | `/api/clear`, robustness grids at beta 0.093 |
 
 ## Needs you
 
-- **CLFS lab fee schedule.** CMS serves it behind an AMA CPT license click-through, which I didn't accept for
-  you. Download `26clabq4.zip` from the CMS CLFS files page, then run
-  `CLFS_ZIP=path/to/26clabq4.zip scripts/pipeline.sh` (or `python -m concord.ratecard.cms --rvu ... --clfs ...`).
-  Until then every lab line says "placeholder until the CLFS file is loaded".
+- ~~CLFS lab fee schedule~~ **Done (18 Oct):** loaded from `clfs_cy2026_q4v1.zip` (2,117 codes). The demo
+  protocols now have 0 placeholder lab lines; the "placeholder" labels show only if a total still contains one.
 - **Decide how to pitch the site-selection result** (top of this file).
 - **Open audit notes** (all disclosed in the README; none blocks the demo):
   - The two-way SE clips negative eigenvalues, so the CI width depends somewhat on how controls are coded

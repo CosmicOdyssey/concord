@@ -195,11 +195,13 @@ for the first was eligible for the second (overlap 1.0).
 
 - **Physician codes use real CMS rates.** They are priced from the CMS 2026 RVU file (RVU26D, October
   release, conversion factor $33.4009), with GPCI locality adjustment matched by city name.
-- **Lab codes are still placeholders.** CLFS codes are flagged unverified because CMS serves that file
-  behind an AMA CPT license click-through, which a person has to accept. To load it, download
-  `26clabq4.zip` from
-  https://www.cms.gov/medicare/payment/fee-schedules/clinical-laboratory-fee-schedule-clfs/files/26clabq4
-  and run `CLFS_ZIP=path/to/26clabq4.zip scripts/pipeline.sh`.
+- **Lab codes use the real CMS 2026 lab fee schedule** (CLFS, Q4 2026 release, national limitation
+  amounts; not geographically adjusted). CMS serves that file behind an AMA CPT license click-through, so a
+  person downloads it: https://www.cms.gov/medicare/payment/fee-schedules/clinical-laboratory-fee-schedule-clfs/files/26clabq4
+  (file `clfs_cy2026_q4v1.zip`), saves it under `data/raw/cms/`, and loads it with
+  `python -m concord.ratecard.cms --rvu ../data/raw/cms/rvu26d/rvu26d.zip --clfs ../data/raw/cms/clfs26q4/clfs_cy2026_q4v1.zip`
+  (from `backend/`; or `CLFS_ZIP=... scripts/pipeline.sh`). Only numbers are copied into
+  `data/ratecard.json`, never AMA descriptors. Without the file, lab lines fall back to labelled placeholders.
 
 ## Assumptions to defend (all in code, all adjustable via the API)
 

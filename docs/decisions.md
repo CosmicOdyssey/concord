@@ -65,3 +65,9 @@ Judgment calls made without being able to ask. Newest last. Each says what and w
 17. **Polish only after QA**: Clear it hint now says clears take 1-2 minutes (measured 96 s); the old research
     term sheet tab is labelled "Term sheet (old)"; QA harness labels updated to match. The terms budget table
     still needs a sideways swipe at 390 px; fixing it would be a restyle, so it is left and noted.
+18. **CLFS loaded (18 Oct, user-downloaded file `clfs_cy2026_q4v1.zip`).** Copied to its own folder
+    `data/raw/cms/clfs26q4/` and loaded with the existing loader: 2,117 codes, numbers only. Real prices
+    differ from the placeholders for venipuncture (36415: $9.34 vs $3.00), hCG (84702: $15.05 vs $15.00) and
+    the 5-50 gene panel (81445: $597.91 vs $597.00). The Terms view's "includes placeholder lab prices"
+    labels now appear only when a total still contains placeholder amounts. API restarted to reload the
+    cached rate table.
