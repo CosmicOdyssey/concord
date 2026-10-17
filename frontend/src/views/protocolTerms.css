@@ -124,7 +124,7 @@
 }
 
 /* ---------- step window ---------- */
-/* Under the sticky app header and the sticky step nav (about 3.1rem; the switch measures it, termsSteps.tsx). */
+/* Under the sticky app header and the sticky step nav (about 3.1rem; a step switch measures both, termsStepTabs.ts). */
 .tf-step {
   scroll-margin-top: calc(var(--sticky-h) + 3.875rem);
 }
