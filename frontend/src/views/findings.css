@@ -1,136 +1,511 @@
-/* Findings page (landing). Uses the app's color tokens from index.css, so it follows light and dark. */
-.fd {
-  gap: 1.25rem;
-}
-.fd .view-head h1 {
-  font-size: 1.75rem;
-}
-.fd-meta {
-  max-width: 90ch;
-  margin: 0;
-}
+/* Findings page in the Calm layout (mockup C-Findings). Windows, headings, figure captions and the Details
+   disclosure come from the shared Section (calm.css); this file styles the page's own figures, tables and lists.
+   Tokens only, so it follows both themes. */
 
-/* index of the findings on this page */
-.fd-index {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  gap: 0.6rem;
-}
-.fd-index-item {
-  appearance: none;
-  font: inherit;
-  text-align: left;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
-  box-shadow: var(--shadow);
-  min-width: 0;
-}
-.fd-index-item:hover {
-  border-color: var(--border-strong);
-  background: var(--surface-2);
-}
-.fd-index-item:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-.fd-index-title {
-  flex: 1;
-  font-size: 0.9rem;
-  font-weight: 600;
-  line-height: 1.35;
-  min-width: 0;
-}
-.fd-index-item .badge {
-  margin-top: 0.1rem;
-}
-
-/* cards */
+/* Each block is an anchor for #findings/<id>: land below the sticky header. */
 .fd-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  padding: 1.25rem 1.35rem 1.35rem;
-  scroll-margin-top: 4rem;
-}
-.fd-head {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.65rem;
-}
-.fd-num {
-  flex: none;
-  display: inline-grid;
-  place-items: center;
-  width: 1.6rem;
-  height: 1.6rem;
-  border-radius: 50%;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-.fd-title {
-  flex: 1;
-  margin: 0.1rem 0 0;
-  font-size: 1.2rem;
-  font-weight: 650;
+  scroll-margin-top: calc(var(--sticky-h) + 0.75rem);
   min-width: 0;
-}
-.fd-head .badge {
-  margin-top: 0.3rem;
-}
-.fd-headline {
-  margin: 0;
-  font-size: 1.05rem;
-  line-height: 1.55;
-  color: var(--text);
-  max-width: 80ch;
 }
 .fd-missing .fd-headline {
   color: var(--muted);
 }
 
-/* tables */
+/* ---------- on-page index: one quiet line of links ---------- */
+.fd-index {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1rem;
+  font-size: var(--fs-ui);
+  line-height: 1.5;
+  color: var(--muted);
+}
+.fd-index ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fd-index-item {
+  display: inline-block;
+  padding: 0.125rem 0;
+}
+@media (pointer: coarse) {
+  .fd-index-item {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+  }
+}
+
+/* ---------- text beside the figures ---------- */
+.fd-qual {
+  margin: 0;
+  font-size: var(--fs-md);
+  line-height: 1.55;
+  color: var(--ink);
+}
+.fd-qual + .fd-qual {
+  margin-top: var(--sp-2);
+}
+.fd-open {
+  margin: var(--sp-4) 0 0;
+  font-size: var(--fs-md);
+}
+
+/* ---------- lead block: key numbers and one square per pair ---------- */
+.fd-kfs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem 2.5rem;
+}
+.fd-kfs .kf-inline {
+  font-size: var(--fs-md);
+}
+.fd-squares {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem 1.125rem;
+  margin-top: 1.25rem;
+}
+.fd-sq-group {
+  display: inline-flex;
+  gap: 4px;
+}
+.fd-sq {
+  display: inline-block;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 3px;
+}
+.fd-sq-ub {
+  border: 2px solid var(--accent);
+}
+.fd-sq-ok {
+  background: var(--accent);
+}
+.fd-sq-sm {
+  width: 0.75rem;
+  height: 0.75rem;
+  vertical-align: -1px;
+}
+.fd-sq-key {
+  margin: 0.875rem 0 0;
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* ---------- interval chart (congestion) ---------- */
+.ci-item + .ci-item {
+  margin-top: var(--sp-3);
+}
+.ci-series {
+  margin: 0;
+  font-size: var(--fs-ui);
+  color: var(--ink-2);
+}
+.ci-plot {
+  position: relative;
+  height: 7.25rem;
+  margin: 0.5rem 0.25rem 0;
+}
+.ci-ref {
+  position: absolute;
+  top: 1.5rem;
+  height: 4.25rem;
+  width: 0;
+  margin-left: -1px;
+  border-left: 2px dashed var(--ink-2);
+}
+.ci-ref-label {
+  position: absolute;
+  top: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+  color: var(--ink-2);
+}
+.ci-ref-label .num {
+  font-weight: 600;
+  color: var(--ink);
+}
+.ci-axis {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 4rem;
+  height: 1px;
+  background: var(--ctl);
+}
+.ci-tick-mark {
+  position: absolute;
+  top: 3.75rem;
+  width: 1px;
+  height: 0.5rem;
+  background: var(--ctl);
+}
+.ci-band {
+  position: absolute;
+  top: calc(4rem - 4px);
+  height: 8px;
+  border-radius: 4px;
+  background: var(--s3);
+}
+.ci-dot {
+  position: absolute;
+  top: 4rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  margin: -0.4375rem 0 0 -0.4375rem;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.ci-val {
+  position: absolute;
+  top: 1.875rem;
+  font-size: var(--fs-fig);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.ci-int {
+  position: absolute;
+  top: 5rem;
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+  color: var(--ink);
+}
+.ci-ticks {
+  position: relative;
+  height: 1.25rem;
+  margin: 0 0.25rem;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.ci-ticks span {
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
+}
+.ci-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  margin-top: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+}
+
+/* ---------- allocation dot strip ---------- */
+.al-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 1.25rem;
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.al-key {
+  display: inline-block;
+  position: relative;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-right: 0.375rem;
+  vertical-align: -1px;
+}
+.al-key > span {
+  left: 50%;
+}
+.al-group {
+  margin-top: 1.25rem;
+}
+.al-group-rule {
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--rule);
+}
+/* Label column wide enough for "Calibrated held-out (post hoc, b = 0.33)" on one line at desktop widths. */
+.al-lane {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, min(17.5rem, 42%)) minmax(0, 1fr);
+  gap: 0 1rem;
+  align-items: center;
+  min-height: 2.375rem;
+}
+.al-name {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink);
+}
+.al-label {
+  font-size: var(--fs-ui);
+  line-height: 1.35;
+  color: var(--ink-2);
+}
+.al-trk {
+  position: relative;
+  height: 2.375rem;
+}
+.al-ref {
+  position: absolute;
+  left: var(--al-ref, 10%);
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px dashed var(--ctl);
+}
+.al-ref-label {
+  position: absolute;
+  left: calc(var(--al-ref, 10%) + 0.375rem);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.al-dot,
+.al-ring,
+.al-dia {
+  position: absolute;
+  top: 50%;
+}
+.al-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  margin: -0.375rem 0 0 -0.375rem;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.al-ring {
+  width: 0.75rem;
+  height: 0.75rem;
+  margin: -0.375rem 0 0 -0.375rem;
+  border-radius: 50%;
+  border: 2px solid var(--ink-2);
+  background: var(--surface);
+}
+.al-dia {
+  width: 0.6875rem;
+  height: 0.6875rem;
+  margin: -0.34375rem 0 0 -0.34375rem;
+  transform: rotate(45deg);
+  background: var(--series-2);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+/* The calibrated range across the slope's 95% CI: a thin bar with end caps behind the diamonds. */
+.al-range {
+  position: absolute;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  background: var(--series-2);
+  opacity: 0.55;
+}
+.al-range::before,
+.al-range::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 10px;
+  background: var(--series-2);
+}
+.al-range::before {
+  left: 0;
+}
+.al-range::after {
+  right: 0;
+}
+.al-vlab {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--fs-fig);
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.al-note {
+  margin: 0.375rem 0 0;
+  font-size: var(--fs-ui);
+  line-height: 1.5;
+  color: var(--ink);
+}
+.al-axis {
+  min-height: 1.5rem;
+  margin-top: var(--sp-2);
+}
+.al-ticks {
+  position: relative;
+  height: 1.5rem;
+  border-top: 1px solid var(--ctl);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.al-ticks span {
+  position: absolute;
+  top: 0.25rem;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+/* ---------- implication: three measures on hairline rules, no tiles ---------- */
+.fd-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fd-rows li {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
+  gap: 0.375rem 1.5rem;
+  padding: 0.875rem 0;
+  border-top: 1px solid var(--rule);
+}
+.fd-rows li:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+.fd-rows-label {
+  font-size: var(--fs-md);
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.fd-fig {
+  font-size: var(--fs-fig);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.fd-rows-sub {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.fd-rows-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-top: 0.375rem;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+}
+.fd-bar {
+  position: relative;
+  flex: 1 1 auto;
+  max-width: 11rem;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--accent-soft);
+}
+.fd-bar > span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 3px;
+  background: var(--accent);
+}
+/* The list closes with its own rule, so its caption needs none. */
+.section-figure > .fd-rows + figcaption {
+  border-top: 0;
+  padding-top: 0;
+}
+
+/* ---------- details: full headline, tables, caveats, sources ---------- */
+.fd-details {
+  min-width: 0;
+}
+.fd-full {
+  margin: 0;
+  max-width: 52rem;
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--ink);
+}
+.fd-full strong {
+  font-weight: 600;
+}
+.fd-status {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.fd-status-v {
+  color: var(--ink-2);
+  font-weight: 600;
+}
 .fd-table-block {
+  margin: var(--sp-6) 0 0;
   min-width: 0;
 }
 .fd-table-title {
-  margin: 0.25rem 0 0.4rem;
-  font-size: 0.88rem;
-  color: var(--text-2);
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.fd-scroll {
+  position: relative;
+  min-width: 0;
+}
+.fd-scroll .table-scroll {
+  border-top: 1px solid var(--rule);
+}
+.fd-table {
+  font-size: var(--fs-md);
+}
+.fd-table th,
+.fd-table td {
+  padding: 0.625rem 1rem 0.625rem 0;
+  text-align: left;
+  vertical-align: top;
+}
+.fd-table th:first-child {
+  padding-left: 0.5rem;
 }
 .fd-table thead th {
+  min-width: 6.5rem;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ink-2);
   white-space: normal;
   text-transform: none;
   letter-spacing: 0;
-  font-size: 0.78rem;
-  vertical-align: bottom;
-  min-width: 6.5rem;
+  border-bottom: 1px solid var(--rule);
 }
 .fd-table thead th:first-child,
 .fd-table tbody th {
-  min-width: 13rem;
+  min-width: 14rem;
   max-width: 26rem;
 }
 .fd-table tbody th {
-  font-weight: 500;
-  color: var(--text);
+  font-weight: 400;
+  color: var(--ink);
 }
-.fd-table td {
+.fd-table td.num {
   white-space: nowrap;
+  text-align: left;
 }
-/* prose cells (a parser change, a context note) wrap instead of widening the table */
+/* Prose cells (a parser change, a context note) wrap instead of widening the table. */
 .fd-table td.fd-text {
-  white-space: normal;
   min-width: 11rem;
   max-width: 40rem;
+  white-space: normal;
+}
+.fd-cell-note {
+  font-family: var(--font);
+  color: var(--muted);
 }
 /* The row-header column stays in view while a wide table scrolls sideways. */
 .fd-table tbody th,
@@ -146,256 +521,110 @@
 .fd-table .fd-row-hl th,
 .fd-table .fd-row-hl td {
   background: var(--accent-soft);
-  font-weight: 650;
 }
-.fd-table .fd-row-hl th:first-child {
-  box-shadow: inset 3px 0 0 var(--accent);
+.fd-table .fd-row-hl th {
+  font-weight: 600;
 }
 .fd-scroll-l .fd-table tbody th,
 .fd-scroll-l .fd-table thead th:first-child {
-  box-shadow: 6px 0 6px -6px rgba(0, 0, 0, 0.35);
-}
-.fd-scroll-l .fd-table .fd-row-hl th:first-child {
-  box-shadow:
-    inset 3px 0 0 var(--accent),
-    6px 0 6px -6px rgba(0, 0, 0, 0.35);
-}
-/* scroll cue: the right edge fades out while columns are off-screen */
-.fd-scroll {
-  position: relative;
-  min-width: 0;
-}
-.fd-scroll::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 2.25rem;
-  pointer-events: none;
-  background: linear-gradient(to right, transparent, var(--surface));
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-.fd-scroll-r::after {
-  opacity: 1;
+  box-shadow: inset -1px 0 0 var(--rule-strong);
 }
 .fd-scroll-hint {
-  margin: 0.3rem 0 0;
+  margin: 0.375rem 0 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
 }
 .fd-notes {
-  margin: 0.4rem 0 0;
-  padding-left: 1.1rem;
+  margin: 0.75rem 0 0;
+  padding-left: 1.125rem;
+  font-size: var(--fs-ui);
+  line-height: 1.55;
+  color: var(--muted);
+}
+.fd-notes li + li {
+  margin-top: 0.25rem;
 }
 
-/* caveats and sources */
 .fd-foot {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
-  gap: 0.75rem 2rem;
-  border-top: 1px solid var(--border);
-  padding-top: 0.85rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
+  gap: var(--sp-5) var(--sp-8);
+  margin-top: var(--sp-7);
 }
 .fd-foot-title {
-  margin: 0 0 0.35rem;
-  font-size: 0.75rem;
+  margin: 0 0 var(--sp-2);
+  font-size: 1rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted);
+  letter-spacing: 0;
+}
+.fd-foot ul + .fd-foot-title {
+  margin-top: var(--sp-5);
 }
 .fd-list {
   margin: 0;
-  padding-left: 1.1rem;
-  font-size: 0.86rem;
-  color: var(--text-2);
+  padding-left: 1.125rem;
+  font-size: var(--fs-md);
+  line-height: 1.6;
+  color: var(--ink-2);
 }
 .fd-list li + li {
-  margin-top: 0.3rem;
+  margin-top: 0.375rem;
+}
+.fd-sources {
+  padding-left: 0;
+  list-style: none;
 }
 .fd-sources li {
   overflow-wrap: anywhere;
 }
 .fd-path {
-  margin-left: 0.45rem;
-  font-size: 0.76rem;
+  display: block;
+  padding: 0;
+  background: none;
+  font-size: var(--fs-sm);
   color: var(--muted);
   overflow-wrap: anywhere;
 }
-
-/* related note (portfolio overlap audit), right under the findings index */
-.fd-related {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  font-size: 0.88rem;
-  color: var(--text-2);
-  padding: 0.65rem 0.9rem;
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius);
-  min-width: 0;
-}
-.fd-related-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.2rem 0.75rem;
-}
-.fd-related-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted);
-}
-.fd-related-link {
-  font-weight: 600;
-  white-space: nowrap;
-}
-.fd-related-text {
-  margin: 0;
-  color: var(--text);
-  max-width: 90ch;
-}
-.fd-related-count {
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-.fd-related-def summary {
-  cursor: pointer;
-  color: var(--muted);
-  width: fit-content;
-}
-.fd-related-def p {
-  margin: 0.35rem 0 0;
-  max-width: 90ch;
-  color: var(--text-2);
-}
-
-/* a cited file this checkout does not have: plain text, not a dead link */
+/* A cited file this checkout does not have: plain text, not a dead link. */
 .fd-src-off {
-  color: var(--text-2);
+  color: var(--ink-2);
 }
-
-/* CI plot */
-.ci {
+.fd-def {
   margin: 0;
-  min-width: 0;
-}
-.ci-box {
-  width: 100%;
-  max-width: 760px;
-  min-width: 0;
-}
-.ci-box svg {
-  display: block;
-  overflow: visible;
-}
-.ci-grid {
-  stroke: var(--border);
-  stroke-width: 1;
-}
-.ci-axis {
-  stroke: var(--border-strong);
-  stroke-width: 1;
-}
-.ci-tick {
-  fill: var(--muted);
-  font-size: 11.5px;
-  font-variant-numeric: tabular-nums;
-}
-.ci-ref {
-  stroke: var(--text-2);
-  stroke-width: 2;
-}
-.ci-ref-label {
-  fill: var(--text-2);
-  font-size: 12px;
-  font-weight: 600;
-}
-.ci-item-label {
-  fill: var(--text-2);
-  font-size: 12.5px;
-}
-.ci-band {
-  fill: var(--accent);
-  fill-opacity: 0.12;
-}
-.ci-whisker {
-  stroke: var(--accent);
-  stroke-width: 2;
-  stroke-linecap: round;
-}
-.ci-est {
-  fill: var(--accent);
-  stroke: var(--surface);
-  stroke-width: 2;
-}
-.ci-val {
-  fill: var(--text);
-  font-size: 12px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  paint-order: stroke;
-  stroke: var(--surface);
-  stroke-width: 4px;
-  stroke-linejoin: round;
-}
-.ci-hit {
-  fill: transparent;
-}
-.ci-item:hover .ci-band {
-  fill-opacity: 0.2;
-}
-.ci-key {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 1.25rem;
-  margin-top: 0.35rem;
-}
-.ci-key-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.ci-key-item svg {
-  overflow: visible;
+  font-size: var(--fs-md);
+  line-height: 1.6;
+  color: var(--ink-2);
 }
 
-@media (max-width: 560px) {
-  .fd-index {
-    gap: 0.4rem;
+/* ---------- page footer line ---------- */
+.fd-rule {
+  margin: var(--sp-4) 0 0;
+  max-width: 52rem;
+  font-size: var(--fs-ui);
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* ---------- phones ---------- */
+@media (max-width: 640px) {
+  .al-lane {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
   }
-  .fd-index-item {
-    padding: 0.5rem 0.7rem;
-    align-items: center;
+  .al-lane > span:first-child {
+    padding-top: 0.375rem;
   }
-  .fd-index-title {
-    font-size: 0.84rem;
+  .al-axis > span:first-child {
+    display: none;
   }
-  .fd-index-item .fd-num {
-    width: 1.35rem;
-    height: 1.35rem;
-    font-size: 0.72rem;
-  }
-  .fd-index-item .badge {
-    margin-top: 0;
-  }
-  .fd-card {
-    padding: 1rem;
-  }
-  .fd-title {
-    font-size: 1.08rem;
-  }
-  .fd-headline {
-    font-size: 0.98rem;
+  .al-vlab {
+    font-size: var(--fs-md);
   }
   .fd-table thead th:first-child,
   .fd-table tbody th {
     min-width: 7.75rem;
     max-width: 8.5rem;
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     overflow-wrap: anywhere;
   }
   .fd-table thead th {

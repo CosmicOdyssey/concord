@@ -46,70 +46,78 @@ async function waitFor(page, fn, arg, timeout = 60000) {
   // ---------------------------------------------------------------- (a) Findings
   if (STEPS.includes('a')) {
     const ck = Q.checker('a Findings', checks)
+    // The Calm Findings page: Detailed mode shows each finding under the file's own title, with the full headline,
+    // tables, notes, caveats and sources inline (Simple folds them into a Details disclosure).
+    await page.evaluate(() => localStorage.setItem('concord.density', 'detailed'))
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await waitFor(page, () => document.querySelectorAll('.fd-card').length >= 3 && document.querySelector('.ci svg') && document.querySelector('.fd-related'))
+    await waitFor(page, () => document.querySelectorAll('.fd-card').length >= 3 && document.querySelector('.ci-plot') && document.querySelector('.fd-related-text'))
     await Q.settle(page, 800)
     await Q.snap(browser, page, '01-findings', { fullPage: true })
     await Q.snap(browser, page, '01-findings-top', { fullPage: false })
     const cards = await page.$$('.fd-card')
     const ids = await page.$$eval('.fd-card', (els) => els.map((e) => e.id.replace('finding-', '')))
-    for (let i = 0; i < cards.length; i++) await Q.snap(browser, cards[i], `01${'abc'[i]}-finding-${ids[i]}`, { element: true })
+    for (let i = 0; i < cards.length; i++) await Q.snap(browser, cards[i], `01${'abcde'[i]}-finding-${ids[i]}`, { element: true })
 
     const screen = await page.evaluate(() => {
       const t = (el) => (el ? el.innerText.replace(/\u00a0/g, ' ').trim() : null)
       return {
         meta: t(document.querySelector('.fd-meta')),
         related: t(document.querySelector('.fd-related-text')),
-        cards: [...document.querySelectorAll('.fd-card')].map((c) => ({
+        // The same-sponsor lead block (.fd-lead) comes first; the findings follow in findings.json order.
+        cards: [...document.querySelectorAll('.fd-card:not(.fd-lead)')].map((c) => ({
           id: c.id,
-          title: t(c.querySelector('.fd-title')),
-          status: t(c.querySelector('.fd-head .badge')),
-          headline: t(c.querySelector('.fd-headline')),
-          ciDesc: c.querySelector('.ci desc')?.textContent ?? null,
+          title: t(c.querySelector('h2')),
+          status: t(c.querySelector('.fd-status-v')),
+          headline: t(c.querySelector('.fd-full') ?? c.querySelector('.fd-headline')),
           ciVals: [...c.querySelectorAll('.ci-val')].map((x) => x.textContent),
-          ciRef: c.querySelector('.ci-ref-label')?.textContent ?? null,
+          ciInts: [...c.querySelectorAll('.ci-int')].map(t),
+          ciRef: t(c.querySelector('.ci-ref-label')),
           tables: [...c.querySelectorAll('.fd-table-block')].map((b) => ({
             title: t(b.querySelector('.fd-table-title')),
-            head: [...b.querySelectorAll('thead th')].map(t),
+            head: [...b.querySelectorAll('thead th')].map((x) => x.textContent.trim()),
             rows: [...b.querySelectorAll('tbody tr')].map((r) => [...r.children].map(t)),
             notes: [...b.querySelectorAll('.fd-notes li')].map(t),
           })),
-          caveats: [...c.querySelectorAll('.fd-foot > div:first-child .fd-list li')].map(t),
+          caveats: [...c.querySelectorAll('.fd-caveats li')].map(t),
           sources: [...c.querySelectorAll('.fd-sources li')].map(t),
           sourceHrefs: [...c.querySelectorAll('.fd-sources a')].map((a) => a.getAttribute('href')),
         })),
       }
     })
+    // The page typesets "1.42x" as "1.42×" and "-0.093" as "−0.093": compare on the stored glyphs.
+    const norm = (x) => (x == null ? x : String(x).replace(/×/g, 'x').replace(/\u2212/g, '-'))
     const api = (await Q.apiGet('/api/findings')).body
     const so = (await Q.apiGet('/api/findings/self-overlap')).body
     ck('finding count', api.findings.length, screen.cards.length)
     api.findings.forEach((f, i) => {
       const c = screen.cards[i] || {}
       ck(`${f.id} title`, f.title, c.title)
-      ck(`${f.id} headline`, f.headline, c.headline)
+      ck(`${f.id} headline`, f.headline, norm(c.headline))
       const statusLabel = { final: 'Final', provisional: 'Provisional', missing: 'Not computed' }[f.status] ?? f.status
       ck(`${f.id} status`, statusLabel, c.status)
       if (f.chart && f.chart.type === 'ci') {
         f.chart.items.forEach((it, j) => {
-          ck(`${f.id} CI label ${j}`, `${it.estimate.toFixed(2)}  [${it.lo.toFixed(2)}, ${it.hi.toFixed(2)}]`, c.ciVals?.[j])
+          ck(`${f.id} CI estimate ${j}`, it.estimate.toFixed(2), norm(c.ciVals?.[j]))
+          ck(`${f.id} CI interval ${j}`, true, !!norm(c.ciInts?.[j])?.includes(`${it.lo.toFixed(2)} to ${it.hi.toFixed(2)}`), c.ciInts?.[j])
         })
         const rv = f.chart.reference.value
-        ck(`${f.id} CI reference`, `${f.chart.reference.label}: ${Number.isInteger(rv) ? rv.toFixed(1) : rv.toFixed(2)}`, c.ciRef)
+        ck(`${f.id} CI reference`, true, !!norm(c.ciRef)?.startsWith(`${Number.isInteger(rv) ? rv.toFixed(1) : rv.toFixed(2)} · `), c.ciRef)
       }
       ;(f.tables || []).forEach((tb, j) => {
         const st = c.tables?.[j] || {}
-        ck(`${f.id} table ${j} title`, tb.title, st.title)
-        // Empty columns are dropped by the view; compare the non-empty cells row by row.
+        ck(`${f.id} table ${j} title`, tb.title, norm(st.title))
+        // Empty columns are dropped by the view; compare the non-empty cells row by row. An unnamed column's head
+        // reads "Note" to screen readers.
         const filled = (k) => tb.rows.some((r) => (r[k] ?? '').trim() !== '')
         const cols = tb.columns.map((_, k) => k).filter((k) => k === 0 || filled(k))
-        ck(`${f.id} table ${j} columns`, JSON.stringify(cols.map((k) => tb.columns[k])), JSON.stringify(st.head))
+        ck(`${f.id} table ${j} columns`, JSON.stringify(cols.map((k) => tb.columns[k] || 'Note')), JSON.stringify((st.head || []).map(norm)))
         tb.rows.forEach((r, k) => {
           const exp = cols.map((m) => ((r[m] ?? '').trim() ? r[m] : '—'))
-          ck(`${f.id} table ${j} row ${k}`, JSON.stringify(exp), JSON.stringify(st.rows?.[k]))
+          ck(`${f.id} table ${j} row ${k}`, JSON.stringify(exp), JSON.stringify((st.rows?.[k] || []).map(norm)))
         })
-        ck(`${f.id} table ${j} notes`, JSON.stringify(tb.notes || []), JSON.stringify(st.notes))
+        ck(`${f.id} table ${j} notes`, JSON.stringify(tb.notes || []), JSON.stringify((st.notes || []).map(norm)))
       })
-      ck(`${f.id} caveats`, JSON.stringify(f.caveats || []), JSON.stringify(c.caveats))
+      ck(`${f.id} caveats`, JSON.stringify(f.caveats || []), JSON.stringify((c.caveats || []).map(norm)))
       ck(`${f.id} source count`, (f.sources || []).length, (c.sources || []).length)
     })
     // Related overlap note: the headline count and its sponsors / upper-bound numbers from self_overlap.json.

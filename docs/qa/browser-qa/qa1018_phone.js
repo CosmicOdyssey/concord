@@ -9,7 +9,7 @@ const PREFIX = process.argv[3] || '12'
 const out = { base: BASE, tabs: [], errors: [] }
 
 const TABS = [
-  ['#findings', 'findings', () => document.querySelectorAll('.fd-card').length >= 3 && document.querySelector('.ci svg')],
+  ['#findings', 'findings', () => document.querySelectorAll('.fd-card').length >= 3 && document.querySelector('.ci-plot')],
   ['#overlap/regeneron', 'overlap', () => (document.querySelector('.ov-detail h2')?.innerText ?? '').includes('NCT05785767')],
   ['#terms-flow/NCT05800015', 'terms-flow', () => document.querySelectorAll('.tf-stats .stat-value').length >= 4 && document.querySelector('.tf-decomp-total') && document.querySelector('.tf-sheet')],
   ['#research/clear', 'research', () => document.querySelector('.tbl-trials tbody tr')],
