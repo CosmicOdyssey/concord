@@ -44,7 +44,17 @@ from scipy.stats import gamma as gamma_dist
 
 from concord.allocator import core
 from concord.compiler.eligibility import Criterion, eligible_fraction, eligible_mask
+from concord.compiler import overrides as _overrides
 from concord.compiler.overrides import OVERRIDES
+
+# Hand-encoded design labels (compiler/overrides.py). Basket and multi-cohort trials cannot be
+# described by one eligibility predicate, so they are held fixed as background and excluded from
+# headline numbers, like flagged trials.
+EXCLUDED_DESIGNS = ("basket", "multi_cohort")
+
+
+def _design(nct_id: str) -> str | None:
+    return getattr(_overrides, "DESIGN", {}).get(nct_id, {}).get("design")
 from concord.compiler.population import synthetic_population
 from concord.paths import DB_PATH
 
@@ -267,11 +277,13 @@ def build(params: Params, rates: dict | None = None, movable: np.ndarray | None 
     # alone is not a flag: biomarker-selected trials legitimately have one, and f is clipped anyway.)
     T0 = core.evaluate(inst, x_actual)
     flagged = T0 > PLAUSIBLE_T_MONTHS
+    designs = [_design(t) for t in trial_ids]
+    excluded_design = np.array([d in EXCLUDED_DESIGNS for d in designs], dtype=bool)
     if movable is not None:
         movable = np.asarray(movable, dtype=bool).copy()
         assert movable.shape == (len(trial_ids),)
     else:
-        movable = ~flagged
+        movable = ~flagged & ~excluded_design
         if params.sponsor:
             movable &= np.array([params.sponsor.lower() in (r["sponsor"] or "").lower() for r in trows])
     inst = inst.replace(movable=movable, w=movable.astype(float))
@@ -282,9 +294,11 @@ def build(params: Params, rates: dict | None = None, movable: np.ndarray | None 
         "n_sites_region": int(n), "target_region": round(float(nr), 1), "f": float(fi), "f_rel": float(fr),
         "criteria": [c.to_dict() for c in cr], "eligibility_source": pv,
         "realized_window_months": _realized(r),
-        "flagged": bool(fl), "movable": bool(mv),
-    } for r, n, nr, fi, fr, cr, pv, fl, mv in zip(trows, n_region, N, f, f_rel, criteria, provenance, flagged,
-                                                     movable)]
+        "flagged": bool(fl), "movable": bool(mv), "design": dg,
+        "excluded_reason": ("implausible model time" if fl else f"{dg} design" if dg in EXCLUDED_DESIGNS
+                            else None),
+    } for r, n, nr, fi, fr, cr, pv, fl, mv, dg in zip(trows, n_region, N, f, f_rel, criteria, provenance, flagged,
+                                                         movable, designs)]
     sites = [{
         "site_id": r["site_id"], "facility": r["facility"], "city": r["city"], "state": r["state"],
         "country": r["country"], "lat": r["lat"], "lon": r["lon"], "is_amc": bool(r["is_amc"]),
@@ -423,6 +437,7 @@ def clear(params: Params) -> dict:
     run["result"] = {
         "params": asdict(b.params),
         "counts": {"trials": inst.P, "movable_trials": int(mv.sum()), "flagged_trials": int(b.flagged.sum()),
+                   "excluded_design_trials": int(sum(t["design"] in EXCLUDED_DESIGNS for t in b.trials)),
                    "sites": inst.S, **{f"sites_used_{k}": int(X[k].any(axis=1).sum()) for k in X}},
         "summary": summary,
         "trials": b.trials,
