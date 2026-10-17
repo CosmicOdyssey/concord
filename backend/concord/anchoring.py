@@ -10,9 +10,9 @@ Anchoring (per sponsor-paid line and per per-participant dollar):
   open      "Open to negotiation": everything else, i.e. the overhead %, placeholder prices, edited
             standard items and unpriced items (counted as $0 and flagged).
 
-Band: every sponsor-paid coded line is also shown at Medicare x band_lo and Medicare x band_hi (an
-assumption the user sets, default 100% to 150%); lines without a Medicare rate keep their point value,
-and overhead follows its rate. Totals carry the resulting low and high.
+Band: every line anchored to public rates (priced from a loaded CMS file) is also shown at Medicare x
+band_lo and Medicare x band_hi (an assumption the user sets, default 100% to 150%); every other line,
+placeholder prices included, keeps its point value, and overhead follows its rate. Totals carry the resulting low and high.
 """
 
 from __future__ import annotations
@@ -22,19 +22,19 @@ import math
 BAND_DEFAULT = (1.0, 1.5)
 BAND_MIN, BAND_MAX = 0.1, 5.0
 BAND_NOTE = ("Assumption: a negotiation band you set around the Medicare rate (default 100% to 150%). Not market "
-             "data and not a fair-market-value finding. Only coded lines (physician and lab fee schedule) move "
-             "with it; proposed standard fees, coordinator time and placeholders stay at their point value, and "
-             "overhead follows its rate.")
+             "data and not a fair-market-value finding. Only coded lines priced from a loaded CMS file "
+             "(physician and lab fee schedule) move with it; proposed standard fees, coordinator time and "
+             "placeholder prices stay at their point value, and overhead follows its rate.")
 OVERHEAD_NOTE = ("Assumption: the overhead rate is a proposed default (25% in Concord's proposed standard "
                  "schedule), not a public rate. Edit it to the site's negotiated indirect rate.")
 RVU_BASIS = ("Physician lines use Medicare's non-facility rates: the non-facility practice expense RVU (the "
              "office setting, where the practice bears its own costs) from the CMS PFS relative value file. "
              "Hospital outpatient facility fees (OPPS) are not included, so a hospital-based site may bill a "
              "separate facility fee that this budget does not show.")
-LAB_NOTE = ("Lab lines use the CMS clinical laboratory fee schedule (CLFS) national limitation amount: one "
-            "national number per test, so lab prices do not vary by site.")
+LAB_NOTE = ("Lab lines use the CMS clinical laboratory fee schedule (CLFS) national payment rate (CLFS RATE "
+            "column): one national number per test, so lab prices do not vary by site.")
 LAB_NOTE_PLACEHOLDER = ("Lab lines without a CLFS amount use a placeholder national amount (not from a CMS file) "
-                        "and count as open to negotiation.")
+                        "and count as open to negotiation; they stay at their point value in the range.")
 
 ANCHORS: list[dict] = [
     {"id": "public", "label": "Anchored to public rates",
@@ -43,7 +43,8 @@ ANCHORS: list[dict] = [
                    "you set."},
     {"id": "standard", "label": "Anchored to a proposed standard",
      "definition": "Unedited items of Concord's proposed standard non-procedure schedule (per-visit fees and "
-                   "coordinator time): a published starting point to negotiate against, not market data."},
+                   "coordinator time): Concord's proposed starting point (not a public rate) to negotiate against, "
+                   "not market data."},
     {"id": "open", "label": "Open to negotiation",
      "definition": "Everything else: the overhead %, placeholder prices, standard items you edited, and "
                    "unpriced items (counted as $0 and flagged)."},
@@ -146,8 +147,8 @@ def annotate(b: dict, band_lo: float = BAND_DEFAULT[0], band_hi: float = BAND_DE
         for l in v["lines"]:
             a, why = classify(l)
             l["anchor"], l["anchor_reason"] = a, why
-            banded = (l["payer"] == "Sponsor" and l["schedule"] in ("PFS", "CLFS")
-                      and l["medicare_amount"] is not None and l["amount"] is not None)
+            # Only lines priced from a loaded CMS file move with the band; placeholders keep their point value.
+            banded = a == "public" and l["medicare_amount"] is not None
             l["banded"] = banded
             if l["amount"] is None:
                 l["low"] = l["high"] = None
@@ -180,6 +181,7 @@ def annotate(b: dict, band_lo: float = BAND_DEFAULT[0], band_hi: float = BAND_DE
                  "n_banded_lines": sum(1 for v in fixed for l in v["lines"] if l["banded"]),
                  "point_multiplier": b["multiplier"]}
     b["anchoring"] = _anchoring(b, fixed, coord_anchor)
+    b["anchoring"]["public_sources"] = _public_sources(b)
     b["breakdowns"] = _breakdowns(b, fixed)
     b["pricing_basis"] = {
         "pfs": RVU_BASIS, "pfs_column": "NON-FAC PE RVU column of the CMS PPRRVU file (non-facility setting)",
@@ -187,6 +189,34 @@ def annotate(b: dict, band_lo: float = BAND_DEFAULT[0], band_hi: float = BAND_DE
         "lab_varies_by_site": False,
     }
     return b
+
+
+def _locality_text(loc: dict | None) -> str:
+    if not loc:
+        return "national amounts (no U.S. Medicare locality resolved)"
+    return f"{loc['state']} locality {loc['code']} {loc['name'].title()}"
+
+
+def _clfs_source() -> str | None:
+    """The loaded CLFS file, named by its zip; the loader reads that file's RATE column (national payment rate)."""
+    from concord.ratecard import medicare
+
+    src = (medicare._cms().get("clfs") or {}).get("source")  # noqa: SLF001 - same package
+    if not src:
+        return None
+    return src.split(" (")[0] + ", RATE column (2026 national payment rate, not geographically adjusted)"
+
+
+def _public_sources(b: dict) -> list[str]:
+    """Named CMS files, year and locality behind the 'Anchored to public rates' share."""
+    out = []
+    if b.get("pfs_source"):
+        out.append(f"{b['pfs_source']}; at {_locality_text(b.get('locality'))}; conversion factor "
+                   f"{b.get('conversion_factor')}")
+    clfs = _clfs_source() if b.get("clfs_loaded") else None
+    if clfs:
+        out.append(clfs)
+    return out
 
 
 def _share(rows: list[tuple[str, float, float, float, str]]) -> tuple[float, float, float, list[dict]]:

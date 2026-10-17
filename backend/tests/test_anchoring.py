@@ -155,3 +155,41 @@ def test_api_band_params():
     assert j["band"]["hi"] == 1.25 and all("anchor" in l for v in j["visits"] for l in v["lines"])
     bad = c.get("/api/terms-flow/NCT05800015/budget", params={"site_id": sid, "band_lo": 1.5, "band_hi": 1.0})
     assert bad.status_code == 400
+
+
+@needs_data
+def test_placeholder_lines_keep_point_value_without_clfs(monkeypatch):
+    """With the CLFS file not loaded, lab lines are placeholders: open to negotiation and outside the band."""
+    import copy
+
+    from concord.ratecard import medicare
+
+    nct = "NCT05800015"
+    sid = _default_site(nct)
+    cms = copy.deepcopy(medicare._cms())  # noqa: SLF001
+    cms.pop("clfs", None)
+    monkeypatch.setattr(medicare, "_cms", lambda: cms)
+    b = terms.budget(nct, sid)
+    ph = [l for l in _lines(b, fixed_only=False) if l["placeholder"] and l["payer"] == "Sponsor"]
+    assert ph, "expected placeholder lab lines without the CLFS file"
+    for l in ph:
+        assert l["anchor"] == "open" and not l["banded"]
+        assert l["low"] == l["high"] == l["amount"]
+    for l in _lines(b, fixed_only=False):
+        assert l["banded"] == (l["anchor"] == "public")
+    assert not b["clfs_loaded"] and "placeholder" in b["pricing_basis"]["lab"]
+    assert len(b["anchoring"]["public_sources"]) == 1  # PFS only
+
+
+@needs_data
+def test_public_sources_name_files_and_locality():
+    nct = "NCT05800015"
+    b = terms.budget(nct, _default_site(nct))
+    src = b["anchoring"]["public_sources"]
+    loc = b["locality"]
+    assert b["pfs_source"] in src[0] and f"locality {loc['code']}" in src[0]
+    if b["clfs_loaded"]:
+        assert "CLFS" in src[1] and "RATE column" in src[1]
+    assert "RATE column" in b["pricing_basis"]["lab"] and "limitation" not in b["pricing_basis"]["lab"]
+    std_def = b["anchoring"]["shares"][1]["definition"]
+    assert "published" not in std_def and "not a public rate" in std_def
