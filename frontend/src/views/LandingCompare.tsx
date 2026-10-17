@@ -113,8 +113,10 @@ function Mark({ row, n, detailed }: { row: Row; n: number; detailed: boolean }) 
       label={`${word}: ${name}, ${capOf(n).short}. Evidence ${cell.key}`}
       content={<EvidenceCard row={row} n={n} cell={cell} />}
     >
-      <span className="cmp-dot" aria-hidden="true" />
-      <span className="cmp-word">{word}</span>
+      <span className="cmp-face">
+        <span className="cmp-dot" aria-hidden="true" />
+        <span className="cmp-word">{word}</span>
+      </span>
       {detailed && <span className="cmp-key">{cell.key}</span>}
     </HoverCard>
   )
@@ -136,7 +138,7 @@ function Matrix({ rows, cols, detailed }: { rows: readonly Row[]; cols: readonly
             {cols.map((n) => (
               <th scope="col" key={n} className="cmp-colh" title={capOf(n).label}>
                 {detailed && <span className="cmp-coln">{n}</span>}
-                {detailed ? capOf(n).label : capOf(n).short}
+                {capOf(n).short}
               </th>
             ))}
           </tr>
@@ -184,6 +186,13 @@ function Legend({ detailed }: { detailed: boolean }) {
         Each Yes or Partial opens the vendor’s own words and the page they come from{detailed ? '; the small code is the document’s evidence key' : ''}.
         Vendor numbers are the vendor’s own claims.
       </span>
+      {detailed && (
+        <ol className="cmp-caps">
+          {CAPABILITIES.map((c) => (
+            <li key={c.n}>{c.label}</li>
+          ))}
+        </ol>
+      )}
     </div>
   )
 }
@@ -256,7 +265,8 @@ function TheyDo({ detailed }: { detailed: boolean }) {
   const items = SIMPLE_THEY_DO.map((lead) => THEY_DO.find((x) => x.lead === lead)!).filter(Boolean)
   const words = items.map((x, i) => {
     const w = x.lead!.replace(/\.$/, '')
-    return i === 0 ? w : w.charAt(0).toLowerCase() + w.slice(1)
+    // Lower-case the first letter of an ordinary word only ("Site payments" -> "site payments"; "SoA", "CTA" stay).
+    return i === 0 || /^[A-Z][A-Z]/.test(w) || /^[A-Z][a-z]*[A-Z]/.test(w.split(' ')[0]) ? w : w.charAt(0).toLowerCase() + w.slice(1)
   })
   return (
     <div className="cmp-block">
@@ -464,7 +474,7 @@ export default function LandingCompare() {
           </p>
         </div>
 
-        <div className="win lp-win cmp-win">
+        <div className={`win lp-win cmp-win${detailed ? ' cmp-win-full' : ''}`}>
           <div className="win-strip">
             <span>
               <span className="win-title">What each product states publicly</span> ·{' '}
