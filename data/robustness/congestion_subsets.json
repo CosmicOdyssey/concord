@@ -533,5 +533,55 @@
       "n_subsets": 3
     }
   },
-  "seconds": 22.6
+  "post_hoc_descriptive": {
+    "note": "added after the results audit; descriptive only, not part of the pre-registered method or rule",
+    "moves_vs_full": {
+      "full_within_coef": -0.026491044492067743,
+      "by_subset": {
+        "S1": {
+          "move": -0.010460971334117681,
+          "ci_half_width": 0.08424046103787501
+        },
+        "S2": {
+          "move": 0.036728466732059095,
+          "ci_half_width": 0.09930104299344601
+        },
+        "S3": {
+          "move": -0.017344346918200953,
+          "ci_half_width": 0.09023235856204447
+        }
+      },
+      "largest": "S2",
+      "largest_abs_move": 0.036728466732059095
+    },
+    "composition": {
+      "exposure_by_site_volume": {
+        "n_hist_lt_10": {
+          "rows": 32717,
+          "mean_exposure": 0.14814919389873332,
+          "share_nonzero_exposure": 0.23165326894275148
+        },
+        "n_hist_ge_10": {
+          "rows": 35757,
+          "mean_exposure": 1.0059411902480557,
+          "share_nonzero_exposure": 0.7833151550745309
+        }
+      },
+      "partial_corr_y_share_low_volume_rows_given_log_n_sites": 0.1644406230168529,
+      "trials": 3003,
+      "s1_pooled_sample": {
+        "dropped_by_S1": {
+          "trials": 636,
+          "mean_y": 0.0670250444799987,
+          "mean_trial_exposure_all_rows": 0.15355204709514106
+        },
+        "kept_by_S1": {
+          "trials": 2367,
+          "mean_y": -1.1356832967337067,
+          "mean_trial_exposure_all_rows": 1.0061707800788935
+        }
+      }
+    }
+  },
+  "seconds": 24.8
 }

@@ -63,6 +63,19 @@ Decision rule (fixed now). Recommend changing the default beta ONLY if a subset'
 Interpretation (descriptive, not part of the rule): attenuation would show as subset estimates
 more negative than the full sample. Estimates near 0 or positive in the cleaner subsets do not
 support attenuation as the explanation for the small full-sample coefficient.
+
+ADDENDUM (post hoc, added after the results audit; NOT part of the pre-registered method)
+The output's "post_hoc_descriptive" block records two descriptive facts that the report text relies
+on, so that every number in the write-up can be traced to this file. Neither feeds the decision
+rule, and no pre-registered number changes:
+  moves_vs_full  within_overlap coef of each subset minus the full-sample coef, with the subset's
+                 95% CI half-width beside it.
+  composition    why the pooled (cross-site) coefficient is negative while the within-site one is
+                 not: overlap exposure at low-volume sites (n_hist < 10) vs the rest (row mean and
+                 share non-zero); the partial correlation, net of log n_sites, between a trial's
+                 outcome y and the share of its rows at low-volume sites; and mean y and mean
+                 exposure of the trials that S1 drops (no row at a site with n_hist >= 10) vs those
+                 it keeps.
 """
 
 from __future__ import annotations
@@ -233,6 +246,50 @@ def decide(full: dict, subsets: dict[str, dict]) -> dict:
                      "z_bonferroni": Z_BONF, "n_subsets": N_SUBSETS}}
 
 
+def post_hoc_descriptive(trials: dict, rows: list, k: int, n_hist: dict, full: dict, subsets: dict) -> dict:
+    """Descriptive numbers behind the report text (added after the audit; see the docstring ADDENDUM)."""
+    f = full["within"]["coef"]
+    moves = {n: {"move": float(res["within"]["coef"] - f),
+                 "ci_half_width": float(Z95 * res["within"]["se"])} for n, res in subsets.items()}
+    big = max(moves, key=lambda n: abs(moves[n]["move"]))
+
+    low = np.array([(n_hist.get(r[1]) or 0) < S1_MIN_SITE_TRIALS for r in rows])
+    x = np.array([r[k] for r in rows], dtype=float)
+    expo_by_volume = {
+        name: {"rows": int(m.sum()), "mean_exposure": float(x[m].mean()),
+               "share_nonzero_exposure": float(np.mean(x[m] > 0))}
+        for name, m in ((f"n_hist_lt_{S1_MIN_SITE_TRIALS}", low), (f"n_hist_ge_{S1_MIN_SITE_TRIALS}", ~low))}
+
+    by_t: dict[str, list[tuple[bool, float]]] = {}
+    for r, lo_ in zip(rows, low):
+        by_t.setdefault(r[0], []).append((bool(lo_), float(r[k])))
+    ids = sorted(by_t)
+    y = np.array([_y(trials, t) for t in ids])
+    share_low = np.array([np.mean([a for a, _ in by_t[t]]) for t in ids])
+    lns = np.log([trials[t]["n_sites"] for t in ids])
+    Z = np.column_stack([np.ones(len(ids)), lns])
+    res_ = lambda v: v - Z @ np.linalg.lstsq(Z, v, rcond=None)[0]  # noqa: E731
+    pcorr = float(np.corrcoef(res_(y), res_(share_low))[0, 1])
+
+    groups = {"dropped_by_S1": [t for t in ids if all(a for a, _ in by_t[t])],
+              "kept_by_S1": [t for t in ids if not all(a for a, _ in by_t[t])]}
+    s1_groups = {g: {"trials": len(ts),
+                     "mean_y": float(np.mean([_y(trials, t) for t in ts])),
+                     "mean_trial_exposure_all_rows": float(np.mean([np.mean([b for _, b in by_t[t]]) for t in ts]))}
+                 for g, ts in groups.items()}
+    return {
+        "note": "added after the results audit; descriptive only, not part of the pre-registered method or rule",
+        "moves_vs_full": {"full_within_coef": float(f), "by_subset": moves, "largest": big,
+                          "largest_abs_move": float(abs(moves[big]["move"]))},
+        "composition": {
+            "exposure_by_site_volume": expo_by_volume,
+            "partial_corr_y_share_low_volume_rows_given_log_n_sites": pcorr,
+            "trials": len(ids),
+            "s1_pooled_sample": s1_groups,
+        },
+    }
+
+
 def run(con: sqlite3.Connection) -> dict:
     t0 = time.time()
     d = load(con)
@@ -281,6 +338,7 @@ def run(con: sqlite3.Connection) -> dict:
                "share_pairs_kept": float(n_pairs_hi / max(n_pairs, 1)),
                "median_pair_overlap": float(np.median([o for v in pairs.values() for o in v])) if n_pairs else None},
     }
+    post_hoc = post_hoc_descriptive(trials, rows, k, n_hist, full, subsets)
     return {
         "task": "F. attenuation check of the within-site congestion estimate",
         "method": "pre-registered in the module docstring of concord.analysis.congestion_subsets",
@@ -296,6 +354,7 @@ def run(con: sqlite3.Connection) -> dict:
         "subsets": subsets,
         "diagnostics": diag,
         "decision": decide(full, subsets),
+        "post_hoc_descriptive": post_hoc,
         "seconds": round(time.time() - t0, 1),
     }
 
@@ -322,6 +381,7 @@ def main() -> None:
         print(_row(n, res["subsets"][n], res["decision"]["checks"][n]))
     print(json.dumps(res["decision"]["recommendation"], indent=2))
     print(json.dumps(res["diagnostics"], indent=2))
+    print(json.dumps(res["post_hoc_descriptive"], indent=2))
     print(f"wrote {a.out} in {res['seconds']} s")
 
 
