@@ -19,7 +19,9 @@ import {
   type CropPair,
   type TermsFragment,
 } from '../landingData'
+import { CellFace, HalfGrid } from '../halfgrid'
 import { overlapApi } from '../overlapApi'
+import { highShare, pctInt, shadeStep } from '../shade'
 import { skipTo } from '../skip'
 import { termsApi } from '../termsFlowApi'
 import { ThemeControl } from '../theme'
@@ -57,13 +59,6 @@ function SectionLink({ to, className, children }: { to: SectionId; className?: s
       {children}
     </a>
   )
-}
-
-const pctInt = (x: number) => Math.round(x * 100)
-/** Shade step of the larger eligible-patient share (rounded as shown): 0, under 25, under 50, under 80, 80 or more. */
-const heat = (share: number) => {
-  const s = pctInt(share)
-  return s === 0 ? 0 : s < 25 ? 1 : s < 50 ? 2 : s < 80 ? 3 : 4
 }
 
 interface Oriented {
@@ -171,8 +166,6 @@ function PairCard({ crop, sel }: { crop: Crop; sel: Oriented }) {
 /** The hero: a 7-trial crop of the Portfolio overlap matrix. Hover, focus or tap a cell to show that pair in the card. */
 function HeroMatrix({ crop }: { crop: Crop }) {
   const pairs = useMemo(() => new Map(crop.pairs.map((p) => [`${p.p}|${p.q}`, p])), [crop])
-  const rows = crop.trials.slice(0, -1)
-  const cols = crop.trials.slice(1)
   const [selKey, setSelKey] = useState<[string, string]>(FEATURED)
   const sel = orient(pairs, selKey[0], selKey[1]) ?? orient(pairs, FEATURED[0], FEATURED[1])
   const anyUnreviewed = crop.pairs.some((p) => p.unreviewed)
@@ -181,78 +174,58 @@ function HeroMatrix({ crop }: { crop: Crop }) {
     <div className="lp-hero-body">
       <div className="lp-matrix-col">
         <div className="lp-matrix-scroll">
-          <div
-            role="table"
-            className="lp-matrix"
-            aria-label={`Shared registered sites for ${crop.trials.length} ${HERO_SPONSOR.replace(' LLC', '')} trials; shade is the larger eligible-patient share`}
-          >
-            <div role="row" className="lp-mrow">
-              <div role="columnheader" className="lp-corner">
-                Row × column
-              </div>
-              {cols.map((c) => (
-                <div role="columnheader" key={c.nct} className="lp-colh">
-                  <span>{c.label}</span>
-                </div>
-              ))}
-            </div>
-            {rows.map((r, i) => (
-              <div role="row" className="lp-mrow" key={r.nct}>
-                <div role="rowheader" className="lp-rowh">
-                  <span className="lp-rowh-label">{r.label}</span>
-                  <span className="lp-rowh-sub">{r.phase}</span>
-                </div>
-                {cols.map((c, j) => {
-                  if (j < i) return <div role="cell" key={c.nct} className="lp-cell-empty" />
-                  const o = orient(pairs, r.nct, c.nct)
-                  if (!o) return <div role="cell" key={c.nct} className="lp-cell-empty" />
-                  const share = Math.max(o.o_ab, o.o_ba)
-                  const on = !!sel && sel.pair === o.pair
-                  const desc =
-                    `${r.label} and ${c.label}: ` +
-                    (o.pair.shared === null ? "shared sites can't be counted" : `${o.pair.shared} shared registered sites`) +
-                    `, larger eligible-patient share ${pctInt(share)}%` +
-                    (o.pair.upperBound ? ', upper bound' : '') +
-                    (o.pair.unreviewed ? ', unreviewed criteria' : '')
-                  return (
-                    <div role="cell" key={c.nct}>
-                      <button
-                        type="button"
-                        className={`lp-cell heat-${heat(share)}${on ? ' lp-cell-on' : ''}`}
-                        aria-pressed={on}
-                        aria-label={desc}
-                        onPointerEnter={(e) => {
-                          if (e.pointerType === 'mouse') setSelKey([r.nct, c.nct])
-                        }}
-                        onFocus={() => setSelKey([r.nct, c.nct])}
-                        onClick={() => setSelKey([r.nct, c.nct])}
-                      >
-                        {o.pair.shared !== null && <span className="num lp-cell-n">{o.pair.shared}</span>}
-                        <span className="lp-cell-mk" aria-hidden="true">
-                          {o.pair.upperBound ? '†' : ''}
-                          {o.pair.unreviewed ? '‡' : ''}
-                        </span>
-                        {pctInt(share) >= 80 && <span className="lp-cell-hi" aria-hidden="true" />}
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-            ))}
-          </div>
+          <HalfGrid
+            items={crop.trials}
+            keyOf={(t) => t.nct}
+            label={`Shared registered sites for ${crop.trials.length} ${HERO_SPONSOR.replace(' LLC', '')} trials; shade is the larger eligible-patient share`}
+            rowHead={(r) => (
+              <>
+                <span className="hg-rowh-label">{r.label}</span>
+                <span className="hg-rowh-sub">{r.phase}</span>
+              </>
+            )}
+            colHead={(c) => <span className="hg-vt">{c.label}</span>}
+            cell={(r, c) => {
+              const o = orient(pairs, r.nct, c.nct)
+              if (!o) return null
+              const share = Math.max(o.o_ab, o.o_ba)
+              const on = !!sel && sel.pair === o.pair
+              const desc =
+                `${r.label} and ${c.label}: ` +
+                (o.pair.shared === null ? "shared sites can't be counted" : `${o.pair.shared} shared registered sites`) +
+                `, larger eligible-patient share ${pctInt(share)}%` +
+                (o.pair.upperBound ? ', upper bound' : '') +
+                (o.pair.unreviewed ? ', unreviewed criteria' : '')
+              return (
+                <button
+                  type="button"
+                  className={`hg-cell hg-h${shadeStep(share)}${on ? ' hg-on' : ''}`}
+                  aria-pressed={on}
+                  aria-label={desc}
+                  onPointerEnter={(e) => {
+                    if (e.pointerType === 'mouse') setSelKey([r.nct, c.nct])
+                  }}
+                  onFocus={() => setSelKey([r.nct, c.nct])}
+                  onClick={() => setSelKey([r.nct, c.nct])}
+                >
+                  <CellFace n={o.pair.shared} marks={(o.pair.upperBound ? '†' : '') + (o.pair.unreviewed ? '‡' : '')} hi={highShare(share)} />
+                </button>
+              )
+            }}
+          />
         </div>
         <div className="lp-legend">
           <span className="lp-legend-item">
             Shade
-            <span className="lp-sw heat-0" />
-            <span className="lp-sw heat-1" />
-            <span className="lp-sw heat-2" />
-            <span className="lp-sw heat-3" />
-            <span className="lp-sw heat-4" />
+            <span className="hg-sw hg-h0" />
+            <span className="hg-sw hg-h1" />
+            <span className="hg-sw hg-h2" />
+            <span className="hg-sw hg-h3" />
+            <span className="hg-sw hg-h4" />
             <span className="num">0% → 100%</span>
           </span>
           <span className="lp-legend-item">
-            <span className="lp-legend-dot" aria-hidden="true" />
+            <span className="hg-dot" aria-hidden="true" />
             80% or more, one way
           </span>
           <span>

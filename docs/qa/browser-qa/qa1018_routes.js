@@ -50,7 +50,8 @@ const wait = (page, fn, arg, timeout = 60000) => page.waitForFunction(fn, { time
       return strip.includes('Regeneron') && sum.includes('September 1, 2024') && (document.querySelector('.ov-detail h2')?.innerText ?? '').includes('NCT05785767 × NCT05800015')
     })
     const s = await state(page)
-    const sel = await page.$eval('.ov-matrix td.ov-sel', (td) => td.dataset.cell).catch(() => null)
+    // Simple (a fresh visitor's density) draws the half grid: the selected pair's cell is its one [data-cell] wrapper.
+    const sel = await page.$eval('.ov-matrix td.ov-sel, .ov-hg .ov-sel[data-cell]', (td) => td.dataset.cell).catch(() => null)
     rec('#overlap/regeneron opens the Regeneron 2024-09-01 preset with the fianlimab pair', s.tab === 'Portfolio overlap' && sel === 'NCT05785767|NCT05800015', { ...s, sel })
     // Reload keeps it.
     await page.reload({ waitUntil: 'domcontentloaded' })

@@ -2,10 +2,11 @@
 // and eligible patients, and the criteria that separate each pair. Descriptive only (counts, dates, eligibility shares
 // on a synthetic population); no forecasts anywhere, and no date after the registry snapshot.
 //
-// Simple: the matrix shows one number per cell (shared registered sites) on a quiet shade of the larger eligible-patient
-// share, with the 80% dot and the upper-bound / unreviewed marks; the rest of each pair is in its hover/focus/tap card,
-// and secondary tables sit in "Details" disclosures. Detailed: every cell keeps its full text, and every table, note
-// and definition is inline. Both densities keep every control and deep link.
+// Simple: the matrix is the landing hero's half grid (halfgrid.tsx): each pair once, above the diagonal, one number per
+// cell (shared registered sites) on a quiet shade of the larger eligible-patient share, with the 80% dot and the
+// upper-bound / unreviewed marks; the rest of each pair is in its hover/focus/tap card, and secondary tables sit in
+// "Details" disclosures. Detailed: the full directional matrix, every cell with its full text, and every table, note
+// and definition inline. Both densities keep every control and deep link.
 //
 // Deep links: #overlap/regeneron (the Regeneron Sept 2024 preset, fianlimab pair selected) and
 // #overlap/<sponsor>[/<region>][/<YYYY-MM-DD>], e.g. #overlap/merck (Merck at the snapshot, all registered sites
@@ -16,6 +17,7 @@ import type { Criterion } from '../api'
 import { Caveat, Details, ErrorBox, Gloss, HoverCard, InfoTip, Loading, PageHead, Qualifier, Segmented, Stat, Window } from '../components'
 import { useDensity } from '../density'
 import { ctgovUrl, int, num, pct } from '../format'
+import { CellFace, HalfGrid } from '../halfgrid'
 import {
   FIANLIMAB_PAIR,
   mostlyAnonymized,
@@ -29,6 +31,7 @@ import {
   type OverlapSponsors,
   type OverlapTrial,
 } from '../overlapApi'
+import { highShare, shadeStep } from '../shade'
 import { useTheme } from '../theme'
 import './overlap.css'
 
@@ -51,6 +54,8 @@ const MARK_NONUM = "Shared sites can't be counted: a trial lists only anonymized
 const ANON_SPONSOR_NOTE =
   'This sponsor lists its sites on ClinicalTrials.gov only as anonymized "Research Site" entries, so shared sites can\'t be counted; those cells show eligibility overlap only.'
 const FOOT = 'Synthetic population. Registered sites, not confirmed enrolling.'
+/** The landing hero card's upper-bound line (Simple pair cards). */
+const UB_NOTE = "Upper bound: a trial has restrictions the synthetic population can't represent, so these shares are ceilings."
 
 const DESIGN_LABEL: Record<string, string> = {
   single_population: 'Single population',
@@ -268,18 +273,14 @@ function regionOptions(regions: string[]): { value: string; label: string }[] {
   ]
 }
 
-const pctInt = (x: number) => Math.round(x * 100)
-
-/** Shade step of the larger eligible-patient share as shown (rounded): 0, under 25, under 50, under 80, 80 or more.
- *  null: no criteria encoded for one trial, so the overlap is not informative (hatched). Same steps as the landing hero. */
+/** Shade step of the larger eligible-patient share as shown (shade.ts, the landing hero's steps). null: no criteria
+ *  encoded for one trial, so the overlap is not informative (hatched). */
 function heatOf(o: Oriented): number | null {
-  if (!o.pair.overlap_informative) return null
-  const s = pctInt(Math.max(o.o_ab, o.o_ba))
-  return s === 0 ? 0 : s < 25 ? 1 : s < 50 ? 2 : s < 80 ? 3 : 4
+  return o.pair.overlap_informative ? shadeStep(Math.max(o.o_ab, o.o_ba)) : null
 }
 
 function hiOf(o: Oriented): boolean {
-  return o.pair.overlap_informative && pctInt(Math.max(o.o_ab, o.o_ba)) >= 80
+  return o.pair.overlap_informative && highShare(Math.max(o.o_ab, o.o_ba))
 }
 
 function markGlyphs(p: OverlapPair): string {
@@ -785,7 +786,20 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
           ) : (
             <>
               {mode === 'matrix' && (
-                <LegendRow theme={theme} uncountable={stats.noneKnown || stats.someUnknown} uninformative={stats.uninformative} />
+                <LegendRow
+                  theme={theme}
+                  uncountable={stats.noneKnown || stats.someUnknown}
+                  uninformative={stats.uninformative}
+                  simple={
+                    detailed
+                      ? null
+                      : {
+                          numbers: !stats.noneKnown,
+                          unrevPairs: data.pairs.some((p) => p.unreviewed_criteria),
+                          unrevTrials: trials.some((t) => t.eligibility_source !== 'hand-encoded'),
+                        }
+                  }
+                />
               )}
               {stats.noneKnown ? (
                 <p className="ov-anon">
@@ -807,22 +821,21 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
                 title={data.sponsor}
                 meta={data.region_label}
                 aside={
-                  mode === 'matrix'
-                    ? "Row trial vs column trial · diagonal: the trial's registered sites"
-                    : "P → Q: share of P's eligible patients who also qualify for Q"
+                  mode === 'list'
+                    ? "P → Q: share of P's eligible patients who also qualify for Q"
+                    : detailed
+                      ? "Row trial vs column trial · diagonal: the trial's registered sites"
+                      : 'Each pair once: row trial × column trial'
                 }
                 flush
               >
                 <div aria-busy={stale || undefined}>
                   {mode === 'matrix' ? (
-                    <Matrix
-                      trials={trials}
-                      orient={orient}
-                      selected={selected}
-                      onSelect={setSelected}
-                      detailed={detailed}
-                      worldwide={worldwide}
-                    />
+                    detailed ? (
+                      <Matrix trials={trials} orient={orient} selected={selected} onSelect={setSelected} worldwide={worldwide} />
+                    ) : (
+                      <HalfMatrix trials={trials} orient={orient} selected={selected} onSelect={setSelected} worldwide={worldwide} />
+                    )
                   ) : (
                     <PairList data={data} tIdx={tIdx} hideSites={stats.noneKnown} orient={orient} selected={selected} onSelect={setSelected} />
                   )}
@@ -893,10 +906,10 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
           )}
 
           {detailed ? (
-            <LegendDefs data={data} theme={theme} />
+            <LegendDefs data={data} theme={theme} detailed />
           ) : (
             <Details summary="Legend, definitions and sources" className="ov-defs-disclosure">
-              <LegendDefs data={data} theme={theme} />
+              <LegendDefs data={data} theme={theme} detailed={false} />
             </Details>
           )}
         </>
@@ -979,14 +992,28 @@ function AuditNotes({
   )
 }
 
-/** The compact legend above the matrix (both densities), as in the C mockup. */
-function LegendRow({ theme, uncountable, uninformative }: { theme: 'light' | 'dark'; uncountable: boolean; uninformative: boolean }) {
+/** The compact legend above the matrix (both densities), as in the C mockup. `simple` (Simple): what the half matrix
+ *  shows (any site count, unreviewed pair marks, unreviewed trial marks), so the legend keeps only those keys; null
+ *  (Detailed) keeps every key. */
+function LegendRow({
+  theme,
+  uncountable,
+  uninformative,
+  simple,
+}: {
+  theme: 'light' | 'dark'
+  uncountable: boolean
+  uninformative: boolean
+  simple: { numbers: boolean; unrevPairs: boolean; unrevTrials: boolean } | null
+}) {
   return (
-    <div className="ov-legend" role="group" aria-label="Matrix legend">
-      <span className="ov-lg">
-        <span className="strong">Number:</span>
-        <HoverCard content="Registered sites both trials list on ClinicalTrials.gov.">shared registered sites</HoverCard>
-      </span>
+    <div className={`ov-legend${simple ? ' ov-legend-simple' : ''}`} role="group" aria-label="Matrix legend">
+      {(simple?.numbers ?? true) && (
+        <span className="ov-lg">
+          <span className="strong">Number:</span>
+          <HoverCard content="Registered sites both trials list on ClinicalTrials.gov.">shared registered sites</HoverCard>
+        </span>
+      )}
       <span className="ov-lg">
         <HoverCard
           content={`The larger share of one trial's eligible patients who also qualify for the other, on a synthetic population. ${theme === 'dark' ? 'Brighter' : 'Darker'} means more.`}
@@ -1010,19 +1037,23 @@ function LegendRow({ theme, uncountable, uninformative }: { theme: 'light' | 'da
         </span>
         <HoverCard content={MARK_UB}>Upper bound</HoverCard>
       </span>
-      <span className="ov-lg">
-        <span className="ov-lg-mk" aria-hidden="true">
-          {UNREVIEWED}
+      {(simple?.unrevPairs ?? true) && (
+        <span className="ov-lg">
+          <span className="ov-lg-mk" aria-hidden="true">
+            {UNREVIEWED}
+          </span>
+          <HoverCard content={MARK_UNREV}>Unreviewed</HoverCard>
         </span>
-        <HoverCard content={MARK_UNREV}>Unreviewed</HoverCard>
-      </span>
-      <span className="ov-lg">
-        <span className="ov-lg-mk" aria-hidden="true">
-          {UNREVIEWED}
+      )}
+      {(simple?.unrevTrials ?? true) && (
+        <span className="ov-lg">
+          <span className="ov-lg-mk" aria-hidden="true">
+            {UNREVIEWED}
+          </span>
+          <span>on a trial name:</span>
+          <HoverCard content={MARK_UNREV_CRIT}>Unreviewed criteria</HoverCard>
         </span>
-        <span>on a trial name:</span>
-        <HoverCard content={MARK_UNREV_CRIT}>Unreviewed criteria</HoverCard>
-      </span>
+      )}
       {uncountable && (
         <span className="ov-lg">
           <span className="strong">No number:</span>
@@ -1078,11 +1109,9 @@ function PairTip({
       <span className="hc-title">
         {a} × {b}
       </span>
-      {detailed && (
-        <span className="ov-tip-sub">
-          {A.nct_id} · {phaseText(A.phases)} · {sitesLabel(A.n_sites)} — {B.nct_id} · {phaseText(B.phases)} · {sitesLabel(B.n_sites)}
-        </span>
-      )}
+      <span className="ov-tip-sub">
+        {A.nct_id} · {phaseText(A.phases)} · {sitesLabel(A.n_sites)} — {B.nct_id} · {phaseText(B.phases)} · {sitesLabel(B.n_sites)}
+      </span>
       <div className={detailed ? 'ov-tip-cols' : undefined}>
       <dl className="ov-tip-rows">
         <div>
@@ -1165,7 +1194,8 @@ function PairTip({
           {MARK_SPARSE}
         </span>
       )}
-      <span className="hc-src">{FOOT}</span>
+      {/* Simple, as on the landing hero's card: what the upper-bound mark means, in the card itself. */}
+      <span className="hc-src">{!detailed && p.upper_bound ? `${UB_NOTE} ${FOOT}` : FOOT}</span>
       <span className="ov-tip-cta">{selected ? 'Criteria compared below the matrix ↓' : 'Compare criteria ↓'}</span>
     </div>
   )
@@ -1210,36 +1240,52 @@ function TrialTip({ t, detailed, worldwide, diag }: { t: OverlapTrial; detailed:
   )
 }
 
+/** Accessible name of a trial's row or column header. */
+function headLabel(t: OverlapTrial): string {
+  return `${trialLabel(t)}, ${phaseText(t.phases)}, ${int(t.n_sites)} registered sites${t.eligibility_source !== 'hand-encoded' ? ', unreviewed criteria' : ''}`
+}
+
+function isSelected(selected: Pair | null, a: string, b: string): boolean {
+  return !!selected && ((selected[0] === a && selected[1] === b) || (selected[0] === b && selected[1] === a))
+}
+
+/** Keep the selected cell in view horizontally (narrow screens), without scrolling the page. `sticky` is the row
+ *  header that scrolled cells pass under. */
+function useSelectedInView(selected: Pair | null, trials: OverlapTrial[], sticky: string) {
+  const scroller = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const box = scroller.current
+    if (!box || !selected) return
+    const cell =
+      box.querySelector<HTMLElement>(`[data-cell="${selected[0]}|${selected[1]}"]`) ?? box.querySelector<HTMLElement>(`[data-cell="${selected[1]}|${selected[0]}"]`)
+    if (!cell) return
+    const b = box.getBoundingClientRect()
+    const c = cell.getBoundingClientRect()
+    const w = box.querySelector(sticky)?.getBoundingClientRect().width ?? 0
+    if (c.left < b.left + w || c.right > b.right) box.scrollLeft += c.left - (b.left + w) - 8
+  }, [selected, trials, sticky])
+  return scroller
+}
+
+/** Detailed: the full directional matrix. Each pair twice (row trial toward column trial), the diagonal the trial's own
+ *  registered sites, every cell with its site count and both eligibility shares. */
 function Matrix({
   trials,
   orient,
   selected,
   onSelect,
-  detailed,
   worldwide,
 }: {
   trials: OverlapTrial[]
   orient: (a: string, b: string) => Oriented | null
   selected: Pair | null
   onSelect: (p: Pair) => void
-  detailed: boolean
   worldwide: boolean
 }) {
-  const scroller = useRef<HTMLDivElement>(null)
-  // Keep the selected cell in view horizontally (narrow screens), without scrolling the page.
-  useEffect(() => {
-    const box = scroller.current
-    if (!box || !selected) return
-    const cell = box.querySelector<HTMLElement>(`[data-cell="${selected[0]}|${selected[1]}"]`)
-    if (!cell) return
-    const b = box.getBoundingClientRect()
-    const c = cell.getBoundingClientRect()
-    const sticky = box.querySelector('.ov-rowh')?.getBoundingClientRect().width ?? 0
-    if (c.left < b.left + sticky || c.right > b.right) box.scrollLeft += c.left - (b.left + sticky) - 8
-  }, [selected, trials])
+  const scroller = useSelectedInView(selected, trials, '.ov-rowh')
   return (
     <div className="ov-mscroll" ref={scroller}>
-      <table className={`ov-matrix${detailed ? ' ov-matrix-detailed' : ''}`}>
+      <table className="ov-matrix ov-matrix-detailed">
         <caption className="sr-only">
           Shared registered sites and eligible-patient overlap for {trials.length} trials: rows against columns. Shade is the larger eligible-patient share.
         </caption>
@@ -1250,11 +1296,7 @@ function Matrix({
             </th>
             {trials.map((t) => (
               <th key={t.nct_id} scope="col" className="ov-colh">
-                <HoverCard
-                  className="ov-hbtn ov-hbtn-col"
-                  label={`${trialLabel(t)}, ${phaseText(t.phases)}, ${int(t.n_sites)} registered sites${t.eligibility_source !== 'hand-encoded' ? ', unreviewed criteria' : ''}`}
-                  content={<TrialTip t={t} detailed={detailed} worldwide={worldwide} />}
-                >
+                <HoverCard className="ov-hbtn ov-hbtn-col" label={headLabel(t)} content={<TrialTip t={t} detailed worldwide={worldwide} />}>
                   <span className="ov-vt">
                     <span className="ov-vt-label">
                       {trialLabel(t)}
@@ -1271,18 +1313,15 @@ function Matrix({
           {trials.map((r) => (
             <tr key={r.nct_id}>
               <th scope="row" className="ov-rowh">
-                <HoverCard
-                  className="ov-hbtn ov-hbtn-row"
-                  label={`${trialLabel(r)}, ${phaseText(r.phases)}, ${int(r.n_sites)} registered sites${r.eligibility_source !== 'hand-encoded' ? ', unreviewed criteria' : ''}`}
-                  content={<TrialTip t={r} detailed={detailed} worldwide={worldwide} />}
-                >
+                <HoverCard className="ov-hbtn ov-hbtn-row" label={headLabel(r)} content={<TrialTip t={r} detailed worldwide={worldwide} />}>
+                  {/* A long label truncates; the unreviewed mark beside it never does. */}
                   <span className="ov-rh-label">
-                    {trialLabel(r)}
+                    <span className="ov-rl-text">{trialLabel(r)}</span>
                     {r.eligibility_source !== 'hand-encoded' && <span className="ov-hmk">{UNREVIEWED}</span>}
                   </span>
                   <span className="ov-rh-sub">
                     {phaseText(r.phases)}
-                    {detailed ? ` · ${sitesLabel(r.n_sites)}` : ''}
+                    {` · ${sitesLabel(r.n_sites)}`}
                   </span>
                 </HoverCard>
               </th>
@@ -1293,21 +1332,19 @@ function Matrix({
                       <HoverCard
                         className="ov-cell ov-cell-diag"
                         label={`${trialLabel(r)}: ${int(r.n_sites)} registered sites`}
-                        content={<TrialTip t={r} detailed={detailed} worldwide={worldwide} diag />}
+                        content={<TrialTip t={r} detailed worldwide={worldwide} diag />}
                       >
                         <span className="ov-cn">
                           <span className="num">{int(r.n_sites)}</span>
-                          {detailed && <span className="ov-unit"> {r.n_sites === 1 ? 'site' : 'sites'}</span>}
+                          <span className="ov-unit"> {r.n_sites === 1 ? 'site' : 'sites'}</span>
                         </span>
                       </HoverCard>
                     </td>
                   )
                 const o = orient(r.nct_id, c.nct_id)
                 if (!o) return <td key={c.nct_id} />
-                const sel =
-                  !!selected &&
-                  ((selected[0] === r.nct_id && selected[1] === c.nct_id) || (selected[0] === c.nct_id && selected[1] === r.nct_id))
-                // Pairs whose shared sites can't be counted show no number (unknown, not 0), only the eligibility shade.
+                const sel = isSelected(selected, r.nct_id, c.nct_id)
+                // Pairs whose shared sites can't be counted show no number (unknown, not 0), only the eligibility shares.
                 const known = sitesKnown(r, c)
                 const heat = heatOf(o)
                 const mk = markGlyphs(o.pair)
@@ -1321,29 +1358,20 @@ function Matrix({
                     <HoverCard
                       className={`ov-cell ov-h${heat === null ? 'x' : heat}`}
                       label={cellLabel(o, r, c, known, sel)}
-                      content={<PairTip o={o} A={r} B={c} known={known} detailed={detailed} selected={sel} />}
+                      content={<PairTip o={o} A={r} B={c} known={known} detailed selected={sel} />}
                     >
-                      {detailed ? (
-                        <>
-                          {known && (
-                            <span className="ov-cn">
-                              <span className="num">{int(o.pair.shared_sites)}</span>
-                              <span className="ov-unit"> {o.pair.shared_sites === 1 ? 'site' : 'sites'}</span>
-                              {mk && <span className="ov-mk">{mk}</span>}
-                            </span>
-                          )}
-                          <span className="ov-cp">
-                            {/* The slash stays with the first share, so a narrow cell breaks only after it. */}
-                            <span className="num">{o.pair.overlap_informative ? `${pct(o.o_ab)} / ${pct(o.o_ba)}` : '—'}</span>
-                            {!known && mk && <span className="ov-mk">{mk}</span>}
-                          </span>
-                        </>
-                      ) : (
+                      {known && (
                         <span className="ov-cn">
-                          {known && <span className="num">{int(o.pair.shared_sites)}</span>}
+                          <span className="num">{int(o.pair.shared_sites)}</span>
+                          <span className="ov-unit"> {o.pair.shared_sites === 1 ? 'site' : 'sites'}</span>
                           {mk && <span className="ov-mk">{mk}</span>}
                         </span>
                       )}
+                      <span className="ov-cp">
+                        {/* The slash stays with the first share (a no-break space), so a narrow cell breaks only after it. */}
+                        <span className="num">{o.pair.overlap_informative ? `${pct(o.o_ab)} / ${pct(o.o_ba)}` : '—'}</span>
+                        {!known && mk && <span className="ov-mk">{mk}</span>}
+                      </span>
                       {hiOf(o) && <span className="ov-hi" />}
                     </HoverCard>
                   </td>
@@ -1353,6 +1381,83 @@ function Matrix({
           ))}
         </tbody>
       </table>
+    </div>
+  )
+}
+
+/** Simple: the landing hero's half matrix (halfgrid.tsx) for every trial of the sponsor. A pair matrix is symmetric, so
+ *  each pair appears once, above the diagonal: rows are trials 1..n-1, columns trials 2..n, no diagonal. One number per
+ *  cell (shared registered sites; none when they can't be counted), the shade of the larger eligible-patient share, the
+ *  80% dot and the upper-bound / unreviewed marks. Hover, focus or tap opens the pair's card (a bottom sheet on phones);
+ *  a click or Enter selects the pair for the detail below. Cells narrow as the trial count grows, and the box scrolls
+ *  sideways (never the page) under sticky row headers. */
+function HalfMatrix({
+  trials,
+  orient,
+  selected,
+  onSelect,
+  worldwide,
+}: {
+  trials: OverlapTrial[]
+  orient: (a: string, b: string) => Oriented | null
+  selected: Pair | null
+  onSelect: (p: Pair) => void
+  worldwide: boolean
+}) {
+  const scroller = useSelectedInView(selected, trials, '.hg-rowh')
+  const cols = trials.length - 1
+  const size = cols <= 7 ? 1 : cols <= 11 ? 2 : cols <= 15 ? 3 : 4
+  const unrev = (t: OverlapTrial) => t.eligibility_source !== 'hand-encoded' && <span className="ov-hmk">{UNREVIEWED}</span>
+  return (
+    // data-scrolled: the sticky headers cover the gaps beside them only while cells can be underneath (overlap.css).
+    <div className="ov-mscroll" ref={scroller} onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
+      <HalfGrid
+        items={trials}
+        keyOf={(t) => t.nct_id}
+        className={`ov-hg ov-hg-s${size}`}
+        label={`Shared registered sites for each pair of ${trials.length} trials, each pair once; shade is the larger eligible-patient share`}
+        rowHead={(t) => (
+          <HoverCard className="ov-hbtn ov-hbtn-row" label={headLabel(t)} content={<TrialTip t={t} detailed={false} worldwide={worldwide} />}>
+            {/* A long label truncates; the unreviewed mark beside it never does. */}
+            <span className="hg-rowh-label">
+              <span className="ov-rl-text">{trialLabel(t)}</span>
+              {unrev(t)}
+            </span>
+            <span className="hg-rowh-sub">{phaseText(t.phases)}</span>
+          </HoverCard>
+        )}
+        colHead={(t) => (
+          <HoverCard className="ov-hbtn ov-hbtn-col" label={headLabel(t)} content={<TrialTip t={t} detailed={false} worldwide={worldwide} />}>
+            <span className="hg-vt">
+              {trialLabel(t)}
+              {unrev(t)}
+            </span>
+          </HoverCard>
+        )}
+        cell={(r, c) => {
+          const o = orient(r.nct_id, c.nct_id)
+          if (!o) return null
+          const sel = isSelected(selected, r.nct_id, c.nct_id)
+          // Pairs whose shared sites can't be counted show no number (unknown, not 0); the shade, dot and marks stay.
+          const known = sitesKnown(r, c)
+          const heat = heatOf(o)
+          return (
+            <div
+              className={`ov-hg-c${sel ? ' ov-sel' : ''}${known ? '' : ' ov-nosites'}`}
+              data-cell={`${r.nct_id}|${c.nct_id}`}
+              onClick={() => onSelect([r.nct_id, c.nct_id])}
+            >
+              <HoverCard
+                className={`hg-cell ${heat === null ? 'ov-hx' : `hg-h${heat}`}${sel ? ' hg-on' : ''}`}
+                label={cellLabel(o, r, c, known, sel)}
+                content={<PairTip o={o} A={r} B={c} known={known} detailed={false} selected={sel} />}
+              >
+                <CellFace n={known ? o.pair.shared_sites : null} marks={markGlyphs(o.pair)} hi={hiOf(o)} />
+              </HoverCard>
+            </div>
+          )
+        }}
+      />
     </div>
   )
 }
@@ -2025,7 +2130,7 @@ function TrialRow({
 
 /** The full legend and the definitions (C mockup, Detailed), with the method notes that used to be the provenance list.
  *  Inline in Detailed; in a "Details" disclosure in Simple. */
-function LegendDefs({ data, theme }: { data: OverlapAudit; theme: 'light' | 'dark' }) {
+function LegendDefs({ data, theme, detailed }: { data: OverlapAudit; theme: 'light' | 'dark'; detailed: boolean }) {
   const lid = useId()
   const did = useId()
   return (
@@ -2033,16 +2138,32 @@ function LegendDefs({ data, theme }: { data: OverlapAudit; theme: 'light' | 'dar
       <section aria-labelledby={lid} className="ov-defs-col">
         <h2 id={lid}>Legend</h2>
         <dl className="ov-dlrows">
+          {!detailed && (
+            <div>
+              <dt>Each pair once</dt>
+              <dd>
+                The matrix is symmetric, so this view shows each pair once, above the diagonal. Detailed shows both directions in every cell, and each
+                trial's registered sites on the diagonal.
+              </dd>
+            </div>
+          )}
           <div>
             <dt>Number</dt>
             <dd>Registered sites both trials list on ClinicalTrials.gov.</dd>
           </div>
-          <div>
-            <dt>
-              <span className="num">a% / b%</span>
-            </dt>
-            <dd>Share of the row trial's eligible patients who also qualify for the column trial, then the reverse, on a synthetic population.</dd>
-          </div>
+          {detailed ? (
+            <div>
+              <dt>
+                <span className="num">a% / b%</span>
+              </dt>
+              <dd>Share of the row trial's eligible patients who also qualify for the column trial, then the reverse, on a synthetic population.</dd>
+            </div>
+          ) : (
+            <div>
+              <dt>Both ways</dt>
+              <dd>In a pair's card: the share of each trial's eligible patients who also qualify for the other, on a synthetic population.</dd>
+            </div>
+          )}
           <div>
             <dt>No number</dt>
             <dd>A trial lists only anonymized sites on ClinicalTrials.gov, so shared sites can't be counted. Unknown, not zero.</dd>
