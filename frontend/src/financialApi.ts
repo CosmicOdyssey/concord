@@ -54,10 +54,13 @@ async function checked(response: Response): Promise<Response> {
   try { const body = await response.json(); detail += `: ${typeof body.detail === 'string' ? body.detail : JSON.stringify(body.detail ?? body)}` } catch { /* HTTP status remains useful */ }
   throw new Error(detail)
 }
+/** Thrown before any request when an input is empty or not finite; the view shows it as an input problem, not a
+ *  failed request. */
+export const NONFINITE_MESSAGE = 'Every numeric assumption needs a finite value.'
 function body(request: FinanceRequest): string {
   // JSON.stringify silently turns NaN/Infinity into null; reject those before sending or exporting.
   return JSON.stringify(request, (_key, value: unknown) => {
-    if (typeof value === 'number' && !Number.isFinite(value)) throw new Error('Every numeric assumption needs a finite value.')
+    if (typeof value === 'number' && !Number.isFinite(value)) throw new Error(NONFINITE_MESSAGE)
     return value
   })
 }
