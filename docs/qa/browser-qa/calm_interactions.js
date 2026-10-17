@@ -135,7 +135,7 @@ async function fresh(browser, { width = 1440, height = 900, touch = false } = {}
         ['#terms-flow', 'Protocol to terms'],
         ['#terms-flow/NCT05800015', 'Protocol to terms'],
         ['#site-scores', 'Site scores'],
-        ['#financial', 'Financial Coordination'],
+        ['#financial', 'Sponsor budget'],
         ['#research/model', 'Research'],
         ['#research/robustness', 'Research'],
         ['#model', 'Research'],

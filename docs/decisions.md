@@ -175,3 +175,20 @@ Judgment calls made without being able to ask. Newest last. Each says what and w
     447.50-447.57) instead of applying payer_fraction. (8) The report's "no double billing" claim is replaced
     by a statement that the worksheet is not a billing-compliance review, and site per_participant_cost is
     defined as excluding every itemized worksheet procedure.
+25. **Sponsor budget: coverage and payer wording a research-finance office would read differently** (17 Oct,
+    review of branch financial-ui). (1) Medicare pays clinical diagnostic lab tests at 100% of the CLFS amount
+    with no Part B deductible or coinsurance (SSA 1833(a)(1)(D) and (b)(3)), so a routine CLFS line under
+    Medicare now has no participant share (default per participant: insurer 5,026.97, participant 1,031.70;
+    sponsor commitments unchanged). (2) PAYER_INDEPENDENCE said a contract term could move a line "onto or off"
+    the sponsor; a contract term can only put a routine item on the sponsor, and only coverage analysis can make
+    a line billable to insurance (if the contract and consent form do not promise it free). The sentence now says
+    so and drops the code name. (3) Research items and the investigational-supply reserve now carry
+    allowed_statuses (sponsor side only), so the view no longer offers an insurer or participant status that
+    ends in a 422. (4) Simple shows the first sentence of PAYER_INDEPENDENCE next to the payer line, not only in
+    a hover card. (5) Medicaid: the participant-cost-sharing status is disabled and any line holding it is
+    qualified (42 CFR 447.15); the payer line names the Medicare benchmark as a stand-in for state rates.
+    (6) Labels: "Hospital revenue minus assumed cost" (synthetic 80%/70% cost basis; not a margin or FMV
+    test) instead of "Hospital operating contribution"; the sponsor's figure names its negotiated-rate multiple
+    (not an FMV finding); the insurer figure is pending coverage analysis; held contingency splits the supply
+    reserve from unresolved lines; the worksheet caption says an edit is an operator interpretation, not a
+    coverage decision.
