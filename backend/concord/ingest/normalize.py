@@ -26,12 +26,47 @@ ANON_PATTERNS = re.compile(
     r"research facility|.* clinical site \d*|novartis.*|pfizer.*|gsk.*|.*sponsor.*)$",
     re.I,
 )
+# Academic medical centers and NCI-designated cancer centers, matched on the facility name only.
+# Generic terms (universit, college, school of medicine) catch most; the terms after them name
+# centers whose sites do not say "university". As with "universit" and "memorial sloan", a university
+# or NCI-center name also catches that institution's own regional sites. Community hospitals that
+# only share a health-system brand (UPMC X, Henry Ford X, Houston Methodist X, UCHealth X, ...) are
+# deliberately not matched, nor are VA/military hospitals, networks and private practices.
 AMC_PATTERNS = re.compile(
-    r"universit|college|school of medicine|academic|memorial sloan|md anderson|dana[- ]farber|mayo clinic|"
-    r"johns hopkins|cleveland clinic|massachusetts general|brigham|fred hutch|city of hope|moffitt|"
-    r"yale|stanford|ucla|ucsf|uc san diego|ucsd|emory|vanderbilt|duke|northwestern|penn medicine|"
-    r"sidney kimmel|roswell|huntsman|karmanos|fox chase|lineberger|siteman|knight cancer|"
-    r"gustave roussy|charit|hospital universit|national cancer (center|institute)",
+    r"universit|\buniv\b|college|school of medicine|medical school|academic|memorial sloan|md anderson|"
+    r"dana[- ]farber|mayo clinic|johns hopkins|cleveland clinic|massachusetts general|^mass general\b(?! brigham)|"
+    r"brigham|fred hutch|city of hope|\bmoffitt?\b|yale|stanford|ucla|ucsf|uc san diego|ucsd|emory|vanderbilt|"
+    r"duke|northwestern|penn medicine|sidney kimmel|roswell|huntsman|karmanos|fox chase|lineberger|siteman|"
+    r"knight cancer|gustave roussy|charit|hospital universit|national cancer (center|institute)|"
+    # NCI-designated cancer centers (cancer.gov list) and their universities, as sites name them
+    r"dartmouth|norris cotton|\busc\b|keck (hospital|medical center|medicine) of usc|norris comprehensive|"
+    r"hillman cancer|^upmc[- ](presbyterian|shadyside|magee)|magee[- ]womens hospital|"
+    r"^(the )?mount sinai hospital$|^mount sinai west$|icahn school|tisch cancer|"
+    r"^montefiore (medical (center|park|cancer)|cancer center)|albert einstein (cancer|college|comprehensive)|"
+    r"\bnyu\b|perlmutter cancer|weill? cornell|cornell campus|rutgers|cancer institute of new jersey|"
+    r"ut ?southwestern|\butsw\b|simmons (comprehensive )?cancer center|uc davis|uc irvine|chao family|"
+    r"^uc comprehensive cancer center|\buchicago\b|\buab\b|o'?neal comprehensive|\bmusc\b|hollings cancer|"
+    r"vcu massey|vcu health stony point|vcu medical center|massey (comprehensive )?cancer|winship|"
+    r"stephenson cancer|holden comprehensive|carbone cancer|case comprehensive|seidman cancer center|"
+    r"^(uh )?ireland cancer center$|"
+    r"lurie|sylvester comprehensive|buffett cancer|^nebraska medic(ine|al center)$|^lombardi cancer center|"
+    r"lombardi comprehensive|markey cancer|greenebaum|rogel cancer|masonic cancer center|wilmot cancer|"
+    r"strong memorial|mays cancer|jonsson comprehensive|moores cancer|helen diller|abramson cancer|perelman|"
+    r"james cancer hospital|wexner medical|\bohsu\b|oregon health (and|&) science|dan l\.? duncan|"
+    r"\bunm (cancer|comprehensive)|\buva (comprehensive|health|cancer)|iu simon|simon comprehensive cancer|"
+    r"\bku medical center|unc hospitals|^unc health care|unc chapel hill|unc limeberger|^unc /id|"
+    r"st\.? jude children|(?<!ochsner )\blsu ?(health|hsc)|\blsu medical center|seattle cancer care alliance|"
+    r"national institutes of health|nih clinical center|magnuson clinical center|"
+    # Academic medical centers whose names do not say "university" (main campuses), including the
+    # public hospitals that are a medical school's principal teaching hospital
+    r"penn state (hershey|cancer institute|college of medicine)|hershey medical center|"
+    r"^beth israel medical center$|beth israel deaconess medical center|cedars[- ]sinai medical center|"
+    r"samuel oschin|^henry ford hospital\b|barnes[- ]jewish hospital|ellis fischel|^froedtert hospital$|"
+    r"^houston methodist (hospital|cancer center|neal cancer center)\b|tufts medical center|"
+    r"new england medical center|boston medical center|rhode island hospital|^(cancer center of )?albany medical center|"
+    r"harborview medical center|lac[- +]usc|los angeles county[- +]usc|los angeles general medical center|"
+    r"parkland memorial hospital|parkland health and hospital system|ben taub|^grady (health|memorial)|"
+    r"jackson memorial hospital|truman medical (center|ctr)",
     re.I,
 )
 LUNG_PATTERN = re.compile(r"nsclc|non[- ]?small|lung|thoracic", re.I)
