@@ -39,6 +39,23 @@ async function shot(page, name, fullPage = false) {
 const text = (page, sel) => page.$eval(sel, (e) => e.innerText.replace(/\s+/g, ' ').trim())
 const texts = (page, sel) => page.$$eval(sel, (es) => es.map((e) => e.innerText.replace(/\s+/g, ' ').trim()))
 
+/** frontend/src/siteScoresApi.ts rate(): three significant figures. */
+function rate(x) {
+  if (x === null || x === undefined || !Number.isFinite(x)) return '—'
+  if (x === 0) return '0'
+  return x.toFixed(Math.max(0, Math.min(5, 2 - Math.floor(Math.log10(Math.abs(x))))))
+}
+
+async function elementShot(page, sel, name) {
+  const el = await page.$(sel)
+  if (!el) return
+  await el.scrollIntoView()
+  const file = `${SCREENS}/${name}.png`
+  await el.screenshot({ path: file })
+  out.shots.push(file)
+  console.log('shot', file)
+}
+
 ;(async () => {
   const browser = await L.launch()
   const log = {}
@@ -80,7 +97,39 @@ const texts = (page, sel) => page.$$eval(sel, (es) => es.map((e) => e.innerText.
       calnote: await text(page, '.ss-calnote'),
     }
     check('distribution caveat no longer says scores fall with history depth', !/Scores also fall with history depth/i.test(out.preset.caveat) && /lower median/.test(out.preset.caveat), out.preset.caveat)
-    check('table note: intervals leave out the split uncertainty', /narrower than the real uncertainty/.test(out.preset.calnote), out.preset.calnote)
+    // Score ranges include trial-to-trial variation (summary.heterogeneity); the old Poisson-only range is kept small.
+    const het = sum.heterogeneity
+    out.heterogeneity = het
+    check('summary: heterogeneity estimated (not the Poisson fallback)', het && !het.fallback && het.inv_k > 0 && het.sites_used > 0, het && { k: het.k, inv_k: het.inv_k, ci: het.inv_k_ci95, sites: het.sites_used })
+    // No undefined symbol (1/k) in the note; it says the amount is set mostly by the high-volume sites.
+    check('table note: ranges include trial-to-trial variation (mostly set by high-volume sites), leave out systematic error in the split',
+      /varies from one trial to the next/.test(out.preset.calnote) && /systematic error in that split/.test(out.preset.calnote) &&
+        !/1\/k/.test(out.preset.calnote) && !/narrower than the real uncertainty/.test(out.preset.calnote) &&
+        out.preset.calnote.includes(`50 of them carry ${Math.round(het.concentration.top50_weight * 100)}% of its weight`),
+      out.preset.calnote)
+    const apiRows = (await (await fetch(`${APP}/api/site-scores?region=US&min_trials=1&sort=-n_fit&limit=20&offset=0`)).json()).rows
+    const ivText = await page.$$eval('.ss-sites tbody tr > td:nth-child(3) > div:nth-child(2)', (es) => es.map((e) => e.textContent.trim()))
+    const ivWant = apiRows.map((r) => `${rate(r.interval[0])}–${rate(r.interval[1])}`)
+    out.preset.intervals = ivText.slice(0, 5)
+    check('table ranges are the API interval (with trial-to-trial variation), not interval_poisson',
+      ivText.length === ivWant.length && ivText.every((t, i) => t === ivWant[i]) &&
+        apiRows.every((r) => r.interval[0] <= r.interval_poisson[0] && r.interval[1] >= r.interval_poisson[1]),
+      { shown: ivText.slice(0, 3), api: ivWant.slice(0, 3) })
+    const detail = await (await fetch(`${APP}/api/site-scores/${sum.preset.site_id}`)).json()
+    const step3 = out.preset.steps[2]
+    check('Step 3: range includes trial-to-trial variation, effective vs allocated patients, Poisson-only range in small text',
+      /varies from trial to trial/.test(step3) && /effective patients/.test(step3) &&
+        step3.includes(`${rate(detail.posterior.p10)}–${rate(detail.posterior.p90)}`) &&
+        step3.includes(`exact counts): ${rate(detail.posterior.p10_poisson)}–${rate(detail.posterior.p90_poisson)}`),
+      step3)
+    out.preset.detail = { data: detail.data, posterior: detail.posterior }
+    out.preset.bdCaveat = await text(page, '.ss-breakdown .caveat')
+    check('breakdown caveat: what the range includes and leaves out; historical, not a forecast',
+      /varies from trial to trial/.test(out.preset.bdCaveat) && /systematic error in that split/.test(out.preset.bdCaveat) &&
+        /not a forecast for a new trial/.test(out.preset.bdCaveat) && !/treats the allocated patients as observed/.test(out.preset.bdCaveat) &&
+        !/suggests that error is large/.test(out.preset.bdCaveat),
+      out.preset.bdCaveat)
+    check('method paragraph: one sentence on trial-to-trial variation', /varies from one trial to the next/.test(sum.method), sum.method)
     check('reading: overstatement explained on the log scale', /on the log scale, not a division of ratios/.test(out.preset.reading), out.preset.reading)
     const body = await page.evaluate(() => document.querySelector('.ss').innerText)
     const hits = FORBIDDEN.filter((r) => r.test(body)).map(String)
@@ -90,6 +139,10 @@ const texts = (page, sel) => page.$$eval(sel, (es) => es.map((e) => e.innerText.
     check('1440: no horizontal page scroll', overflow <= 0, overflow)
     await shot(page, 'site-scores-1440')
     await shot(page, 'site-scores-1440-full', true)
+    // The site table and the preset's (Dana-Farber's) breakdown, as elements.
+    await elementShot(page, '.ss-list', 'site-scores-table')
+    await elementShot(page, '.ss-breakdown', 'site-scores-breakdown-preset')
+    await page.evaluate(() => window.scrollTo(0, 0))
 
     // Histogram hover tooltip
     const bins = await page.$$('.ss-hit')
@@ -156,6 +209,7 @@ const texts = (page, sel) => page.$$eval(sel, (es) => es.map((e) => e.innerText.
       /^Percentile — no fitted trials/i.test(uf.figs.find((f) => /^percentile/i.test(f)) || '') &&
         /unseen-site rate/.test(uf.steps[4]) && !/percentile among/.test(uf.steps[4]),
       uf)
+    check('unfitted U.S. site: Step 3 range is the prior’s', /With no fitted trial, the 10th–90th range is the prior’s/.test(uf.steps[2]), uf.steps[2])
 
     // Deep link to a non-U.S. site: calibrated value labelled as relative to the U.S. mean; no U.S. percentile.
     await page.goto('about:blank')

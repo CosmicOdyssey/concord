@@ -15,7 +15,8 @@ now does things that need no forecasting:
   real CMS 2026 physician fee schedule with Medicare locality, a proposed standard non-procedure schedule,
   and a term sheet with provenance on every line. Decision support, not a fair-market-value legal opinion.
 - **Site scores** (`#site-scores`): each U.S. site's historical lung-trial enrollment score, with every step
-  that forms it (prior, the site's own trials, posterior, low-history cap) and the observed-outcome check
+  that forms it (prior, the site's own trials, posterior, low-history cap), a 10th-90th range that counts how
+  much a site's rate varies from trial to trial, and the observed-outcome check
   that says raw differences are overstated about 3x on the log scale. Historical evidence, not a forecast;
   the default order is history depth, not score.
 - **Findings** (landing page): the research results that motivate both. The earlier clearing views live
