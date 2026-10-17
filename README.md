@@ -191,14 +191,15 @@ with adversarial audits. Numbers below are provisional until the final rerun (la
 |---|---|---|
 | A. optimizer's curse holdout (choose with half the history, score with the other) | audit found issues; being fixed | the held-out number becomes the headline |
 | B. where the joint optimum comes from (capacity settings, beta = 0) | merged; one audit gap left (time split not run by B) | see below |
-| C. transfer surplus of the joint optimum | running | |
+| C. transfer surplus of the joint optimum | merged; three audit items disclosed below | see below |
 | D. browser QA | merged | 2,576 of 2,580 on-screen numbers match the API; the other 4 were backend inconsistencies, now fixed. 7 label and layout defects fixed. No phone-width breakage. Report: `docs/qa/2026-10-17-browser-qa.md` |
 | E. hand-encoded eligibility, design labels, academic flag | merged | 146 demo trials: 63 single population, 62 basket, 21 multi-cohort. Basket and multi-cohort trials are held out of headline numbers: US-Northeast keeps 47 movable trials (was 103) |
 | F. attenuation check of beta | merged | see section 1 |
 | Congestion re-estimate: predetermined "experienced site", two-way clustered SEs, beta by parser version | running | |
 | UI: ">= 1 month" threshold for share faster; beta labels | running | |
-| Deterministic solver | done (`allocator/core.py` Budget); default budget being calibrated by objective convergence | |
-| Final rerun of sections 3-4 at the current beta, deterministic solver, both splits | after A, B and the congestion re-estimate | held-out numbers become the headline |
+| Deterministic solver | done: 500k-evaluation default, chosen by objective convergence; repeat runs identical | `data/robustness/solver_budget_calibration.json` |
+| Database rebuilt with E's encodings and academic flags | done | within-site estimate now -0.093 [-0.213, +0.028], p 0.13 (interim; trial-clustered SEs until the re-estimate merges) |
+| Final rerun of sections 3-4: task A's script unchanged, current beta, deterministic solver, both splits | waits for A and the congestion re-estimate | replaces the withdrawn notes in sections 3-4; nothing added |
 
 ### B. Where the joint optimum's gain comes from (provisional)
 
@@ -220,6 +221,33 @@ geometric mean of both directions. The time-split column comes from B's auditor 
   than with their registered sites.
 - **More search helps in-sample only.** More solver effort raised the in-sample headline but lowered the
   held-out one: the optimizer's curse acting through search.
+
+### C. Transfer surplus of the joint optimum (provisional)
+
+C asks whether winners could compensate losers. Settings: US-Northeast, joint optimum vs each trial's
+best response. Net surplus S = trial-months gained minus lost, background trials included. Inputs are
+stale: beta 0.026, rule-based eligibility from before the parser fix, and C's own fixed-effort solver.
+C will not be rerun.
+
+| | in-sample | held-out, alternating split | held-out, time split |
+|---|---|---|---|
+| net surplus S (trial-months) | +1,408 | +1,050 (+912 and +1,188 by direction) | +1,677 and **-697** (auditor's probe) |
+| share of gains winners keep after paying losers | 85% | 66% | |
+| trials still worse off after ex-ante credits | 0 (by construction) | **31 and 39** of about 103 | |
+| same surplus, unlimited capacity | +12 | **-110** | |
+
+- **Transfers don't rescue the joint optimum out of sample.** The surplus is positive in-sample and on
+  the alternating split but reverses in one time direction.
+- **Credits fixed in advance don't hold.** Credits set from in-sample deltas leave 31-39 trials worse
+  off under held-out rates.
+- **It rests on the capacity assumption.** The surplus exists only if each site's historical peak
+  concurrency is a hard limit.
+
+Three audit items are disclosed rather than fixed:
+1. C did not run the time split; those numbers come from its auditor running C's code.
+2. The inputs are stale (above).
+3. One like-for-like comparison has the wrong sign. Against registered sites, the value of transfers
+   changes by +5.3%, not -7%, from in-sample to held-out on the same trials.
 
 Two findings from D that the final numbers must handle:
 
