@@ -3,9 +3,10 @@ import { CircleMarker, MapContainer, TileLayer, Tooltip, useMap } from 'react-le
 import type { LatLngBoundsExpression } from 'leaflet'
 import type { AllocKey, ClearResult, Site } from '../api'
 import type { ClearState } from '../App'
-import { Badge, ErrorBox, Loading, NeedsClear, RunLine, useDarkMode } from '../components'
+import { Badge, ErrorBox, Loading, NeedsClear, RunLine } from '../components'
 import { ALLOC_HINT, ALLOC_LABEL, int, isNum, loadOf, pct } from '../format'
 import { DEFAULT_SCENARIO } from '../api'
+import { useTheme } from '../theme'
 
 const ALLOCS: AllocKey[] = ['actual', 'indep', 'coord', 'coord_free']
 
@@ -54,7 +55,8 @@ function allocStats(r: ClearResult, a: AllocKey): AllocStats {
 
 export default function MapView({ clear }: { clear: ClearState }) {
   const [alloc, setAlloc] = useState<AllocKey>('actual')
-  const dark = useDarkMode()
+  // Leaflet draws the markers, not CSS, so they key on the app theme (which may differ from the system's).
+  const dark = useTheme().theme === 'dark'
   const r = clear.result
 
   const palette = dark

@@ -1,7 +1,9 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { api, DEFAULT_SCENARIO, REGENERON_PRESET, type ClearResult, type Scenario } from './api'
 import { Loading, useElapsed } from './components'
+import { DENSITY_TOGGLE_ENABLED, DensityControl } from './density'
 import { NEEDS_CLEAR, RESEARCH_TABS, researchTab, type ResearchTabId } from './routes'
+import { ThemeControl } from './theme'
 import { useActiveTabScroll } from './useActiveTabScroll'
 import FindingsView from './views/FindingsView'
 import './app.css'
@@ -12,6 +14,7 @@ const ResearchView = lazy(() => import('./views/ResearchView'))
 const OverlapView = lazy(() => import('./views/OverlapView'))
 const ProtocolTermsView = lazy(() => import('./views/ProtocolTermsView'))
 const SiteScoresView = lazy(() => import('./views/SiteScoresView'))
+const DevComponentsView = lazy(() => import('./views/DevComponentsView'))
 
 const TABS = [
   { id: 'findings', label: 'Findings' },
@@ -21,9 +24,11 @@ const TABS = [
   { id: 'research', label: 'Research' },
 ] as const
 type TabId = (typeof TABS)[number]['id']
+/** A tab, or the QA page at #dev/components, which has no tab. */
+type ViewId = TabId | 'dev'
 
 interface Route {
-  tab: TabId
+  tab: ViewId
   /** Research sub-tab named by the hash, if any. */
   sub: ResearchTabId | null
   /** Trailing segment: #research/prices/NCT01234567, #research/portfolio/regeneron, #findings/allocation. */
@@ -31,10 +36,12 @@ interface Route {
 }
 
 /** Hash routes: #findings[/<finding id>] (default), #overlap, #terms-flow, #site-scores[/<site id>], #research/<sub>[/<arg>]. The pre-pivot
- *  flat links (#clear, #map, #prices/NCT..., #portfolio/regeneron, ...) open the same research sub-tab. */
+ *  flat links (#clear, #map, #prices/NCT..., #portfolio/regeneron, ...) open the same research sub-tab. #dev/components is a QA page
+ *  for the theme, density and hover-card building blocks, linked from nowhere. */
 function parseHash(hash: string = window.location.hash): Route {
   const [head = '', ...rest] = hash.replace(/^#\/?/, '').split('/').filter(Boolean)
   const h = head.toLowerCase()
+  if (h === 'dev' && rest[0]?.toLowerCase() === 'components') return { tab: 'dev', sub: null, arg: null }
   if (h === 'research') {
     const sub = researchTab(rest[0])
     return { tab: 'research', sub, arg: sub ? (rest[1] ?? null) : null }
@@ -72,7 +79,7 @@ export interface ClearState {
 }
 
 export default function App() {
-  const [tab, setTab] = useState<TabId>(INITIAL_ROUTE.tab)
+  const [tab, setTab] = useState<ViewId>(INITIAL_ROUTE.tab)
   const [sub, setSub] = useState<ResearchTabId>(INITIAL_ROUTE.sub ?? RESEARCH_TABS[0].id)
   const [regions, setRegions] = useState<string[]>(['US-Northeast', 'US-Midwest', 'US-South', 'US-West', 'US'])
   const [form, setForm] = useState<Scenario>(INITIAL_SCENARIO)
@@ -198,23 +205,27 @@ export default function App() {
           <span className="brand-name">Concord</span>
           <span className="brand-tag">NSCLC trial portfolios on public ClinicalTrials.gov data</span>
         </div>
-        {/* Clearing is a Research-only computation: its status shows only there. */}
-        <div className="run-status small" aria-live="polite">
-          {tab !== 'research' ? null : loading ? (
-            <span>
-              <span className="dot dot-busy" /> Clearing {pendingParams?.region}… <span className="tnum">{elapsed.toFixed(0)} s</span>
-            </span>
-          ) : solvedParams ? (
-            <span>
-              <span className="dot dot-ok" /> Cleared {solvedParams.region}
-              {solvedParams.sponsor ? ` · ${solvedParams.sponsor}` : ''}
-              {solvedParams.as_of ? ` · ${solvedParams.as_of}` : ''}
-            </span>
-          ) : error ? (
-            <span>
-              <span className="dot dot-bad" /> Clear failed
-            </span>
-          ) : null}
+        <div className="topbar-end">
+          {/* Clearing is a Research-only computation: its status shows only there. */}
+          <div className="run-status small" aria-live="polite">
+            {tab !== 'research' ? null : loading ? (
+              <span>
+                <span className="dot dot-busy" /> Clearing {pendingParams?.region}… <span className="tnum">{elapsed.toFixed(0)} s</span>
+              </span>
+            ) : solvedParams ? (
+              <span>
+                <span className="dot dot-ok" /> Cleared {solvedParams.region}
+                {solvedParams.sponsor ? ` · ${solvedParams.sponsor}` : ''}
+                {solvedParams.as_of ? ` · ${solvedParams.as_of}` : ''}
+              </span>
+            ) : error ? (
+              <span>
+                <span className="dot dot-bad" /> Clear failed
+              </span>
+            ) : null}
+          </div>
+          {DENSITY_TOGGLE_ENABLED && <DensityControl />}
+          <ThemeControl />
         </div>
       </header>
       <nav className="tabs" role="tablist" aria-label="Views" ref={tabBar}>
@@ -261,6 +272,11 @@ export default function App() {
               setSelectedTrial={setSelectedTrial}
               onOpenTrial={openTrial}
             />
+          </Suspense>
+        )}
+        {tab === 'dev' && (
+          <Suspense fallback={<Loading label="Loading component check…" />}>
+            <DevComponentsView />
           </Suspense>
         )}
       </main>

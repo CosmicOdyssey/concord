@@ -29,6 +29,7 @@
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
+  /* Without data-theme (scripts off) native controls follow the system, as the tokens do below. */
   color-scheme: light dark;
   font-family: var(--font);
   font-size: 15px;
@@ -38,8 +39,44 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* Themes. index.html's inline script and ThemeProvider (theme.tsx) set data-theme on <html> to light or dark; the
+   light tokens are the defaults above. */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0d1117;
+  --surface: #151b23;
+  --surface-2: #1c232d;
+  --border: #2a323d;
+  --border-strong: #3a4452;
+  --text: #e6eaf0;
+  --text-2: #b8c0cc;
+  --muted: #8b95a3;
+  --accent: #5b8def;
+  --accent-ink: #0b0f14;
+  --accent-soft: #1b2a47;
+  --pos: #3ecf8e;
+  --neg: #ff7b6e;
+  --warn-bg: #3a2a10;
+  --warn-ink: #f5c374;
+  --ok-bg: #12301f;
+  --ok-ink: #7ddca5;
+  --bad-bg: #3a1714;
+  --bad-ink: #ff9d92;
+  --info-bg: #1b2a47;
+  --info-ink: #a9c3ff;
+  --neutral-bg: #252d38;
+  --neutral-ink: #c4ccd8;
+  --bar-indep: #5c6778;
+  --bar-coord: #5b8def;
+  --shadow: none;
+}
+/* No-script fallback: the system setting picks the theme. A copy of the dark set above, because one rule cannot
+   put a media condition on only one of its selectors; keep the two in step. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     --bg: #0d1117;
     --surface: #151b23;
     --surface-2: #1c232d;
@@ -67,9 +104,10 @@
     --bar-coord: #5b8def;
     --shadow: none;
   }
-  .leaflet-tile-pane {
-    filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.6);
-  }
+}
+/* The map renders only with scripts on, so data-theme is always set when it shows. */
+:root[data-theme='dark'] .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.6);
 }
 
 *,
