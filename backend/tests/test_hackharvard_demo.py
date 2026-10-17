@@ -110,3 +110,21 @@ def test_ambient_ratecard_is_not_silently_mixed(monkeypatch,tmp_path):
     (tmp_path/'ratecard.json').write_text('{}')
     assert TestClient(app).post('/api/hackharvard-demo/optimize').status_code == 409
     assert TestClient(app).get('/api/hackharvard-demo').status_code == 409
+
+
+def test_saved_rehearsal_is_genuine_integrity_checked_evidence(computed):
+    import hashlib
+    import json
+    root = d.FIXTURE.parents[2]
+    raw = (root/'frontend/public/demo/saved-result.json').read_bytes()
+    capture = json.loads(raw)
+    r = capture['run']['result']
+    assert p.valid_result(r)
+    assert capture['run']['delivery_mode'] == 'SAVED_RESULT_REPLAY'
+    assert r['evidence']['dirty'] is False
+    assert r['scenarios'] == computed['scenarios']
+    assert r['request'] == d.request().model_dump(mode='json')
+    assert capture['bundle']['baseline']['ledger'] == r['scenarios'][0]['ledger']
+    assert hashlib.sha256(raw).hexdigest() in (root/'frontend/src/demoSavedDigest.ts').read_text()
+    report = (root/'frontend/public/demo/saved-report.html').read_text()
+    assert 'SAVED REHEARSAL — NOT LIVE COMPUTATION' in report and r['result_sha256'] in report

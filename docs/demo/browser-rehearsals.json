@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-17T21:27:37.418Z",
+  "source": "Real connected browser; actual loopback backend; no response mocking",
+  "timing_scope": "Automation action/observation latency, not human speech or staged dwell time",
+  "trials": [
+    {
+      "rehearsal": 1,
+      "main_clicks": 4,
+      "setup_reset_clicks": 1,
+      "status": "Live computation completed · 363.5 ms server compute · OPTIMAL · 678 candidate/policy evaluations",
+      "run_id": "553f35a1268c310f35db133f840eb13e",
+      "result_sha256": "553f35a1268c310f35db133f840eb13eb2eb993b58749b70ff7da78763db6361",
+      "computed_label": "Live computation · 2026-10-17T21:27:33.530862+00:00",
+      "steps": [
+        {
+          "scene": "problem",
+          "automation_elapsed_ms": 294
+        },
+        {
+          "scene": "baseline",
+          "automation_elapsed_ms": 285
+        },
+        {
+          "scene": "compute-and-compare",
+          "automation_elapsed_ms": 486
+        },
+        {
+          "scene": "money-and-evidence",
+          "automation_elapsed_ms": 315
+        },
+        {
+          "scene": "conclusion",
+          "automation_elapsed_ms": 279
+        }
+      ],
+      "total_automation_ms": 1659,
+      "passed": true
+    },
+    {
+      "rehearsal": 2,
+      "main_clicks": 4,
+      "setup_reset_clicks": 1,
+      "status": "Live computation completed · 360.7 ms server compute · OPTIMAL · 678 candidate/policy evaluations",
+      "run_id": "553f35a1268c310f35db133f840eb13e",
+      "result_sha256": "553f35a1268c310f35db133f840eb13eb2eb993b58749b70ff7da78763db6361",
+      "computed_label": "Live computation · 2026-10-17T21:27:35.122320+00:00",
+      "steps": [
+        {
+          "scene": "problem",
+          "automation_elapsed_ms": 265
+        },
+        {
+          "scene": "baseline",
+          "automation_elapsed_ms": 263
+        },
+        {
+          "scene": "compute-and-compare",
+          "automation_elapsed_ms": 477
+        },
+        {
+          "scene": "money-and-evidence",
+          "automation_elapsed_ms": 315
+        },
+        {
+          "scene": "conclusion",
+          "automation_elapsed_ms": 280
+        }
+      ],
+      "total_automation_ms": 1600,
+      "passed": true
+    },
+    {
+      "rehearsal": 3,
+      "main_clicks": 4,
+      "setup_reset_clicks": 1,
+      "status": "Live computation completed · 361.7 ms server compute · OPTIMAL · 678 candidate/policy evaluations",
+      "run_id": "553f35a1268c310f35db133f840eb13e",
+      "result_sha256": "553f35a1268c310f35db133f840eb13eb2eb993b58749b70ff7da78763db6361",
+      "computed_label": "Live computation · 2026-10-17T21:27:36.743296+00:00",
+      "steps": [
+        {
+          "scene": "problem",
+          "automation_elapsed_ms": 267
+        },
+        {
+          "scene": "baseline",
+          "automation_elapsed_ms": 272
+        },
+        {
+          "scene": "compute-and-compare",
+          "automation_elapsed_ms": 488
+        },
+        {
+          "scene": "money-and-evidence",
+          "automation_elapsed_ms": 309
+        },
+        {
+          "scene": "conclusion",
+          "automation_elapsed_ms": 281
+        }
+      ],
+      "total_automation_ms": 1617,
+      "passed": true
+    }
+  ]
+}

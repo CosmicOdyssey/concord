@@ -126,3 +126,9 @@ The tracked `.fleet/config.json` runs every deterministic check. Fleet campaign:
 **CONCORD-HACKHARVARD-DEMO**, local task `concord-demo-implementation`. It never
 creates a remote execution authority, consumes a previous mission approval or
 modifies the Fleet daemon/supervisor. See `ACCEPTANCE.md` for actual fresh results.
+
+Backend unavailable but static browser still usable: serve only the built files:
+`python3 -m http.server 18082 --bind 127.0.0.1 --directory frontend/dist`, then open
+`http://127.0.0.1:18082/#demo`. The missing API is shown as an error; explicitly
+choose the saved rehearsal. This path was exercised with a real static-only
+server, not a mocked successful API response.

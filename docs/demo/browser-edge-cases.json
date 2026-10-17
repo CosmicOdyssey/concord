@@ -1,0 +1,26 @@
+{
+  "observed_at": "2026-10-17T21:33:36.792Z",
+  "resetDuringActualCompute": {
+    "observedInFlight": true,
+    "afterResetKnownBaseline": true,
+    "oldResultNotRestored": true
+  },
+  "staticOnlyBackendUnavailable": {
+    "origin": "http://127.0.0.1:18082",
+    "actual_status": 404,
+    "errorShown": true,
+    "honestUnavailableStatus": true,
+    "noAutomaticReplay": true,
+    "explicitReplayLoaded": true
+  },
+  "reportDownloads": {
+    "json": "concord-portfolio-553f35a1268c310f35db133f840eb13e.json",
+    "html": "HTML export downloaded successfully; source-tab download-event watcher timed out because target opens another tab; file content independently validated"
+  },
+  "recording": "Browser exposes visibility and viewport only; no recording capability available. No recording fabricated.",
+  "generalApplication": {
+    "findingsRendered": true,
+    "returnedToDemoBaseline": true,
+    "scope": "Findings and navigation smoke check; data-dependent views not proven without SQLite"
+  }
+}

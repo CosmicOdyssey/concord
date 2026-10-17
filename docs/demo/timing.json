@@ -1,0 +1,25 @@
+{
+  "startup": {
+    "scope": "Fresh owned uvicorn process through first successful baseline HTTP response; dependencies/build already installed",
+    "startup_ms": 633.488,
+    "baseline_compute_ms": 3.062,
+    "port": 18081,
+    "pid": 26589,
+    "external_credentials_forwarded": false
+  },
+  "scripts": {
+    "180": {
+      "words": 319,
+      "estimated_seconds_at_140_wpm": 136.7,
+      "estimated_seconds_at_135_wpm": 141.8,
+      "synthetic_voice_seconds": 154.361769
+    },
+    "120": {
+      "words": 218,
+      "estimated_seconds_at_140_wpm": 93.4,
+      "estimated_seconds_at_135_wpm": 96.9,
+      "synthetic_voice_seconds": 109.767846
+    }
+  },
+  "voice": "Locally installed macOS Samantha at 145 wpm; measured audio length via afinfo; not a human rehearsal"
+}

@@ -43,3 +43,11 @@ test('demo inputs never enable rate boosts or realized administration savings',(
   assert.equal(input.operations_rate_effect,0);assert.equal(input.support_rate_effect,0)
   assert.equal(input.savings_realized,false);assert.equal(input.draws,32);assert.equal(input.seed,7)
 })
+test('explicit saved rehearsal restores genuine checked bytes without touching the API',async()=>{
+  globalThis.fetch=async(url)=>{assert.equal(url,'/demo/saved-result.json');return new Response(readFileSync(new URL('../public/demo/saved-result.json',import.meta.url),'utf8'))}
+  const capture=await demoApi.saved(new AbortController().signal)
+  assert.equal(capture.run.delivery_mode,'SAVED_RESULT_REPLAY')
+  assert.equal(capture.run.result.evidence.dirty,false)
+  assert.deepEqual(capture.run.result.request,input)
+  assert.equal(proposal(capture.run.result).optimization.status,'OPTIMAL')
+})
