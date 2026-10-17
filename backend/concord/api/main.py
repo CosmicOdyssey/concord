@@ -26,7 +26,6 @@ from concord.ratecard import medicare
 app = FastAPI(title="Concord", version="0.2.0",
               description="Clearing mechanism for clinical-trial enrollment capacity (HackHarvard 2026)")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-app.include_router(findings_api.router)
 
 
 class Scenario(BaseModel):
@@ -77,6 +76,9 @@ def _meta() -> dict:
         return {}
     finally:
         con.close()
+
+
+app.include_router(findings_api.router)  # findings landing page (W3)
 
 
 @app.get("/api/health")

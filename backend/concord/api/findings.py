@@ -1,6 +1,7 @@
 """Findings page API: serves the curated findings files in FINDINGS_DIR (repo data/findings).
 
-    GET /api/findings                 findings.json, written by `python -m concord.findings`
+    GET /api/findings                 findings.json, written by `python -m concord.findings` (each source
+                                      marked `available` when this checkout has the cited file)
     GET /api/findings/self-overlap    self_overlap.json, written by the portfolio overlap audit (404 until it exists)
     GET /api/findings/source?path=..  one source file a finding cites (only paths listed in findings.json)
 
@@ -48,10 +49,26 @@ def _read(name: str, missing: str) -> dict:
         raise HTTPException(500, f"{name} is not valid JSON: {e}") from e
 
 
+def _in_checkout(path: str) -> bool:
+    """True when a repo-relative path names a file inside this checkout (what /source can serve)."""
+    root = paths.ROOT.resolve()
+    target = (root / path).resolve()
+    return root in target.parents and target.is_file()
+
+
 @router.get("")
 def findings() -> dict:
-    """The findings page content (three findings with tables, caveats and sources)."""
-    return _read(FINDINGS_FILE, "run python -m concord.findings to generate it")
+    """The findings page content (three findings with tables, caveats and sources).
+
+    The file is served as written, except that each source gets `available`: whether this checkout has
+    the cited file, so the page shows a missing one as plain text instead of a dead link."""
+    doc = _read(FINDINGS_FILE, "run python -m concord.findings to generate it")
+    sections = doc.get("findings", []) if isinstance(doc, dict) else []
+    for f in sections if isinstance(sections, list) else []:
+        for s in (f.get("sources") or []) if isinstance(f, dict) else []:
+            if isinstance(s, dict) and isinstance(s.get("path"), str):
+                s["available"] = _in_checkout(s["path"])
+    return doc
 
 
 @router.get("/self-overlap")
@@ -83,8 +100,7 @@ def source(path: str = Query(..., description="repo-relative path exactly as a f
     """A file a finding cites. Only paths listed in the findings files are served, and only inside the repo."""
     if path not in _cited_paths():
         raise HTTPException(404, f"{path} is not a source cited by the findings")
-    root = paths.ROOT.resolve()
-    target = (root / path).resolve()
-    if root not in target.parents or not target.is_file():
+    if not _in_checkout(path):
         raise HTTPException(404, f"{path} is not available in this checkout")
+    target = (paths.ROOT.resolve() / path).resolve()
     return FileResponse(target, media_type=_MEDIA.get(target.suffix.lower(), "text/plain; charset=utf-8"))
