@@ -12,6 +12,14 @@ fs.mkdirSync(DIR, { recursive: true })
   const log = { base: BASE, widths: {}, text: {} }
   const browser = await L.launch()
   const page = await browser.newPage()
+  // Detailed: the trials table and the notes are inline (Simple puts them in Details disclosures).
+  await page.evaluateOnNewDocument(() => {
+    try {
+      localStorage.setItem('concord.density', 'detailed')
+    } catch {
+      /* storage off */
+    }
+  })
   L.instrument(page, log)
   try {
     await page.setViewport({ width: 1400, height: 900 })
@@ -34,7 +42,7 @@ fs.mkdirSync(DIR, { recursive: true })
         return { clientWidth: sc.clientWidth, scrollWidth: sc.scrollWidth, clipped: sc.scrollWidth - sc.clientWidth, headHeights: head }
       })
       const box = await page.evaluate(() => {
-        const r = document.querySelector('.tbl-trials').closest('.card').getBoundingClientRect()
+        const r = document.querySelector('.tbl-trials').closest('.card, .win').getBoundingClientRect()
         return { x: r.left, y: r.top + window.scrollY, w: r.width }
       })
       await page.screenshot({ path: `${DIR}/clear_trials_${w}.png`, clip: { x: Math.max(0, box.x), y: box.y, width: Math.min(box.w, w), height: 520 }, captureBeyondViewport: true })

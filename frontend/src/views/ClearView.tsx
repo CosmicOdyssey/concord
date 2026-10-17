@@ -1,7 +1,8 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from 'react'
-import { DEFAULT_SCENARIO, scenarioKey, type AllocKey, type LowHistory, type Scenario, type Trial, type Universe } from '../api'
+import { DEFAULT_SCENARIO, scenarioKey, type AllocKey, type ClearResult, type LowHistory, type Scenario, type Trial, type Universe } from '../api'
 import type { ClearState } from '../App'
-import { Badge, ErrorBox, Loading, RunLine } from '../components'
+import { Badge, ErrorBox, Gloss, Loading, RunLine, Section } from '../components'
+import { useDensity } from '../density'
 import { ALLOC_HINT, ALLOC_LABEL, ctgovUrl, int, isNum, num, phaseLabel, signedMonths, tOf } from '../format'
 import {
   AssumptionsUsed,
@@ -10,10 +11,12 @@ import {
   betaInfo,
   CalibrationLine,
   DecompositionTable,
-  HeadlineBlock,
+  HeadlineStats,
+  InSampleResult,
   isFullSampleBeta,
   materialMonths,
 } from '../summary'
+import { InSampleLine, InSampleMark, RsHead } from './researchParts'
 
 type SortKey = 'trial' | 'sponsor' | 'target' | 'sites' | AllocKey | 'saved'
 const T_COLS: AllocKey[] = ['actual', 'indep', 'coord', 'coord_free']
@@ -301,20 +304,18 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
       ? `Blank = default β = full-sample estimate (${num(b.beta, 3)}, 95% CI ${num(b.ci95[0], 3)} to ${num(b.ci95[1], 3)}).`
       : undefined
   const nBackground = r ? r.trials.filter((t) => !t.movable).length : 0
+  const simple = useDensity().density === 'simple'
 
   return (
-    <section className="view">
-      <div className="view-head">
-        <div>
-          <h1>Clear the market</h1>
-          <p className="lede">
-            Allocate every concurrent trial’s sites jointly, then compare enrollment times with the sites sponsors actually
-            registered. All allocations are evaluated under the same model.
-          </p>
-        </div>
-      </div>
+    <section className="view rs-view">
+      <RsHead
+        title="Clear the market"
+        lede="Allocate every concurrent trial’s sites jointly, then compare enrollment times with the sites sponsors actually registered. All allocations are evaluated under the same model."
+      >
+        <InSampleLine />
+      </RsHead>
 
-      <div className="card controls">
+      <div className="card controls rs-controls">
         <div className="controls-row">
           <label className="field">
             <span className="field-label">Region</span>
@@ -332,7 +333,9 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
           <span className="muted small">Clears take about 1–2 minutes{form.region === 'US' ? ' (US-wide: longer)' : ''}.</span>
         </div>
         <details className="assumptions" open={modified || undefined}>
-          <summary>Assumptions {modified && <Badge tone="info">modified</Badge>}</summary>
+          <summary>
+            Assumptions {modified && <span className="rs-modified">· modified</span>}
+          </summary>
           <AssumptionsForm form={form} setForm={setForm} betaHint={betaHint} />
           <button
             className="btn btn-small"
@@ -363,139 +366,191 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
               </span>
             }
           />
-          <HeadlineBlock r={r} />
+          <InSampleResult
+            r={r}
+            details={
+              <>
+                <HeadlineStats r={r} />
+                {simple && (
+                  <>
+                    <h3>Where the gain comes from</h3>
+                    <GainBreakdown r={r} />
+                    <h3>Assumptions used</h3>
+                    <AssumptionsBlock r={r} />
+                  </>
+                )}
+              </>
+            }
+          />
 
-          <div className="card">
-            <h2>Where the gain comes from</h2>
-            <p className="muted small">
-              Five comparisons over the same {int(s.coord_vs_actual.trials)} trials. Ratio = total trial-months, baseline ÷
-              alternative. If “pure coordination” is near 1×, the in-sample gain comes from better site selection, which a
-              single sponsor could make alone.
-            </p>
-            <DecompositionTable r={r} />
-            {s.background_trials > 0 && (
-              <p className="muted small">
-                {int(s.background_trials)} background trials are held at their registered sites and excluded from every number.
-                Under the joint optimum with losers allowed, {int(backgroundSlowerMaterial(r))} of them would be slower by{' '}
-                {atLeast(materialMonths(s.coord_free_vs_actual), true)} ({int(s.background_worse_under_coord_free)} by any
-                amount); the capped allocation holds every trial, background included, at its registered time under the
-                same rates (in-sample only).
+          {!simple && (
+            <Section title="Where the gain comes from">
+              <GainBreakdown r={r} />
+            </Section>
+          )}
+          {!simple && (
+            <Section title="Assumptions used">
+              <AssumptionsBlock r={r} />
+            </Section>
+          )}
+
+          <Section
+            id="rs-trials"
+            title="Trials"
+            lede={
+              <>
+                {int(r.counts.movable_trials)} trials compared and {int(nBackground)} background trials held at their registered sites. Click
+                a row for that trial’s criterion price tags.
+              </>
+            }
+            qualifiers={
+              <p className="rs-qual-line">
+                <InSampleMark />: times are model-estimated months to fill each trial’s regional target, not observed enrollment.
               </p>
-            )}
-          </div>
-
-          <div className="card raw">
-            <h2>Assumptions used</h2>
-            <AssumptionsUsed a={s.assumptions} />
-            <h3>Calibration check</h3>
-            <CalibrationLine c={s.calibration_check} />
-            <h3>Solver</h3>
-            <div className="small tnum">
-              {Object.entries(s.solver).map(([k, st]) => (
-                <div key={k}>
-                  <span className="muted">{ALLOC_LABEL[k as AllocKey] ?? k}:</span> {num(st.seconds, 1)} s,{' '}
-                  {int(st.improvements)} improving moves
-                  {st.hit_time_limit && ' · stopped at time limit (feasible, not proven optimal)'}
+            }
+            details={
+              <div className="rs-trials">
+                <div className="table-tools">
+                  <input
+                    type="search"
+                    placeholder="Filter by NCT, acronym, sponsor, title"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    aria-label="Filter trials"
+                  />
+                  <label className="check small">
+                    Background trials ({nBackground})
+                    <select value={bgMode} onChange={(e) => setBgMode(e.target.value as 'last' | 'inline' | 'hide')}>
+                      <option value="last">sorted last</option>
+                      <option value="inline">sorted inline</option>
+                      <option value="hide">hidden</option>
+                    </select>
+                  </label>
+                  <span className="muted small">{rows.length} shown · click a row for its price tags</span>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="table-tools">
-              <h2>Trials</h2>
-              <input
-                type="search"
-                placeholder="Filter by NCT, acronym, sponsor, title"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                aria-label="Filter trials"
-              />
-              <label className="check small">
-                Background trials ({nBackground})
-                <select value={bgMode} onChange={(e) => setBgMode(e.target.value as 'last' | 'inline' | 'hide')}>
-                  <option value="last">sorted last</option>
-                  <option value="inline">sorted inline</option>
-                  <option value="hide">hidden</option>
-                </select>
-              </label>
-              <span className="muted small">{rows.length} shown · click a row for its price tags</span>
-            </div>
-            <div className="table-scroll">
-              <table className="tbl tbl-trials">
-                <thead>
-                  <tr>
-                    {th('trial', 'Trial')}
-                    {th('sponsor', 'Sponsor')}
-                    {th('target', 'Regional target', 'num')}
-                    {th('sites', 'Sites', 'num', 'Registered sites in the region')}
-                    {T_COLS.map((k) => th(k, ALLOC_LABEL[k], 'num', ALLOC_HINT[k]))}
-                    <th className="bar-col">
-                      <span className="legend-inline small">
-                        <i className="sw sw-indep" /> reg. <i className="sw sw-coord" /> coord.
-                      </span>
-                    </th>
-                    {th('saved', 'Months saved', 'num', 'Registered minus coordinated (no losers)')}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((t) => {
-                    const d = saved(t)
-                    return (
-                      <tr
-                        key={t.nct_id}
-                        className={`clickable${t.movable ? '' : ' row-bg'}`}
-                        onClick={() => onOpenTrial(t.nct_id)}
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') onOpenTrial(t.nct_id)
-                        }}
-                      >
-                        <td className="trial-cell">
-                          <div className="trial-id">
-                            <a href={ctgovUrl(t.nct_id)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
-                              {t.acronym ?? t.nct_id}
-                            </a>
-                            <BackgroundBadge t={t} />
-                          </div>
-                          <div className="muted small trunc" title={t.title}>
-                            {t.acronym ? `${t.nct_id} · ` : ''}
-                            {phaseLabel(t.phases)}
-                          </div>
-                          <EligBadge source={t.eligibility_source} />
-                        </td>
-                        <td className="sponsor-cell" title={t.sponsor ?? ''}>
-                          {t.sponsor ?? '—'}
-                        </td>
-                        <td className="num">{num(t.target_region)}</td>
-                        <td className="num">{int(t.sites_actual)}</td>
-                        {T_COLS.map((k) => (
-                          <td key={k} className="num">
-                            {num(tOf(t, k))}
-                          </td>
-                        ))}
-                        <td className="bar-col">
-                          <TimeBar base={t.T_actual} coord={t.T_coord} cap={cap} />
-                        </td>
-                        <td className={`num ${t.movable && d !== null && d > 0 ? 'pos' : ''}`}>
-                          {t.movable ? signedMonths(d) : <span className="muted">excluded</span>}
-                        </td>
+                <div className="table-scroll">
+                  <table className="tbl tbl-trials">
+                    <thead>
+                      <tr>
+                        {th('trial', 'Trial')}
+                        {th('sponsor', 'Sponsor')}
+                        {th('target', 'Regional target', 'num')}
+                        {th('sites', 'Sites', 'num', 'Registered sites in the region')}
+                        {T_COLS.map((k) => th(k, ALLOC_LABEL[k], 'num', ALLOC_HINT[k]))}
+                        <th className="bar-col">
+                          <span className="legend-inline small">
+                            <i className="sw sw-indep" /> reg. <i className="sw sw-coord" /> coord.
+                          </span>
+                        </th>
+                        {th('saved', 'Difference (mo)', 'num', 'Registered minus coordinated (no losers): model estimate, in-sample')}
                       </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <p className="muted small">
-              T = model-estimated months to fill the trial’s regional enrollment target (total enrollment pro-rated by the
-              share of its CT.gov sites in the region). Months saved = Registered − Coordinated (no losers). Bars are scaled to{' '}
-              {int(cap)} months; › marks a value beyond that. “Background (excluded)” marks an implausible model time (over{' '}
-              {int(cap)} months): the trial stays at its registered sites as congestion and is left out of every number.
-              Unknown values show “—”.
-            </p>
-          </div>
+                    </thead>
+                    <tbody>
+                      {rows.map((t) => {
+                        const d = saved(t)
+                        return (
+                          <tr
+                            key={t.nct_id}
+                            className={`clickable${t.movable ? '' : ' row-bg'}`}
+                            onClick={() => onOpenTrial(t.nct_id)}
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') onOpenTrial(t.nct_id)
+                            }}
+                          >
+                            <td className="trial-cell">
+                              <div className="trial-id">
+                                <a href={ctgovUrl(t.nct_id)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
+                                  {t.acronym ?? t.nct_id}
+                                </a>
+                                <BackgroundBadge t={t} />
+                              </div>
+                              <div className="muted small trunc" title={t.title}>
+                                {t.acronym ? `${t.nct_id} · ` : ''}
+                                {phaseLabel(t.phases)}
+                              </div>
+                              <EligBadge source={t.eligibility_source} />
+                            </td>
+                            <td className="sponsor-cell" title={t.sponsor ?? ''}>
+                              {t.sponsor ?? '—'}
+                            </td>
+                            <td className="num">{num(t.target_region)}</td>
+                            <td className="num">{int(t.sites_actual)}</td>
+                            {T_COLS.map((k) => (
+                              <td key={k} className="num">
+                                {num(tOf(t, k))}
+                              </td>
+                            ))}
+                            <td className="bar-col">
+                              <TimeBar base={t.T_actual} coord={t.T_coord} cap={cap} />
+                            </td>
+                            <td className={`num ${t.movable && d !== null && d > 0 ? 'pos' : ''}`}>
+                              {t.movable ? signedMonths(d) : <span className="muted">excluded</span>}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="muted small">
+                  T = model-estimated months to fill the trial’s regional enrollment target (total enrollment pro-rated by the share
+                  of its CT.gov sites in the region), in-sample. Difference = Registered − Coordinated (no losers). Bars are scaled to{' '}
+                  {int(cap)} months; › marks a value beyond that. “Background (excluded)” marks an implausible model time (over{' '}
+                  {int(cap)} months): the trial stays at its registered sites as congestion and is left out of every number. Unknown
+                  values show “—”.
+                </p>
+              </div>
+            }
+            detailsLabel={`Show the trials table (${int(r.trials.length)} trials)`}
+          />
         </>
       )}
     </section>
+  )
+}
+
+/** The five comparisons and the background note ("Where the gain comes from"). */
+function GainBreakdown({ r }: { r: ClearResult }) {
+  const s = r.summary
+  return (
+    <>
+      <p className="muted small">
+        Five comparisons over the same {int(s.coord_vs_actual.trials)} trials, all in-sample and{' '}
+        <Gloss term="scored-by-model">scored by our enrollment model</Gloss>. Ratio = total trial-months, baseline ÷ alternative. If “pure
+        coordination” is near 1×, the in-sample gain comes from choosing faster sites, which a single sponsor could do alone.
+      </p>
+      <DecompositionTable r={r} />
+      {s.background_trials > 0 && (
+        <p className="muted small">
+          {int(s.background_trials)} background trials are held at their registered sites and excluded from every number. Under
+          the joint optimum with losers allowed, {int(backgroundSlowerMaterial(r))} of them would be slower by{' '}
+          {atLeast(materialMonths(s.coord_free_vs_actual), true)} ({int(s.background_worse_under_coord_free)} by any amount); the
+          capped allocation holds every trial, background included, at its registered time under the same rates (in-sample
+          only).
+        </p>
+      )}
+    </>
+  )
+}
+
+/** Assumptions used, the calibration check and the solver report. */
+function AssumptionsBlock({ r }: { r: ClearResult }) {
+  const s = r.summary
+  return (
+    <div className="raw">
+      <AssumptionsUsed a={s.assumptions} />
+      <h3>Calibration check</h3>
+      <CalibrationLine c={s.calibration_check} />
+      <h3>Solver</h3>
+      <div className="small tnum">
+        {Object.entries(s.solver).map(([k, st]) => (
+          <div key={k}>
+            <span className="muted">{ALLOC_LABEL[k as AllocKey] ?? k}:</span> {num(st.seconds, 1)} s, {int(st.improvements)} improving moves
+            {st.hit_time_limit && ' · stopped at time limit (feasible, not proven optimal)'}
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
