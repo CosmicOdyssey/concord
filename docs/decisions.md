@@ -192,3 +192,16 @@ Judgment calls made without being able to ask. Newest last. Each says what and w
     (not an FMV finding); the insurer figure is pending coverage analysis; held contingency splits the supply
     reserve from unresolved lines; the worksheet caption says an edit is an operator interpretation, not a
     coverage decision.
+26. **Mentor feedback: Protocol to terms is the product** (17 Oct, two-hour budget 16:10-18:10). Done in five parallel
+    tracks, each verified independently before merge: landing leads with Terms (exact headline/subhead, Regeneron
+    overlap preview) and Terms is the first tab; anchored share (NCT05800015 at NYU Langone: public CMS rates 20.4%,
+    proposed standard 59.6%, open 20.0% = the 25% overhead assumption); Medicare band ranges (100%-150%, assumption;
+    $6,568.67-$7,406.11 per participant); editable overhead; non-facility rates and no OPPS facility fees stated; lab
+    note; plain-language GPCI labels; compare lead explains why budgets differ; category breakdowns; locality
+    distribution over all 109 localities and the three spreads; site proposal check with a SYNTHETIC sample and a
+    counter-proposal export; one non-lung Regeneron Phase 3 (SIENNA, NCT06541704) from a static registry snapshot (no
+    DB rebuild). The Calm cleanup pass was stopped so its fixes would not collide with the Terms work.
+27. **Teammate PR #2 (Portfolio Command) kept out of the main navigation; financial test values restored.** It
+    reports modeled "months saved", which the product does not claim (#24, the app rule); it stays reachable at
+    #portfolio-command for the team to decide. PR #2 had changed four expected values in test_financial.py to match an
+    environment without the CMS lab fee schedule; with the real CLFS file loaded the original values are correct.
