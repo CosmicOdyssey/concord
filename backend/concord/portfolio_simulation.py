@@ -57,6 +57,9 @@ def simulate(req, selected, shocks, boost=0.):
     Capacity is immediately reallocated when a trial finishes. Enrollment is a
     continuous fluid approximation, not a count of observed participants.
     """
+    if len(shocks) > 1 and np.all(shocks == shocks[0]):
+        compact = simulate(req, selected, shocks[:1], boost)
+        return {key: np.repeat(value, len(shocks), axis=0) for key, value in compact.items()}
     pids = [t.id for t in req.trials]
     sids = [s.id for s in req.sites]
     edges = req.edges

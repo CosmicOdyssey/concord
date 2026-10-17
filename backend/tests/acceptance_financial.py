@@ -19,8 +19,14 @@ def run():
     higher=f.compare(request.model_copy(update={'payer_fraction':1}))['scenarios'][0]['economics']
     normal=f.compare(request)['scenarios'][0]['economics']
     assert higher['insurer']['payments']>normal['insurer']['payments'] and higher['sponsor']==normal['sponsor']
-    req=f.FinanceRequest(target=10,admin_cost=500000,admin_reduction=.8,draws=100,sites=[f.Site(id='A',name='Synthetic A',baseline_active=True,rate=1,capacity=30,monthly_cost=100,activation_lag_months=0),f.Site(id='B',name='Synthetic B',rate=5,capacity=30,activation_cost=100000,monthly_cost=500,activation_lag_months=1)])
-    result=f.compare(req); a,c=result['scenarios'][0],result['scenarios'][2]
+    from concord import portfolio as p
+    req=p.PortfolioRequest(trials=[p.Trial(id='T',title='Explicit synthetic accounting stress',target=10,admin=500000)],
+        sites=[p.SharedSite(id=s,name='Synthetic '+s,capacity=10,capacity_basis='ASSUMED') for s in ['A','B']],
+        edges=[p.Edge(trial='T',site=s,baseline=s=='A',rate=rate,lag=lag,activation=100000,
+            feasibility='ASSUMED_FEASIBLE',rate_basis='ASSUMED') for s,rate,lag in [('A',1,0),('B',5,1)]],
+        savings_realized=True,admin_reduction=.8,spread=0,draws=32,operations_rate_effect=0)
+    result=p.run(req)
+    a,c=[{'economics':result['scenarios'][i]['ledger']['trials'][0]['economics']} for i in [0,2]]
     assert c['economics']['sponsor']['expenditure']<a['economics']['sponsor']['expenditure']
     assert c['economics']['hospital']['resource_cost']>a['economics']['hospital']['resource_cost']
     return {'responsibility_shift':{'line':line['id'],'classification':'ASSUMPTION-DEPENDENT cost shift; no resource savings','rows':rows},

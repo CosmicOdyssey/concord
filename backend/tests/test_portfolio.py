@@ -97,7 +97,7 @@ def test_financial_transfer_conservation_no_double_counting(result):
             assert econ['hospital']['revenue']-econ['hospital']['resource_cost'] == pytest.approx(econ['hospital']['net_contribution'],abs=.01)
             assert econ['hospital']['net_contribution'] >= 0
             # Transfers cancel; they are not added to the resource total.
-            assert econ['consolidated_resource_cost'] == pytest.approx(econ['hospital']['resource_cost']+t['breakdown']['administration']+econ['insurer']['administration']+t['breakdown']['support'],abs=.02)
+            assert econ['consolidated_resource_cost'] == pytest.approx(econ['hospital']['resource_cost']+econ['sponsor']['supply_resource_proxy']+t['breakdown']['administration']+econ['insurer']['administration']+t['breakdown']['support'],abs=.02)
 
 
 def test_savings_require_explicit_realization_and_no_automatic_speed(req,result):

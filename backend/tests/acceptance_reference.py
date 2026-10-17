@@ -64,7 +64,8 @@ def cost(request, selected, out, coverage):
         care=(cov['sponsor']+cov['reserve'])*n
         expected+=startup+operating+variable+care+t['support']*n+t['admin']
         committed+=startup+sum((request['edges'][j]['operating']+request['edges'][j]['monitoring'])*request['horizon'] for j in own)+max((request['edges'][j]['participant']+request['edges'][j]['screening'] for j in own),default=0)*n+care+t['support']*n+t['admin']
-        resources=.8*(startup+operating+variable)+cov['resource']*n
+        # Portfolio uses the default $2500 sponsor supply proxy; it is outside hospital resources.
+        resources=.8*(startup+operating+variable)+(cov['resource']-2500)*n
         revenues=startup+operating+variable+(cov['sponsor']+cov['payer']+cov['patient'])*n
         hospitals.append(revenues-resources)
     return expected,committed,hospitals

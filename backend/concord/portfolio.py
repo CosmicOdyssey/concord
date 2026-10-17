@@ -19,13 +19,15 @@ from pydantic import Field, model_validator
 
 from concord import financial as fin
 from concord import portfolio_simulation as sim
+from concord import portfolio_search as search_engine
+from concord.allocator import core
 from concord.paths import ROOT, DATA_DIR
 
 router = APIRouter(prefix='/api/portfolio-command', tags=['Portfolio Command'])
 STORE = DATA_DIR / 'work' / 'portfolio'
 CONTEXT = ROOT / 'data' / 'portfolio' / 'context.json'
-RUNTIME_SOURCES = [Path(__file__),Path(sim.__file__),Path(fin.__file__),
-                   Path(fin.core.__file__),Path(fin.terms.__file__),Path(fin.terms.medicare.__file__),
+RUNTIME_SOURCES = [Path(__file__),Path(sim.__file__),Path(search_engine.__file__),Path(fin.__file__),
+                   Path(core.__file__),Path(fin.terms.__file__),Path(fin.terms.medicare.__file__),
                    Path(fin.__file__).with_name('financial_allocation.py')]
 EXECUTED_SOURCES = {str(path.relative_to(ROOT)):hashlib.sha256(path.read_bytes()).hexdigest() for path in RUNTIME_SOURCES}
 
@@ -74,7 +76,7 @@ class Edge(fin.Strict):
 
 
 class PortfolioRequest(fin.Strict):
-    budget: float = Field(3000000, gt=0, le=1e9)
+    budget: float = Field(3000000, ge=0, le=1e9)
     objective: Literal['weighted_makespan', 'sum_duration', 'min_cost_deadline'] = 'weighted_makespan'
     horizon: float = Field(36, gt=0, le=60)
     seed: int = Field(7, ge=0, le=2**32-1)
@@ -111,7 +113,7 @@ LIMITATIONS = [
     'Live computation on explicitly synthetic operational inputs; registry records supply identifiers, titles and sponsors only. No live Regeneron relationship or actual recruitment progress.',
     'Current registry captures are retrospective context, never historical as-of features. No clinical outcomes, historical backtest or acceleration evidence is inferred.',
     'Independent mean-one lognormal edge-rate shocks and continuous enrollment are assumptions. P10–P90 ranges and deadline draw fractions are not calibrated predictive probabilities.',
-    'Bounded deterministic beam search is a heuristic, not a global optimum. Objective selection and no-loser compare expected horizon-capped times on the same assumed draws.',
+    'Small admitted instances exhaustively enumerate all usable networks on the supplied finite draw bank. Larger instances use bounded beam search with unknown optimality gap. Status and termination are reported per strategy; this is not a clinical optimum. No-loser constrains expected trial times.',
     'Site capacity is shared proportionally between activated unfinished trials. Static concurrent-trial slots are reserved for the whole network; outside trials and eligibility overlap are unknown.',
     'Budget feasibility reserves operating/monitoring costs for the full horizon and maximum selected per-participant cost for all remaining participants. Budget assurance is limited to the modeled cost scope and horizon.',
     'Unfinished draws are censored at the horizon. Their capped durations are lower bounds; no complete-time estimate is claimed and such networks are ineligible for recommendation.',
@@ -119,7 +121,9 @@ LIMITATIONS = [
     'Potential payer costs, participant cost sharing and reserves reuse Financial Coordination. Coverage is fixed across scenarios and never optimized; no reduction of care or cost shifting is used.',
     'Additional support does not change rates unless an explicit hypothetical effect is supplied. Administrative reductions release budget only when marked realized.',
     'Hospital contribution uses the inherited 80% operating-resource and 70% procedure-resource assumptions. A nonnegative contribution is an economic scenario constraint, not a fair-market-value or legal determination.',
-    *fin.LIMITATIONS[:5],
+    'Financial Coordination is a sponsor-budget worksheet with no time model. Only Portfolio Command simulates assumed enrollment timing; payer amounts never cause a sponsor saving or rate effect.',
+    'Site participant/screening costs must exclude every itemized coverage procedure to avoid duplicate charges. Access support is travel/lodging and is not netted against cost sharing.',
+    *[text for text in fin.LIMITATIONS if text != fin.NO_TIME_MODEL],
 ]
 
 
@@ -143,7 +147,7 @@ def demo():
 
 def financial_inputs(req):
     return [fin.FinanceRequest(trial_id=t.financial_template,target=t.target-t.enrolled,
-                              budget=req.budget,admin_cost=t.admin,support_per_participant=t.support)
+                              budget=max(req.budget,1),admin_cost=t.admin,support_per_participant=t.support)
             for t in req.trials]
 
 
@@ -165,7 +169,7 @@ def price(req, selected, simulation, covs, finances, efficient=False, support=Fa
                      +sum((req.edges[j].operating+req.edges[j].monitoring)*req.horizon for j in indices)
                      +max((req.edges[j].participant+req.edges[j].screening for j in indices),default=0)*n)
         expected = sum(b.values())
-        econ = fin.economics(finances[p],{'sponsor_total':fin.money(expected),'breakdown':b},covs[p])
+        econ = fin.economics(finances[p],{'costed':True,'sponsor_total':fin.money(expected),'breakdown':b},covs[p])
         rows.append({'trial':t.id,'breakdown':{k:fin.money(v) for k,v in b.items()},
                      'budget_commitment':fin.money(committed),'expected_commitment':fin.money(expected),'economics':econ})
         total += expected
@@ -187,6 +191,8 @@ def run(req: PortfolioRequest):
     shocks = rng.lognormal(-req.spread**2/2,req.spread,(req.draws,len(req.edges)))
     baseline = frozenset(j for j,e in enumerate(req.edges) if e.baseline)
     memo = {}
+    simulation_cache = {}
+    effective_draws = 1 if np.all(shocks == shocks[0]) else len(shocks)
     baseline_times = None
 
     def evaluate(selected, efficient=False, support=False, operations=False):
@@ -194,8 +200,11 @@ def run(req: PortfolioRequest):
         if key in memo:
             return memo[key]
         errors = sim.network_errors(req,selected)
-        out = sim.simulate(req,selected,shocks,
-                           (req.support_rate_effect if support else 0)+(req.operations_rate_effect if operations else 0))
+        boost = (req.support_rate_effect if support else 0)+(req.operations_rate_effect if operations else 0)
+        simulation_key = (tuple(sorted(selected)), boost)
+        if simulation_key not in simulation_cache:
+            simulation_cache[simulation_key] = sim.simulate(req, selected, shocks, boost)
+        out = simulation_cache[simulation_key]
         ledger = price(req,selected,out,covs,finances,efficient,support,operations)
         if ledger['budget_commitment'] > req.budget+.005:
             errors.append('Conservative sponsor commitment exceeds fixed budget')
@@ -217,38 +226,20 @@ def run(req: PortfolioRequest):
     baseline_times = base['simulation']['times'].mean(axis=0)
 
     def search(efficient=False, support=False, operations=False, add_only=False):
-        start = evaluate(baseline,efficient,support,operations)
-        frontier = [(baseline,start)]
-        seen = {baseline}
-        evaluated = [start]
-        # Every score uses the same full draw bank; no adaptive fresh inference.
-        for _ in range(3):
-            candidates = []
-            for selected,_ in frontier:
-                for network in sim.candidate_networks(req,selected):
-                    if network in seen or (add_only and not baseline.issubset(network)):
-                        continue
-                    seen.add(network)
-                    if len(seen)>96:
-                        break
-                    if sim.network_errors(req,network):
-                        continue
-                    candidate = evaluate(network,efficient,support,operations)
-                    evaluated.append(candidate)
-                    candidates.append((network,candidate))
-                if len(seen)>96:
-                    break
-            if not candidates or len(seen)>96:
-                break
-            frontier = sorted(candidates,key=lambda pair:(len(pair[1]['violations']),pair[1]['objective'],pair[1]['ledger']['expected_commitment'],sorted(pair[0])))[:3]
-        feasible = [r for r in evaluated if r['feasible']]
-        return min(feasible,key=lambda r:(r['objective'],r['ledger']['expected_commitment'],r['selected'])) if feasible else start
+        return search_engine.solve(req, baseline, evaluate, sim.usable, sim.network_errors,
+                                   sim.candidate_networks, effective_draws,
+                                   efficient, support, operations, add_only)
 
     joint_options = [search(True,support,operations)
                      for support in ([False,True] if req.support_rate_effect>0 else [False])
                      for operations in (False,True)]
     eligible_joint = [r for r in joint_options if r['feasible']]
-    joint = min(eligible_joint,key=lambda r:(r['objective'],r['ledger']['expected_commitment'],r['selected'])) if eligible_joint else evaluate(baseline,True)
+    joint = min(eligible_joint,key=search_engine.rank) if eligible_joint else joint_options[0]
+    if eligible_joint:
+        all_exact = all(r['optimization']['method']=='exact_enumeration' for r in joint_options)
+        joint = {**joint, 'optimization': {**joint['optimization'],
+                 'optimality_scope': 'All usable networks and enumerated optional support/operations policies on supplied finite draws',
+                 'policy_searches': len(joint_options)}} if all_exact else joint
     plans = [('A','Fixed baseline',base),('B','Financial efficiency',evaluate(baseline,True)),
              ('C','More sites',search(efficient=True,add_only=True)),
              ('D','Participant support',evaluate(baseline,True,True)),
@@ -261,6 +252,9 @@ def run(req: PortfolioRequest):
         return {'id':ident,'label':label,'feasible':result['feasible'],'violations':result['violations'],
                 'selected_edges':result['selected'],'ledger':result['ledger'],'policy':result['policy'],
                 'objective_value':fin.money(result['objective']),
+                'objective_unrounded':float(result['objective']),
+                'optimization':result.get('optimization', {'method':'fixed_comparison','status':'FIXED_COMPARISON',
+                    'objective_lower_bound':None,'absolute_gap':None,'relative_gap':None,'termination':'fixed_network'}),
                 'expected_makespan':fin.money(out['makespan'].mean()),
                 'weighted_makespan':fin.money(out['weighted_makespan'].mean()),
                 'weighted_sum_duration':fin.money(out['sum_duration'].mean()),
@@ -306,13 +300,13 @@ def run(req: PortfolioRequest):
                          'affects_critical_path':gain>1e-6,'break_even_value_per_month':fin.money(delta/gain) if gain>1e-6 and delta>0 else None,
                          'recommendation':'Candidate under assumptions' if r['feasible'] and gain>1e-6 else 'Retain funds; no feasible demonstrated time gain'})
     feasible = [s for s in scenarios if s['feasible']]
-    best = min(feasible,key=lambda s:(s['objective_value'],s['ledger']['expected_commitment'],s['id'])) if feasible else None
+    best = min(feasible,key=lambda s:(s['objective_unrounded'],s['ledger']['expected_commitment'],s['id'])) if feasible else None
     pareto = [s['id'] for s in feasible if not any(o['ledger']['expected_commitment']<=s['ledger']['expected_commitment'] and o['expected_makespan']<=s['expected_makespan'] and (o['ledger']['expected_commitment']<s['ledger']['expected_commitment'] or o['expected_makespan']<s['expected_makespan']) for o in feasible)]
     evidence = fin.code_evidence()
-    paths = [Path(__file__),Path(sim.__file__),CONTEXT,*[fin.terms.PROTOCOL_DIR/f'{t.financial_template}.json' for t in req.trials]]
+    paths = [Path(__file__),Path(sim.__file__),Path(search_engine.__file__),CONTEXT,*[fin.terms.PROTOCOL_DIR/f'{t.financial_template}.json' for t in req.trials]]
     evidence['portfolio_sources'] = {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
     evidence['executed_source_sha256'] = EXECUTED_SOURCES
-    evidence['algorithm'] = 'Event simulation; original allocator Instance feasibility contract; deterministic beam width 3 / depth 3 / at most 96 visited networks per search'
+    evidence['algorithm'] = 'Event simulation and original allocator Instance contract; exhaustive subsets when eligible edges <=12 and subsets*effective_draws*(edges+trials+2)<=500000; otherwise deterministic beam width 3 / depth 3 / 96 visited; heuristic gap unknown'
     evidence['cache_policy'] = 'No scenario result lookup during computation; immutable saved evidence verified by complete result digest'
     evidence['delivery_policy'] = 'Computation metadata records origin. Saved-run and report GET endpoints replay an immutable snapshot without new simulation.'
     evidence['runtime'] = {'python':platform.python_version(),'numpy':np.__version__,'pydantic':version('pydantic'),'fastapi':version('fastapi')}
@@ -374,8 +368,8 @@ def load(ident):
 
 def report_html(result):
     esc = html.escape
-    rows = ''.join(f"<tr><td>{esc(s['label'])}</td><td>{s['feasible']}</td><td>{s['expected_makespan']}</td><td>{s['ledger']['expected_commitment']:,.2f}</td><td>{s['ledger']['budget_commitment']:,.2f}</td></tr>" for s in result['scenarios'])
-    return '<!doctype html><html lang="en"><meta charset="utf-8"><title>Concord portfolio evidence</title><style>body{font:16px system-ui;max-width:1100px;margin:40px auto;padding:20px}td,th{padding:12px;border:1px solid #ccc}pre{white-space:pre-wrap;overflow-wrap:anywhere}h1{color:#165e63}</style><h1>Concord · Portfolio Command</h1><p>Computation evidence snapshot · synthetic operations · registry context only</p><p>Exporting or reopening this snapshot does not run a new simulation.</p><p>Run '+esc(result['run_id'])+'</p><table><tr><th>Scenario</th><th>Feasible</th><th>Expected months (capped)</th><th>Expected USD incl. reserve</th><th>Conservative commitment USD</th></tr>'+rows+'</table><h2>Limitations</h2><ul>'+''.join('<li>'+esc(x)+'</li>' for x in result['limitations'])+'</ul><h2>Complete immutable evidence</h2><pre>'+esc(json.dumps(result,indent=2))+'</pre></html>'
+    rows = ''.join(f"<tr><td>{esc(s['label'])}</td><td>{s['feasible']}</td><td>{esc(s.get('optimization', {}).get('status', 'LEGACY_UNVERIFIED'))}</td><td>{esc(str(s.get('optimization', {}).get('absolute_gap') if s.get('optimization', {}).get('absolute_gap') is not None else 'UNKNOWN'))}</td><td>{s['expected_makespan']}</td><td>{s['ledger']['expected_commitment']:,.2f}</td><td>{s['ledger']['budget_commitment']:,.2f}</td></tr>" for s in result['scenarios'])
+    return '<!doctype html><html lang="en"><meta charset="utf-8"><title>Concord portfolio evidence</title><style>body{font:16px system-ui;max-width:1100px;margin:40px auto;padding:20px}td,th{padding:12px;border:1px solid #ccc}pre{white-space:pre-wrap;overflow-wrap:anywhere}h1{color:#165e63}</style><h1>Concord · Portfolio Command</h1><p>Computation evidence snapshot · synthetic operations · registry context only</p><p>Exporting or reopening this snapshot does not run a new simulation.</p><p>Run '+esc(result['run_id'])+'</p><table><tr><th>Scenario</th><th>Feasible</th><th>Search status</th><th>Objective gap</th><th>Expected months (capped)</th><th>Expected USD incl. reserve</th><th>Conservative commitment USD</th></tr>'+rows+'</table><h2>Limitations</h2><ul>'+''.join('<li>'+esc(x)+'</li>' for x in result['limitations'])+'</ul><h2>Complete immutable evidence</h2><pre>'+esc(json.dumps(result,indent=2))+'</pre></html>'
 
 
 @router.get('/demo')

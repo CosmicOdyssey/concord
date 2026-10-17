@@ -70,7 +70,7 @@ def test_coverage_and_transfer_resource_conservation():
     req=f.FinanceRequest(target=10,draws=100)
     cov=f.coverage(req)
     assert all(sum(item[k] for k in ['sponsor_per_participant','payer_per_participant','patient_per_participant','reserve_per_participant'])==pytest.approx(item['unit_rate'],abs=.011) for item in cov['items'])
-    plan={'breakdown':dict(activation=10000,operating=2000,site_variable=3000,procedures=(cov['totals']['sponsor']+cov['totals']['reserve'])*10,support=5000,administration=1000)}
+    plan={'costed':True,'breakdown':dict(activation=10000,operating=2000,site_variable=3000,procedures=(cov['totals']['sponsor']+cov['totals']['reserve'])*10,support=5000,administration=1000)}
     plan['sponsor_total']=sum(plan['breakdown'].values())
     econ=f.economics(req,plan,cov)
     assert sum(econ['party_transfer_balances'].values())==pytest.approx(0,abs=.01)

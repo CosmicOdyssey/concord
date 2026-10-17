@@ -18,6 +18,8 @@ export interface RegistryContext { id: string; title: string; sponsor: string; s
 export interface PortfolioDemo { request: PortfolioRequest; registry_context: RegistryContext[]; limitations: string[] }
 export interface PortfolioScenario {
   id: string; label: string; feasible: boolean; violations: string[]; selected_edges: number[]; objective_value: number
+  optimization?: { method: string; status: string; termination: string; absolute_gap: number | null; relative_gap: number | null; objective_lower_bound: number | null; optimality_scope?: string }
+  objective_unrounded?: number
   policy: { administrative_efficiency: boolean; additional_support: boolean; operations_investment: boolean }
   expected_makespan: number; weighted_makespan: number; weighted_sum_duration: number; interval: number[]
   censored_draws: number; paired_months_saved: number; paired_savings_interval: number[]

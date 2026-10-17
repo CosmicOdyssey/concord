@@ -164,7 +164,7 @@ def test_payments_conserve_and_resource_costs_are_not_payment_totals(client, req
 def test_investigational_supply_is_never_a_hospital_receipt_or_cost(client, request_body):
     default = by_id(compare(client, request_body))["A"]["economics"]
     # Default demo: 60 x (0.8 x 0 + 0.8 x 52,800 + 0.8 x 120,000 ...) with no 2,500 drug reserve per participant.
-    assert default["hospital"]["net_contribution"] == pytest.approx(200489.40, abs=0.01)
+    assert default["hospital"]["net_contribution"] == pytest.approx(194163.60, abs=0.01)
     request_body["coverage_overrides"] = {"drug-contingency": "SPONSOR"}
     paid = by_id(compare(client, request_body))["A"]["economics"]
     assert paid["sponsor"]["contingency_reserve"] == default["sponsor"]["contingency_reserve"] - default["sponsor"]["supply_resource_proxy"]
