@@ -69,7 +69,8 @@ async function elementShot(page, sel, name) {
 
     const tabs = (await texts(page, 'nav.tabs button')).map((t) => t.replace(/^\d+\s*/, ''))
     const at = tabs.indexOf('Site scores')
-    check('tab order: Site scores after Protocol to terms, before Research', at > 0 && tabs[at - 1] === 'Protocol to terms' && tabs[at + 1] === 'Research', tabs)
+    // Other tabs may sit between Site scores and Research (Financial Coordination, from PR #1).
+    check('tab order: Site scores after Protocol to terms, before Research', at > 0 && tabs[at - 1] === 'Protocol to terms' && tabs.indexOf('Research') > at, tabs)
     const title = await text(page, '.ss-bd-title')
     check('preset opens the richest-history Dana-Farber / MSK site', /dana|sloan/i.test(title), title)
     const head = await text(page, '.ss-bd-head .small.muted')

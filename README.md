@@ -168,7 +168,7 @@ not just a conservative choice. Calibration slope of actual on predicted rate: 0
 dates, the model's times for the same trials are within 15-40% of what they actually took (June 2019:
 31 vs 37 months).
 
-**Observed-outcome check of the site scores** (`analysis/selection_validation.py`, 18 Oct). Completed trials
+**Observed-outcome check of the site scores** (`analysis/selection_validation.py`, 17 Oct). Completed trials
 started 2018 or later: each trial's registered site list is scored with rates fit only on pre-2018 trials,
 and the actual log per-site enrollment rate is regressed on that score with phase, log site count and
 start-year controls:
@@ -204,7 +204,7 @@ of trials slower than the baseline. Output: `data/robustness/holdout.json`; earl
 | Coordination capped at best-response times, vs best response | 1.00x (0% slower) | 1.00x (0% slower) | 1.00x (2% slower) | 1.01x (0% slower) | 0.99x (16% slower) |
 
 **Re-scored with calibrated site rates (post hoc, not pre-registered; `analysis/selection_calibrated.py`,
-18 Oct).** The observed-outcome check in section 2 says the scores overstate differences between site
+17 Oct).** The observed-outcome check in section 2 says the scores overstate differences between site
 lists. So the same saved allocations, not re-solved, are re-scored with every site's log rate shrunk
 toward the U.S. mean by b, the observed-outcome slope. b = 1 reproduces the table above exactly (largest
 difference 4e-16). Output: `data/findings/selection_calibrated.json`.
