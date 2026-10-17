@@ -63,10 +63,8 @@ Interactive docs at `http://localhost:8000/docs`.
 
 ## Results (17 Oct 2026, after trying to break them)
 
-> **Status, 17 Oct (checks in progress).** The numbers in sections 3-4 are in-sample: allocations are
-> chosen and scored with the same site rates. Treat them as upper bounds until the pre-registered holdout
-> (task A) is merged. Sections 3-4 also predate the beta correction in section 1 (they used 0.026).
-> See "Checks in progress" at the end.
+> **Status, 17 Oct.** The clearing results (sections 3-4) are withdrawn as headlines: they were measured
+> in-sample and do not hold out of sample. See "Checks in progress" at the end.
 
 ### 1. Does congestion slow enrollment? A little, mainly at experienced sites.
 
@@ -115,59 +113,28 @@ not just a conservative choice. Calibration slope of actual on predicted rate: 0
 dates, the model's times for the same trials are within 15-40% of what they actually took (June 2019:
 31 vs 37 months).
 
-### 3. Clearing, US-Northeast (recruiting industry Phase II/III, 103 trials after flagging)
+### 3. Clearing, US-Northeast: withdrawn as a headline
 
-Four allocations, all evaluated under the same model. **Headline: no trial worse off than its registered
-CT.gov site list.** Trials are reassigned only among sites that some trial in the market registered, and
-no trial gets more sites than it registered.
+The earlier clearing numbers here (e.g. 1.28x with "no trial worse off" vs registered site lists) were
+**in-sample**: allocations were chosen and scored with the same site rates. **They do not hold out of
+sample** (section B under "Checks in progress"):
 
-| comparison | ratio | median speedup | faster / slower |
-|---|---|---|---|
-| **no-loser coordination vs registered** (headline) | **1.28x** | 1.10x | 91% / 0% |
-| site selection alone (best response vs registered) | 1.23x | | |
-| pure coordination, no losers (vs best response) | 1.002x | | |
-| joint optimum, losers allowed (vs best response) | 1.57x | | 42% slower |
+- **Over time:** choosing with older trials and scoring with newer ones, the joint optimum is 0.98x its
+  best-response baseline.
+- **Under held-out rates:** 22% of trials are slower than with their registered sites, so "no trial
+  worse off" is not a claim we make.
 
-Robustness grid (`data/robustness/US-Northeast.json`, also in the app):
+The pre-registered holdout (task A) is being rerun at the current beta with the deterministic solver.
+Whatever it shows replaces this note; nothing else is added to it.
 
-| congestion elasticity | headline, registered sites only | pure coordination, no losers |
-|---|---|---|
-| 0 (CI lower) | 1.73x (median 1.59x) | 1.000x |
-| 0.026 (estimate) | 1.28x (median 1.10x) | 1.002x |
-| 0.12 (CI upper) | 1.28x (median 1.06x) | 1.035x |
-| 1.0 (master doc assumption) | 1.41x (median 1.13x) | 2.29x |
+### 4. Portfolio clearing: Regeneron, as of 1 Sept 2024 (withdrawn as a headline)
 
-- **The coordination dividend came from an assumption.** The master doc's dividend was produced by
-  assuming beta = 1. At the elasticity the data supports, coordination with no losers is worth about
-  1.00-1.04x.
-- **Larger gains need side payments.** The joint optimum is worth more, but it makes a third or more of
-  trials slower. Sponsors would only join if the losers were compensated.
-- **The no-loser gain over registered sites doesn't depend on congestion.** That 1.28-1.73x comes from
-  moving trials, within the shared network of sites sponsors already use, toward sites with better
-  track records and spare capacity. It rests on the site-rate model (section 2), which is the weakest
-  link.
-- **Idle sites push it higher, on weaker ground.** Letting trials use idle sites that have some history
-  (`universe=history`) raises the gain to 1.6-2.2x, but leans harder on the site rates.
+The portfolio clearing ratios previously reported here were in-sample in the same way as section 3 and
+are withdrawn pending the same rerun. One observed fact stands, since it needs no model of site rates:
 
-43 of 146 trials are flagged: their model time exceeds 120 months under their registered sites, mostly
-because of parse or estimate failures. They stay in the instance as fixed background congestion and are
-excluded from every number.
-
-### 4. Portfolio clearing (the wedge): Regeneron, as of 1 Sept 2024
-
-Setup: `region=US, sponsor=Regeneron, as_of=2024-09-01`. That covers Regeneron's 5 NSCLC trials
-recruiting on that date, cleared across Regeneron's own registered U.S. site network, with every other
-sponsor's trials held fixed. Eligibility is hand-encoded (`compiler/overrides.py`).
-
-- **Self-competition.** The two fianlimab Phase 2/3 trials (NCT05785767, NCT05800015) shared 16
-  registered U.S. sites, and every patient eligible for the first was eligible for the second
-  (overlap 1.0).
-- **No-loser clearing:** 1.27x (median 1.26x); all 5 trials faster. Across the elasticity range it
-  is 1.24-2.08x. It is highest at beta = 0, because with any congestion, moves onto Regeneron's sites
-  slightly slow other sponsors' trials there, and the no-loser cap protects those trials too. Rows
-  that allow any idle U.S. site (`universe=history`, 3.6x) lean on noisy site rates and are not the
-  claim. Grid: `data/robustness/US_Regeneron_2024-09-01.json`.
-- **Pure coordination:** about 1.00x, consistent with section 1.
+- **Self-competition.** Regeneron's two fianlimab Phase 2/3 trials (NCT05785767, NCT05800015) shared 16
+  registered U.S. sites. Under hand-encoded eligibility on the synthetic population, every patient
+  eligible for the first was eligible for the second (overlap 1.0).
 
 ### 5. Term sheets
 
