@@ -1,0 +1,224 @@
+/* One fee-schedule line, priced step by step (LineBreakdown.tsx). Calm tokens only. */
+.lb {
+  min-width: 0;
+  transition: opacity 120ms ease-out;
+}
+.lb-stale {
+  opacity: 0.6;
+}
+.lb-tbl {
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+.lb-tbl thead th {
+  position: static;
+  white-space: normal;
+}
+.lb-tbl tbody th {
+  font-weight: 500;
+  color: var(--ink);
+  min-width: 10rem;
+}
+.lb-full tbody th {
+  min-width: 13rem;
+}
+.lb-tbl td.num,
+.lb-tbl th.num {
+  white-space: nowrap;
+}
+.lb-site {
+  text-align: center;
+  color: var(--ink-2);
+  border-left: 1px solid var(--rule);
+}
+.lb-loc,
+.lb-src,
+.lb-sub {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--muted);
+  white-space: normal;
+}
+.lb-loc {
+  color: var(--ink-2);
+}
+.lb-sub {
+  margin-top: 0.125rem;
+}
+.lb-src {
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
+.lb-units .lb-src {
+  max-width: 13rem;
+  margin-left: auto;
+  text-align: right;
+}
+.lb-sum th,
+.lb-sum td {
+  border-top: 1px solid var(--rule-strong);
+}
+.lb-big {
+  font-size: var(--fs-md);
+}
+.lb-final th,
+.lb-final td {
+  background: var(--surface-2);
+}
+.lb-th-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+.lb-pct {
+  display: block;
+  margin-top: 0.25rem;
+}
+.lb-pct-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.lb-pct input {
+  width: 4.75rem;
+  font: inherit;
+  font-size: var(--fs-ui);
+  padding: 0.2rem 0.375rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--ctl);
+  border-radius: var(--radius-ctl);
+}
+.lb-pct input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.lb-pct input[aria-invalid='true'] {
+  border-color: var(--error-ink);
+}
+.lb-pct-msg {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--error-ink);
+}
+.lb-notes {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.lb-notes p {
+  margin: 0 0 0.375rem;
+}
+.lb-muted {
+  color: var(--muted);
+}
+.lb-cms {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.lb-recon {
+  margin: var(--sp-3) 0;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+.lb-recon-h {
+  font-weight: 600;
+  color: var(--ink);
+}
+.lb-recon ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+.lb-recon li + li {
+  margin-top: 0.375rem;
+}
+.lb-na {
+  margin: 0;
+}
+/* inside a hover card: keep the compact table narrow enough for a phone */
+.hc-card .lb {
+  width: min(20rem, calc(100vw - 48px));
+}
+.hc-card .lb-tbl th,
+.hc-card .lb-tbl td {
+  padding: 0.3rem 0.375rem;
+}
+.hc-card .lb-tbl tbody th {
+  min-width: 6rem;
+}
+.tf-featured .lb,
+.lb-wrap .lb {
+  margin-top: var(--sp-2);
+}
+/* landing: the Detailed term-sheet line */
+.lp-sheet-build {
+  margin-top: var(--sp-4);
+}
+.lp-sheet .lb-tbl thead th {
+  background: transparent;
+}
+.lb-stack {
+  display: block;
+}
+.lb-card-notes {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-xs);
+}
+@media (max-width: 640px) {
+  .lb-tbl tbody th {
+    min-width: 7.5rem;
+  }
+  /* the step names stay in view while the site columns scroll beside them */
+  .lb-full tbody th,
+  .lb-full thead th.lb-step {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    min-width: 8.5rem;
+    max-width: 9.5rem;
+    background: var(--surface);
+    box-shadow: 1px 0 0 var(--rule);
+  }
+  .lb-full .lb-final th {
+    background: var(--surface-2);
+  }
+}
+/* phones: the compact summary above the full table, and a narrower step column so a site column shows in view */
+.lb-phone-summary {
+  display: none;
+}
+@media (max-width: 480px) {
+  .lb-phone-summary {
+    display: block;
+    margin-bottom: var(--sp-3);
+  }
+  .lb-full tbody th,
+  .lb-full thead th.lb-step {
+    min-width: 7rem;
+    width: 7.5rem;
+    max-width: 7.5rem;
+  }
+  .lb-full thead th.num {
+    white-space: normal;
+    min-width: 5.5rem;
+  }
+  .lb-full .lb-units .lb-src {
+    max-width: none;
+  }
+}
+@media (max-width: 480px) {
+  .lb-full thead th.lb-units {
+    min-width: 7.5rem;
+  }
+}
+/* a hover card holding a breakdown can be taller than a phone screen: it scrolls inside instead of running off it */
+.hc-card:has(.lb) {
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+}

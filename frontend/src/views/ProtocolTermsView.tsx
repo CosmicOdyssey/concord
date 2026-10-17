@@ -35,7 +35,6 @@ import {
   type TrialCard,
   type VisitBudget,
   coverageLabel,
-  formulaText,
   localityLabel,
   localityTitle,
   nodeStates,
@@ -45,6 +44,8 @@ import { CoverageList, CoverageSplit, NodeDetail, RuleChip, RuleList, ScheduleGr
 import { AnchorChip, BandInputs, BandOutsideNote, BudgetTransparency, CompareWhy, GpciLabel, LineRange, OverheadInput } from './TermsAnchoring'
 import { GPCI_PLAIN } from './termsAnchoringText'
 import TermsProposalCheck from './TermsProposalCheck'
+import { LineDetailContext, type LineDetailScope } from '../lineDetailApi'
+import { LineBreakdown } from './LineBreakdown'
 import './protocolTerms.css'
 import TermsSpread from './TermsSpread'
 
@@ -297,6 +298,29 @@ export default function ProtocolTermsView() {
   const cmpData = cmp.status === 'ok' && cmpOk && cmp.data.nct_id === nct ? cmp.data : null
   const cmpStale = !!cmpData && cmp.status === 'ok' && (cmp.pending || pkey !== JSON.stringify(params))
   const lineById = useMemo(() => new Map(bud?.visits.flatMap((v) => v.lines.map((l) => [l.node_id, l] as const)) ?? []), [bud])
+  const setOverhead = useCallback((v: number | null) => {
+    setStandard((s) => {
+      const next = { ...s }
+      if (v === null) delete next.overhead
+      else next.overhead = v
+      return next
+    })
+  }, [])
+  // Line breakdowns (LineBreakdown.tsx) price against the same trial, sites and parameters, and edit the same
+  // multiplier and overhead controls as step 3.
+  const overDef = overItem?.default ?? null
+  const overNow = standard.overhead ?? overDef
+  const lineScope: LineDetailScope | null =
+    proto && siteA
+      ? {
+          nct,
+          siteA,
+          siteB: cmpOk ? siteB : null,
+          params: dparams,
+          mult: { pct: multPct, set: setMultPct },
+          overhead: overDef != null && overNow != null ? { value: overNow, def: overDef, set: setOverhead } : undefined,
+        }
+      : null
 
   const setNode = useCallback((id: string, c: Coverage | null) => {
     setOverrides((o) => {
@@ -331,6 +355,7 @@ export default function ProtocolTermsView() {
   const picked = trialList?.find((t) => t.nct_id === nct) ?? null
 
   return (
+    <LineDetailContext.Provider value={lineScope}>
     <section className="view tf" aria-label="Protocol to terms">
       <PageHead
         title="Protocol to terms"
@@ -546,16 +571,7 @@ export default function ProtocolTermsView() {
                     </label>
                     <BandInputs lo={band[0]} hi={band[1]} onChange={(lo, hi) => setBand([lo, hi])} />
                     {overItem && overItem.default != null && (
-                      <OverheadInput
-                        value={standard.overhead ?? overItem.default}
-                        def={overItem.default}
-                        onChange={(v) => {
-                          const next = { ...standard }
-                          if (v === null) delete next.overhead
-                          else next.overhead = v
-                          setStandard(next)
-                        }}
-                      />
+                      <OverheadInput value={standard.overhead ?? overItem.default} def={overItem.default} onChange={setOverhead} />
                     )}
                   </div>
                 )}
@@ -710,10 +726,13 @@ export default function ProtocolTermsView() {
             figure={bud && <FeaturedLine b={bud} rules={proto.rules} selected={selected} lineById={lineById} cmp={cmpData} siteA={siteA} siteB={siteB} />}
             details={bud && <SheetContents b={bud} picked={picked} />}
             detailsLabel="What the term sheet contains"
-          />
+          >
+            {bud && <FeaturedBreakdown b={bud} selected={selected} lineById={lineById} />}
+          </Step>
         </>
       )}
     </section>
+    </LineDetailContext.Provider>
   )
 }
 
@@ -1523,8 +1542,11 @@ function Provenance({ l, mult }: { l: Line; mult: number }) {
   if (l.schedule === 'PFS' && l.formula)
     return (
       <span>
-        <span className="tf-src-tag">PFS</span> <span className="tf-mono">{formulaText(l.formula)}</span>
-        {m}
+        <span className="tf-src-tag">PFS</span>{' '}
+        <HoverCard content={<LineBreakdown nodeId={l.node_id} variant="compact" editable={false} inCard />}>
+          Medicare {usd(l.medicare_amount)}
+          {m}, step by step
+        </HoverCard>
       </span>
     )
   if (l.schedule === 'CLFS')
@@ -1552,14 +1574,18 @@ function LineFields({
   mult,
   visit,
   priceB,
+  breakdownBelow = false,
 }: {
   line: Line
   rules: Rule[]
   mult: number
   visit?: string
   priceB?: { a: number; b: number } | null
+  /** The step-by-step table is shown below (step 6) rather than inside these fields (hover cards). */
+  breakdownBelow?: boolean
 }) {
   const sponsor = line.payer === 'Sponsor'
+  const pfs = line.schedule === 'PFS' && !!line.formula
   const multText = sponsor && mult !== 1 && (line.schedule === 'PFS' || line.schedule === 'CLFS') ? ` × ${pctText(mult)} = ${usd(line.amount)}` : ''
   const price: ReactNode = sponsor ? (
     priceB ? (
@@ -1578,18 +1604,17 @@ function LineFields({
   ) : (
     (line.note ?? 'No site charge')
   )
-  const formula: ReactNode =
-    line.schedule === 'PFS' && line.formula ? (
-      <span className="num tf-formula-text">
-        {formulaText(line.formula)}
-        {multText}
-      </span>
-    ) : line.schedule === 'CLFS' ? (
+  const formula: ReactNode = pfs ? (
+    breakdownBelow ? (
+      'Step by step in the table below: units for this code × each site’s regional adjustment × Medicare dollars per unit, then the multiplier and overhead.'
+    ) : null
+  ) : line.schedule === 'CLFS' ? (
       `National lab fee ${usd(line.medicare_amount)}${multText}${line.placeholder ? ' (placeholder until the CLFS file is loaded)' : ''}`
     ) : line.schedule === 'Standard' && sponsor ? (
       `${line.standard_label ?? 'Itemized fee'}, ${line.standard_unit ?? 'each time performed'}${line.edited ? ' (edited)' : ''}`
     ) : null
   return (
+    <>
     <dl className="tf-line-dl">
       {visit && <Field k="Visit">{visit}</Field>}
       <Field k="Item">{line.label}</Field>
@@ -1601,9 +1626,11 @@ function LineFields({
       <Field k="Rule">{line.override ? `${ruleTitle(rules, line.rule)}; overridden by a reviewer` : ruleTitle(rules, line.rule)}</Field>
       <Field k="Why">{line.reason}</Field>
       <Field k="Price">{price}</Field>
-      {formula !== null && <Field k="Formula">{formula}</Field>}
+      {formula !== null && <Field k={pfs ? 'How it’s built' : 'Formula'}>{formula}</Field>}
       <Field k="Source">{line.source ?? '—'}</Field>
     </dl>
+    {pfs && !breakdownBelow && <LineBreakdown nodeId={line.node_id} variant="compact" editable={false} inCard />}
+    </>
   )
 }
 
@@ -1904,7 +1931,7 @@ function CompareDetails({ c }: { c: Compare }) {
       <h3>Every sponsor-paid item</h3>
       <p className="small muted tf-sub">
         Per line: amount = (work RVU × work GPCI + PE RVU × PE GPCI + MP RVU × MP GPCI) × conversion factor × {m}. RVUs and the conversion factor are
-        national, so the difference is CF × m × Σ RVU × ΔGPCI. Select a row for both formulas.
+        national, so the difference is CF × m × Σ RVU × ΔGPCI. Select a row for its price step by step at both sites.
       </p>
       <div className="table-scroll">
         <table className="tbl tbl-compact tf-cmp-tbl">
@@ -1970,12 +1997,11 @@ function CompareDetails({ c }: { c: Compare }) {
                       <td colSpan={9} className="small">
                         {r.formula_a ? (
                           <>
-                            <div>
-                              A: <span className="tf-mono">{formulaText(r.formula_a)}</span> × {m} = {usd(r.unit_a)}
-                            </div>
-                            <div>
-                              B: <span className="tf-mono">{formulaText(r.formula_b ?? '')}</span> × {m} = {usd(r.unit_b)}
-                            </div>
+                            <LineBreakdown
+                              nodeId={`${r.visits_fixed[0] ?? r.visits_counted?.[0]?.visit_id ?? r.visits_repeat[0]}:${r.procedure_id}`}
+                              variant="compact"
+                              editable={false}
+                            />
                             <div className="muted">
                               Δ = {c.conversion_factor.toFixed(4)} × {m} × ({r.rvu?.work.toFixed(2)} × {signedNum(c.gpci_delta.work)} +{' '}
                               {r.rvu?.pe.toFixed(2)} × {signedNum(c.gpci_delta.pe)} + {r.rvu?.mp.toFixed(2)} × {signedNum(c.gpci_delta.mp)}) ={' '}
@@ -2089,10 +2115,8 @@ function FeaturedLine({
   siteA: string
   siteB: string
 }) {
-  const fixed = fixedVisits(b).flatMap((v) => v.lines)
-  const sponsorPfs = fixed.filter((l) => l.payer === 'Sponsor' && l.schedule === 'PFS')
   const chosen = selected ? lineById.get(selected) : undefined
-  const line = chosen ?? sponsorPfs.find((l) => l.rule === 'R4') ?? sponsorPfs[0] ?? fixed.find((l) => l.payer === 'Sponsor') ?? fixed[0]
+  const line = featuredLine(b, selected, lineById)
   if (!line) return null
   const visit = b.visits.find((v) => v.visit_id === line.visit_id)
   const pair = cmp && cmp.a.site.site_id === siteA && cmp.b.site.site_id === siteB ? cmp : null
@@ -2103,8 +2127,31 @@ function FeaturedLine({
         Term sheet line · {visit?.label ?? line.visit_id}
         {chosen ? ' (selected in the grid)' : ''}
       </p>
-      <LineFields line={line} rules={rules} mult={b.multiplier} visit={visit?.label} priceB={row ? { a: row.unit_a, b: row.unit_b } : null} />
+      <LineFields line={line} rules={rules} mult={b.multiplier} visit={visit?.label} priceB={row ? { a: row.unit_a, b: row.unit_b } : null} breakdownBelow />
       {!chosen && <p className="tf-featured-hint">Select any cell in the step 2 schedule grid to show its line here.</p>}
+    </div>
+  )
+}
+
+/** The term-sheet line shown in step 6: the selected grid item's line, or else a research scan from the fixed schedule. */
+function featuredLine(b: Budget, selected: string | null, lineById: Map<string, Line>): Line | undefined {
+  const fixed = fixedVisits(b).flatMap((v) => v.lines)
+  const sponsorPfs = fixed.filter((l) => l.payer === 'Sponsor' && l.schedule === 'PFS')
+  const chosen = selected ? lineById.get(selected) : undefined
+  return chosen ?? sponsorPfs.find((l) => l.rule === 'R4') ?? sponsorPfs[0] ?? fixed.find((l) => l.payer === 'Sponsor') ?? fixed[0]
+}
+
+/** Step 6, full width: the featured line's price step by step (physician-fee-schedule lines only). */
+function FeaturedBreakdown({ b, selected, lineById }: { b: Budget; selected: string | null; lineById: Map<string, Line> }) {
+  const line = featuredLine(b, selected, lineById)
+  if (!line || line.schedule !== 'PFS' || !line.formula) return null
+  const visit = b.visits.find((v) => v.visit_id === line.visit_id)
+  return (
+    <div className="lb-wrap">
+      <h3>
+        How this line’s price is built: {line.label} (<span className="num">{line.code}</span>), {visit?.label ?? line.visit_id}
+      </h3>
+      <LineBreakdown nodeId={line.node_id} />
     </div>
   )
 }

@@ -166,3 +166,17 @@ def counter_proposal(nct: str, body: ProposalIn) -> HTMLResponse:
             f"{'_SYNTHETIC' if res.get('synthetic') else ''}.html")
     return HTMLResponse(proposal.counter_proposal_html(res, body.detail),
                         headers={"Content-Disposition": f'attachment; filename="{name}"'})
+
+
+# ---------------------------------------------------------------- one line, step by step (concord.line_detail)
+
+from concord import line_detail as _line_detail  # noqa: E402 - kept with the route it serves
+
+
+@router.get("/{nct}/line-detail")
+def line_detail(nct: str, node_id: str, site_a: str, site_b: str | None = None, multiplier: float = 1.0,
+                overrides: str | None = None, standard: str | None = None) -> dict:
+    """One term-sheet line's price, step by step: CMS units x each site's regional adjustments x the conversion
+    factor = Medicare rate, then x multiplier + overhead (assumptions) = sponsor price, reconciled with Budget."""
+    return _call(_line_detail.line_detail, nct.upper(), node_id, site_a, site_b or None, multiplier,
+                 _json_map(overrides, "overrides"), _json_map(standard, "standard"))

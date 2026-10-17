@@ -271,6 +271,10 @@ def _code_lines(b: dict) -> dict[str, dict]:
                 e["procedures"].append(ln["procedure_id"])
                 e["labels"].append(ln["label"])
             e["sponsor_visits" if ln["payer"] == "Sponsor" else "insurance_visits"] += 1
+            # the term-sheet line whose step-by-step price the UI shows (line_detail.py): the first sponsor-paid
+            # occurrence of the code, else its first occurrence
+            if "node_id" not in e or (ln["payer"] == "Sponsor" and not e["node_sponsor"]):
+                e["node_id"], e["node_sponsor"] = ln["node_id"], ln["payer"] == "Sponsor"
     return out
 
 
@@ -278,8 +282,9 @@ def _cms_source(e: dict, loc: dict | None) -> dict:
     src = e["source"] or ""
     if e["schedule"] == "PFS":
         where = f"{loc['name']} ({loc['state']} locality {loc['code']})" if loc else "national (no locality resolved)"
-        text = (f"CMS PFS {_year(src) or ''} ({_file(src) or 'RVU file'}), {where}, code {e['code']}: "
-                f"{e['formula'] or ''}").replace("  ", " ")
+        # the UI shows how the amount is built as a step-by-step table (node_id -> line_detail.py); the one-line
+        # formula stays in the "formula" key and in the printable export
+        text = f"CMS PFS {_year(src) or ''} ({_file(src) or 'RVU file'}), {where}, code {e['code']}".replace("  ", " ")
         return {"schedule": "PFS", "file": _file(src), "year": _year(src), "locality": where, "code": e["code"],
                 "formula": e["formula"], "title": src, "text": text}
     if e["schedule"] == "CLFS":
@@ -334,7 +339,7 @@ def check(nct: str, site_id: str, csv_text: str, band_low: float = BAND_DEFAULT[
                "flag": "unmatched", "flag_label": FLAGS["unmatched"], "kind": None, "match": None, "method": None,
                "matched_label": None, "code": None, "medicare": None, "range_low": None, "range_high": None,
                "outside_by": 0.0, "reference": None, "reference_unit": None, "reference_label": None,
-               "source": None, "notes": []}
+               "source": None, "node_id": None, "notes": []}
         if r["rejoined"]:
             row["notes"].append("amount read from unquoted thousands separators; check it")
         if r.get("decimal_comma"):
@@ -372,7 +377,7 @@ def check(nct: str, site_id: str, csv_text: str, band_low: float = BAND_DEFAULT[
             row.update({"kind": "lab" if e["schedule"] == "CLFS" else "procedure", "match": e["code"],
                         "method": target[2], "code": e["code"],
                         "matched_label": row["matched_label"] or " / ".join(e["labels"]),
-                        "source": _cms_source(e, loc)})
+                        "source": _cms_source(e, loc), "node_id": e["node_id"]})
             if r["percent"]:
                 errors.append({"row": r["row"], "text": f"{r['item']}, {r['raw']}"[:200],
                                "error": "a percentage is only meaningful for the overhead rate; give a dollar amount"})
@@ -598,6 +603,8 @@ def counter_proposal_html(res: dict, detail: str = "simple") -> str:
           f"<td class='n'>{e(_ask_text(r))}</td><td>{e(_range_text(r))}</td>"
           f"<td><span class='flag f-{e(r['flag'])}'>{e(r['flag_label'])}</span></td><td>{e(response_text(r))}</td></tr>")
         src = r["source"]["text"] if r["source"] else "No source: the item is not in this protocol's schedule"
+        if r["source"] and r["source"]["formula"]:
+            src += f": {r['source']['formula']}"
         if r["medicare"] is not None:
             src = (f"Medicare {_m(r['medicare'])} x {res['band']['low'] * 100:.0f}% to "
                    f"{res['band']['high'] * 100:.0f}% (band: {BAND_LABEL}). Source: {src}")

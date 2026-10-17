@@ -31,7 +31,18 @@ import { highShare, pctInt, shadeStep } from '../shade'
 import { skipTo } from '../skip'
 import { DISCLAIMER, ILLUSTRATIVE, termsApi } from '../termsFlowApi'
 import { ThemeControl } from '../theme'
+import { LineDetailContext, type LineDetailScope } from '../lineDetailApi'
+import { LineBreakdown } from './LineBreakdown'
 import './landing.css'
+
+// The Detailed term-sheet line: CT chest at cycle 7 day 1, priced step by step at the same two sites and 100% of Medicare.
+const CT_NODE = 'C7D1:ct_chest'
+const LANDING_LINE_SCOPE: LineDetailScope = {
+  nct: TERMS_NCT,
+  siteA: TERMS_SITE_A,
+  siteB: TERMS_SITE_B,
+  params: { multiplier: 1, overrides: {}, standard: {} },
+}
 
 const SECTIONS = ['terms', 'overlap', 'tested'] as const
 type SectionId = (typeof SECTIONS)[number]
@@ -373,14 +384,19 @@ function TermsWindow({ f }: { f: TermsFragment }) {
                   </dd>
                 </div>
                 <div>
-                  <dt>Formula (Site A)</dt>
-                  <dd className="num lp-formula">{f.ctFormulaA}</dd>
-                </div>
-                <div>
                   <dt>Source</dt>
                   <dd>CMS 2026 Physician Fee Schedule, RVU file, October release (rvu26d.zip)</dd>
                 </div>
               </dl>
+              <p className="lp-sheet-h lp-sheet-build">How the price is built</p>
+              <LineDetailContext.Provider value={LANDING_LINE_SCOPE}>
+                <LineBreakdown
+                  nodeId={CT_NODE}
+                  variant="compact"
+                  editable={false}
+                  fallback={<p className="num lp-formula">Site A: {f.ctFormulaA}</p>}
+                />
+              </LineDetailContext.Provider>
             </div>
           )}
         </div>
@@ -733,7 +749,7 @@ export default function LandingView({ focus }: { focus: { id: string | null; n: 
                   Concord reads a protocol's schedule of assessments and marks each item routine care (billable to insurance) or research-only (paid by the sponsor),
                   with the rule and reason shown. It prices physician services from the CMS 2026 physician fee schedule at the site's Medicare locality, lab tests from
                   the CMS 2026 clinical lab fee schedule, and non-procedure fees from a proposed standard schedule, labeled as an assumption. Every term-sheet line keeps
-                  its source; fee-schedule items also show their code, and physician services show the formula, so site and sponsor negotiate from the same numbers.
+                  its source; fee-schedule items also show their code, and physician services show how the price is built, step by step, so site and sponsor negotiate from the same numbers.
                 </p>
               ) : (
                 <p className="lp-body">
