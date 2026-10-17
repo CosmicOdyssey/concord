@@ -8,6 +8,7 @@ import TermsView from './views/TermsView'
 import ModelView from './views/ModelView'
 import RobustnessView from './views/RobustnessView'
 import PortfolioView from './views/PortfolioView'
+import OverlapView from './views/OverlapView'
 
 const TABS = [
   { id: 'map', label: 'Congestion map' },
@@ -17,6 +18,7 @@ const TABS = [
   { id: 'prices', label: 'Price tags' },
   { id: 'terms', label: 'Pre-cleared terms' },
   { id: 'model', label: 'Model & data' },
+  { id: 'overlap', label: 'Portfolio overlap' },
 ] as const
 type TabId = (typeof TABS)[number]['id']
 
@@ -168,6 +170,7 @@ export default function App() {
         {tab === 'prices' && <PriceTagsView clear={clear} selected={selectedTrial} setSelected={setSelectedTrial} />}
         {tab === 'terms' && <TermsView clear={clear} />}
         {tab === 'model' && <ModelView />}
+        {tab === 'overlap' && <OverlapView regions={regions} />}
       </main>
       <footer className="footer small muted">
         Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov; enrollment times are model estimates.

@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-17T07:07:12+00:00",
+ "generated_at": "2026-10-17T07:32:41+00:00",
  "definition": "Same-sponsor pairs of NSCLC trials (is_lung = 1, industry lead sponsor, status not WITHDRAWN, any phase) whose estimated enrollment windows (start to start + 0.65 x (primary completion - start)) are both open on some date on or after 2015-01-01, that share >= 10 identifiable registered sites (worldwide; site rows withdrawn from the trial and anonymized per-city pseudo-sites excluded), and whose eligibility overlap on the synthetic population is >= 0.8 in at least one direction (o_PQ = share of P's eligible patients also eligible for Q: one population nearly contained in the other). Excluded and counted separately: pairs where either trial has no encoded criteria (an empty criteria list describes everyone and passes the overlap test trivially) and pairs where either trial registers no completion date at all (its window would run to the 2100-01-01 stand-in, so 'open after 2015-01-01' would be an artifact).",
  "parameters": {
   "min_shared_sites": 10,
@@ -31,13 +31,15 @@
   "excluded_open_ended_window_at_min_5_sites": 1,
   "industry_lung_trials_in_db": 3062,
   "industry_lung_trials_considered": 2959,
-  "industry_sponsors_with_2plus_trials": 326
+  "industry_sponsors_with_2plus_trials": 326,
+  "considered_trials_with_mostly_anonymized_sites": 639
  },
  "notes": [
   "Descriptive: counts of registered sites, estimated enrollment windows and synthetic-population eligibility shares. Nothing here predicts enrollment speed.",
   "upper_bound: either trial's hand-encoded design entry lists a required biomarker the population does not model, a basket or multi-cohort design, or any unmodeled restriction; the overlap shown is then a ceiling on the modeled populations, not a measurement.",
   "Overlap months are the full overlap of the two estimated windows (not only the part after the cut-off date).",
-  "Site lists are as registered on ClinicalTrials.gov today; a site's activation dates are not public."
+  "Site lists are as registered on ClinicalTrials.gov today; a site's activation dates are not public.",
+  "The count is a floor: sponsors that register their sites anonymously ('Research Site'; see context.considered_trials_with_mostly_anonymized_sites) cannot show identifiable shared sites, and different lead-sponsor strings of one company are not merged."
  ],
  "pairs": [
   {

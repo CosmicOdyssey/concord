@@ -8,10 +8,12 @@ synthetic population; nothing here predicts enrollment speed, time-to-fill or a 
 statistic:
 
   recruiting on a date   status is not WITHDRAWN and start <= date < start + ENROLL_FRACTION x
-                         (primary completion - start): service.build's as-of rule. The window end is
-                         an estimate (0.65 of start -> primary completion is an assumption); trials
-                         with no completion date at all run to OPEN_END, as in service.build, and are
-                         flagged open_ended.
+                         (primary completion - start): service.build's as-of rule (completion date
+                         when primary completion is missing). The window end is an estimate (0.65 of
+                         start -> primary completion is an assumption). Unlike service.build, a trial
+                         that registers no completion date at all has no window here (service.build
+                         runs it to OPEN_END, which keeps 2005 trials "recruiting" in 2024): it is left
+                         out and listed in the audit's excluded_open_ended.
   registered site        a trial_sites row whose site status is not WITHDRAWN (a withdrawn site never
                          took part). Region filters apply to the site's country/state.
   shared site            a registered site on both trials that is identifiable: sites registered
@@ -65,11 +67,13 @@ def _con() -> sqlite3.Connection:
     return con
 
 
-def recruiting_sql(a: str = "t") -> str:
-    """Two parameters: (as_of, as_of). Same as-of rule as service.build."""
-    return (f"{a}.status NOT IN ('WITHDRAWN') AND {a}.start_date <= ? AND julianday({a}.start_date) + "
-            f"{ENROLL_FRACTION} * (julianday(COALESCE({a}.primary_completion_date, {a}.completion_date, "
-            f"'{OPEN_END}')) - julianday({a}.start_date)) > julianday(?)")
+def recruiting_sql(a: str = "t", open_ended: bool = False) -> str:
+    """Two parameters: (as_of, as_of). service.build's as-of rule; open_ended=False (default) also
+    requires a registered completion date, so the window is defined."""
+    sql = (f"{a}.status NOT IN ('WITHDRAWN') AND {a}.start_date <= ? AND julianday({a}.start_date) + "
+           f"{ENROLL_FRACTION} * (julianday(COALESCE({a}.primary_completion_date, {a}.completion_date, "
+           f"'{OPEN_END}')) - julianday({a}.start_date)) > julianday(?)")
+    return sql if open_ended else f"{sql} AND COALESCE({a}.primary_completion_date, {a}.completion_date) IS NOT NULL"
 
 
 def region_sql(region: str | None, a: str = "s") -> tuple[str, list, str]:
@@ -200,6 +204,11 @@ def _audit(sponsor: str, as_of: str, region: str | None) -> dict:
         FROM trials t LEFT JOIN trial_model tm USING(nct_id)
         WHERE t.is_lung=1 AND t.sponsor=? AND {recruiting_sql()}{in_region}
         ORDER BY t.start_date, t.nct_id""", [sponsor, as_of, as_of] + rargs).fetchall()
+    excluded_open_ended = [r[0] for r in con.execute(f"""
+        SELECT t.nct_id FROM trials t
+        WHERE t.is_lung=1 AND t.sponsor=? AND {recruiting_sql(open_ended=True)}
+          AND t.primary_completion_date IS NULL AND t.completion_date IS NULL{in_region}
+        ORDER BY t.nct_id""", [sponsor, as_of, as_of] + rargs)]
     ids = [r["nct_id"] for r in trows]
     ph = ",".join("?" * len(ids))
 
@@ -274,8 +283,11 @@ def _audit(sponsor: str, as_of: str, region: str | None) -> dict:
         shared = sorted(set(tp["site_ids"]) & set(tq["site_ids"]) & identified,
                         key=lambda s: (-(sites[s]["other_sponsor_trials"] or 0), sites[s]["facility"] or ""))
         ov = overlap_window(wins[i], wins[j])
+        # Both list an anonymized site in the same city: same pseudo-site id, facility unknown. Not a shared site.
+        anon_same_city = len((set(tp["site_ids"]) & set(tq["site_ids"])) - identified)
         pairs.append({
             "p": tp["nct_id"], "q": tq["nct_id"], "shared_sites": len(shared), "shared_site_ids": shared,
+            "anonymized_same_city": anon_same_city,
             "o_pq": _round(o[i, j]), "o_qp": _round(o[j, i]),
             "overlap_informative": not (tp["no_criteria"] or tq["no_criteria"]),
             "months_both_recruiting_estimated": round((ov[1] - ov[0]) / DAYS_PER_MONTH, 1) if ov else 0.0,
@@ -287,16 +299,21 @@ def _audit(sponsor: str, as_of: str, region: str | None) -> dict:
 
     return {
         "sponsor": sponsor, "sponsor_known": known > 0, "as_of": as_of, "region": region, "region_label": label,
-        "trials": trials, "pairs": pairs, "sites": sites,
+        "trials": trials, "pairs": pairs, "sites": sites, "excluded_open_ended": excluded_open_ended,
+        "n_sites": len(sites), "n_sites_anonymized": len(sites) - len(identified),
         "population": {"n": int(len(next(iter(pop.values())))), "seed": 7,
                        "note": "Synthetic advanced-NSCLC population; prevalences are rounded modeling "
                                "assumptions, not patient data."},
         "definitions": {
             "recruiting_on_date": f"status not WITHDRAWN and start <= date < start + {ENROLL_FRACTION} x (primary "
                                   "completion - start); the window end is an estimate",
+            "excluded_open_ended": "the sponsor's trials started by the date that register no completion date at "
+                                   "all (no window can be estimated); left out",
             "registered_sites": "trial_sites rows whose site status is not WITHDRAWN, in the region if one is given",
             "shared_sites": "identifiable registered sites on both trials; anonymized per-city pseudo-sites are "
                             "never counted as shared",
+            "anonymized_same_city": "cities where both trials list an anonymized site (facility unknown; not "
+                                    "counted as shared)",
             "o_pq": "share of P's eligible synthetic patients who also meet Q's encoded criteria",
             "other_sponsor_trials_at_sites": "distinct lung trials of other lead sponsors (any sponsor class, any "
                                              "phase) recruiting on the date at the trial's identifiable sites",
@@ -327,6 +344,11 @@ def self_overlap(min_sites: int = 10, min_overlap: float = 0.8, since: str = "20
             WHERE t.is_lung=1 AND t.sponsor_class='INDUSTRY' AND s.anonymized=0 AND {SITE_ROW_OK.format(a='ts')}"""):
         site_sets[nct].add(sid)
     n_trials_db = con.execute("SELECT COUNT(*) FROM trials WHERE is_lung=1 AND sponsor_class='INDUSTRY'").fetchone()[0]
+    # Trials whose registered sites are mostly anonymized cannot show shared sites (count is a floor for them).
+    mostly_anon = {nct for nct, n, a in con.execute(f"""
+            SELECT ts.nct_id, COUNT(*), SUM(s.anonymized) FROM trial_sites ts JOIN sites s USING(site_id)
+            JOIN trials t USING(nct_id) WHERE t.is_lung=1 AND t.sponsor_class='INDUSTRY'
+              AND {SITE_ROW_OK.format(a='ts')} GROUP BY ts.nct_id""") if a > n / 2}
     con.close()
 
     pop = service.population()
@@ -424,6 +446,7 @@ def self_overlap(min_sites: int = 10, min_overlap: float = 0.8, since: str = "20
             "industry_lung_trials_in_db": n_trials_db,
             "industry_lung_trials_considered": len(rows),
             "industry_sponsors_with_2plus_trials": sum(len(v) >= 2 for v in by_sponsor.values()),
+            "considered_trials_with_mostly_anonymized_sites": sum(r["nct_id"] in mostly_anon for r in rows),
         },
         "notes": [
             "Descriptive: counts of registered sites, estimated enrollment windows and synthetic-population "
@@ -434,6 +457,9 @@ def self_overlap(min_sites: int = 10, min_overlap: float = 0.8, since: str = "20
             "Overlap months are the full overlap of the two estimated windows (not only the part after the "
             "cut-off date).",
             "Site lists are as registered on ClinicalTrials.gov today; a site's activation dates are not public.",
+            "The count is a floor: sponsors that register their sites anonymously ('Research Site'; see "
+            "context.considered_trials_with_mostly_anonymized_sites) cannot show identifiable shared sites, and "
+            "different lead-sponsor strings of one company are not merged.",
         ],
         "pairs": hits,
     }

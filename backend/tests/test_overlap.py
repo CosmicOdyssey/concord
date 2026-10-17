@@ -44,8 +44,10 @@ def test_window_matches_service_as_of_rule():
 def test_criteria_diff_matches_on_id():
     from concord.compiler.eligibility import Criterion
     from concord.overlap import criteria_diff
-    a = [Criterion("x", "inclusion", "ecog", "<=", 1, "ECOG", "s"), Criterion("y", "inclusion", "stage", "in", ["IV"], "IV", "s")]
-    b = [Criterion("y", "inclusion", "stage", "in", ["III", "IV"], "III-IV", "s"), Criterion("z", "exclusion", "ild_history", "==", True, "ILD", "s")]
+    a = [Criterion("x", "inclusion", "ecog", "<=", 1, "ECOG", "s"),
+         Criterion("y", "inclusion", "stage", "in", ["IV"], "IV", "s")]
+    b = [Criterion("y", "inclusion", "stage", "in", ["III", "IV"], "III-IV", "s"),
+         Criterion("z", "exclusion", "ild_history", "==", True, "ILD", "s")]
     d = criteria_diff(a, b)
     assert d == {"only_p": ["x"], "only_q": ["z"], "shared": ["y"], "shared_differs": ["y"]}
 
@@ -83,8 +85,11 @@ def test_fianlimab_pair(regeneron):
 
 def test_shared_sites_are_registered_on_both(regeneron):
     by_id = {t["nct_id"]: set(t["site_ids"]) for t in regeneron["trials"]}
+    anon = {s for s, v in regeneron["sites"].items() if v["anonymized"]}
     for p in regeneron["pairs"]:
-        assert set(p["shared_site_ids"]) <= by_id[p["p"]] & by_id[p["q"]]
+        both = by_id[p["p"]] & by_id[p["q"]]
+        assert set(p["shared_site_ids"]) == both - anon
+        assert p["anonymized_same_city"] == len(both & anon)
     for t in regeneron["trials"]:
         assert len(t["site_ids"]) == t["n_sites"]
         assert t["n_sites"] - t["n_sites_identified"] == sum(regeneron["sites"][s]["anonymized"] for s in t["site_ids"])
@@ -99,6 +104,25 @@ def test_region_narrows_sites():
     for t in us["trials"]:
         assert t["n_sites"] <= w[t["nct_id"]]
     assert _pair(world, *FIANLIMAB)["shared_sites"] >= _pair(us, *FIANLIMAB)["shared_sites"]
+
+
+def test_trials_without_completion_date_are_left_out():
+    """No registered completion date = no estimable window: listed, never shown as recruiting."""
+    import sqlite3
+
+    from concord import overlap
+    con = sqlite3.connect(DB_PATH)
+    row = con.execute("""SELECT sponsor, nct_id, start_date FROM trials WHERE is_lung=1 AND sponsor IS NOT NULL
+                         AND start_date IS NOT NULL AND primary_completion_date IS NULL AND completion_date IS NULL
+                         AND status <> 'WITHDRAWN' ORDER BY start_date LIMIT 1""").fetchone()
+    con.close()
+    if row is None:
+        pytest.skip("no open-ended trial in this DB")
+    sponsor, nct, start = row
+    res = overlap.audit(sponsor, "2024-09-01" if start <= "2024-09-01" else start, None)
+    assert nct in res["excluded_open_ended"]
+    assert nct not in {t["nct_id"] for t in res["trials"]}
+    assert not any(t["open_ended"] for t in res["trials"])
 
 
 def test_upper_bound_follows_design():
