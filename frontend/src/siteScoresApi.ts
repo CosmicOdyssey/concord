@@ -27,8 +27,10 @@ export interface SiteRow {
   /** Final score (site_model.lam_eff), patients per month per trial. */
   score: number
   posterior_mean: number
-  /** Posterior 10th to 90th percentile. */
+  /** 10th to 90th percentile around the posterior mean, including trial-to-trial variation in the site's rate. */
   interval: [number, number]
+  /** The Poisson-only posterior's 10th to 90th percentile (treats the allocated patients as exact counts). */
+  interval_poisson: [number, number]
   low_history: boolean
   /** The low-history cap lowered the score below the posterior mean. */
   capped: boolean
@@ -99,6 +101,37 @@ export interface Bucket {
   median_posterior_mean: number | null
   capped: number
   low_history: boolean
+  /** Median log(p90 / p10) of the shown interval, and of the Poisson-only one. */
+  median_log_width?: number | null
+  median_log_width_poisson?: number | null
+}
+
+/** Trial-to-trial heterogeneity behind the score intervals: n_ts ~ Poisson(lam_s eps_ts e_ts), eps ~ Gamma(k, k). */
+export interface Heterogeneity {
+  model: string
+  method: 'trial_heterogeneity' | 'poisson_fallback'
+  /** True when 1/k could not be estimated: intervals are the Poisson-only ones. */
+  fallback: boolean
+  k: number | null
+  inv_k: number | null
+  inv_k_ci95: [number, number] | null
+  sites_used: number
+  /** Site-trial pairs at those sites. */
+  trials_used: number
+  distinct_trials: number
+  min_trials: number
+  excluded: string
+  bootstrap: { draws: number; seed: number; over: string }
+  cross_check: {
+    sites: number
+    min_trials: number
+    draws: number
+    median_width_ratio: number
+    iqr: [number, number]
+    median_width_ratio_poisson: number
+    iqr_poisson: [number, number]
+    definition: string
+  } | null
 }
 
 export interface HistBin {
@@ -134,6 +167,7 @@ export interface Summary {
     geo_mean: number
   }
   buckets: Bucket[]
+  heterogeneity: Heterogeneity
   histogram: { bin_log10: number; bins: HistBin[] }
   validation: Validation | null
   calibration: Calibration | null
@@ -192,8 +226,35 @@ export interface SiteDetail {
     not_fit: { reason: string; n: number; examples: string[] }[]
   }
   prior: Prior
-  data: { sum_n_hat: number; sum_exposure: number; data_rate: number | null; data_weight: number }
-  posterior: { shape: number; rate: number; mean: number; p10: number; p90: number }
+  data: {
+    sum_n_hat: number
+    sum_exposure: number
+    data_rate: number | null
+    data_weight: number
+    /** Exposure-weighted effective number of trials, (sum e)^2 / sum e^2. */
+    n_eff: number
+    /** Effective patients, 1 / CV2_data: what the data are worth once trial-to-trial variation is counted. */
+    N_eff: number
+    /** 1 / sum n_hat + 1 / (k n_eff); null with no fitted trial. */
+    CV2_data: number | null
+  }
+  /** shape and rate are the Poisson posterior's (they give the mean). p10/p90 and interval: the shown interval,
+   *  including trial-to-trial variation; *_poisson: the Poisson-only one. */
+  posterior: {
+    shape: number
+    rate: number
+    mean: number
+    p10: number
+    p90: number
+    interval: [number, number]
+    p10_poisson: number
+    p90_poisson: number
+    interval_poisson: [number, number]
+    interval_shape: number
+    interval_rate: number
+    interval_method: 'trial_heterogeneity' | 'poisson_fallback'
+    inv_k: number | null
+  }
   cap: { low_history: boolean; threshold: number; quantile: number; cap_value: number; applied: boolean; value: number }
   score: number
   percentile: number | null

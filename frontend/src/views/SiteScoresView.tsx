@@ -776,7 +776,7 @@ function SiteTable({ data, S, sort, onSort, selected, onPick, onPage }: { data: 
             <tr>
               <SortTh k="facility" label="Site" sort={sort} onSort={onSort} />
               <SortTh k="n_fit" label="Fitted trials" sort={sort} onSort={onSort} num title="Completed trials in the fit (of lifetime lung trials)" />
-              <SortTh k="score" label="Score / mo" sort={sort} onSort={onSort} num title="Historical patients per month per trial, with the posterior 10th to 90th percentile" />
+              <SortTh k="score" label="Score / mo" sort={sort} onSort={onSort} num title="Historical patients per month per trial, with a 10th to 90th percentile range that includes how much the site's rate varies from trial to trial" />
               {cal && (
                 <SortTh
                   k="calibrated"
@@ -816,21 +816,36 @@ function SiteTable({ data, S, sort, onSort, selected, onPick, onPage }: { data: 
           Next
         </button>
       </div>
-      {cal && (
-        <p className="small muted ss-calnote">
-          Calibrated: b = {fixed(cal.b)} [{fixed(cal.b_ci[0])}, {fixed(cal.b_ci[1])}], {cal.b_label}, n {int(cal.b_n)}.
-          Score intervals are posterior 10th&ndash;90th percentiles; they treat each trial&rsquo;s split across its sites
-          as known, so they are narrower than the real uncertainty (the validation above shows how much). Capped sites
-          (<em>at cap</em>) all share one value, {rate(S.prior.p25)}, so they get no percentile.
-        </p>
-      )}
-      {!cal && (
-        <p className="small muted ss-calnote">
-          Score intervals are posterior 10th&ndash;90th percentiles; they treat each trial&rsquo;s split across its sites
-          as known, so they are narrower than the real uncertainty. Capped sites (<em>at cap</em>) all share one value,{' '}
-          {rate(S.prior.p25)}, so they get no percentile.
-        </p>
-      )}
+      <p className="small muted ss-calnote">
+        {cal && (
+          <>
+            Calibrated: b = {fixed(cal.b)} [{fixed(cal.b_ci[0])}, {fixed(cal.b_ci[1])}], {cal.b_label}, n {int(cal.b_n)}.{' '}
+          </>
+        )}
+        <IntervalNote S={S} /> Capped sites (<em>at cap</em>) all share one value, {rate(S.prior.p25)}, so they get no
+        percentile.
+      </p>
+    </>
+  )
+}
+
+/** What the score ranges include and what they leave out (the note under the table). */
+function IntervalNote({ S }: { S: Summary }) {
+  const h = S.heterogeneity
+  if (!h || h.fallback || h.inv_k === null)
+    return (
+      <>
+        Score ranges are 10th&ndash;90th percentiles that treat the allocated patients as exact counts (trial-to-trial
+        variation could not be measured), so they are narrower than the real uncertainty.
+      </>
+    )
+  return (
+    <>
+      Score ranges are 10th&ndash;90th percentiles that include how much a site&rsquo;s rate varies from one trial to
+      the next (1/k = {fixed(h.inv_k)}
+      {h.inv_k_ci95 ? ` [${fixed(h.inv_k_ci95[0])}, ${fixed(h.inv_k_ci95[1])}]` : ''}, one value for all sites, measured
+      on {int(h.sites_used)} sites with {h.min_trials} or more fitted trials). They still take each trial&rsquo;s split
+      across its sites as given, so systematic error in that split is not in them.
     </>
   )
 }
@@ -860,7 +875,14 @@ function SiteTr({ r, on, onPick, showCal, atCapTitle }: { r: SiteRow; on: boolea
       </td>
       <td className="num">
         <div>{rate(r.score)}</div>
-        <div className={`small muted${r.capped ? ' ss-iv-capped' : ''}`} title={r.capped ? 'Posterior interval; the score is capped below it' : 'Posterior 10th to 90th percentile'}>
+        <div
+          className={`small muted${r.capped ? ' ss-iv-capped' : ''}`}
+          title={
+            r.capped
+              ? 'Range around the posterior mean before the cap (10th to 90th percentile, including trial-to-trial variation); the capped score is set by the cap, not by this range'
+              : '10th to 90th percentile, including how much this site’s rate varies from trial to trial'
+          }
+        >
           {rate(r.interval[0])}&ndash;{rate(r.interval[1])}
         </div>
         {/* Below 560 px the Calibrated and Pctile columns fold in here, so nothing sits off-screen on a phone. */}
@@ -973,8 +995,27 @@ function Breakdown({ d, S, stale, isPreset }: { d: SiteDetail; S: Summary; stale
         </Step>
         <Step n={3} title="Posterior" value={perMonth(post.mean)}>
           Shape {fixed(post.shape, 2)} = &alpha; + allocated patients; rate {fixed(post.rate, 2)} = &beta; + exposure months.
-          Mean = {fixed(w, 3)} &times; {rate(data.data_rate ?? 0)} + {fixed(1 - w, 3)} &times; {rate(prior.mean)}. 10th&ndash;90th
-          percentile {rate(post.p10)}&ndash;{rate(post.p90)}.
+          Mean = {fixed(w, 3)} &times; {rate(data.data_rate ?? 0)} + {fixed(1 - w, 3)} &times; {rate(prior.mean)}.{' '}
+          {unseen ? (
+            <>
+              With no fitted trial, the 10th&ndash;90th range is the prior&rsquo;s, {rate(post.p10)}&ndash;{rate(post.p90)}.
+            </>
+          ) : post.interval_method === 'poisson_fallback' ? (
+            <>
+              10th&ndash;90th range {rate(post.p10)}&ndash;{rate(post.p90)}. Trial-to-trial variation could not be
+              measured, so this range treats the allocated patients as exact counts.
+            </>
+          ) : (
+            <>
+              The 10th&ndash;90th range, {rate(post.p10)}&ndash;{rate(post.p90)}, also includes how much this site&rsquo;s
+              rate varies from trial to trial. Once that is counted, its {fixed(data.sum_n_hat, 1)} allocated patients
+              are worth about {fixed(data.N_eff, data.N_eff < 10 ? 2 : 1)} effective patients.
+              <div className="muted">
+                Counting only Poisson noise (allocated patients as exact counts): {rate(post.p10_poisson)}&ndash;
+                {rate(post.p90_poisson)}.
+              </div>
+            </>
+          )}
         </Step>
         <Step n={4} title="Low-history cap" value={cap.applied ? `capped to ${rate(cap.value)}` : 'not applied'} warn={cap.applied}>
           {cap.low_history ? (
@@ -1030,11 +1071,20 @@ function Breakdown({ d, S, stale, isPreset }: { d: SiteDetail; S: Summary; stale
           )}
         </Step>
       </ol>
-      <p className="caveat">
-        The 10th&ndash;90th interval is the model&rsquo;s posterior. It treats the allocated patients as observed, so it
-        leaves out the uncertainty in splitting each trial across its sites; the validation above shows that uncertainty is
-        large.
-      </p>
+      {post.interval_method === 'poisson_fallback' ? (
+        <p className="caveat">
+          The 10th&ndash;90th range treats the allocated patients as exact counts: trial-to-trial variation could not be
+          measured, so it is narrower than the real uncertainty. It also takes each trial&rsquo;s split across its sites
+          as given, and it describes past trials, not a forecast for a new trial.
+        </p>
+      ) : (
+        <p className="caveat">
+          The 10th&ndash;90th range includes the count noise in the allocated patients and how much a site&rsquo;s rate
+          varies from trial to trial (one amount for all sites). It still takes each trial&rsquo;s split across its sites
+          as given, so systematic error in that split is not in it; the validation above suggests that error is large.
+          It is a range for this historical score, not a forecast for a new trial.
+        </p>
+      )}
     </div>
   )
 }
@@ -1094,8 +1144,8 @@ function IntervalStrip({ d }: { d: SiteDetail }) {
         <span className="ss-strip-note" />
       </div>
       <p className="small muted ss-strip-legend">
-        Bands: prior and posterior 10th&ndash;90th percentiles; calibrated across b&rsquo;s 95% interval. Vertical line:
-        low-history cap {rate(prior.p25)}. Log scale, per month.
+        Bands: prior and posterior 10th&ndash;90th percentiles (the posterior&rsquo;s includes trial-to-trial variation);
+        calibrated across b&rsquo;s 95% interval. Vertical line: low-history cap {rate(prior.p25)}. Log scale, per month.
       </p>
     </div>
   )

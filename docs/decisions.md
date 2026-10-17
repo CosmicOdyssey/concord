@@ -97,3 +97,19 @@ Judgment calls made without being able to ask. Newest last. Each says what and w
     the validation file is missing. Default order is fitted trials, not score. Capped sites (3,472, tied at
     0.0757), unfitted and non-U.S. sites get no percentile. The 3x overstatement is stated on the log scale
     (10x raw is about 2.2x calibrated). Posterior intervals leave out the split uncertainty, and the view says so.
+23. **Site score ranges now count trial-to-trial variation** (user: "The site score intervals can be expanded as
+    long as it's within reason", 18 Oct). The old 10th-90th ranges treated EM-allocated patients as exact Poisson
+    counts (MD Anderson 0.676-0.696, Dana-Farber 0.150-0.162). The method was fixed before any width was looked
+    at: n_ts ~ Poisson(lam_s eps_ts e_ts), eps ~ Gamma(k, k); one global 1/k by the pooled moment estimator on the
+    final allocations over identifiable sites with 5+ fitted trials (anonymized "Anonymized site <city>" entries
+    pool several real sites, so they are left out; decided before computing k); N_eff = 1 / (1/sum n_hat +
+    1/(k n_eff)), n_eff = (sum e)^2 / sum e^2; range = gamma(alpha + N_eff, rate (alpha + N_eff) / posterior
+    mean), so it keeps the score's centre and is the prior's spread with no data. Result: 1/k = 2.15 [1.17, 2.70]
+    (k = 0.46; 3,300 sites, 40,510 site-trials); MD Anderson 0.606-0.769, Dana-Farber 0.132-0.181; median log
+    width grows 1.6-2.2x across the history buckets (21+ trials: 0.49 to 0.96). Score, cap, percentile and calibrated value are unchanged (tests).
+    Reported, not tuned: a trial-level bootstrap at the 414 identifiable sites with 20+ fitted trials gives ranges
+    narrower than the new ones (median width ratio new/bootstrap 2.56, IQR 1.58-3.34; old/bootstrap 1.12). The gap
+    is largest at low-volume sites, where smoothed EM shares vary less than counts (old/bootstrap there 2.2); 1/k
+    is set mostly by the high-volume sites (top 50 carry 90% of its weight). On simulated NB2 data with the real
+    exposures the estimator returns about 0.65x the true 1/k. The API keeps the old range as interval_poisson,
+    and the view shows it in small text in Step 3. If 1/k cannot be estimated, the ranges fall back to it, flagged.

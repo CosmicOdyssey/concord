@@ -15,6 +15,22 @@ stored table drops, so every score can be shown step by step:
                  b = the industry Phase II/III slope in data/findings/selection_validation.json (omitted when
                  that file is missing; b is never invented)
 
+The 10th-90th interval shown with a score is NOT the Poisson posterior's (that one, kept as interval_poisson,
+treats the allocated patients as exact Poisson counts and is far too narrow). A site's rate also varies from trial
+to trial, so each trial's count is modelled as n_ts ~ Poisson(lam_s * eps_ts * e_ts), eps_ts ~ Gamma(k, k):
+
+    1/k          ONE global value, pooled moment estimator over identifiable fitted sites with at least
+                 HET_MIN_TRIALS fitted trials, on the final E-step allocations: mu_ts = d_s e_ts, d_s = sum n / sum e,
+                 1/k = sum_s [m_s/(m_s-1) sum_t ((n_ts - mu_ts)^2 - n_ts)] / sum_s sum_t mu_ts^2, clipped at 0;
+                 95% CI from a bootstrap over those sites
+    N_eff        1 / CV2_data, CV2_data = 1/sum n_hat + 1/(k n_eff), n_eff = (sum e)^2 / sum e^2: the patients the
+                 data are worth once trial-to-trial variation is counted (0 for a site with no fitted trial)
+    interval     10th/90th percentiles of gamma(alpha + N_eff, rate = (alpha + N_eff) / posterior mean): the same
+                 centre as the score (before the cap), and the prior's spread when there is no data
+
+The method was fixed before any width was looked at. The score, cap, percentile and calibrated value do not use it.
+Anonymized pseudo-sites ("Anonymized site <city>") pool several real sites, so they do not feed 1/k.
+
 The fit loop below replicates recruitment.fit() line for line (it does not return the allocations); tests assert
 the shape and rate arrays are equal to recruitment.fit(load_history(con)). Nothing here is a forecast for a new
 trial: these are historical estimates with their observed-outcome validation.
@@ -41,6 +57,11 @@ VALIDATION_FILE = "selection_validation.json"
 DEPTH_BUCKETS = [("1", 1, 1), ("2", 2, 2), ("3-5", 3, 5), ("6-20", 6, 20), ("21+", 21, None)]
 HIST_BIN = 0.2  # log10 units
 INTERVAL_Q = (0.1, 0.9)
+# Trial-to-trial heterogeneity (fixed in advance; see the module docstring and docs/decisions.md).
+HET_MIN_TRIALS = 5  # sites with at least this many fitted trials feed the 1/k estimate
+CROSS_CHECK_MIN_TRIALS = 20  # sites with at least this many fitted trials get the trial-bootstrap cross-check
+BOOT_DRAWS = 1000
+BOOT_SEED = 20261018
 ONGOING = {"RECRUITING", "NOT_YET_RECRUITING", "ENROLLING_BY_INVITATION", "ACTIVE_NOT_RECRUITING", "SUSPENDED"}
 # Sites considered for the default "open this site" preset; the one with the most fitted trials wins.
 PRESET_PATTERNS = ("dana-farber", "dana farber", "memorial sloan")
@@ -55,8 +76,10 @@ METHOD = (
     "exposure months (65% of each trial's start-to-primary-completion time, the assumed enrollment window). Sites "
     "with fewer than 3 fitted trials are capped at the prior's 25th percentile, the same rate used for sites with "
     "no history. The calibrated score shrinks each site's distance from the U.S. average, on the log scale, by the "
-    "slope measured when pre-2018 scores were checked against how 2018+ trials actually enrolled. These are "
-    "historical, registry-based estimates, not forecasts for a new trial."
+    "slope measured when pre-2018 scores were checked against how 2018+ trials actually enrolled. Each score's "
+    "10th-90th interval also counts how much a site's rate varies from one trial to the next (one amount for all "
+    "sites, measured on sites with 5 or more fitted trials), so it is wider than a pure count-based interval. These "
+    "are historical, registry-based estimates, not forecasts for a new trial."
 )
 
 
@@ -140,6 +163,140 @@ def fit_with_allocations(h: R.History, iters: int = FIT_ITERS) -> _Fit:
                 lam_eff, float(floor), q_lo, q_hi, np.bincount(ti, minlength=len(h.N)))
 
 
+# ---------- trial-to-trial heterogeneity: the interval shown with each score ----------
+
+def inv_k_terms(n: np.ndarray, e: np.ndarray, si: np.ndarray, n_sites: int, eligible: np.ndarray | None = None,
+                min_trials: int = HET_MIN_TRIALS) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Per-site terms of the pooled moment estimator of 1/k, for n_ts ~ Poisson(lam_s * eps_ts * e_ts) with
+    eps_ts ~ Gamma(k, k). Over links (n, e, site index si), for the sites with at least min_trials links, positive
+    exposure and eligible[s]: returns (sites, num, den) with
+
+        mu_ts = d_s e_ts,  d_s = sum_t n_ts / sum_t e_ts
+        num_s = m_s / (m_s - 1) * sum_t ((n_ts - mu_ts)^2 - n_ts)     (m/(m-1): d_s comes from the same trials)
+        den_s = sum_t mu_ts^2
+
+    so that 1/k = max(0, sum num / sum den) (inv_k_from_terms)."""
+    m = np.bincount(si, minlength=n_sites)
+    sn = np.bincount(si, weights=n, minlength=n_sites)
+    se = np.bincount(si, weights=e, minlength=n_sites)
+    d = np.divide(sn, se, out=np.zeros(n_sites), where=se > 0)
+    mu = d[si] * e
+    raw = np.bincount(si, weights=(n - mu) ** 2 - n, minlength=n_sites)
+    den = np.bincount(si, weights=mu * mu, minlength=n_sites)
+    q = (m >= max(2, min_trials)) & (se > 0)
+    if eligible is not None:
+        q &= eligible
+    sites = np.flatnonzero(q)
+    return sites, raw[sites] * m[sites] / (m[sites] - 1), den[sites]
+
+
+def inv_k_from_terms(num: np.ndarray, den: np.ndarray) -> float | None:
+    """Pooled 1/k, clipped at 0; None when no site qualifies."""
+    total = float(np.sum(den))
+    if len(num) == 0 or total <= 0:
+        return None
+    return max(0.0, float(np.sum(num)) / total)
+
+
+def inv_k_ci95(num: np.ndarray, den: np.ndarray, draws: int = BOOT_DRAWS, seed: int = BOOT_SEED) -> list[float] | None:
+    """95% interval for 1/k from a bootstrap over sites (each draw resamples the qualifying sites)."""
+    if len(num) < 2:
+        return None
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(num), size=(draws, len(num)))
+    b = np.maximum(0.0, num[idx].sum(axis=1) / den[idx].sum(axis=1))
+    return [float(x) for x in np.percentile(b, [2.5, 97.5])]
+
+
+def effective_patients(sum_n: np.ndarray, sum_e: np.ndarray, sum_e2: np.ndarray,
+                       inv_k: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """(n_eff, CV2_data, N_eff) per site. n_eff = (sum e)^2 / sum e^2 is the exposure-weighted effective number of
+    trials; CV2_data = 1/sum n_hat + (1/k)/n_eff is the squared coefficient of variation of the site's data rate
+    sum n / sum e under the model; N_eff = 1/CV2_data, the patients the data are worth (0 with no data, CV2 inf)."""
+    n_eff = np.divide(sum_e ** 2, sum_e2, out=np.zeros(len(sum_e)), where=sum_e2 > 0)
+    has = (sum_n > 0) & (n_eff > 0)
+    cv2 = np.full(len(sum_n), np.inf)
+    cv2[has] = 1.0 / sum_n[has] + inv_k / n_eff[has]
+    N_eff = np.zeros(len(sum_n))
+    N_eff[has] = 1.0 / cv2[has]
+    return n_eff, cv2, N_eff
+
+
+def het_interval(alpha: float, mean, N_eff) -> tuple[np.ndarray, np.ndarray]:
+    """10th and 90th percentiles of gamma(shape = alpha + N_eff, rate = (alpha + N_eff) / mean): centred on the
+    posterior mean, the prior's spread when N_eff = 0, the Poisson posterior's when N_eff = sum n_hat."""
+    shape = alpha + np.asarray(N_eff, dtype=float)
+    scale = np.asarray(mean, dtype=float) / shape
+    return gamma_dist.ppf(INTERVAL_Q[0], shape, scale=scale), gamma_dist.ppf(INTERVAL_Q[1], shape, scale=scale)
+
+
+def trial_bootstrap_log_widths(f: _Fit, sites, links_of: dict[int, list[int]], draws: int = BOOT_DRAWS,
+                               seed: int = BOOT_SEED) -> np.ndarray:
+    """Cross-check of the interval: for each site, resample its fitted trials with replacement and recompute
+    (alpha + sum n*) / (beta + sum e*); returns log(p90 / p10) of the draws per site."""
+    rng = np.random.default_rng(seed)
+    out = []
+    for i in sites:
+        k = np.asarray(links_of[int(i)])
+        n, e = f.n_hat[k], f.e[k]
+        idx = rng.integers(0, len(k), size=(draws, len(k)))
+        r = (f.alpha + n[idx].sum(axis=1)) / (f.beta + e[idx].sum(axis=1))
+        p10, p90 = np.quantile(r, INTERVAL_Q)
+        out.append(math.log(p90 / p10))
+    return np.array(out)
+
+
+@dataclass
+class _Het:
+    inv_k: float | None  # None: no qualifying site, the interval falls back to the Poisson one
+    ci95: list[float] | None
+    sites_used: int
+    links_used: int  # site-trial pairs (each one observation)
+    distinct_trials: int
+    n_eff: np.ndarray  # per fit site
+    cv2: np.ndarray
+    N_eff: np.ndarray
+    lo: np.ndarray  # the interval shown with each score
+    hi: np.ndarray
+    cross_check: dict | None
+
+    @property
+    def fallback(self) -> bool:
+        return self.inv_k is None
+
+
+def heterogeneity(f: _Fit, eligible: np.ndarray, links_of: dict[int, list[int]]) -> _Het:
+    S = len(f.hist.site_ids)
+    sites, num, den = inv_k_terms(f.n_hat, f.e, f.si, S, eligible)
+    inv_k = inv_k_from_terms(num, den)
+    used = np.isin(f.si, sites)
+    sum_e2 = np.bincount(f.si, weights=f.e ** 2, minlength=S)
+    if inv_k is None:  # fall back to the Poisson posterior's interval
+        n_eff, _, _ = effective_patients(f.sum_n, f.sum_e, sum_e2, 0.0)
+        cv2 = np.divide(1.0, f.sum_n, out=np.full(S, np.inf), where=f.sum_n > 0)
+        return _Het(None, None, 0, 0, 0, n_eff, cv2, f.sum_n.copy(), f.lo, f.hi, None)
+    n_eff, cv2, N_eff = effective_patients(f.sum_n, f.sum_e, sum_e2, inv_k)
+    lo, hi = het_interval(f.alpha, f.mean, N_eff)
+    het = _Het(inv_k, inv_k_ci95(num, den), int(len(sites)), int(used.sum()), int(len(np.unique(f.ti[used]))),
+               n_eff, cv2, N_eff, lo, hi, None)
+    deep = np.flatnonzero((f.n_fit >= CROSS_CHECK_MIN_TRIALS) & eligible)
+    if len(deep):
+        boot = trial_bootstrap_log_widths(f, deep, links_of)
+        new = np.log(hi[deep] / lo[deep])
+        old = np.log(f.hi[deep] / f.lo[deep])
+        ratio, ratio_old = new / boot, old / boot
+        het.cross_check = {
+            "sites": int(len(deep)), "min_trials": CROSS_CHECK_MIN_TRIALS, "draws": BOOT_DRAWS,
+            "median_width_ratio": float(np.median(ratio)),
+            "iqr": [float(x) for x in np.percentile(ratio, [25, 75])],
+            "median_width_ratio_poisson": float(np.median(ratio_old)),
+            "iqr_poisson": [float(x) for x in np.percentile(ratio_old, [25, 75])],
+            "definition": "log(p90/p10) of the shown interval divided by log(p90/p10) of a trial-level bootstrap "
+                          "of (alpha + sum n) / (beta + sum e), per site",
+        }
+    return het
+
+
 @dataclass
 class _State:
     fit: _Fit
@@ -153,6 +310,7 @@ class _State:
     stored_max_diff: float  # max |our lam_eff - site_model.lam_eff| over fitted sites
     stored_compared: int
     at_cap: int  # U.S. fitted sites whose score equals the cap (they share one tied value)
+    het: _Het  # trial-to-trial heterogeneity and the interval shown with each score
     rows: list[dict]  # list rows for U.S. non-anonymized fitted sites (without calibration)
 
 
@@ -218,8 +376,12 @@ def _build() -> _State:
         links_of.setdefault(s, []).append(k)
 
     at_cap = int(np.sum(f.lam_eff[us_idx] == f.floor))
+    # Anonymized pseudo-sites ("Anonymized site <city>") pool several real sites: their trial-to-trial spread
+    # would include between-site differences, so they do not feed 1/k or the cross-check.
+    eligible = np.array([not (sites.get(s) or {}).get("anonymized") for s in h.site_ids], dtype=bool)
+    het = heterogeneity(f, eligible, links_of)
     st = _State(f, s_index, sites, trials, us_idx, us_sorted, m, links_of,
-                max(diffs) if diffs else float("nan"), len(diffs), at_cap, [])
+                max(diffs) if diffs else float("nan"), len(diffs), at_cap, het, [])
     st.rows = [_row(st, int(i)) for i in us_idx]
     return st
 
@@ -257,7 +419,9 @@ def _row(st: _State, i: int) -> dict:
         "site_id": sid, "facility": s.get("facility"), "city": s.get("city"), "state": s.get("state"),
         "is_amc": bool(s.get("is_amc")), "n_hist": int(s.get("n_hist", 0)), "n_fit": int(f.n_fit[i]),
         "score": float(f.lam_eff[i]), "posterior_mean": float(f.mean[i]),
-        "interval": [float(f.lo[i]), float(f.hi[i])], "low_history": low, "capped": capped,
+        # interval: includes trial-to-trial variation; interval_poisson: the Poisson-only posterior's (too narrow)
+        "interval": [float(st.het.lo[i]), float(st.het.hi[i])],
+        "interval_poisson": [float(f.lo[i]), float(f.hi[i])], "low_history": low, "capped": capped,
         "percentile": _percentile(st, float(f.lam_eff[i])) if status == "ok" else None,
         "percentile_status": status,
     }
@@ -429,14 +593,20 @@ def site_detail(site_id: str) -> dict:
     v = validation()
     cal = _calibration(st, v)
     i = st.s_index.get(site_id)
+    het = st.het
     prior_mean = f.alpha / f.beta
-    if i is None:  # no fitted trials: the score is the unseen-site rate
+    if i is None:  # no fitted trials: the score is the unseen-site rate, the interval the prior's
         shape, rate, sum_n, sum_e, n_fit, lam = f.alpha, f.beta, 0.0, 0.0, 0, f.floor
         mean = prior_mean
-        lo, hi = (float(gamma_dist.ppf(q, f.alpha, scale=1.0 / f.beta)) for q in INTERVAL_Q)
+        p_lo, p_hi = (float(gamma_dist.ppf(q, f.alpha, scale=1.0 / f.beta)) for q in INTERVAL_Q)
+        n_eff, cv2, N_eff = 0.0, None, 0.0
+        lo, hi = (float(x) for x in het_interval(f.alpha, mean, 0.0))
     else:
         shape, rate, sum_n, sum_e = float(f.shape[i]), float(f.rate[i]), float(f.sum_n[i]), float(f.sum_e[i])
-        n_fit, lam, mean, lo, hi = int(f.n_fit[i]), float(f.lam_eff[i]), float(f.mean[i]), float(f.lo[i]), float(f.hi[i])
+        n_fit, lam, mean = int(f.n_fit[i]), float(f.lam_eff[i]), float(f.mean[i])
+        p_lo, p_hi, lo, hi = float(f.lo[i]), float(f.hi[i]), float(het.lo[i]), float(het.hi[i])
+        n_eff, N_eff = float(het.n_eff[i]), float(het.N_eff[i])
+        cv2 = float(het.cv2[i]) if math.isfinite(het.cv2[i]) else None
     low = n_fit < R.LOW_HISTORY_N
     weight = sum_e / (f.beta + sum_e)
 
@@ -492,8 +662,16 @@ def site_detail(site_id: str) -> dict:
                   "p90": float(gamma_dist.ppf(INTERVAL_Q[1], f.alpha, scale=1.0 / f.beta)),
                   "trials_used": f.prior_trials, "trim": list(f.prior_trim)},
         "data": {"sum_n_hat": sum_n, "sum_exposure": sum_e, "data_rate": (sum_n / sum_e) if sum_e > 0 else None,
-                 "data_weight": weight},
-        "posterior": {"shape": shape, "rate": rate, "mean": mean, "p10": lo, "p90": hi},
+                 "data_weight": weight,
+                 # n_eff: exposure-weighted effective number of trials; N_eff: effective patients = 1 / CV2_data
+                 "n_eff": n_eff, "N_eff": N_eff, "CV2_data": cv2},
+        # p10/p90 and interval: the interval shown with the score (includes trial-to-trial variation);
+        # *_poisson: the Poisson posterior gamma(shape, rate), which treats the allocated patients as exact counts.
+        "posterior": {"shape": shape, "rate": rate, "mean": mean, "p10": lo, "p90": hi, "interval": [lo, hi],
+                      "p10_poisson": p_lo, "p90_poisson": p_hi, "interval_poisson": [p_lo, p_hi],
+                      "interval_shape": f.alpha + N_eff, "interval_rate": (f.alpha + N_eff) / mean,
+                      "interval_method": "poisson_fallback" if het.fallback else "trial_heterogeneity",
+                      "inv_k": het.inv_k},
         "cap": {"low_history": low, "threshold": R.LOW_HISTORY_N, "quantile": R.LOW_HISTORY_Q, "cap_value": f.floor,
                 "applied": applied, "value": lam},
         "score": lam,
@@ -515,6 +693,9 @@ def summary() -> dict:
     lam = f.lam_eff[st.us_idx]
     nf = f.n_fit[st.us_idx]
     mean = f.mean[st.us_idx]
+    het = st.het
+    width = np.log(het.hi[st.us_idx] / het.lo[st.us_idx])
+    width_poisson = np.log(f.hi[st.us_idx] / f.lo[st.us_idx])
     buckets = []
     for label, lo, hi in DEPTH_BUCKETS:
         k = (nf >= lo) & (nf <= (hi if hi is not None else nf.max()))
@@ -525,6 +706,9 @@ def summary() -> dict:
             "median_posterior_mean": float(np.median(mean[k])) if n else None,
             "capped": int((k & (nf < R.LOW_HISTORY_N) & (mean > f.floor)).sum()),
             "low_history": lo < R.LOW_HISTORY_N,
+            # median log(p90 / p10) of the shown interval and of the Poisson-only one
+            "median_log_width": float(np.median(width[k])) if n else None,
+            "median_log_width_poisson": float(np.median(width_poisson[k])) if n else None,
         })
     x = np.log10(lam)
     start = math.floor(x.min() / HIST_BIN) * HIST_BIN
@@ -562,6 +746,17 @@ def summary() -> dict:
                "cap_percentile": _percentile(st, f.floor), "median_score": float(np.median(lam)),
                "m": st.m, "geo_mean": math.exp(st.m)},
         "buckets": buckets,
+        "heterogeneity": {
+            "model": "n_ts ~ Poisson(lam_s * eps_ts * e_ts), eps_ts ~ Gamma(k, k)",
+            "method": "poisson_fallback" if het.fallback else "trial_heterogeneity",
+            "fallback": het.fallback,
+            "k": (1.0 / het.inv_k) if het.inv_k else None,  # None also when 1/k is clipped to 0 (k infinite)
+            "inv_k": het.inv_k, "inv_k_ci95": het.ci95,
+            "sites_used": het.sites_used, "trials_used": het.links_used, "distinct_trials": het.distinct_trials,
+            "min_trials": HET_MIN_TRIALS, "excluded": "anonymized pseudo-sites (several real sites pooled)",
+            "bootstrap": {"draws": BOOT_DRAWS, "seed": BOOT_SEED, "over": "sites"},
+            "cross_check": het.cross_check,
+        },
         "histogram": {"bin_log10": HIST_BIN, "bins": hist},
         "validation": v,
         "calibration": cal,
