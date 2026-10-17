@@ -18,8 +18,85 @@ Exposure, per (trial, site):
 Models:
     pooled  trial-level OLS of y_t on the mean exposure over t's sites + controls
     site FE trial-site rows, site fixed effects (within-site: same site in busy vs quiet periods),
-            rows weighted 1/|S_t| so each trial counts once, SEs clustered by trial
+            rows weighted 1/|S_t| so each trial counts once
+    within  trial-level OLS of y_t on the site-demeaned exposure averaged over t's sites (PRIMARY,
+            measure "overlap")
 Controls: phase dummies, log site count, industry sponsor, start-year fixed effects.
+Standard errors: two-way clustered by trial and site (see V2 below); trial-only CR1 reported beside.
+
+V2 PRE-REGISTERED METHOD (items 2 and 3; written and committed before any V2 number was computed)
+==================================================================================================
+
+A. Standard errors. The primary se / ci95 / p of EVERY estimator (pooled, site_fe, within x start,
+   overlap, avg; full sample, subsets and parser versions) are two-way clustered by trial and site
+   (Cameron, Gelbach and Miller 2011):
+       V = V_trial + V_site - V_trial&site,  V_d = adj_d * B M_d B,  B = (X'WX)^-1,
+       M_d = sum over clusters c of dimension d of S_c S_c',  S_c = sum of the scores w_i x_i e_i of c,
+       adj_d = G_d / (G_d - 1) * (n - 1) / (n - k)   (per dimension, as in the existing CR1 _ols_cluster;
+       n = observations, k = columns of X, G_d = clusters of dimension d),
+   then negative eigenvalues of V (symmetric eigendecomposition) are clipped to 0; se = sqrt(diag V).
+   Membership:
+     site_fe (row level): each trial-site row belongs to its trial and its site; the intersection
+       clusters are the (trial, site) pairs (unique per row: trial_sites has PRIMARY KEY (nct_id, site_id)).
+     pooled and within (trial level): a trial belongs to every site it was registered at
+       (multi-membership). "Registered sites" = the (non-anonymized) sites of the trial's rows in that
+       estimator's sample: pooled uses all of the sample's rows, within the rows left after the
+       singleton-site drop (the rows its exposure is built from). Anonymized sites never enter
+       load()'s rows and so are never clusters. The site-cluster score of site s is the sum of the
+       scores of all trials registered at s; the intersection term is sum over trials of
+       m_t * s_t s_t' with m_t = number of the trial's sites, and G_trial&site = sum_t m_t.
+   p = 2 * (1 - Phi(|coef / se|)), ci95 = coef +/- 1.96 se, as before. The old trial-clustered CR1
+   numbers (_ols_cluster, unchanged) are reported as se_trial_only / ci95_trial_only / p_trial_only.
+   Implemented as _ols_twoway(); unit test: equals the one-way trial-clustered variance when every
+   trial has its own site (backend/tests/test_congestion_twoway.py).
+B. Point estimates, samples, exposures, outcome and controls are unchanged; the full-sample run must
+   reproduce the previous coef and trial-only se of all nine estimators (abs diff < 1e-9, checked
+   against the meta written before this change). The default beta remains -coef of the full-sample
+   within_overlap (service.congestion_beta reads results.within_overlap.coef / ci95; ci95 is now
+   two-way).
+C. Subsets (same three estimators on the measure "overlap"; trial-site rows restricted FIRST, then
+   every estimator computed exactly as for the full sample: outcome uses trials.n_sites, site_fe drops
+   sites with < 2 remaining rows, weights 1/n_sites, within uses the site_fe rows):
+     S1p "experienced site, predetermined": keep a row (t, s) only if site s had >= 10 lung trials whose
+         start_date is strictly before t's start_date. Count = number of distinct nct_id Q with (Q, s) in
+         trial_sites JOIN trials, trials.is_lung = 1 (any status), start_date non-null and
+         start_date_Q < start_date_t (ISO date strings). t itself never counts (not strictly before).
+     S1  "experienced site, lifetime": site_model.n_hist >= 10 (missing site = 0), as in task F;
+         labelled "uses later trials; not predetermined"; kept for comparison only.
+     S2  rows of trials with trials.n_sites <= 20.
+     S3  all rows; exposure = log(1 + sum of o_tQ over rivals with o_tQ >= 0.8), rivals and o_tQ exactly
+         as in load() (sanity: without the threshold the rebuild reproduces load()'s overlap, < 1e-9).
+   Multiple comparisons: Bonferroni over the k = 4 subsets, alpha = 0.05:
+     bonferroni_ci95 = coef +/- z se with z = Phi^-1(1 - 0.05 / (2 * 4)) = 2.498 (two-way se), for
+     within_overlap of each subset.
+   Each subset reports within / site_fe / pooled: coef, se, ci95, p (two-way), the trial-only
+   counterparts, clusters (trials), n_rows, sites. The full sample is not in "subsets".
+D. Parser-version sensitivity (item 3). Versions: v0 = backend/concord/compiler/eligibility.py and
+   population.py as of commit b8c576f; v1 = as of c0050f4; v2 = as of 4a87d33 (current). Each version's
+   two files are read with `git show <commit>:<path>` into a temporary directory and imported as
+   standalone modules under private names (never into the repo or the concord package). For every
+   lung trial (trials.is_lung = 1; the same 7,206 trials trial_model holds) criteria =
+   extract_criteria(eligibility_text or "") of that version, mask = that version's
+   eligible_mask(criteria, pop) with pop = that version's synthetic_population(4000, seed=11) (size and
+   seed exactly as _masks), WITHOUT hand-encoded overrides for all versions alike. These masks replace
+   _masks() in load(); everything else identical. Report per version the full-sample within_overlap
+   (coef, two-way ci95, p, clusters; also trial-only se and the pooled / site_fe overlap coefs) and
+   empty_masks = number of the 7,206 lung trials whose mask has no eligible patient (also the count
+   among the trials in the within_overlap sample). Reference (not a parser version): v2 WITH the current
+   hand-encoded overrides (OVERRIDES.get(nct) or extract_criteria(text)), which must reproduce the
+   production trial_model masks (number of differing masks reported) and therefore the production
+   results.within_overlap.
+E. Decision rule (unchanged from task F, now on two-way CIs). A subset "meets the rule" iff its
+   within_overlap 95% CI excludes the full-sample within_overlap point estimate AND it is well powered
+   (>= 300 trials AND CI half-width <= 1.5 x the full-sample CI half-width). Whether its Bonferroni CI
+   also excludes the full estimate is reported beside. S1 (lifetime) is checked mechanically but is not
+   predetermined. Regardless of the outcome the default beta is the full-sample estimate
+   (default_beta.source = "full-sample within_overlap"); a subset that meets the rule is flagged for
+   review, labelled "subset, not the default", and never used automatically.
+Output: the meta key "congestion_test" (also written to data/robustness/congestion_v2.json) keeps
+task, n_trials, n_trial_sites, results, primary, model_implied_coef_overlap, verdict (verdict from the
+two-way p) and adds se_method, subsets, multiple_comparisons, parser_sensitivity (+ the production
+reference), default_beta.
 """
 
 from __future__ import annotations
