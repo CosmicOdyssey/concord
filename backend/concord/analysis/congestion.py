@@ -101,21 +101,43 @@ reference), default_beta.
 
 from __future__ import annotations
 
+import argparse
 import json
 import sqlite3
+import sys
+import time
+from bisect import bisect_left
 from datetime import date
 
 import numpy as np
+from scipy.stats import norm
 
 from concord.model.recruitment import ENROLL_FRACTION
-from concord.paths import DB_PATH
+from concord.paths import DB_PATH, ROOT
+
+SE_METHOD = "two-way clustered (trial, site)"
+Z95 = 1.96
+MEASURE_COL = {"start": 2, "avg": 3, "overlap": 4}  # columns of load()'s rows
+# Subsets (V2 section C) and decision rule (section E, thresholds from task F).
+S1_MIN_SITE_TRIALS = 10
+S2_MAX_SITES = 20
+S3_MIN_OVERLAP = 0.8
+MIN_TRIALS = 300
+MAX_HW_RATIO = 1.5
+ALPHA = 0.05
+N_SUBSETS = 4
+Z_BONF = float(norm.ppf(1 - ALPHA / (2 * N_SUBSETS)))  # 2.498
+SUBSET_ROLE = "subset, not the default"
 
 
 def _months(a: str, b: str) -> float:
     return (date.fromisoformat(b) - date.fromisoformat(a)).days / 30.44
 
 
-def load(con: sqlite3.Connection) -> dict:
+def load(con: sqlite3.Connection, masks: dict[str, np.ndarray] | None = None) -> dict:
+    """Trials, trial-site rows and the rival overlaps behind each row.
+
+    masks: eligibility mask per lung trial; default _masks(con) (the production trial_model)."""
     trials = {}
     for nct, n, s, e, phases, nsites, cls in con.execute("""
             SELECT nct_id, enrollment, start_date, primary_completion_date, phases, n_sites, sponsor_class
@@ -136,8 +158,9 @@ def load(con: sqlite3.Connection) -> dict:
                                    WHERE s.anonymized=0"""):
         by_site.setdefault(sid, []).append(nct)
 
-    masks = _masks(con)
+    masks = _masks(con) if masks is None else masks
     rows = []  # (trial, site, exposure_start, exposure_avg, log1p overlap at start)
+    pair_overlaps: dict[tuple[str, str], list[float]] = {}  # o_tQ of each rival Q behind a row
     for sid, ncts in by_site.items():
         mine = [n for n in ncts if n in trials]
         if not mine:
@@ -149,8 +172,13 @@ def load(con: sqlite3.Connection) -> dict:
             at_start = len(rivals)
             mt = masks.get(t)
             ov = 0.0
+            o: list[float] = []
             if mt is not None and mt.sum() > 0:
-                ov = sum(float((masks[q] & mt).sum()) for q in rivals if q in masks) / float(mt.sum())
+                denom = float(mt.sum())
+                inter = [float((masks[q] & mt).sum()) for q in rivals if q in masks]
+                ov = sum(inter) / denom
+                o = [c / denom for c in inter]
+            pair_overlaps[(t, sid)] = o
             dur = max((date.fromisoformat(e0) - date.fromisoformat(s0)).days, 1)
             overlap_days = 0
             for n, s1, e1 in w:
@@ -159,7 +187,7 @@ def load(con: sqlite3.Connection) -> dict:
                 lo, hi = max(s0, s1), min(e0, e1)
                 overlap_days += (date.fromisoformat(hi) - date.fromisoformat(lo)).days
             rows.append((t, sid, at_start, overlap_days / dur, float(np.log1p(ov))))
-    return {"trials": trials, "rows": rows}
+    return {"trials": trials, "rows": rows, "pair_overlaps": pair_overlaps}
 
 
 def _masks(con: sqlite3.Connection, n_pop: int = 4000) -> dict[str, np.ndarray]:
@@ -200,6 +228,57 @@ def _ols_cluster(y, X, groups, w=None):
     return beta, np.sqrt(np.clip(np.diag(V), 0, None)), G
 
 
+def _cr1_meat(codes: np.ndarray, S: np.ndarray, n: int, k: int) -> tuple[np.ndarray, int]:
+    """adj * sum_c S_c S_c' over the clusters `codes` (S: one score row per code entry)."""
+    _, g = np.unique(codes, return_inverse=True)
+    G = int(g.max()) + 1
+    if G < 2:
+        raise ValueError("two-way clustering needs >= 2 clusters in every dimension")
+    agg = np.zeros((G, S.shape[1]))
+    np.add.at(agg, g, S)
+    return G / (G - 1) * (n - 1) / max(n - k, 1) * (agg.T @ agg), G
+
+
+def twoway_vcov(scores: np.ndarray, bread: np.ndarray, trial_of_obs: np.ndarray,
+                member_obs: np.ndarray, member_site: np.ndarray) -> tuple[np.ndarray, dict]:
+    """Two-way (trial, site) cluster-robust variance, CGM (2011), with multi-membership.
+
+    scores        (n, k) per-observation scores w_i x_i e_i
+    bread         (X'WX)^-1
+    trial_of_obs  (n,) trial id of each observation
+    member_obs,   incidence pairs: observation member_obs[j] belongs to site member_site[j]. A
+    member_site   trial-site row has one pair; a trial-level observation one pair per site.
+    V = V_trial + V_site - V_trial&site, CR1 factor per dimension, negative eigenvalues clipped to 0.
+    """
+    n, k = scores.shape
+    member_obs = np.asarray(member_obs)
+    _, t_code = np.unique(trial_of_obs, return_inverse=True)
+    _, s_code = np.unique(member_site, return_inverse=True)
+    if not np.array_equal(np.unique(member_obs), np.arange(n)):
+        raise ValueError("every observation needs at least one site")
+    M_t, G_t = _cr1_meat(t_code, scores, n, k)
+    S = scores[member_obs]
+    M_s, G_s = _cr1_meat(s_code, S, n, k)
+    M_ts, G_ts = _cr1_meat(t_code[member_obs].astype(np.int64) * (int(s_code.max()) + 1) + s_code, S, n, k)
+    V = bread @ (M_t + M_s - M_ts) @ bread
+    V = (V + V.T) / 2
+    ev, vec = np.linalg.eigh(V)
+    V = (vec * np.clip(ev, 0, None)) @ vec.T
+    return V, {"clusters_site": G_s, "clusters_trial_site": G_ts, "negative_eigenvalues_clipped": int((ev < 0).sum())}
+
+
+def _ols_twoway(y, X, trial_ids, member_obs, member_site, w=None):
+    """Weighted OLS with two-way (trial, site) clustered standard errors (see twoway_vcov)."""
+    w = np.ones(len(y)) if w is None else w
+    sw = np.sqrt(w)
+    Xw, yw = X * sw[:, None], y * sw
+    XtX_inv = np.linalg.pinv(Xw.T @ Xw)
+    beta = XtX_inv @ Xw.T @ yw
+    u = yw - Xw @ beta
+    V, info = twoway_vcov(Xw * u[:, None], XtX_inv, np.asarray(trial_ids), member_obs, np.asarray(member_site))
+    return beta, np.sqrt(np.clip(np.diag(V), 0, None)), info
+
+
 def _demean(M: np.ndarray, groups: np.ndarray, w: np.ndarray) -> np.ndarray:
     _, g = np.unique(groups, return_inverse=True)
     sums = np.zeros((g.max() + 1, M.shape[1]))
@@ -208,57 +287,268 @@ def _demean(M: np.ndarray, groups: np.ndarray, w: np.ndarray) -> np.ndarray:
     return M - sums[g] / wsum[g][:, None]
 
 
-def run(con: sqlite3.Connection | None = None) -> dict:
+def _y(trials: dict, t: str) -> float:
+    return float(np.log(trials[t]["N"] / (trials[t]["tau"] * trials[t]["n_sites"])))
+
+
+def _fit(y, X, trial_ids, member_obs, member_site, w, x, n_rows: int, trial_site_rows: int) -> dict:
+    """Coefficient on X[:, 0] with two-way (primary) and trial-only (CR1) standard errors."""
+    b, se1, G = _ols_cluster(y, X, trial_ids, w)
+    _, se2, info = _ols_twoway(y, X, trial_ids, member_obs, member_site, w)
+    r = _fmt(b[0], se2[0], n_rows, G, x)
+    t = _fmt(b[0], se1[0], n_rows, G, x)
+    r.update(se_trial_only=t["se"], ci95_trial_only=t["ci95"], p_trial_only=t["p"],
+             trial_site_rows=int(trial_site_rows), **info)
+    return r
+
+
+def estimate(trials: dict, rows: list[tuple[str, str, float]]) -> dict:
+    """pooled / site_fe / within for one exposure, on (trial, site, exposure) rows."""
+    out: dict = {}
+
+    # Pooled, trial level: mean exposure across the trial's (named) sites.
+    expo: dict[str, list[float]] = {}
+    sites_of: dict[str, list[str]] = {}
+    for t, s, x in rows:
+        expo.setdefault(t, []).append(x)
+        sites_of.setdefault(t, []).append(s)
+    ids = sorted(expo)
+    y = np.array([_y(trials, t) for t in ids])
+    x = np.array([np.mean(expo[t]) for t in ids])
+    C, _ = _design(trials, ids)
+    mo = np.array([i for i, t in enumerate(ids) for _ in sites_of[t]])
+    ms = np.array([s for t in ids for s in sites_of[t]])
+    out["pooled"] = _fit(y, np.column_stack([x, np.ones(len(ids)), C]), np.array(ids), mo, ms, None, x,
+                         len(ids), len(rows))
+
+    # Site fixed effects, trial-site rows weighted so each trial counts once.
+    sub = [r for r in rows if r[0] in trials]
+    tid = np.array([r[0] for r in sub])
+    sid = np.array([r[1] for r in sub])
+    # Keep sites with >= 2 trials: singletons carry no within-site variation.
+    _, inv, cnt = np.unique(sid, return_inverse=True, return_counts=True)
+    keep = cnt[inv] >= 2
+    tid, sid = tid[keep], sid[keep]
+    sub = [r for r, kp in zip(sub, keep) if kp]
+    yv = np.array([_y(trials, t) for t in tid])
+    xv = np.array([r[2] for r in sub], dtype=float)
+    Cv, _ = _design(trials, list(tid))
+    w = np.array([1.0 / trials[t]["n_sites"] for t in tid])
+    M = _demean(np.column_stack([yv, xv, Cv]), sid, w)
+    r = _fit(M[:, 0], M[:, 1:], tid, np.arange(len(tid)), sid, w, xv, len(tid), len(tid))
+    r["sites"] = int(len(np.unique(sid)))
+    out["site_fe"] = r
+
+    # Within-site at trial level: each site's exposure minus that site's own average, averaged
+    # over the trial's sites. Avoids diluting a one-site shock against the whole trial's rate.
+    _, g = np.unique(sid, return_inverse=True)
+    site_mean = np.bincount(g, weights=xv) / np.bincount(g)
+    dev: dict[str, list[float]] = {}
+    dsites: dict[str, list[str]] = {}
+    for t, s, xd in zip(tid, sid, xv - site_mean[g]):
+        dev.setdefault(t, []).append(xd)
+        dsites.setdefault(t, []).append(s)
+    ids = sorted(dev)
+    y = np.array([_y(trials, t) for t in ids])
+    x = np.array([np.mean(dev[t]) for t in ids])
+    C, _ = _design(trials, ids)
+    mo = np.array([i for i, t in enumerate(ids) for _ in dsites[t]])
+    ms = np.array([s for t in ids for s in dsites[t]])
+    r = _fit(y, np.column_stack([x, np.ones(len(ids)), C]), np.array(ids), mo, ms, None, x, len(ids), len(tid))
+    r["sites"] = int(len(np.unique(sid)))
+    out["within"] = r
+    return out
+
+
+def _fmt(b: float, se: float, n: int, G: int, x: np.ndarray) -> dict:
+    z = b / se if se > 0 else 0.0
+    return {
+        "coef": float(b), "se": float(se), "p": float(2 * norm.sf(abs(z))),
+        "ci95": [float(b - Z95 * se), float(b + Z95 * se)],
+        "pct_per_competitor": float(np.expm1(b) * 100),
+        "n_rows": int(n), "clusters": int(G),
+        "exposure_mean": float(np.mean(x)), "exposure_p90": float(np.quantile(x, 0.9)),
+    }
+
+
+# ---------------------------------------------------------------------------------------- subsets
+
+def prior_lung_trials(con: sqlite3.Connection, trials: dict, rows: list) -> list[int]:
+    """Per row (t, s): lung trials at s (any status) that started strictly before t (S1p)."""
+    starts: dict[str, list[str]] = {}
+    for sid, s in con.execute("""SELECT ts.site_id, t.start_date FROM trial_sites ts JOIN trials t USING(nct_id)
+                                 WHERE t.is_lung=1 AND t.start_date IS NOT NULL"""):
+        starts.setdefault(sid, []).append(s)
+    for v in starts.values():
+        v.sort()
+    return [bisect_left(starts.get(r[1], []), trials[r[0]]["start"]) for r in rows]
+
+
+def subset_rows(con: sqlite3.Connection, d: dict) -> tuple[dict, dict]:
+    """(trial, site, overlap exposure) rows of each subset, and diagnostics."""
+    trials, rows, pairs = d["trials"], d["rows"], d["pair_overlaps"]
+    k = MEASURE_COL["overlap"]
+    prior = prior_lung_trials(con, trials, rows)
+    n_hist = dict(con.execute("SELECT site_id, n_hist FROM site_model"))
+    s3_x = [float(np.log1p(sum(o for o in pairs[(r[0], r[1])] if o >= S3_MIN_OVERLAP))) for r in rows]
+    rebuilt = np.array([np.log1p(sum(pairs[(r[0], r[1])])) for r in rows])
+    sanity = float(np.max(np.abs(rebuilt - np.array([r[k] for r in rows]))))
+    assert sanity < 1e-9, sanity
+    out = {
+        "S1p": [(r[0], r[1], r[k]) for r, c in zip(rows, prior) if c >= S1_MIN_SITE_TRIALS],
+        "S1": [(r[0], r[1], r[k]) for r in rows if (n_hist.get(r[1]) or 0) >= S1_MIN_SITE_TRIALS],
+        "S2": [(r[0], r[1], r[k]) for r in rows if trials[r[0]]["n_sites"] <= S2_MAX_SITES],
+        "S3": [(r[0], r[1], x) for r, x in zip(rows, s3_x)],
+    }
+    lifetime = np.array([(n_hist.get(r[1]) or 0) >= S1_MIN_SITE_TRIALS for r in rows])
+    predet = np.array([c >= S1_MIN_SITE_TRIALS for c in prior])
+    n_pairs = sum(len(v) for v in pairs.values())
+    diag = {key: {"rows_kept": len(v), "rows_full": len(rows), "trials_with_rows": len({r[0] for r in v})}
+            for key, v in out.items()}
+    diag["S1p"]["rows_also_in_S1"] = int((predet & lifetime).sum())
+    diag["S1p"]["rows_in_S1_not_S1p"] = int((lifetime & ~predet).sum())
+    diag["S3"].update(
+        share_rows_nonzero_exposure=float(np.mean(np.array(s3_x) > 0)),
+        share_rows_nonzero_exposure_full=float(np.mean(np.array([r[k] for r in rows]) > 0)),
+        rival_pairs=n_pairs,
+        rival_pairs_overlap_ge_threshold=sum(sum(o >= S3_MIN_OVERLAP for o in v) for v in pairs.values()),
+        rebuild_max_abs_diff_no_threshold=sanity)
+    return out, diag
+
+
+SUBSET_INFO = {
+    "S1p": {"label": "Experienced sites (predetermined)", "predetermined": True,
+            "definition": f"rows at sites with >= {S1_MIN_SITE_TRIALS} lung trials (any status) whose start date "
+                          "is strictly before the focal trial's start date"},
+    "S1": {"label": "Experienced sites (lifetime count)", "predetermined": False,
+           "definition": f"rows at sites with site_model.n_hist >= {S1_MIN_SITE_TRIALS} lung trials over all time; "
+                         "uses later trials; not predetermined"},
+    "S2": {"label": f"Trials with <= {S2_MAX_SITES} sites", "predetermined": True,
+           "definition": f"rows of trials with <= {S2_MAX_SITES} registered sites (trials.n_sites)"},
+    "S3": {"label": f"High-overlap competitors only (o >= {S3_MIN_OVERLAP})", "predetermined": True,
+           "definition": f"all rows; exposure = log(1 + sum of eligibility overlaps o_tQ >= {S3_MIN_OVERLAP})"},
+}
+
+
+def _bonf(c: dict) -> list[float]:
+    return [c["coef"] - Z_BONF * c["se"], c["coef"] + Z_BONF * c["se"]]
+
+
+def decide(full_within: dict, subsets: dict) -> dict:
+    """Pre-registered rule (section E) on the within_overlap estimates; never changes the default."""
+    f = full_within
+    f_hw = Z95 * f["se"]
+    checks = {}
+    for key, sub in subsets.items():
+        c = sub["within"]
+        hw = Z95 * c["se"]
+        lo, hi = c["ci95"]
+        blo, bhi = _bonf(c)
+        excl = not (lo <= f["coef"] <= hi)
+        powered = c["clusters"] >= MIN_TRIALS and hw <= MAX_HW_RATIO * f_hw
+        checks[key] = {
+            "ci_excludes_full_estimate": bool(excl),
+            "trials": int(c["clusters"]), "enough_trials": bool(c["clusters"] >= MIN_TRIALS),
+            "ci_half_width": float(hw), "full_ci_half_width": float(f_hw), "half_width_ratio": float(hw / f_hw),
+            "well_powered": bool(powered), "meets_rule": bool(excl and powered),
+            "bonferroni_ci_excludes_full_estimate": bool(not (blo <= f["coef"] <= bhi)),
+            "bonferroni_ci_excludes_zero": bool(blo > 0 or bhi < 0),
+            "ci_excludes_zero": bool(lo > 0 or hi < 0),
+            "direction_vs_full": "more negative" if c["coef"] < f["coef"] else "less negative or positive",
+            "predetermined": SUBSET_INFO[key]["predetermined"],
+        }
+    hits = [k for k, ch in checks.items() if ch["meets_rule"]]
+    return {
+        "checks": checks, "subsets_meeting_rule": hits, "default_changed": False,
+        "action": ("flag for review: " + ", ".join(hits) + " meet(s) the rule; the default stays the full-sample "
+                   "estimate and subset estimates are labelled '" + SUBSET_ROLE + "'") if hits else
+                  "no subset meets the rule; the default stays the full-sample estimate",
+        "rule": {"ci": "two-way 95% CI of within_overlap excludes the full-sample point estimate",
+                 "min_trials": MIN_TRIALS, "max_half_width_ratio": MAX_HW_RATIO, "z95": Z95,
+                 "z_bonferroni": Z_BONF, "k": N_SUBSETS},
+    }
+
+
+def _short(c: dict) -> dict:
+    keys = ("coef", "se", "ci95", "p", "clusters", "n_rows", "trial_site_rows", "se_trial_only",
+            "ci95_trial_only", "p_trial_only", "clusters_site")
+    return {k: c[k] for k in keys if k in c}
+
+
+def multiple_comparisons(full_within: dict, subsets: dict) -> dict:
+    f = full_within["coef"]
+    b = {k: _bonf(s["within"]) for k, s in subsets.items()}
+    ex0 = [k for k, (lo, hi) in b.items() if lo > 0 or hi < 0]
+    exf = [k for k, (lo, hi) in b.items() if not (lo <= f <= hi)]
+    names = lambda ks: ", ".join(ks) if ks else "none"  # noqa: E731
+    note = (f"{N_SUBSETS} subsets were tested, so each subset's within-site CI is also shown at the Bonferroni "
+            f"level (alpha {ALPHA}/{N_SUBSETS}, z = {Z_BONF:.2f}); at that level the CIs that exclude zero: "
+            f"{names(ex0)}; that exclude the full-sample estimate {f:+.3f}: {names(exf)}.")
+    return {"method": "Bonferroni", "k": N_SUBSETS, "alpha": ALPHA, "z": Z_BONF, "estimator": "within_overlap",
+            "se_method": SE_METHOD, "note": note, "bonferroni_ci95": b}
+
+
+# ------------------------------------------------------------------------------ parser sensitivity
+
+def within_sample(rows: list) -> set[str]:
+    """Trials in the within / site_fe sample: a row at a site with >= 2 rows."""
+    n_at: dict[str, int] = {}
+    for r in rows:
+        n_at[r[1]] = n_at.get(r[1], 0) + 1
+    return {r[0] for r in rows if n_at[r[1]] >= 2}
+
+
+def parser_sensitivity(con: sqlite3.Connection, production_masks: dict[str, np.ndarray]) -> tuple[list, dict]:
+    """Full-sample within_overlap under each historical parser (section D), and the production reference."""
+    from concord.analysis import parser_versions as pv
+    from concord.compiler.overrides import OVERRIDES
+
+    def one(masks: dict) -> dict:
+        d = load(con, masks=masks)
+        res = estimate(d["trials"], [(r[0], r[1], r[4]) for r in d["rows"]])
+        w = res["within"]
+        sample = within_sample(d["rows"])
+        assert len(sample) == w["clusters"], (len(sample), w["clusters"])
+        return {"within_overlap": _short(w),
+                "site_fe_overlap": _short(res["site_fe"]), "pooled_overlap": _short(res["pooled"]),
+                "empty_masks": int(sum(1 for m in masks.values() if not m.any())),
+                "empty_masks_analysis_trials": int(sum(1 for t in sample if t in masks and not masks[t].any())),
+                "lung_trials_compiled": len(masks)}
+
+    out = []
+    for v in pv.VERSIONS:
+        mods = pv.load_version(v["commit"])
+        masks = pv.compile_masks(con, mods)
+        out.append({**v, "overrides": False, "source_matches_working_tree": pv.source_matches_working_tree(v["commit"]),
+                    **one(masks)})
+    cur = pv.VERSIONS[-1]
+    masks = pv.compile_masks(con, pv.load_version(cur["commit"]), overrides=OVERRIDES)
+    differ = sum(1 for n, m in masks.items() if n not in production_masks or not np.array_equal(m, production_masks[n]))
+    differ += sum(1 for n in production_masks if n not in masks)
+    ref = {"parser_version": f"{cur['parser_version']}+overrides", "commit": cur["commit"],
+           "description": f"production: {cur['parser_version']} plus the hand-encoded overrides "
+                          f"({len(OVERRIDES)} trials); reference, not a parser version",
+           "overrides": True, "n_overrides": len(OVERRIDES),
+           "masks_differing_from_trial_model": int(differ), **one(masks)}
+    return out, ref
+
+
+# ------------------------------------------------------------------------------------------- run
+
+def run(con: sqlite3.Connection | None = None, with_parser_sensitivity: bool = True) -> dict:
+    t0 = time.time()
     con = con or sqlite3.connect(DB_PATH)
-    d = load(con)
+    production_masks = _masks(con)
+    d = load(con, masks=production_masks)
     trials, rows = d["trials"], d["rows"]
-    out: dict = {"n_trials": len(trials), "n_trial_sites": len(rows), "results": {}}
+    out: dict = {"task": "congestion test v2: two-way clustered SEs, predetermined subsets, parser sensitivity",
+                 "n_trials": len(trials), "n_trial_sites": len(rows), "se_method": SE_METHOD, "results": {}}
 
-    for k, measure in ((2, "start"), (4, "overlap"), (3, "avg")):
-        # Pooled, trial level: mean exposure across the trial's (named) sites.
-        expo: dict[str, list[float]] = {}
-        for r in rows:
-            expo.setdefault(r[0], []).append(r[k])
-        ids = sorted(expo)
-        y = np.array([np.log(trials[t]["N"] / (trials[t]["tau"] * trials[t]["n_sites"])) for t in ids])
-        x = np.array([np.mean(expo[t]) for t in ids])
-        C, names = _design(trials, ids)
-        X = np.column_stack([x, np.ones(len(ids)), C])
-        b, se, G = _ols_cluster(y, X, np.array(ids))
-        out["results"][f"pooled_{measure}"] = _fmt(b[0], se[0], len(ids), G, x)
-
-        # Site fixed effects, trial-site rows weighted so each trial counts once.
-        sub = [r for r in rows if r[0] in trials]
-        tid = np.array([r[0] for r in sub])
-        sid = np.array([r[1] for r in sub])
-        # Keep sites with >= 2 trials: singletons carry no within-site variation.
-        _, inv, cnt = np.unique(sid, return_inverse=True, return_counts=True)
-        keep = cnt[inv] >= 2
-        tid, sid = tid[keep], sid[keep]
-        sub = [r for r, kp in zip(sub, keep) if kp]
-        yv = np.array([np.log(trials[t]["N"] / (trials[t]["tau"] * trials[t]["n_sites"])) for t in tid])
-        xv = np.array([r[k] for r in sub], dtype=float)
-        Cv, _ = _design(trials, list(tid))
-        w = np.array([1.0 / trials[t]["n_sites"] for t in tid])
-        M = _demean(np.column_stack([yv, xv, Cv]), sid, w)
-        b, se, G = _ols_cluster(M[:, 0], M[:, 1:], tid, w)
-        r = _fmt(b[0], se[0], len(tid), G, xv)
-        r["sites"] = int(len(np.unique(sid)))
-        out["results"][f"site_fe_{measure}"] = r
-
-        # Within-site at trial level: each site's exposure minus that site's own average, averaged
-        # over the trial's sites. Avoids diluting a one-site shock against the whole trial's rate.
-        _, g = np.unique(sid, return_inverse=True)
-        site_mean = np.bincount(g, weights=xv) / np.bincount(g)
-        dev: dict[str, list[float]] = {}
-        for t, xd in zip(tid, xv - site_mean[g]):
-            dev.setdefault(t, []).append(xd)
-        ids = sorted(dev)
-        y = np.array([np.log(trials[t]["N"] / (trials[t]["tau"] * trials[t]["n_sites"])) for t in ids])
-        x = np.array([np.mean(dev[t]) for t in ids])
-        C, _ = _design(trials, ids)
-        b, se, G = _ols_cluster(y, np.column_stack([x, np.ones(len(ids)), C]), np.array(ids))
-        out["results"][f"within_{measure}"] = _fmt(b[0], se[0], len(ids), G, x)
+    for measure in ("start", "overlap", "avg"):
+        k = MEASURE_COL[measure]
+        res = estimate(trials, [(r[0], r[1], r[k]) for r in rows])
+        for est in ("pooled", "site_fe", "within"):
+            out["results"][f"{est}_{measure}"] = res[est]
 
     primary = out["results"]["within_overlap"]
     out["primary"] = "within_overlap"
@@ -266,25 +556,84 @@ def run(con: sqlite3.Connection | None = None) -> dict:
     out["verdict"] = (
         "negative and significant" if primary["coef"] < 0 and primary["p"] < 0.05 else
         "positive and significant" if primary["coef"] > 0 and primary["p"] < 0.05 else "not significant")
+
+    srows, diag = subset_rows(con, d)
+    subsets = {}
+    for key, rs in srows.items():
+        res = estimate(trials, rs)
+        subsets[key] = {"label": SUBSET_INFO[key]["label"], "definition": SUBSET_INFO[key]["definition"],
+                        "role": SUBSET_ROLE, "is_default": False, "predetermined": SUBSET_INFO[key]["predetermined"],
+                        "within": res["within"], "site_fe": res["site_fe"], "pooled": res["pooled"],
+                        "bonferroni_ci95_within": _bonf(res["within"]), "diagnostics": diag[key]}
+    out["subsets"] = subsets
+    out["subset_decision"] = decide(primary, subsets)
+    for key, ch in out["subset_decision"]["checks"].items():
+        subsets[key]["decision"] = ch
+    out["multiple_comparisons"] = multiple_comparisons(primary, subsets)
+
+    if with_parser_sensitivity:
+        out["parser_sensitivity"], out["parser_sensitivity_reference"] = parser_sensitivity(con, production_masks)
+
+    lo, hi = primary["ci95"]
+    out["default_beta"] = {
+        "value": -primary["coef"], "source": "full-sample within_overlap", "ci95": [-hi, -lo],
+        "ci95_scale": "beta = -coef; service.congestion_beta clips both at 0", "se_method": SE_METHOD,
+        "note": "subset estimates are reported separately and are not used as the default",
+        "subsets_meeting_rule": out["subset_decision"]["subsets_meeting_rule"]}
+    out["seconds"] = round(time.time() - t0, 1)
     return out
 
 
-def _fmt(b: float, se: float, n: int, G: int, x: np.ndarray) -> dict:
-    from scipy.stats import norm
-    z = b / se if se > 0 else 0.0
-    return {
-        "coef": float(b), "se": float(se), "p": float(2 * norm.sf(abs(z))),
-        "ci95": [float(b - 1.96 * se), float(b + 1.96 * se)],
-        "pct_per_competitor": float(np.expm1(b) * 100),
-        "n_rows": int(n), "clusters": int(G),
-        "exposure_mean": float(np.mean(x)), "exposure_p90": float(np.quantile(x, 0.9)),
-    }
+def reproduction_check(new: dict, prev: dict | None) -> dict:
+    """Section B: coef and trial-only se of all nine estimators vs the previously stored meta."""
+    if not prev:
+        return {"compared": False}
+    diffs = {}
+    for key, r in new["results"].items():
+        p = prev["results"].get(key)
+        if p is None:
+            continue
+        diffs[key] = max(abs(r["coef"] - p["coef"]), abs(r["se_trial_only"] - p.get("se_trial_only", p["se"])),
+                         float(r["n_rows"] != p["n_rows"]), float(r["clusters"] != p["clusters"]))
+    return {"compared": True, "estimators": len(diffs), "max_abs_diff": max(diffs.values()) if diffs else None,
+            "by_estimator": diffs}
 
 
-if __name__ == "__main__":
-    res = run()
+def _line(name: str, c: dict) -> str:
+    ci = lambda v: f"[{v[0]:+.4f}, {v[1]:+.4f}]"  # noqa: E731
+    return (f"{name:16s} {c['coef']:+.4f}  2way {ci(c['ci95'])} p={c['p']:.3f}  "
+            f"trial-only {ci(c['ci95_trial_only'])} p={c['p_trial_only']:.3f}  "
+            f"trials={c['clusters']} sites={c.get('clusters_site')} rows={c.get('trial_site_rows')}")
+
+
+def main() -> None:
+    sys.stdout.reconfigure(encoding="utf-8")
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default=str(ROOT / "data" / "robustness" / "congestion_v2.json"))
+    a = ap.parse_args()
     con = sqlite3.connect(DB_PATH)
+    prev = con.execute("SELECT value FROM meta WHERE key='congestion_test'").fetchone() \
+        if con.execute("SELECT 1 FROM sqlite_master WHERE name='meta'").fetchone() else None
+    res = run(con)
+    res["reproduction_vs_previous_meta"] = rep = reproduction_check(res, json.loads(prev[0]) if prev else None)
+    assert not rep["compared"] or rep["max_abs_diff"] < 1e-9, rep
+    with open(a.out, "w", encoding="utf-8") as fh:
+        json.dump(res, fh, indent=2)
     con.execute("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)")
     con.execute("INSERT OR REPLACE INTO meta VALUES ('congestion_test', ?)", (json.dumps(res),))
     con.commit()
-    print(json.dumps(res, indent=2))
+    for key, c in res["results"].items():
+        print(_line(key, c))
+    for key, s in res["subsets"].items():
+        print(_line(key, s["within"]), "bonf", [round(v, 4) for v in s["bonferroni_ci95_within"]],
+              "meets" if s["decision"]["meets_rule"] else "-")
+    for v in res.get("parser_sensitivity", []) + [res.get("parser_sensitivity_reference")]:
+        if v:
+            print(_line(v["parser_version"], v["within_overlap"]), "empty", v["empty_masks"])
+    print(json.dumps({k: res[k] for k in ("multiple_comparisons", "default_beta")}, indent=2))
+    print(json.dumps(res["subset_decision"]["action"]), json.dumps(rep["max_abs_diff"]))
+    print(f"wrote {a.out} and meta congestion_test of {DB_PATH} in {res['seconds']} s")
+
+
+if __name__ == "__main__":
+    main()
