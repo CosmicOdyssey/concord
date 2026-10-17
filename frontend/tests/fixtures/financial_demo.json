@@ -1,0 +1,181 @@
+{
+ "request": {
+  "trial_id": "NCT05800015",
+  "budget": 1500000.0,
+  "target": 60,
+  "budget_period_months": 24.0,
+  "admin_cost": 120000.0,
+  "admin_reduction": 0.25,
+  "support_per_participant": 500.0,
+  "minimum_support": 200.0,
+  "extra_support": 300.0,
+  "seed": 7,
+  "draws": 256,
+  "cost_spread": 0.25,
+  "payer_kind": "Medicare",
+  "jurisdiction": "MA",
+  "payer_plan": "UNVERIFIED DEMO",
+  "payer_fraction": 0.8,
+  "commercial_rate_assumption": false,
+  "sponsor_rate_multiplier": 1.0,
+  "payer_admin_per_participant": 30.0,
+  "drug_contingency_per_participant": 2500.0,
+  "coverage_overrides": {},
+  "sites": [
+   {
+    "id": "SYN-A",
+    "name": "Synthetic site A",
+    "baseline_active": true,
+    "feasible": true,
+    "activation_cost": 30000.0,
+    "monthly_cost": 1000.0,
+    "per_participant_cost": 2000.0,
+    "capacity": 60
+   },
+   {
+    "id": "SYN-B",
+    "name": "Synthetic site B",
+    "baseline_active": true,
+    "feasible": true,
+    "activation_cost": 30000.0,
+    "monthly_cost": 1200.0,
+    "per_participant_cost": 2000.0,
+    "capacity": 60
+   },
+   {
+    "id": "SYN-C",
+    "name": "Synthetic site C",
+    "baseline_active": false,
+    "feasible": true,
+    "activation_cost": 35000.0,
+    "monthly_cost": 1600.0,
+    "per_participant_cost": 2400.0,
+    "capacity": 60
+   },
+   {
+    "id": "SYN-D",
+    "name": "Synthetic site D",
+    "baseline_active": false,
+    "feasible": true,
+    "activation_cost": 50000.0,
+    "monthly_cost": 2200.0,
+    "per_participant_cost": 2800.0,
+    "capacity": 60
+   }
+  ]
+ },
+ "trials": [
+  {
+   "id": "NCT05800015",
+   "title": "Fianlimab + cemiplimab + chemotherapy vs placebo + cemiplimab + chemotherapy, first-line advanced NSCLC"
+  },
+  {
+   "id": "NCT06627647",
+   "title": "Rilvegostomig vs pembrolizumab, each with platinum + pemetrexed, first-line non-squamous NSCLC (ARTEMIDE-Lung03)"
+  }
+ ],
+ "coverage": {
+  "items": [
+   {
+    "id": "SCR:em_new",
+    "label": "New-patient oncology visit, high complexity",
+    "code": "99205",
+    "trial_id": "NCT05800015",
+    "protocol_reference": "compiler/protocols/NCT05800015.json",
+    "quantity": 1,
+    "frequency": "Screening",
+    "schedule": "Day -28 to -1",
+    "unit_rate": 236.81,
+    "sponsor_unit_rate": 236.81,
+    "rate_kind": "verified_fee_schedule_benchmark",
+    "source": "CMS PFS 2026 National Physician Fee Schedule Relative Value File October Release (nonQPP, non-facility), rvu26d.zip",
+    "year": 2026,
+    "status": "POTENTIALLY_PAYER_COVERED",
+    "coverage_determination_status": "NOT_DETERMINED",
+    "review_status": "REVIEW_REQUIRED",
+    "explanation": "Preliminary authored rule R3; routine care billed per coverage rules; illustrative insurer/participant split of the benchmark at the stated payer share",
+    "sponsor_per_participant": 0.0,
+    "payer_per_participant": 189.45,
+    "patient_per_participant": 47.36,
+    "reserve_per_participant": 0.0,
+    "insurer_amount_known": true,
+    "allowed_statuses": [
+     "SPONSOR",
+     "POTENTIALLY_PAYER_COVERED",
+     "POTENTIALLY_PATIENT_COST_SHARING",
+     "CONDITIONAL",
+     "UNKNOWN",
+     "REVIEW_REQUIRED"
+    ],
+    "resource_cost_per_participant": 165.77,
+    "resource_cost_kind": "explicit_synthetic_70_percent_of_benchmark",
+    "jurisdiction": "MA",
+    "payer_plan": "UNVERIFIED DEMO"
+   },
+   {
+    "id": "SCR:ecg",
+    "label": "12-lead ECG with interpretation",
+    "code": "93000",
+    "trial_id": "NCT05800015",
+    "protocol_reference": "compiler/protocols/NCT05800015.json",
+    "quantity": 1,
+    "frequency": "Screening",
+    "schedule": "Day -28 to -1",
+    "unit_rate": 15.36,
+    "sponsor_unit_rate": 15.36,
+    "rate_kind": "verified_fee_schedule_benchmark",
+    "source": "CMS PFS 2026 National Physician Fee Schedule Relative Value File October Release (nonQPP, non-facility), rvu26d.zip",
+    "year": 2026,
+    "status": "SPONSOR",
+    "coverage_determination_status": "NOT_DETERMINED",
+    "review_status": "REVIEW_REQUIRED",
+    "explanation": "Preliminary authored rule R2; research item paid by the sponsor at the negotiated rate (benchmark x sponsor rate multiplier)",
+    "sponsor_per_participant": 15.36,
+    "payer_per_participant": 0.0,
+    "patient_per_participant": 0.0,
+    "reserve_per_participant": 0.0,
+    "insurer_amount_known": true,
+    "allowed_statuses": [
+     "SPONSOR",
+     "CONDITIONAL",
+     "UNKNOWN",
+     "REVIEW_REQUIRED"
+    ],
+    "resource_cost_per_participant": 10.75,
+    "resource_cost_kind": "explicit_synthetic_70_percent_of_benchmark",
+    "jurisdiction": "MA",
+    "payer_plan": "UNVERIFIED DEMO"
+   }
+  ],
+  "totals": {
+   "sponsor": 3159.79,
+   "payer": 5026.97,
+   "patient": 1031.7,
+   "reserve": 2500.0,
+   "resource": 8952.97
+  },
+  "insurer_amounts_unknown": 0,
+  "warnings": [
+   "Every coverage determination and price requires review. Insurer and participant figures are illustrative splits, not approvals.",
+   "Medicare qualifying-trial, service and beneficiary eligibility remain unverified. Clinical diagnostic lab tests priced from the CLFS are paid at 100% with no participant share; the payer share applies to the other routine lines.",
+   "In this worksheet, payer type, payer share and the commercial-rate assumption change only the insurer and participant lines; the sponsor commitment does not fall because an insurer pays more for routine care. A line moves onto the sponsor through coverage review or a contract term (for example, the site contract has the sponsor pay for a routine item), and off the sponsor only when coverage analysis finds it is billable routine care that the contract and consent form do not promise to provide free; never through the insurer's payment amount. Payer and Medicare amounts can still inform the rate negotiated for research items (benchmark x the sponsor-site negotiated rate)."
+  ]
+ },
+ "limitations": [
+  "Synthetic financial demonstration: all candidate sites, capacities, costs, margins and payer shares are hypothetical, not registered site facts or negotiated prices.",
+  "The real trial identifier links an existing illustrative authored schedule; the registry does not publish the complete protocol. This is not a sponsor-approved protocol budget.",
+  "Medicare and insurer amounts for routine care are benchmarks: they inform fair-market-value reasoning and are inputs to the sponsor's budget negotiation with each site or hospital.",
+  "Whether an item may be billed to an insurer follows the protocol and coverage rules (for Medicare, NCD 310.1 routine costs in qualifying trials): research-only items are the sponsor's and are never billed to an insurer or participant. The site contract can still have the sponsor pay for a routine item (mark it SPONSOR here), and an item the sponsor pays for or supplies free is then not billed to the insurer. Insurer payment amounts are not a lever over who is billed.",
+  "In this worksheet, payer type, payer share and the commercial-rate assumption change only the insurer and participant lines; the sponsor commitment does not fall because an insurer pays more for routine care. A line moves onto the sponsor through coverage review or a contract term (for example, the site contract has the sponsor pay for a routine item), and off the sponsor only when coverage analysis finds it is billable routine care that the contract and consent form do not promise to provide free; never through the insurer's payment amount. Payer and Medicare amounts can still inform the rate negotiated for research items (benchmark x the sponsor-site negotiated rate).",
+  "Nothing here models negotiation length, enrollment speed, time to fill sites or trial duration, and no scenario is ranked or recommended; the budgeted contract period is an input that prices monthly site costs.",
+  "Routine coverage is potential, subject to qualifying-trial, beneficiary, jurisdiction, plan, network and service review. No insurer participates or commits funding.",
+  "Unknown responsibility is held as sponsor contingency, not billed to insurers or participants. Unresolved patient exposure is unknown, not evidence of zero liability.",
+  "Only the authored non-repeating visits (screening, cycles 1-8, end of treatment, safety follow-up) are priced. Actual drug acquisition/manufacturing, later treatment, complications and downstream outcomes are unknown; the drug contingency is an assumption, not a complete trial cost.",
+  "Access support reimburses trial-related travel and lodging; it is not netted against, and does not pay, insurer cost sharing. Whether a sponsor may cover a beneficiary's cost sharing is a separate compliance question this worksheet does not model.",
+  "Each worksheet line is assigned to one party (sponsor, insurer, participant or sponsor contingency). That is not a billing-compliance review and does not establish that no item is billed twice. Site per-participant costs must exclude every itemized worksheet procedure, or that procedure is counted twice.",
+  "Participants are split across selected sites in proportion to stated capacity, an operator input; when an existing network that lacks capacity is extended, existing sites are filled to their stated capacity first and only the shortfall goes to added sites. It is not a measured or predicted enrollment.",
+  "Sensitivity varies only site cost inputs (seeded lognormal spread); the ranges are not calibrated intervals.",
+  "Sponsor-to-hospital payments are transfers. Consolidated resource costs use separate explicit cost assumptions; a lower sponsor payment is not automatically a system or payer saving.",
+  "No claims, reimbursements, coverage authorizations, contracts or patient-identifiable records are transmitted. Operator corrections are interpretations, not clinical or payer attestations."
+ ]
+}

@@ -1,48 +1,606 @@
-.financial { display: grid; gap: 1rem; max-width: 1480px; margin: 0 auto; }
-.financial-heading, .financial-toolbar, .financial-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
-.financial-heading p { max-width: 850px; color: var(--text-2); }
-.financial-eyebrow { text-transform: uppercase; letter-spacing: .09em; font-size: .72rem; font-weight: 700; }
-.financial-tag { border: 1px solid var(--warn-ink); color: var(--warn-ink); border-radius: 4px; padding: .35rem .6rem; font-size: .72rem; font-weight: 700; }
-.financial-warning { background: var(--warn-bg); color: var(--warn-ink); padding: .8rem 1rem; border-radius: 6px; font-size: .87rem; }
-.financial-error { background: var(--bad-bg); color: var(--bad-ink); padding: 1rem; border-radius: 6px; overflow-wrap: anywhere; }
-.financial section, .financial-panel { background: var(--surface); border: 1px solid var(--border); padding: 1.3rem; border-radius: var(--radius); min-width: 0; }
-.financial section { display: grid; gap: .9rem; }
-.financial-toolbar .financial-field { flex: 1; max-width: 690px; }
-.financial-field { display: grid; gap: .35rem; font-size: .82rem; color: var(--text-2); }
-.financial input:not([type=checkbox]), .financial select { background: var(--surface); border: 1px solid var(--border-strong); color: var(--text); border-radius: 5px; min-height: 36px; padding: .4rem .5rem; font: inherit; width: 100%; }
-.financial select { max-width: 100%; }
-.financial input:focus-visible, .financial select:focus-visible, .financial button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.financial input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; }
-.financial button { font: inherit; cursor: pointer; padding: .55rem .8rem; color: var(--text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: 5px; }
-.financial button:disabled { opacity: .6; cursor: wait; }
-.financial .financial-primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 650; }
-.financial-sections { display: flex; flex-wrap: wrap; gap: .4rem; border-bottom: 1px solid var(--border); padding-bottom: .7rem; }
-.financial-sections button { border-color: transparent; background: transparent; font-size: .85rem; }
-.financial-sections button[aria-current] { color: var(--accent); background: var(--accent-soft); font-weight: 650; border-color: var(--accent); }
-.financial-status { min-height: 1.5rem; color: var(--text-2); font-size: .85rem; }
-.financial-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .9rem; }
-.financial-check { display: flex; align-items: center; gap: .55rem; font-size: .85rem; }
-.financial-scroll { overflow: auto; max-width: 100%; border: 1px solid var(--border); border-radius: 6px; }
-.financial table { width: 100%; border-collapse: collapse; font-size: .82rem; }
-.financial caption { text-align: left; padding: .65rem; background: var(--surface-2); color: var(--text-2); }
-.financial th, .financial td { padding: .65rem; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
-.financial thead th { background: var(--surface-2); font-size: .75rem; color: var(--text-2); }
-.financial th[scope=row] { min-width: 160px; }
-.financial td input[type=number] { min-width: 90px; }
-.financial .financial-text-button { padding: 0; border: 0; background: transparent; text-align: left; color: var(--accent); }
-.financial-selected { background: var(--accent-soft); }
-.financial-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
-.financial-cards article { border: 1px solid var(--border); border-radius: 6px; padding: 1rem; }
-.financial-cards h3 { margin-top: 0; }
-.financial-cards strong { font-size: 1.5rem; }
-.financial-cards p { font-size: .82rem; color: var(--text-2); }
-.financial-provenance { display: grid; grid-template-columns: 140px 1fr; gap: .5rem; margin: 0; }
-.financial-provenance dd { margin: 0; overflow-wrap: anywhere; }
-.financial pre { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--surface-2); padding: 1rem; font-size: .75rem; }
-.financial-empty { background: var(--surface-2); padding: 1.3rem; color: var(--text-2); border-radius: 6px; }
-.financial-actions { justify-content: flex-start; }
-@media (max-width: 650px) { .financial section { padding: .8rem; } .financial-provenance { grid-template-columns: 1fr; } .financial-heading { align-items: flex-start; } }
-/* Calm foundation: controls share the app's control radius and outline, and reach 44 px on touch screens. */
-.financial input:not([type=checkbox]), .financial select, .financial button { border-radius: var(--radius-ctl); }
-.financial input:not([type=checkbox]), .financial select { border-color: var(--ctl); }
-@media (pointer: coarse) { .financial input:not([type=checkbox]), .financial select, .financial button { min-height: var(--tap); } }
+/* Sponsor budget (the synthetic sponsor-budget worksheet) in the Calm skin. Tokens only (index.css), so both themes follow; windows, banners, key
+   figures, sections and disclosures come from calm.css. Class names start with fin- (hover-card content is portalled
+   to <body>, so the .fin-tip-* rules are not scoped under .financial). */
+
+.financial {
+  min-width: 0;
+}
+.financial p {
+  text-wrap: pretty;
+}
+
+/* ---------- setup window: trial, key inputs (Simple), compare ---------- */
+.fin-setup .win-body {
+  display: grid;
+  gap: var(--sp-5);
+}
+.fin-setup-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--sp-3) var(--sp-5);
+}
+.fin-trial {
+  flex: 1 1 22rem;
+  max-width: 46rem;
+}
+.fin-trial select {
+  width: 100%;
+  text-overflow: ellipsis;
+}
+.fin-registry {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  margin: 0;
+  font-size: var(--fs-md);
+}
+.fin-hint {
+  margin: 0;
+  max-width: 52rem;
+  font-size: var(--fs-ui);
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.fin-run {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3) var(--sp-5);
+}
+.fin-status {
+  flex: 1 1 16rem;
+  min-height: 1.5em;
+  margin: 0;
+  font-size: var(--fs-ui);
+  color: var(--ink-2);
+}
+
+/* ---------- inputs ---------- */
+.fin-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: var(--sp-4) var(--sp-5);
+}
+/* Labels of different lengths: keep the inputs of one row on one line. */
+.fin-field {
+  justify-content: space-between;
+}
+.fin-field input,
+.fin-field select {
+  width: 100%;
+}
+.fin-field-note {
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  color: var(--muted);
+}
+.fin-check-off {
+  color: var(--muted);
+  cursor: default;
+}
+.fin-check {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: var(--fs-md);
+  line-height: 1.45;
+  cursor: pointer;
+}
+.financial input[type='checkbox'] {
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0;
+}
+.fin-cellcheck {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  cursor: pointer;
+}
+
+/* ---------- section switcher (Detailed) ---------- */
+.fin-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-2);
+}
+.fin-nav button {
+  position: relative;
+  appearance: none;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.875rem;
+  border: 0;
+  border-radius: var(--radius-ctl);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--fs-md);
+  line-height: 1.3;
+  cursor: pointer;
+}
+.fin-nav button:hover {
+  color: var(--ink);
+  background: var(--surface);
+}
+.fin-nav button[aria-current] {
+  color: var(--ink);
+  font-weight: 600;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+.fin-nav button[aria-current]::after {
+  content: '';
+  position: absolute;
+  left: 0.875rem;
+  right: 0.875rem;
+  bottom: 0.3125rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+/* ---------- a Detailed section window ---------- */
+.fin-stack {
+  display: grid;
+  gap: var(--sp-4);
+}
+.fin-stack > *,
+.disclosure-body.fin-stack > *,
+.fin-more .disclosure-body > * {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.fin-stack > h3,
+.fin-more .disclosure-body > h3 {
+  margin-top: var(--sp-3);
+}
+.fin-h3 {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--ink);
+}
+.fin-h2 {
+  font-size: clamp(1.375rem, 1.1rem + 0.8vw, 1.75rem);
+  line-height: 1.22;
+}
+.fin-text {
+  max-width: 56rem;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+.fin-empty {
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+.fin-error {
+  display: grid;
+  gap: var(--sp-2);
+}
+.fin-error p {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+/* ---------- tables ---------- */
+.fin-tbl caption {
+  caption-side: top;
+  padding: 0 0 0.625rem;
+  text-align: left;
+  font-size: var(--fs-ui);
+  line-height: 1.5;
+  color: var(--muted);
+}
+.tbl.fin-tbl thead th {
+  white-space: normal;
+  min-width: 6rem;
+}
+.fin-tbl tbody th[scope='row'] {
+  min-width: 11rem;
+}
+.fin-tbl td input[type='number'] {
+  width: 100%;
+  min-width: 6.5rem;
+}
+.fin-tbl td select {
+  min-width: 13rem;
+}
+.fin-tbl-narrow {
+  width: auto;
+  min-width: min(100%, 32rem);
+}
+.fin-tbl-coverage td:nth-child(4) {
+  min-width: 15rem;
+}
+.fin-tbl-coverage td:nth-child(2) {
+  min-width: 13rem;
+}
+.fin-tbl-scen tbody th[scope='row'] {
+  min-width: 15rem;
+}
+.fin-cell-wide {
+  min-width: 16rem;
+}
+.fin-cell-feas {
+  min-width: 8.5rem;
+}
+.fin-sub {
+  margin: 0.125rem 0 0;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  font-weight: 400;
+  color: var(--muted);
+}
+.fin-nowrap {
+  white-space: nowrap;
+}
+.fin-sub-inline {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.fin-viol {
+  font-size: var(--fs-ui);
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+/* The scenario name selects the scenario (the selected row also takes .row-on). */
+.fin-pick {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  cursor: pointer;
+}
+.fin-pick:hover {
+  color: var(--ink);
+}
+.fin-pick[aria-pressed='true'] {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* ---------- inset cards (Detailed overview and party ledger) ---------- */
+.fin-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--sp-3);
+}
+.fin-cards article {
+  min-width: 0;
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+.fin-cards article > p:first-of-type {
+  margin-top: 0.5rem;
+}
+.fin-cards h3 {
+  margin: 0;
+  font-size: var(--fs-ui);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.fin-card-value {
+  display: block;
+  margin: 0.375rem 0 0.25rem;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.fin-cards p {
+  margin: 0.375rem 0 0;
+  font-size: var(--fs-ui);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.fin-panel {
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+.fin-panel h3 {
+  margin: 0 0 var(--sp-2);
+  color: var(--ink);
+}
+.fin-panel p {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-md);
+}
+
+/* ---------- evidence ---------- */
+.fin-prov {
+  margin: 0;
+}
+.fin-prov > div {
+  display: grid;
+  grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr);
+  gap: 0.25rem 1.25rem;
+  padding: 0.625rem 0;
+  border-top: 1px solid var(--rule);
+}
+.fin-prov > div:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+.fin-prov dt {
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+.fin-prov dd {
+  margin: 0;
+  font-size: var(--fs-md);
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.fin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+.fin-pre {
+  max-height: 28rem;
+  margin: 0;
+  padding: var(--sp-4);
+  overflow: auto;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.fin-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  max-width: 60rem;
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+.fin-list li + li {
+  margin-top: 0.375rem;
+}
+
+/* ---------- Simple: scenarios A to E as a list (not selectable, not ranked) ---------- */
+.fin-quals {
+  margin: 0;
+  color: var(--ink-2);
+}
+.fin-quals .qual {
+  white-space: normal;
+}
+.fin-caption {
+  margin: var(--sp-4) 0 0;
+  padding-top: 0.875rem;
+  border-top: 1px solid var(--rule);
+  font-size: var(--fs-ui);
+  line-height: 1.55;
+  color: var(--muted);
+}
+.fin-scen {
+  margin: var(--sp-5) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+.fin-scen-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'name amt'
+    'feas share'
+    'chg chg';
+  gap: 0.25rem 1.25rem;
+  align-items: baseline;
+  padding: 0.875rem 0.25rem;
+  border-bottom: 1px solid var(--rule);
+}
+.fin-scen-row:last-child {
+  border-bottom: 0;
+}
+.fin-scen-name {
+  grid-area: name;
+  min-width: 0;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.fin-scen-amt {
+  grid-area: amt;
+  font-size: var(--fs-fig);
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+}
+.fin-scen-feas {
+  grid-area: feas;
+  min-width: 0;
+  font-size: var(--fs-ui);
+  color: var(--ink-2);
+}
+.fin-scen-share {
+  grid-area: share;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.625rem;
+  font-size: var(--fs-ui);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.fin-scen-chg {
+  grid-area: chg;
+  min-width: 0;
+  font-size: var(--fs-ui);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.fin-chg strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+/* A meter: the track is the sponsor budget (a lighter step of the accent), the fill the commitment. */
+.fin-meter {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 6rem;
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--accent-soft);
+}
+.fin-meter > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 4px;
+  background: var(--accent);
+}
+@media (max-width: 34rem) {
+  .fin-scen-row {
+    grid-template-areas:
+      'name amt'
+      'feas feas'
+      'share share'
+      'chg chg';
+  }
+  .fin-scen-share {
+    justify-content: flex-start;
+    margin-top: 0.25rem;
+  }
+}
+
+/* ---------- coverage totals per participant (Simple figure, Detailed worksheet) ---------- */
+.fin-totals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-5) var(--sp-6);
+}
+.fin-section .fin-totals {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
+@media (max-width: 40rem) {
+  .fin-totals {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------- Detailed: the scenario picker for the per-scenario parts ---------- */
+.fin-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-4);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--rule);
+}
+.fin-picker-label {
+  font-size: var(--fs-ui);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.fin-picker-seg .seg-btn {
+  min-width: 2.5rem;
+}
+.fin-picker-name {
+  font-size: var(--fs-md);
+  color: var(--ink-2);
+}
+
+/* ---------- Detailed: participant values side by side, never netted ---------- */
+.fin-split {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+}
+.fin-split > div {
+  display: grid;
+  gap: 0.125rem;
+}
+.fin-split dt {
+  font-size: var(--fs-ui);
+  color: var(--ink-2);
+}
+.fin-split dd {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ---------- Simple: the remaining inputs and the exports, folded ---------- */
+.fin-more {
+  margin-top: var(--sp-5);
+}
+.fin-more .disclosure + .disclosure {
+  margin-top: 0;
+}
+.fin-more .disclosure:last-child {
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: var(--sp-2);
+}
+.fin-more .disclosure-body {
+  display: grid;
+  gap: var(--sp-4);
+  padding-bottom: var(--sp-5);
+}
+
+/* ---------- hover-card content (portalled to <body>) ---------- */
+.fin-tip-scroll {
+  max-height: min(60vh, 26rem);
+  overflow-y: auto;
+  margin: -0.25rem -0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+.fin-tip-list {
+  margin: 0.25rem 0 0;
+  padding-left: 1.125rem;
+}
+.fin-tip-list li + li {
+  margin-top: 0.375rem;
+}
+
+@media (max-width: 640px) {
+  .fin-prov > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* Touch: every control at least 44 px. */
+@media (pointer: coarse) {
+  .fin-nav button,
+  .fin-pick,
+  .fin-check,
+  .fin-cellcheck {
+    min-height: var(--tap);
+  }
+  .fin-cellcheck {
+    min-width: var(--tap);
+  }
+  .financial input[type='checkbox'] {
+    width: 1.375rem;
+    height: 1.375rem;
+  }
+  .fin-picker-seg .seg-btn {
+    min-width: var(--tap);
+    min-height: var(--tap);
+  }
+}

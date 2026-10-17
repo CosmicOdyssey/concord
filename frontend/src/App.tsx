@@ -16,12 +16,12 @@ const ResearchView = lazy(() => import('./views/ResearchView'))
 const OverlapView = lazy(() => import('./views/OverlapView'))
 const ProtocolTermsView = lazy(() => import('./views/ProtocolTermsView'))
 const SiteScoresView = lazy(() => import('./views/SiteScoresView'))
+const FinancialView = lazy(() => import('./views/FinancialView'))
 const DevComponentsView = lazy(() => import('./views/DevComponentsView'))
-// Financial Coordination (PR #1) is hidden while its time/speed model is removed: it projected faster trials from budget
-// and coverage levers, which the product does not claim. The view and API stay in the repo.
 
 // Labels, sub-labels (always visible) and tooltips: copy deck B1. Protocol to terms is the product, so it leads; Portfolio
-// overlap is the second tool. Financial Coordination stays out of the main navigation.
+// overlap is the second tool. Sponsor budget is a worksheet on synthetic inputs with no time model (decisions.md #24); it
+// stays out of the main navigation (navHidden) and opens at #financial.
 const TABS = [
   { id: 'terms-flow', label: 'Protocol to terms', hint: 'A schedule of assessments, turned into a coverage grid, a budget and a term sheet.' },
   { id: 'overlap', label: 'Portfolio overlap', hint: "Where one sponsor's trials share registered sites and eligible patients." },
@@ -31,6 +31,14 @@ const TABS = [
     label: 'Site scores',
     sub: 'Historical, not a forecast',
     hint: 'Historical per-site enrollment evidence, and how well it held up on later trials.',
+  },
+  {
+    id: 'financial',
+    label: 'Sponsor budget',
+    sub: 'Synthetic worksheet',
+    hint: "A sponsor-budget worksheet on synthetic site inputs: who pays for each protocol item, and what changes the sponsor's commitment.",
+    // Kept out of the main navigation (mentor feedback: Protocol to terms is the product); reachable at #financial.
+    navHidden: true,
   },
   { id: 'research', label: 'Research', sub: 'In-sample model outputs', hint: 'The earlier site-clearing views, kept for reference. Not product claims.' },
 ] as const
@@ -238,7 +246,7 @@ export default function App() {
             </div>
           </div>
           <nav className="tabs" role="tablist" aria-label="Views" ref={tabBar}>
-            {TABS.map((t) => (
+            {TABS.filter((t) => !('navHidden' in t)).map((t) => (
               <button
                 key={t.id}
                 role="tab"
@@ -305,6 +313,11 @@ export default function App() {
             />
           </Suspense>
         )}
+        {tab === 'financial' && (
+          <Suspense fallback={<Loading label="Loading the sponsor budget…" />}>
+            <FinancialView />
+          </Suspense>
+        )}
         {tab === 'dev' && (
           <Suspense fallback={<Loading label="Loading component check…" />}>
             <DevComponentsView />
@@ -313,8 +326,8 @@ export default function App() {
       </main>
       <footer className="footer">
         <div className="footer-in">
-          Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates. Decision
-          support only, not clinical, legal or coverage advice.
+          Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates; Sponsor
+          budget is a worksheet on synthetic inputs with no time model. Decision support only, not clinical, legal or coverage advice.
         </div>
       </footer>
     </div>

@@ -135,8 +135,8 @@ async function fresh(browser, { width = 1440, height = 900, touch = false } = {}
         ['#terms-flow', 'Protocol to terms'],
         ['#terms-flow/NCT05800015', 'Protocol to terms'],
         ['#site-scores', 'Site scores'],
-        // Financial Coordination is not in the main navigation: #financial is an unknown tab and opens Findings.
-        ['#financial', 'Findings'],
+        // Sponsor budget is out of the main navigation (no tab is selected) but #financial still opens it.
+        ['#financial', 'hidden:Sponsor budget'],
         ['#research/model', 'Research'],
         ['#research/robustness', 'Research'],
         ['#model', 'Research'],
@@ -153,8 +153,16 @@ async function fresh(browser, { width = 1440, height = 900, touch = false } = {}
           tab: document.querySelector('nav.tabs [aria-selected="true"] .tab-label')?.innerText ?? null,
           sub: document.querySelector('.rs-tabs [aria-selected="true"]')?.innerText ?? null,
           h1: document.querySelector('h1')?.innerText ?? null,
+          navLabels: [...document.querySelectorAll('nav.tabs .tab-label')].map((e) => e.innerText),
         }))
-        const ok = want === 'landing' ? r.landing : want === 'dev' ? r.h1 === 'Component check' : r.tab === want
+        const ok =
+          want === 'landing'
+            ? r.landing
+            : want === 'dev'
+              ? r.h1 === 'Component check'
+              : want.startsWith('hidden:')
+                ? r.tab === null && r.h1 === want.slice(7) && !r.navLabels.includes(want.slice(7))
+                : r.tab === want
         got.push({ hash, want, ...r, ok })
       }
       check('every route and deep link opens the right page', got.every((g) => g.ok), got.filter((g) => !g.ok).length ? got.filter((g) => !g.ok) : `${got.length} routes`)

@@ -17,7 +17,7 @@ const FORBIDDEN = [
 ]
 // Copy deck B8, the one sentence allowed to say "predicted": it says the predicted differences were overstated.
 const BANNER_RE =
-  /^In development\. Scores come from public registry history\. On later trials they carried real signal, but predicted differences between site lists were about (\d+) to (\d+) times larger than observed, on the log scale\.$/
+  /^Historical evidence, not a forecast\.\s+Scores come from public registry history\. On later trials they carried real signal, but predicted differences between site lists were about (\d+) to (\d+) times larger than observed, on the log scale\.$/
 // Review fixes: sites to deep-link (an unfitted U.S. site and a non-U.S. site).
 const UNFITTED_US = process.env.UNFITTED_US || 'f4911c74062a' // Northwestern Medicine Glenview, 0 fitted of 12
 const NON_US = process.env.NON_US || '661aca9983d3' // Vall Hebron Institute of Oncology, Spain
@@ -171,7 +171,7 @@ async function tabTo(page, sel) {
 
     const tabs = await texts(page, 'nav.tabs .tab-label')
     const at = tabs.indexOf('Site scores')
-    // Protocol to terms leads; Site scores follows Findings and comes before Research.
+    // Protocol to terms leads; Site scores follows Findings and comes before Research (Sponsor budget is out of the nav).
     check(
       'tab order: Protocol to terms first; Site scores after Findings, before Research',
       tabs[0] === 'Protocol to terms' && at > 0 && tabs[at - 1] === 'Findings' && tabs.indexOf('Research') > at,
@@ -269,7 +269,7 @@ async function tabTo(page, sel) {
     // Honesty wording: the page (minus the B8 banner sentence, checked on its own) and every hover card.
     const banner = await text(page, '.page-head .banner')
     const bm = banner.match(BANNER_RE)
-    check('B8 banner: in development, real signal, 3 to 6 times larger on the log scale (factors from the API)',
+    check('B8 banner: historical evidence, not a forecast; real signal, 3 to 6 times larger on the log scale (factors from the API)',
       bm && Number(bm[1]) === Math.round(ind.overstatement) && Number(bm[2]) === Math.round(allT.overstatement), banner)
     const body = await page.evaluate(() => {
       const ss = document.querySelector('.ss').cloneNode(true)
