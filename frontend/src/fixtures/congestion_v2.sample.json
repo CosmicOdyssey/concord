@@ -1,0 +1,387 @@
+{
+ "_fixture": "FIXTURE for frontend rendering checks only (docs/qa/browser-qa/item4.js). The keys follow the congestion_test v2 contract; se_method/two-way/subset/parser/default_beta numbers are PLACEHOLDERS, not results. Never serve or cite them.",
+ "n_trials": 3442,
+ "n_trial_sites": 68474,
+ "primary": "within_overlap",
+ "model_implied_coef_overlap": -1.0,
+ "task": "congestion v2 contract sample (fixture)",
+ "verdict": "FIXTURE: placeholder numbers",
+ "se_method": "two-way clustered (trial, site)",
+ "results": {
+  "pooled_start": {
+   "coef": -0.004069234249383656,
+   "se": 0.0013865527697175708,
+   "p": 0.0007477351248937666,
+   "ci95": [
+    -0.006786877678030094,
+    -0.001351590820737217
+   ],
+   "pct_per_competitor": -0.40609661344629433,
+   "n_rows": 3003,
+   "clusters": 3003,
+   "exposure_mean": 8.711922644603023,
+   "exposure_p90": 22.06666666666668,
+   "se_trial_only": 0.0011750447200996363,
+   "ci95_trial_only": [
+    -0.006372321900778943,
+    -0.0017661465979883686
+   ],
+   "p_trial_only": 0.0005340965177812618
+  },
+  "site_fe_start": {
+   "coef": 0.0009108761446651337,
+   "se": 0.0014480351389498307,
+   "p": 0.6410927968513833,
+   "ci95": [
+    -0.0019272727276765343,
+    0.003749025017006802
+   ],
+   "pct_per_competitor": 0.09112911183275658,
+   "n_rows": 52873,
+   "clusters": 2730,
+   "exposure_mean": 6.5670190834641495,
+   "exposure_p90": 13.0,
+   "sites": 8066,
+   "se_trial_only": 0.0012271484228388396,
+   "ci95_trial_only": [
+    -0.001494334764098992,
+    0.0033160870534292594
+   ],
+   "p_trial_only": 0.45792342632241667
+  },
+  "within_start": {
+   "coef": -0.0005448111604094893,
+   "se": 0.0021617861897193225,
+   "p": 1.0,
+   "ci95": [
+    -0.004781912092259362,
+    0.003692289771440383
+   ],
+   "pct_per_competitor": -0.054466277775730085,
+   "n_rows": 2730,
+   "clusters": 2730,
+   "exposure_mean": -1.4700988376955018,
+   "exposure_p90": 6.719802859016262,
+   "se_trial_only": 0.001832022194677392,
+   "ci95_trial_only": [
+    -0.0041355746619771774,
+    0.003045952341158199
+   ],
+   "p_trial_only": 0.7661745776223818
+  },
+  "pooled_overlap": {
+   "coef": -0.10602193476435032,
+   "se": 0.031005034286579036,
+   "p": 7.64372349135188e-05,
+   "ci95": [
+    -0.16679180196604523,
+    -0.04525206756265541
+   ],
+   "pct_per_competitor": -10.05950803754121,
+   "n_rows": 3003,
+   "clusters": 3003,
+   "exposure_mean": 0.9030548881945744,
+   "exposure_p90": 2.0396457206341956,
+   "se_trial_only": 0.02627545278523647,
+   "ci95_trial_only": [
+    -0.1575218222234138,
+    -0.054522047305286835
+   ],
+   "p_trial_only": 5.459802493822772e-05
+  },
+  "site_fe_overlap": {
+   "coef": 0.014673325812346231,
+   "se": 0.044680467144053757,
+   "p": 0.9777209576232231,
+   "ci95": [
+    -0.07290038978999913,
+    0.1022470414146916
+   ],
+   "pct_per_competitor": 1.4781507538476883,
+   "n_rows": 52873,
+   "clusters": 2730,
+   "exposure_mean": 0.8441720784087005,
+   "exposure_p90": 1.8987313429681,
+   "sites": 8066,
+   "se_trial_only": 0.037864802664452336,
+   "ci95_trial_only": [
+    -0.05954168740998035,
+    0.08888833903467282
+   ],
+   "p_trial_only": 0.6983721125880166
+  },
+  "within_overlap": {
+   "coef": -0.08706127618637184,
+   "se": 0.0726092554859155,
+   "p": 0.21995124854575582,
+   "ci95": [
+    -0.22937541693876623,
+    0.05525286456602253
+   ],
+   "pct_per_competitor": -8.337907312248136,
+   "n_rows": 2730,
+   "clusters": 2730,
+   "exposure_mean": -0.03587163229769198,
+   "exposure_p90": 0.46652354582667527,
+   "se_trial_only": 0.06153326736094534,
+   "ci95_trial_only": [
+    -0.20766648021382472,
+    0.033543927841081025
+   ],
+   "p_trial_only": 0.15710803467553988
+  },
+  "pooled_avg": {
+   "coef": -0.003452289390247375,
+   "se": 0.0011338042287128364,
+   "p": 0.00045773813711253683,
+   "ci95": [
+    -0.005674545678524535,
+    -0.0012300331019702159
+   ],
+   "pct_per_competitor": -0.3446337090887149,
+   "n_rows": 3003,
+   "clusters": 3003,
+   "exposure_mean": 10.626188463450918,
+   "exposure_p90": 26.61199009350829,
+   "se_trial_only": 0.0009608510412820648,
+   "ci95_trial_only": [
+    -0.0053355574311602216,
+    -0.0015690213493345282
+   ],
+   "p_trial_only": 0.0003269558122232406
+  },
+  "site_fe_avg": {
+   "coef": -5.145660493629794e-05,
+   "se": 0.0015396108894198467,
+   "p": 1.0,
+   "ci95": [
+    -0.0030690939481991973,
+    0.002966180738326602
+   ],
+   "pct_per_competitor": -0.005145528106790951,
+   "n_rows": 52873,
+   "clusters": 2730,
+   "exposure_mean": 8.303853722009187,
+   "exposure_p90": 15.774672393882154,
+   "sites": 8066,
+   "se_trial_only": 0.0013047549910337685,
+   "ci95_trial_only": [
+    -0.002608776387362484,
+    0.0025058631774898883
+   ],
+   "p_trial_only": 0.9685413808456635
+  },
+  "within_avg": {
+   "coef": -0.0007267915431825492,
+   "se": 0.002123998735850406,
+   "p": 0.9609311846488816,
+   "ci95": [
+    -0.004889829065449345,
+    0.003436245979084246
+   ],
+   "pct_per_competitor": -0.07265274941823294,
+   "n_rows": 2730,
+   "clusters": 2730,
+   "exposure_mean": -1.8421779179093525,
+   "exposure_p90": 6.3732201205249,
+   "se_trial_only": 0.001799998928686785,
+   "ci95_trial_only": [
+    -0.004254789443408648,
+    0.002801206357043549
+   ],
+   "p_trial_only": 0.686379417606344
+  }
+ },
+ "subsets": {
+  "S1_experienced_sites": {
+   "label": "S1 experienced sites [fixture]",
+   "definition": "Sites with >= 10 lung trials started before the focal trial (placeholder numbers)",
+   "within": {
+    "coef": -0.121,
+    "se": 0.06,
+    "ci95": [
+     -0.2386,
+     -0.0034
+    ],
+    "p": 0.044,
+    "clusters": 1650,
+    "n_rows": 1650
+   },
+   "site_fe": {
+    "coef": -0.031,
+    "se": 0.048,
+    "ci95": [
+     -0.1251,
+     0.0631
+    ],
+    "p": 0.52,
+    "clusters": 1650,
+    "n_rows": 30110
+   },
+   "pooled": {
+    "coef": -0.142,
+    "se": 0.031,
+    "ci95": [
+     -0.2028,
+     -0.0812
+    ],
+    "p": 0.0001,
+    "clusters": 2100,
+    "n_rows": 2100
+   },
+   "is_default": false
+  },
+  "S2_small_trials": {
+   "label": "S2 trials with <= 20 sites [fixture]",
+   "definition": "Trials with at most 20 registered sites (placeholder numbers)",
+   "within": {
+    "coef": -0.041,
+    "se": 0.081,
+    "ci95": [
+     -0.1998,
+     0.1178
+    ],
+    "p": 0.61,
+    "clusters": 1890,
+    "n_rows": 1890
+   },
+   "site_fe": {
+    "coef": 0.012,
+    "se": 0.055,
+    "ci95": [
+     -0.0958,
+     0.1198
+    ],
+    "p": 0.83,
+    "clusters": 1890,
+    "n_rows": 9800
+   },
+   "pooled": {
+    "coef": -0.09,
+    "se": 0.033,
+    "ci95": [
+     -0.1547,
+     -0.0253
+    ],
+    "p": 0.006,
+    "clusters": 2400,
+    "n_rows": 2400
+   },
+   "is_default": false
+  },
+  "S3_high_overlap": {
+   "label": "S3 overlap >= 0.8 [fixture]",
+   "definition": "Exposure counts only competitor pairs with eligibility overlap >= 0.8 (placeholder numbers)",
+   "within": {
+    "coef": -0.075,
+    "se": 0.07,
+    "ci95": [
+     -0.2122,
+     0.0622
+    ],
+    "p": 0.28,
+    "clusters": 2730,
+    "n_rows": 2730
+   },
+   "site_fe": {
+    "coef": 0.008,
+    "se": 0.044,
+    "ci95": [
+     -0.0782,
+     0.0942
+    ],
+    "p": 0.86,
+    "clusters": 2730,
+    "n_rows": 52873
+   },
+   "pooled": {
+    "coef": -0.101,
+    "se": 0.029,
+    "ci95": [
+     -0.1578,
+     -0.0442
+    ],
+    "p": 0.0005,
+    "clusters": 3003,
+    "n_rows": 3003
+   },
+   "is_default": false
+  }
+ },
+ "multiple_comparisons": {
+  "method": "Bonferroni",
+  "k": 3,
+  "alpha": 0.05,
+  "note": "fixture placeholder: with three subsets, a subset is significant only if its Bonferroni interval excludes zero",
+  "bonferroni_ci95": {
+   "S1_experienced_sites": [
+    -0.2646,
+    0.0226
+   ],
+   "S2_small_trials": [
+    -0.2349,
+    0.1529
+   ],
+   "S3_high_overlap": [
+    -0.2426,
+    0.0926
+   ]
+  }
+ },
+ "parser_sensitivity": [
+  {
+   "parser_version": "v1",
+   "commit": "b8c576f",
+   "description": "[fixture] Key Exclusion Criteria headers not recognized",
+   "within_overlap": {
+    "coef": -0.136,
+    "ci95": [
+     -0.271,
+     -0.001
+    ],
+    "p": 0.048,
+    "clusters": 2730
+   },
+   "empty_masks": 12
+  },
+  {
+   "parser_version": "v2",
+   "commit": "c0050f4",
+   "description": "[fixture] headers fixed; contradictory criteria left 646 empty eligibility masks",
+   "within_overlap": {
+    "coef": -0.027,
+    "ci95": [
+     -0.148,
+     0.094
+    ],
+    "p": 0.66,
+    "clusters": 2730
+   },
+   "empty_masks": 646
+  },
+  {
+   "parser_version": "v3",
+   "commit": "4a87d33",
+   "description": "[fixture] contradictory compiled criteria removed (current parser)",
+   "within_overlap": {
+    "coef": -0.08706127618637184,
+    "ci95": [
+     -0.22937541693876623,
+     0.05525286456602253
+    ],
+    "p": 0.21995124854575582,
+    "clusters": 2730
+   },
+   "empty_masks": 3
+  }
+ ],
+ "default_beta": {
+  "value": 0.08706127618637184,
+  "source": "full-sample within_overlap",
+  "ci95": [
+   -0.05525286456602253,
+   0.22937541693876623
+  ],
+  "note": "subset estimates are reported separately and are not used as the default"
+ }
+}
