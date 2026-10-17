@@ -14,6 +14,7 @@ export interface LocalityRow {
   gpci_mp: number
   pfs: number
   lab: number
+  unadjusted: number
   total: number
   percentile: number
 }
@@ -26,6 +27,7 @@ export interface SiteMark {
   total: number
   pfs: number
   lab: number
+  unadjusted: number
   percentile: number | null
   n_below: number | null
   n_same: number | null
@@ -35,6 +37,7 @@ export interface SiteMark {
 
 export interface SpreadSources {
   gpci: string
+  gpci_short: string
   pfs: string | null
   conversion_factor: number | null
   clfs: string | null
@@ -53,6 +56,9 @@ export interface LocalityDistribution {
   n_placeholder_lines: number
   lab_constant: number
   lab_note: string
+  n_unadjusted_lines: number
+  unadjusted_constant: number
+  unadjusted_note: string
   unpriced_codes: string[]
   localities: LocalityRow[]
   stats: {

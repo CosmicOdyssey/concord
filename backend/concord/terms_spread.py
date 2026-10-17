@@ -14,7 +14,7 @@ No forecasting and no market data. Two read-only views over the same pricing the
    (b) the "% of Medicare" multiplier band at a selected site: procedure cost at the low and high multiplier
        (a user-set band; the default 100%-150% is an assumption, not a benchmark);
    (c) non-procedure fees: the proposed standard schedule's per-participant items (coordinator time and the
-       per-occurrence research fees) x a user-set band (default 75%-125%, an assumption: there is no public
+       per-visit research fees on the fixed schedule) x a user-set band (default 75%-125%, an assumption: there is no public
        benchmark for these fees).
    Institutional overhead (a rate on items and coordinator time) is outside all three ranges.
 
@@ -24,6 +24,7 @@ Decision support. Not a fair-market-value legal opinion.
 from __future__ import annotations
 
 import math
+import re
 
 from concord import terms
 from concord.ratecard import medicare
@@ -65,11 +66,30 @@ def percentile_rank(value: float, values: list[float]) -> float:
     return 100.0 * (below + 0.5 * same) / len(values)
 
 
+def _gpci_release() -> tuple[str, str] | None:
+    """(two-digit year, release letter) of the loaded CMS RVU file, read from its zip name (rvu26d.zip -> 26, D).
+    The GPCI table (Addendum E) ships in the same zip, so it carries the same year and release."""
+    src = medicare._cms().get("pfs", {}).get("source", "")  # noqa: SLF001 - same package
+    m = re.search(r"rvu(\d\d)([a-d])\.zip", src, re.I)
+    return (m[1], m[2].upper()) if m else None
+
+
 def _gpci_source() -> str:
     src = medicare._cms().get("pfs", {}).get("source", "")  # noqa: SLF001 - same package
     if not src:
         return "CMS GPCI table not loaded"
-    return f"CMS RVU26D GPCI2026 table (Addendum E, CY 2026 GPCIs) in {src.split(', ')[-1]}"
+    zip_name = src.split(", ")[-1]
+    rel = _gpci_release()
+    if rel is None:
+        return f"CMS GPCI table (Addendum E) in {zip_name}"
+    yy, letter = rel
+    return f"CMS RVU{yy}{letter} GPCI20{yy} table (Addendum E, CY 20{yy} GPCIs) in {zip_name}"
+
+
+def _gpci_short() -> str:
+    """Short in-sentence name of the loaded GPCI table, e.g. 'CMS CY 2026 GPCI table'."""
+    rel = _gpci_release()
+    return f"CMS CY 20{rel[0]} GPCI table" if rel else "CMS GPCI table"
 
 
 def _clfs_source() -> str | None:
@@ -102,10 +122,15 @@ def _proc_lines(nct: str, overrides: dict[str, str] | None) -> tuple[list[dict],
 
 def _price_lines(lines: list[dict], loc: dict | None, multiplier: float = 1.0) -> dict:
     """Sum the lines at one locality exactly as terms.budget does: per line, the locality amount rounded to the
-    cent (terms._price_code), times the multiplier, rounded to the cent."""
+    cent (terms._price_code), times the multiplier, rounded to the cent.
+
+    Three buckets, by the line's schedule: "pfs" (CMS-verified PFS lines, adjusted by the locality's GPCIs),
+    "lab" (CLFS lines: national amounts, verified or placeholder) and "unadjusted" (any other line without RVUs,
+    e.g. a placeholder for a PFS code missing from the CMS file: a national amount, not adjusted by locality,
+    and never counted as CLFS)."""
     cache: dict[str, dict] = {}
-    pfs = const = 0.0
-    n_pfs = n_const = n_placeholder = 0
+    pfs = lab = other = 0.0
+    n_pfs = n_lab = n_placeholder = n_other = 0
     for l in lines:
         r = cache.get(l["code"])
         if r is None:
@@ -114,12 +139,15 @@ def _price_lines(lines: list[dict], loc: dict | None, multiplier: float = 1.0) -
         if r.get("rvu"):
             pfs += amt
             n_pfs += 1
-        else:
-            const += amt
-            n_const += 1
+        elif r.get("schedule_label") == "CLFS":
+            lab += amt
+            n_lab += 1
             n_placeholder += 1 if r.get("placeholder") else 0
-    return {"pfs": _r2(pfs), "lab": _r2(const), "total": _r2(pfs + const), "n_pfs": n_pfs, "n_lab": n_const,
-            "n_placeholder": n_placeholder}
+        else:
+            other += amt
+            n_other += 1
+    return {"pfs": _r2(pfs), "lab": _r2(lab), "unadjusted": _r2(other), "total": _r2(pfs + lab + other),
+            "n_pfs": n_pfs, "n_lab": n_lab, "n_placeholder": n_placeholder, "n_unadjusted": n_other}
 
 
 def _loc_key(l: dict) -> str:
@@ -137,12 +165,11 @@ def _distribution(nct: str, overrides: dict[str, str] | None) -> dict:
         s = _price_lines(lines, g)
         rows.append({"key": _loc_key(l), "state": l["state"], "code": l["locality"], "name": l["name"],
                      "gpci_work": l["gpci_work"], "gpci_pe": l["gpci_pe"], "gpci_mp": l["gpci_mp"],
-                     "pfs": s["pfs"], "lab": s["lab"], "total": s["total"]})
+                     "pfs": s["pfs"], "lab": s["lab"], "unadjusted": s["unadjusted"], "total": s["total"]})
     totals = sorted(r["total"] for r in rows)
     for r in rows:
         r["percentile"] = round(percentile_rank(r["total"], totals), 1)
     nat = _price_lines(lines, None)
-    lab = rows[0]["lab"]
     lo, hi = totals[0], totals[-1]
     stats = {
         "n": len(rows), "min": lo, "max": hi, "median": _r2(_quantile(totals, 0.5)),
@@ -151,8 +178,9 @@ def _distribution(nct: str, overrides: dict[str, str] | None) -> dict:
         "max_localities": [r["key"] for r in rows if abs(r["total"] - hi) < 0.005],
         "national": nat["total"],
     }
-    return {"lines": lines, "unpriced": unpriced, "rows": rows, "stats": stats, "lab_constant": lab,
-            "n_pfs_lines": nat["n_pfs"], "n_lab_lines": nat["n_lab"], "n_placeholder_lines": nat["n_placeholder"]}
+    return {"lines": lines, "unpriced": unpriced, "rows": rows, "stats": stats, "lab_constant": rows[0]["lab"],
+            "unadjusted_constant": rows[0]["unadjusted"], "n_pfs_lines": nat["n_pfs"], "n_lab_lines": nat["n_lab"],
+            "n_placeholder_lines": nat["n_placeholder"], "n_unadjusted_lines": nat["n_unadjusted"]}
 
 
 def _budget_procedure_total(b: dict) -> float:
@@ -168,7 +196,8 @@ def _site_mark(nct: str, site_id: str, dist: dict, overrides: dict[str, str] | N
     out = {"site_id": site_id, "label": site["label"], "locality": loc, "budget_procedure_total": check}
     if loc is None:
         own = _price_lines(dist["lines"], None)
-        return {**out, "key": None, "total": own["total"], "pfs": own["pfs"], "lab": own["lab"], "percentile": None,
+        return {**out, "key": None, "total": own["total"], "pfs": own["pfs"], "lab": own["lab"],
+                "unadjusted": own["unadjusted"], "percentile": None,
                 "n_below": None, "n_same": None,
                 "note": "No Medicare locality resolved: national amounts, not placed among localities"}
     key = f"{loc['state']}-{loc['code']}"
@@ -177,14 +206,14 @@ def _site_mark(nct: str, site_id: str, dist: dict, overrides: dict[str, str] | N
         raise terms.TermsError(f"locality {key} of {site_id} is not in the GPCI table")
     totals = [r["total"] for r in dist["rows"]]
     return {**out, "key": key, "total": row["total"], "pfs": row["pfs"], "lab": row["lab"],
-            "percentile": row["percentile"],
+            "unadjusted": row["unadjusted"], "percentile": row["percentile"],
             "n_below": sum(1 for t in totals if t < row["total"] - 0.005),
             "n_same": sum(1 for t in totals if abs(t - row["total"]) <= 0.005), "note": None}
 
 
 def _sources() -> dict:
     pfs = medicare._cms().get("pfs", {})  # noqa: SLF001
-    return {"gpci": _gpci_source(), "pfs": pfs.get("source"), "conversion_factor": pfs.get("conversion_factor"),
+    return {"gpci": _gpci_source(), "gpci_short": _gpci_short(), "pfs": pfs.get("source"), "conversion_factor": pfs.get("conversion_factor"),
             "clfs": _clfs_source(), "standard": terms.STANDARD_SOURCE}
 
 
@@ -203,6 +232,9 @@ def locality_distribution(nct: str, site_a: str | None = None, site_b: str | Non
                    "rounded to the cent, as in the budget. CLFS lines: national amount, the same in every locality.",
         "n_pfs_lines": dist["n_pfs_lines"], "n_lab_lines": dist["n_lab_lines"],
         "n_placeholder_lines": dist["n_placeholder_lines"], "lab_constant": dist["lab_constant"],
+        "n_unadjusted_lines": dist["n_unadjusted_lines"], "unadjusted_constant": dist["unadjusted_constant"],
+        "unadjusted_note": ("Placeholder fee-schedule prices for codes missing from the CMS file are national "
+                            "amounts, not adjusted by locality: they add the same constant everywhere"),
         "lab_note": ("Lab (CLFS) lines are national limitation amounts, not geographically adjusted: they add the "
                      "same constant to every locality and do not widen the spread"),
         "unpriced_codes": dist["unpriced"], "localities": dist["rows"], "stats": dist["stats"], "sites": sites,
@@ -222,7 +254,7 @@ def _band(lo: float, hi: float, name: str, lo_min: float, hi_max: float) -> tupl
 
 def _fees(b: dict) -> list[dict]:
     """Per-participant non-procedure fees from the budget: coordinator time and the standard-priced research
-    lines, fixed visits, grouped by standard schedule item."""
+    lines (per-visit research fees on the fixed schedule), grouped by standard schedule item."""
     fixed = [v for v in b["visits"] if v["kind"] != "repeat"]
     std = {i["id"]: i for i in b["standard_schedule"]}
     out: dict[str, dict] = {}
@@ -284,7 +316,8 @@ def spreads(nct: str, site_a: str, site_b: str | None = None, mult_lo: float = M
     fees = {"id": "fees", "low": _r2(base * fee_lo), "high": _r2(base * fee_hi),
             "width": _r2(base * fee_hi - base * fee_lo), "base": base, "f_low": fee_lo, "f_high": fee_hi,
             "items": items, "edited": any(i["edited"] for i in items),
-            "quantity": "Non-procedure fees per participant (coordinator time and per-occurrence research fees)",
+            "quantity": "Non-procedure fees per participant (coordinator time and per-visit research fees on the "
+                        "fixed schedule)",
             "source": terms.STANDARD_SOURCE, "assumption": FEE_BAND_LABEL}
     p = terms.load_protocol(nct)
     return {"nct_id": nct, "label": p["label"], "disclaimer": terms.DISCLAIMER, "geography": geo,

@@ -196,3 +196,39 @@ def test_api_routes_and_wording():
     for w in FORBIDDEN:
         assert w not in text
     assert body["disclaimer"] == terms.DISCLAIMER
+
+
+# ---------------------------------------------------------------- line buckets and source labels (no data needed)
+
+def test_lines_bucketed_by_schedule(monkeypatch):
+    """A line without RVUs is lab only when its schedule is CLFS; an unadjusted PFS placeholder is its own bucket."""
+    fake = {
+        "11111": {"amount": 100.0, "rvu": {"work": 1.0}, "schedule_label": "PFS", "placeholder": False},
+        "22222": {"amount": 10.0, "schedule_label": "CLFS", "placeholder": False},
+        "33333": {"amount": 5.0, "schedule_label": "CLFS", "placeholder": True},
+        "44444": {"amount": 40.0, "schedule_label": "PFS", "placeholder": True},
+    }
+    monkeypatch.setattr(terms, "_price_code", lambda code, loc: dict(fake[code]))
+    lines = [{"code": c} for c in ("11111", "22222", "33333", "44444", "44444")]
+    s = terms_spread._price_lines(lines, None)  # noqa: SLF001
+    assert (s["pfs"], s["lab"], s["unadjusted"], s["total"]) == (100.0, 15.0, 80.0, 195.0)
+    assert (s["n_pfs"], s["n_lab"], s["n_placeholder"], s["n_unadjusted"]) == (1, 2, 1, 2)
+
+
+def test_gpci_label_follows_loaded_release(monkeypatch):
+    def cms_with(src):
+        monkeypatch.setattr(medicare, "_cms", lambda: {"pfs": {"source": src}})
+
+    cms_with("CMS PFS 2027 National Physician Fee Schedule Relative Value File January Release, rvu27a.zip")
+    assert terms_spread._gpci_source() == ("CMS RVU27A GPCI2027 table (Addendum E, CY 2027 GPCIs) in "  # noqa: SLF001
+                                           "rvu27a.zip")
+    assert terms_spread._gpci_short() == "CMS CY 2027 GPCI table"  # noqa: SLF001
+    cms_with("some other file, pfs.zip")
+    assert terms_spread._gpci_source() == "CMS GPCI table (Addendum E) in pfs.zip"  # noqa: SLF001
+    assert terms_spread._gpci_short() == "CMS GPCI table"  # noqa: SLF001
+
+
+@needs_pfs
+def test_gpci_label_today():
+    assert terms_spread._gpci_source().startswith("CMS RVU26D GPCI2026 table (Addendum E, CY 2026 GPCIs)")  # noqa: SLF001
+    assert terms_spread._gpci_short() == "CMS CY 2026 GPCI table"  # noqa: SLF001

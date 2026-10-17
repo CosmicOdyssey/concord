@@ -14,6 +14,22 @@ const DEFAULT_BANDS: Bands = { multLo: 100, multHi: 150, feeLo: 75, feeHi: 125 }
 const BANDS_KEY = 'tf:spread-bands:v1'
 const SITE_TAG = ['A', 'B'] as const
 
+/** Medicare locality key -> the letters of the selected sites in it: 'A', 'B', or 'AB' when both share one. */
+function siteTags(sites: SiteMark[]): Map<string | null, string> {
+  const m = new Map<string | null, string>()
+  sites.forEach((s, i) => m.set(s.key, (m.get(s.key) ?? '') + SITE_TAG[i]))
+  return m
+}
+
+/** 'AB' -> 'A·B' for the marker; the colour follows the first letter. */
+function tagText(tag: string): string {
+  return tag.split('').join('·')
+}
+
+function tagLabel(tag: string): string {
+  return tag.length > 1 ? `Sites ${tag.split('').join(' and ')}` : `Site ${tag}`
+}
+
 function readBands(): Bands {
   try {
     const raw = window.localStorage.getItem(BANDS_KEY)
@@ -169,6 +185,22 @@ export default function TermsSpread({
                   <Qualifier>Includes placeholder lab prices</Qualifier>
                 </li>
               )}
+              {d.n_unadjusted_lines > 0 && (
+                <li>
+                  <Qualifier
+                    info={
+                      <>
+                        <span className="hc-title">Placeholder fee-schedule prices</span>
+                        <p>
+                          {d.n_unadjusted_lines} lines, {usd(d.unadjusted_constant)} per participant. {d.unadjusted_note}.
+                        </p>
+                      </>
+                    }
+                  >
+                    Includes placeholder fee-schedule prices, not adjusted by locality
+                  </Qualifier>
+                </li>
+              )}
             </ul>
             <DistFigures d={d} />
             <StripPlot d={d} />
@@ -225,7 +257,10 @@ function DistInfo({ d }: { d: LocalityDistribution | null }) {
         Medicare payment locality with the budget’s own formula: per physician-fee-schedule line, (work RVU × work GPCI + PE RVU × PE GPCI + MP RVU ×
         MP GPCI) × conversion factor, rounded to the cent, at 100% of Medicare.
       </p>
-      <p>Lab lines are national amounts. Per-visit fees, coordinator time and overhead are left out: they are the same at every site.</p>
+      <p>
+        Lab lines are national amounts. Per-visit fees and coordinator time are left out: they are the same at every site. Overhead is left out too;
+        it is a rate on these lines plus coordinator time, so it moves with them.
+      </p>
       {d && (
         <>
           <Src>{d.sources.gpci}</Src>
@@ -244,7 +279,7 @@ function WeightInfo({ d }: { d: LocalityDistribution }) {
     <>
       <span className="hc-title">What the distribution counts</span>
       <p>
-        {d.stats.n} Medicare payment localities in the CMS 2026 GPCI table, each counted once, whatever its number of sites or beneficiaries. It is
+        {d.stats.n} Medicare payment localities in the {d.sources.gpci_short}, each counted once, whatever its number of sites or beneficiaries. It is
         the fee schedule’s geography, not a survey of what sites charge.
       </p>
       <p>{d.percentile_method}.</p>
@@ -326,6 +361,11 @@ function SiteCard({ s, tag, d }: { s: SiteMark; tag: string; d: LocalityDistribu
               <span className="tf-hc-kv">
                 <span>Lab lines (national)</span> <span className="num">{usd(s.lab)}</span>
               </span>
+              {s.unadjusted > 0 && (
+                <span className="tf-hc-kv">
+                  <span>Placeholder fee-schedule lines (national)</span> <span className="num">{usd(s.unadjusted)}</span>
+                </span>
+              )}
               {s.n_below !== null && (
                 <span>
                   {s.n_below} of {d.stats.n} localities price these procedures lower{s.n_same && s.n_same > 1 ? `, ${s.n_same - 1} the same` : ''}.
@@ -375,7 +415,26 @@ function DistFigures({ d }: { d: LocalityDistribution }) {
         <div>
           <dt>Median</dt>
           <dd>
-            <span className="num">{usd(st.median)}</span>
+            <HoverCard
+              content={
+                <>
+                  <span className="hc-title">Median and p10–p90 of localities</span>
+                  <span className="tf-hc-kv">
+                    <span>Median</span> <span className="num">{usd(st.median)}</span>
+                  </span>
+                  <span className="tf-hc-kv">
+                    <span>p10</span> <span className="num">{usd(st.p10)}</span>
+                  </span>
+                  <span className="tf-hc-kv">
+                    <span>p90</span> <span className="num">{usd(st.p90)}</span>
+                  </span>
+                  <span>{d.quantile_method}; each locality counts once.</span>
+                  <Src>{d.sources.gpci}</Src>
+                </>
+              }
+            >
+              <span className="num">{usd(st.median)}</span>
+            </HoverCard>
             <span className="tsp-mmm-where">
               p10–p90 {wholeUsd(st.p10)}–{wholeUsd(st.p90)}
             </span>
@@ -437,7 +496,8 @@ function StripPlot({ d }: { d: LocalityDistribution }) {
     for (let t = Math.ceil(lo / tick) * tick; t <= hi + 1e-9; t += tick) ticks.push(t)
     return { bin, lo, hi, dots, maxStack, ticks }
   }, [d.localities, st.max, st.min, siteKeys])
-  const siteKey = new Map(d.sites.map((s, i) => [s.key, SITE_TAG[i]]))
+  const siteKey = siteTags(d.sites)
+  const shared = [...siteKey.values()].some((t) => t.length > 1)
   const pos = (v: number) => ((v - layout.lo) / (layout.hi - layout.lo)) * 100
   const hov = hover ? layout.dots.find((x) => x.r.key === hover) : null
   const STEP = 11
@@ -457,12 +517,12 @@ function StripPlot({ d }: { d: LocalityDistribution }) {
           return (
             <span
               key={r.key}
-              className={`tsp-dot${tag ? ` tsp-dot-${tag.toLowerCase()}` : ''}${hover === r.key ? ' tsp-dot-on' : ''}`}
+              className={`tsp-dot${tag ? ` tsp-dot-${tag[0].toLowerCase()}` : ''}${hover === r.key ? ' tsp-dot-on' : ''}`}
               style={{ left: `${x}%`, bottom: `${y * STEP + 4}px` }}
               onPointerEnter={() => setHover(r.key)}
               aria-hidden="true"
             >
-              {tag && <span className={`tsp-tag tsp-key tsp-key-${tag.toLowerCase()}`}>{tag}</span>}
+              {tag && <span className={`tsp-tag tsp-key tsp-key-${tag[0].toLowerCase()}`}>{tagText(tag)}</span>}
             </span>
           )
         })}
@@ -482,7 +542,8 @@ function StripPlot({ d }: { d: LocalityDistribution }) {
       </div>
       <figcaption>
         One dot per Medicare locality ({d.stats.n}), in {wholeUsd(layout.bin)} bins of the per-participant procedure cost at 100% of Medicare. The
-        shaded band is p10–p90 and the line the median. Filled dots tagged A and B are the two sites’ localities.
+        shaded band is p10–p90 and the line the median. Filled dots tagged A and B are the two sites’ localities
+        {shared ? '; A·B marks the one locality both sites share' : ''}.
         <span className="sr-only">
           {' '}
           Range {usd(st.min)} to {usd(st.max)}, median {usd(st.median)}.
@@ -513,7 +574,7 @@ function SortTh({ k, label, num, sort, setSort }: { k: SortKey; label: string; n
 
 function LocalityTable({ d }: { d: LocalityDistribution }) {
   const [sort, setSort] = useState<Sort>({ k: 'total', desc: true })
-  const siteKey = new Map(d.sites.map((s, i) => [s.key, SITE_TAG[i]]))
+  const siteKey = siteTags(d.sites)
   const rows = useMemo(() => {
     const out = [...d.localities]
     out.sort((a, b) => {
@@ -528,7 +589,7 @@ function LocalityTable({ d }: { d: LocalityDistribution }) {
   return (
     <div className="tsp-table">
       <p className="small muted">
-        Every locality in the CMS 2026 GPCI table, priced with the budget’s formula at 100% of Medicare. Lab lines ({usd(d.lab_constant)}) are in each
+        Every locality in the {d.sources.gpci_short}, priced with the budget’s formula at 100% of Medicare. Lab lines ({usd(d.lab_constant)}) are in each
         total. Select a column heading to sort.
       </p>
       <div className="table-scroll tsp-table-scroll" tabIndex={0} role="region" aria-label={`All ${d.stats.n} Medicare localities, scrollable table`}>
@@ -555,8 +616,8 @@ function LocalityTable({ d }: { d: LocalityDistribution }) {
                 <tr key={r.key} className={tag ? 'tsp-row-site' : undefined}>
                   <th scope="row">
                     {tag && (
-                      <span className={`tsp-key tsp-key-${tag.toLowerCase()}`} aria-label={`Site ${tag}`}>
-                        {tag}
+                      <span className={`tsp-key tsp-key-${tag[0].toLowerCase()}`} aria-label={tagLabel(tag)}>
+                        {tagText(tag)}
                       </span>
                     )}{' '}
                     {localityTitle(r.name)} <span className="muted small">{r.code}</span>
@@ -589,8 +650,8 @@ function SpreadInfo() {
       <span className="hc-title">Three ranges, one dollar axis</span>
       <p>
         Geography: the procedure lines across all Medicare localities at 100% of Medicare (CMS GPCIs). Multiplier band: the same lines at one site, at
-        the low and high % of Medicare you set. Non-procedure fees: coordinator time and per-occurrence research fees from the proposed standard
-        schedule, times the band you set.
+        the low and high % of Medicare you set. Non-procedure fees: coordinator time and per-visit research fees on the fixed schedule, from the
+        proposed standard schedule, times the band you set.
       </p>
       <p>Both bands are assumptions, not benchmarks. Overhead, per-site one-time fees and per-occurrence visits are outside these ranges.</p>
     </>
@@ -756,7 +817,7 @@ function RangeBars({ sp }: { sp: Spreads }) {
     {
       id: f.id,
       name: 'Non-procedure fees',
-      quantity: `Coordinator time and per-occurrence fees, ${Math.round(f.f_low * 100)}%–${Math.round(f.f_high * 100)}%`,
+      quantity: `Coordinator time and per-visit research fees on the fixed schedule, ${Math.round(f.f_low * 100)}%–${Math.round(f.f_high * 100)}%`,
       low: f.low,
       high: f.high,
       width: f.width,

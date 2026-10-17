@@ -50,8 +50,10 @@
   color: var(--surface);
   background: var(--accent);
 }
+/* --series-2 alone is 4.05:1 under white 12px bold text in light mode; mixing in 20% ink clears AA (4.5:1) in both
+   themes (darker in light, lighter in dark). Dots and range bars keep --series-2. */
 .tsp-key-b {
-  background: var(--series-2);
+  background: color-mix(in srgb, var(--series-2) 80%, var(--ink));
 }
 
 /* key figures */
