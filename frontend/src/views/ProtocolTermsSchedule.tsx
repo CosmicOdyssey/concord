@@ -1,7 +1,20 @@
-// Schedule of assessments for the protocol-to-terms flow: visit timeline, visits x procedures grid,
-// coverage list with reviewer toggles, and the selected-node detail. Illustrative schedules only.
+// Schedule of assessments for the protocol-to-terms flow: visit timeline, coverage split and rules, visits x
+// procedures grid, coverage list with reviewer toggles, and the selected-node detail. Illustrative schedules only.
 import { useMemo, useState, type ReactNode } from 'react'
-import { coverageLabel, type Coverage, type Line, type NodeState, type Protocol, type ProtocolNode, type Rule, type Visit } from '../termsFlowApi'
+import { HoverCard } from '../components'
+import {
+  RESEARCH_LEGEND,
+  ROUTINE_LEGEND,
+  coverageLabel,
+  formulaText,
+  type Coverage,
+  type Line,
+  type NodeState,
+  type Protocol,
+  type ProtocolNode,
+  type Rule,
+  type Visit,
+} from '../termsFlowApi'
 import { usd } from '../format'
 
 export function RuleChip({ rule, coverage, title }: { rule: string; coverage: Coverage; title?: string }) {
@@ -37,71 +50,160 @@ export function VisitTimeline({ protocol }: { protocol: Protocol }) {
   const later = protocol.visits.filter((v) => v.kind === 'repeat' || v.kind === 'follow_up')
   const scr = timed.find((v) => v.kind === 'screening')
   const step = later.length > 1 ? (LATER_X1 - LATER_X0) / (later.length - 1) : 0
+  const win = timed.find((v) => v.kind === 'treatment' && v.minus)?.minus
   return (
-    <div className="tf-timeline-wrap">
-      <svg className="tf-timeline" viewBox={`0 0 ${VIEW_W} 132`} role="img" aria-label="Visit timeline: screening, 21-day cycles with windows, then per-occurrence and follow-up visits">
-        <line x1={X0 - 10} x2={X1 + 12} y1={70} y2={70} className="tf-tl-axis" />
-        {scr && scr.day !== undefined && (
-          <g>
-            <rect x={xOf(scr.day)} y={62} width={xOf(scr.day_end ?? -1) - xOf(scr.day)} height={16} rx={3} className="tf-tl-scr" />
-            <text x={(xOf(scr.day) + xOf(scr.day_end ?? -1)) / 2} y={98} className="tf-tl-label" textAnchor="middle">
-              {scr.short}
-            </text>
-            <text x={(xOf(scr.day) + xOf(scr.day_end ?? -1)) / 2} y={112} className="tf-tl-sub" textAnchor="middle">
-              d −28 to −1
-            </text>
-          </g>
-        )}
-        {timed
-          .filter((v) => v.kind === 'treatment' && v.day !== undefined)
-          .map((v) => {
-            const x = xOf(v.day as number)
-            const w = Math.max(xOf((v.day as number) + (v.plus ?? 0)) - xOf((v.day as number) - (v.minus ?? 0)), 0)
-            const img = imaging.get(v.id)
+    <figure className="tf-timeline-fig">
+      <div className="tf-timeline-wrap">
+        <svg
+          className="tf-timeline"
+          viewBox={`0 0 ${VIEW_W} 120`}
+          role="img"
+          aria-label="Visit timeline: screening, 21-day cycles with windows, then per-occurrence and follow-up visits"
+        >
+          <line x1={X0 - 10} x2={X1 + 12} y1={58} y2={58} className="tf-tl-axis" />
+          {scr && scr.day !== undefined && (
+            <g>
+              <rect x={xOf(scr.day)} y={50} width={xOf(scr.day_end ?? -1) - xOf(scr.day)} height={16} rx={4} className="tf-tl-scr" />
+              <text x={(xOf(scr.day) + xOf(scr.day_end ?? -1)) / 2} y={88} className="tf-tl-label" textAnchor="middle">
+                {scr.short}
+              </text>
+              <text x={(xOf(scr.day) + xOf(scr.day_end ?? -1)) / 2} y={103} className="tf-tl-sub" textAnchor="middle">
+                d −28 to −1
+              </text>
+            </g>
+          )}
+          {timed
+            .filter((v) => v.kind === 'treatment' && v.day !== undefined)
+            .map((v) => {
+              const x = xOf(v.day as number)
+              const w = Math.max(xOf((v.day as number) + (v.plus ?? 0)) - xOf((v.day as number) - (v.minus ?? 0)), 0)
+              const img = imaging.get(v.id)
+              return (
+                <g key={v.id}>
+                  {w > 0 && <rect x={x - w / 2} y={54} width={w} height={8} rx={3} className="tf-tl-win" />}
+                  <circle cx={x} cy={58} r={4.5} className="tf-tl-dot" />
+                  <text x={x} y={88} className="tf-tl-label" textAnchor="middle">
+                    {v.short}
+                  </text>
+                  <text x={x} y={103} className="tf-tl-sub" textAnchor="middle">
+                    d{v.day}
+                  </text>
+                  {img && (
+                    <g>
+                      <rect x={x - 14} y={20} width={28} height={17} rx={4} className="tf-tl-img" />
+                      <text x={x} y={32} className="tf-tl-imgtext" textAnchor="middle">
+                        {img.replace('Week ', 'W')}
+                      </text>
+                      <line x1={x} x2={x} y1={37} y2={51} className="tf-tl-tick" />
+                    </g>
+                  )}
+                </g>
+              )
+            })}
+          <text x={497} y={62} className="tf-tl-break" textAnchor="middle">
+            ⋯
+          </text>
+          {later.map((v, i) => {
+            const x = LATER_X0 + i * step
             return (
               <g key={v.id}>
-                {w > 0 && <rect x={x - w / 2} y={66} width={w} height={8} rx={2} className="tf-tl-win" />}
-                <circle cx={x} cy={70} r={4.5} className="tf-tl-dot" />
-                <text x={x} y={98} className="tf-tl-label" textAnchor="middle">
+                <circle cx={x} cy={58} r={4.5} className={v.kind === 'repeat' ? 'tf-tl-rep' : 'tf-tl-dot'} />
+                <text x={x} y={88} className="tf-tl-label" textAnchor="middle">
                   {v.short}
                 </text>
-                <text x={x} y={112} className="tf-tl-sub" textAnchor="middle">
-                  d{v.day}
+                <text x={x} y={103} className="tf-tl-sub" textAnchor="middle">
+                  {shortWindow(v)}
                 </text>
-                {img && (
-                  <g>
-                    <rect x={x - 13} y={34} width={26} height={16} rx={3} className="tf-tl-img" />
-                    <text x={x} y={45.5} className="tf-tl-imgtext" textAnchor="middle">
-                      {img.replace('Week ', 'W')}
-                    </text>
-                    <line x1={x} x2={x} y1={50} y2={63} className="tf-tl-tick" />
-                  </g>
-                )}
               </g>
             )
           })}
-        <text x={X0 - 6} y={24} className="tf-tl-sub">
-          Window bars: ±3 days around each Day 1. Boxes: scheduled tumor assessments.
-        </text>
-        <text x={497} y={74} className="tf-tl-break" textAnchor="middle">
-          ⋯
-        </text>
-        {later.map((v, i) => {
-          const x = LATER_X0 + i * step
-          return (
-            <g key={v.id}>
-              <circle cx={x} cy={70} r={4.5} className={v.kind === 'repeat' ? 'tf-tl-rep' : 'tf-tl-dot'} />
-              <text x={x} y={98} className="tf-tl-label" textAnchor="middle">
-                {v.short}
-              </text>
-              <text x={x} y={112} className="tf-tl-sub" textAnchor="middle">
-                {shortWindow(v)}
-              </text>
-            </g>
-          )
-        })}
-      </svg>
+        </svg>
+      </div>
+      <figcaption className="tf-timeline-key">
+        <span>
+          <span className="tf-key tf-key-dot" aria-hidden="true" /> Day 1 of each 21-day cycle
+        </span>
+        <span>
+          <span className="tf-key tf-key-win" aria-hidden="true" /> {win ? `±${win}-day visit window` : 'Visit window'}
+        </span>
+        <span>
+          <span className="tf-key tf-key-img" aria-hidden="true" /> Scheduled tumor assessment (week)
+        </span>
+        <span>
+          <span className="tf-key tf-key-rep" aria-hidden="true" /> Repeating visit, priced per occurrence
+        </span>
+      </figcaption>
+    </figure>
+  )
+}
+
+// ------------------------------------------------------------------ coverage split and rules
+
+/** How many scheduled items each payer covers, with the copy deck's coverage legend. */
+export function CoverageSplit({ nRoutine, nResearch }: { nRoutine: number; nResearch: number }) {
+  return (
+    <div className="tf-split">
+      <p className="tf-split-text">
+        <span className="num strong">{nRoutine}</span> routine care (billable to insurance) · <span className="num strong">{nResearch}</span> research (sponsor)
+      </p>
+      <div className="tf-split-bar" aria-hidden="true">
+        <span className="tf-split-routine" style={{ flexGrow: nRoutine }} />
+        <span className="tf-split-research" style={{ flexGrow: nResearch }} />
+      </div>
+      <ul className="tf-split-legend">
+        <li>
+          <span className="tf-key tf-key-routine" aria-hidden="true" />
+          <span>{ROUTINE_LEGEND}</span>
+        </li>
+        <li>
+          <span className="tf-key tf-key-research" aria-hidden="true" />
+          <span>{RESEARCH_LEGEND}</span>
+        </li>
+      </ul>
     </div>
+  )
+}
+
+/** Rules R1-R5: id, title, who pays and how many items each labels. Simple shows the rule text in a hover card;
+ *  Detailed prints it under the title. */
+export function RuleList({ rules, detailed }: { rules: Rule[]; detailed: boolean }) {
+  return (
+    <ul className="tf-rules">
+      {rules.map((r) => (
+        <li key={r.id} className="tf-rule-row">
+          <RuleChip rule={r.id} coverage={r.coverage} />
+          <span className="tf-rule-main">
+            {detailed ? (
+              <span className="strong">{r.title}</span>
+            ) : (
+              <HoverCard
+                content={
+                  <>
+                    <span className="hc-title">
+                      {r.id}: {r.title}
+                    </span>
+                    {r.text}
+                    <span className="hc-src">{coverageLabel(r.coverage)}</span>
+                  </>
+                }
+              >
+                {r.title}
+              </HoverCard>
+            )}
+            <span className="tf-rule-pay">
+              <span className="tf-rule-sep" aria-hidden="true">
+                {' · '}
+              </span>
+              {r.coverage === 'research' ? 'sponsor pays' : 'billable to insurance'}
+            </span>
+            {detailed && <span className="tf-rule-text">{r.text}</span>}
+          </span>
+          <span className="tf-rule-n">
+            <span className="num">{r.nodes ?? '—'}</span> items
+          </span>
+        </li>
+      ))}
+    </ul>
   )
 }
 
@@ -242,12 +344,12 @@ export function NodeDetail({
       </p>
       {state.override && (
         <p className="small tf-ov-note">
-          Reviewer override: rule {node.rule} said {node.coverage}; this node is now {state.coverage}. The term sheet
-          shows it as “reviewer override”.
+          Reviewer override: rule {node.rule} said {node.coverage}; this item is now {state.coverage}. The term sheet shows it as “reviewer
+          override”.
         </p>
       )}
       {line && <LinePrice line={line} />}
-      <div className="seg tf-seg" role="group" aria-label="Coverage label for this node">
+      <div className="seg tf-seg" role="group" aria-label="Coverage label for this item">
         {(['routine', 'research'] as Coverage[]).map((c) => (
           <button
             key={c}
@@ -273,20 +375,27 @@ export function LinePrice({ line }: { line: Line }) {
   if (line.schedule === 'PFS' && line.formula)
     return (
       <p className="small tf-formula">
-        Medicare at this site: <strong>{usd(line.medicare_amount)}</strong> = <span className="tf-mono">{line.formula}</span>
+        Medicare at this site: <strong className="num">{usd(line.medicare_amount)}</strong> = <span className="tf-mono">{formulaText(line.formula)}</span>
       </p>
     )
   if (line.schedule === 'CLFS')
     return (
       <p className="small tf-formula">
-        Lab fee schedule (national): <strong>{usd(line.medicare_amount)}</strong>{' '}
+        Lab fee schedule (national): <strong className="num">{usd(line.medicare_amount)}</strong>{' '}
         {line.placeholder && <span className="tf-ph">placeholder until the CLFS file is loaded</span>}
       </p>
     )
   if (line.schedule === 'Standard')
     return (
       <p className="small tf-formula">
-        Priced from the proposed standard schedule{line.unit_amount !== null ? <>: <strong>{usd(line.unit_amount)}</strong></> : ' (billed only when research)'}
+        Priced from the proposed standard schedule
+        {line.unit_amount !== null ? (
+          <>
+            : <strong className="num">{usd(line.unit_amount)}</strong>
+          </>
+        ) : (
+          ' (billed only when research)'
+        )}
       </p>
     )
   if (line.note) return <p className="small tf-formula">{line.note}</p>
@@ -334,10 +443,10 @@ export function CoverageList({
     }).length
   return (
     <div className="tf-cov">
-      <div className="seg tf-cov-filter" role="group" aria-label="Filter nodes">
+      <div className="seg tf-cov-filter" role="group" aria-label="Filter items">
         {(
           [
-            ['all', 'All nodes'],
+            ['all', 'All items'],
             ['research', 'Sponsor pays'],
             ['routine', 'Billed to insurance'],
             ['override', 'Reviewer overrides'],
@@ -348,11 +457,12 @@ export function CoverageList({
           </button>
         ))}
       </div>
-      {shown.length === 0 && <p className="small muted">No nodes match this filter.</p>}
+      {shown.length === 0 && <p className="small muted">No items match this filter.</p>}
       {shown.map(({ p, groups }) => (
         <div key={p.id} className="tf-cov-row">
           <div className="tf-cov-proc">
-            <span className="strong">{p.label}</span> {p.code ? <code className="tf-code">{p.code}</code> : <span className="tf-code tf-code-none">no code</span>}
+            <span className="strong">{p.label}</span>{' '}
+            {p.code ? <code className="tf-code">{p.code}</code> : <span className="tf-code tf-code-none">no code</span>}
           </div>
           <div className="tf-cov-groups">
             {groups.map((g) => (
