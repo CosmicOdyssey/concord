@@ -1,0 +1,90 @@
+# Morning handoff (18 Oct)
+
+App running at http://localhost:5173 (UI) and http://localhost:8000 (API). Everything is on `main` and
+pushed. Overnight decisions, with reasons: [docs/decisions.md](decisions.md) (17 entries).
+
+## Read this first
+
+**One result cuts against the pivot's stated premise.** The final holdout rerun (task A's pre-registered
+script, unchanged, beta 0.093, 46 US-Northeast trials) shows:
+
+| | in-sample | held-out, alternating split | held-out, time split |
+|---|---|---|---|
+| Coordination: joint optimum vs each trial's best response | 1.42x | 1.05x (47% slower) | 1.05x (51% slower) |
+| Site selection alone: best response vs registered sites | 1.76x | 1.73x | 1.70x |
+
+- **The data supports:** coordination gains across trials largely disappear out of sample.
+- **The data doesn't support:** "choosing sites from registry data doesn't beat sponsors' own choices out
+  of sample". In our model it does, by about 1.7x held-out. That is still scored by our enrollment model,
+  which typically misses by about 2x, not by observed enrollment.
+
+The Findings page and README state both rows as measured, and the finding's title says "coordination gains
+largely disappear; site-selection gains remain in the model". The product rule is unaffected: no product
+view shows a predicted speedup.
+
+## What works end to end
+
+QA covered the full demo path at 1440 px and 390 px, in light and dark mode. 438 on-screen numbers were
+checked against the API with no mismatches, and there were no console errors. Report:
+[handoff/qa-2026-10-18.md](handoff/qa-2026-10-18.md).
+
+| view | status | screenshot |
+|---|---|---|
+| Findings (landing) | works | [01-findings.png](handoff/screens/01-findings.png) |
+| Portfolio overlap, Regeneron preset | works | [02a-overlap-regeneron-top.png](handoff/screens/02a-overlap-regeneron-top.png), [02c-overlap-pair-detail.png](handoff/screens/02c-overlap-pair-detail.png) |
+| Protocol to terms, NCT05800015 | works | [03a schedule](handoff/screens/03a-terms-schedule-grid.png), [04 coverage](handoff/screens/04-terms-coverage-override.png), [05 budget](handoff/screens/05-terms-budget-site.png), [06 two sites](handoff/screens/06-terms-compare-two-sites.png), [07 term sheet](handoff/screens/07-terms-termsheet.png) |
+| Research (old clearing views, labelled in-sample) | works; a clear takes about 1.5 min | [10-research-clear.png](handoff/screens/10-research-clear.png) |
+
+**Broken: nothing found.** One rough edge: at 390 px the terms budget table needs a sideways swipe to see
+its last columns. Fixing it would be a restyle, so I left it.
+
+## 3-minute demo click path
+
+1. **Findings** (`#findings`), 60 s. Three findings with tables:
+   - Congestion: beta about 0.09 vs the assumed 1.0.
+   - Allocation: coordination doesn't hold out of sample.
+   - Site-level data is the constraint.
+   - Point at the parser-version table: the estimate moved with each fix, and we show that.
+2. **Portfolio overlap** (`#overlap/regeneron`), 60 s. The preset loads Regeneron on 1 Sept 2024 with the
+   fianlimab pair selected (NCT05785767 x NCT05800015):
+   - 16 shared registered U.S. sites.
+   - 100% of the PD-L1 >= 50% trial's eligible patients also qualify for the all-comers trial (26% the
+     other way).
+   - The criteria diff shows the only differences: PD-L1 >= 50% and never-smokers excluded.
+   - Across all NSCLC sponsors since 2015 the same pattern recurs: 21 pairs with reviewed eligibility (note
+     at the bottom of Findings).
+3. **Protocol to terms** (`#terms-flow/NCT05800015`), 60 s:
+   - The schedule grid is labelled illustrative, authored from public trial information.
+   - Coverage labels with rules R1-R5; toggle one reviewer override.
+   - Budget at NYU Langone (Manhattan locality).
+   - "Compare two sites" against a Mississippi site: every dollar of difference traces to published GPCI
+     values.
+   - Export the term sheet.
+   - Close on the label: decision support, not a fair-market-value legal opinion.
+
+## Every number the app shows, and its source
+
+| view | numbers | source |
+|---|---|---|
+| Findings: congestion | beta 0.09 (95% CI 0.00 to 0.30, floored at 0; coefficient -0.093 [-0.297, +0.111], p 0.37); pooled -0.107 (p 0.055); 4 subset rows; parser versions -0.136 / -0.027 / -0.088 | `analysis/congestion.py` on the current DB -> meta `congestion_test`, `data/robustness/congestion_v2.json` |
+| Findings: allocation | US-Northeast and Regeneron tables (in-sample, alternating, time split; share slower) | `data/robustness/holdout.json` (final rerun), copied to `data/findings/sources/holdout_final.json` |
+| Findings: implication | typical held-out miss 1.9x (site model) vs 2.8x (naive); 7,486 of 11,710 U.S. sites (64%) with < 3 lung trials; 0 site-level enrollment counts in the registry | DB meta `backtest`; `site_model` |
+| Findings: related note | 21 same-sponsor pairs (10 sponsors), >= 10 shared sites and >= 80% overlap one way, 19 upper bounds; broad count 134 with caveats | `data/findings/self_overlap.json` (`python -m concord.overlap`) |
+| Portfolio overlap | 37 sponsors; 5 trials; 5 of 10 pairs share a site; 16 shared sites; 100% / 26%; 31.8 months both recruiting (estimated, past); site counts 8 / 9 / 23 / 29 / 8; other sponsors' trials per site | `/api/overlap`: CT.gov registered sites and dates, synthetic population (n = 20,000), hand-encoded eligibility |
+| Protocol to terms | NCT05800015 at NYU Langone (Manhattan, GPCI 1.064 / 1.162 / 1.586, CF 33.4009): $6,328.54 per participant through cycle 8; each later cycle $471.21; per site $18,000 (proposed standard); vs Mississippi $6,007.11 (-$321.43) | CMS 2026 PFS RVU26D (real); GPCI 2026 (real); lab codes are placeholders until CLFS loads; non-procedure items are the proposed standard schedule |
+| Research | in-sample model results, each labelled "not a claim" | `/api/clear`, robustness grids at beta 0.093 |
+
+## Needs you
+
+- **CLFS lab fee schedule.** CMS serves it behind an AMA CPT license click-through, which I didn't accept for
+  you. Download `26clabq4.zip` from the CMS CLFS files page, then run
+  `CLFS_ZIP=path/to/26clabq4.zip scripts/pipeline.sh` (or `python -m concord.ratecard.cms --rvu ... --clfs ...`).
+  Until then every lab line says "placeholder until the CLFS file is loaded".
+- **Decide how to pitch the site-selection result** (top of this file).
+- **Open audit notes** (all disclosed in the README; none blocks the demo):
+  - The two-way SE clips negative eigenvalues, so the CI width depends somewhat on how controls are coded
+    (`congestion_v2_se_diagnostics.json`).
+  - Task B never ran its own time split; that column came from its auditor.
+  - Task C (transfers) is not merged, by your decision.
+- **Cleanup you may want (not done; irreversible):** 12 agent worktrees under `.claude/worktrees/` and
+  their branches. They're ignored by git and safe to remove with `git worktree remove` once you've looked.
