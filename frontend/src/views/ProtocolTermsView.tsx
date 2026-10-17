@@ -658,6 +658,7 @@ function BudgetView({ b, stale }: { b: Budget; stale: boolean }) {
           <div className="stat-label">Per participant</div>
           <div className="stat-value tnum">{usd(t.per_participant)}</div>
           <div className="stat-sub">{t.per_participant_scope}</div>
+          <div className="stat-sub tf-placeholder-note">includes placeholder lab prices until CLFS is loaded</div>
         </div>
         <div className="stat">
           <div className="stat-label">Each later cycle</div>
@@ -941,6 +942,7 @@ function CompareView({ c }: { c: Compare }) {
             <div className="small muted">{c[k].locality?.method}</div>
             <div className="tf-cmp-total tnum">{usd(c[k].totals.per_participant)}</div>
             <div className="small muted">per participant ({c[k].totals.per_participant_scope})</div>
+            <div className="small muted">includes placeholder lab prices until CLFS is loaded</div>
           </div>
         ))}
       </div>
@@ -980,7 +982,7 @@ function CompareView({ c }: { c: Compare }) {
       </div>
       <div className="tf-decomp">
         <div className="tf-decomp-head">
-          <span className="field-label">Difference per participant (B − A)</span>
+          <span className="field-label">Difference per participant (B − A; includes placeholder lab prices until CLFS is loaded)</span>
           <span className="tf-decomp-total tnum">{signedUsd(sm.delta_per_participant)}</span>
         </div>
         <div className="tf-decomp-parts small">
