@@ -3,13 +3,15 @@ import { api, DEFAULT_SCENARIO, REGENERON_PRESET, type ClearResult, type Scenari
 import { Loading, useElapsed } from './components'
 import { DENSITY_TOGGLE_ENABLED, DensityControl } from './density'
 import { NEEDS_CLEAR, RESEARCH_TABS, researchTab, type ResearchTabId } from './routes'
+import { skipTo } from './skip'
 import { ThemeControl } from './theme'
 import { useActiveTabScroll } from './useActiveTabScroll'
 import FindingsView from './views/FindingsView'
+import LandingView from './views/LandingView'
 import './app.css'
 
 // The research views (Leaflet map, clearing, price tags, ...) load on first use of the Research tab; the overlap
-// audit and the protocol-to-terms flow load on first use too, so the Findings landing page stays light.
+// audit and the protocol-to-terms flow load on first use too, so the landing page and Findings stay light.
 const ResearchView = lazy(() => import('./views/ResearchView'))
 const OverlapView = lazy(() => import('./views/OverlapView'))
 const ProtocolTermsView = lazy(() => import('./views/ProtocolTermsView'))
@@ -17,32 +19,46 @@ const SiteScoresView = lazy(() => import('./views/SiteScoresView'))
 const FinancialView = lazy(() => import('./views/FinancialView'))
 const DevComponentsView = lazy(() => import('./views/DevComponentsView'))
 
+// Labels, sub-labels (always visible) and tooltips: copy deck B1. Financial Coordination is a teammate's synthetic
+// planning exercise; its sub-label keeps that visible in the tab bar.
 const TABS = [
-  { id: 'findings', label: 'Findings' },
-  { id: 'overlap', label: 'Portfolio overlap' },
-  { id: 'terms-flow', label: 'Protocol to terms' },
-  { id: 'site-scores', label: 'Site scores' },
-  { id: 'financial', label: 'Financial Coordination' },
-  { id: 'research', label: 'Research' },
+  { id: 'findings', label: 'Findings', hint: 'What we tested, including results that weakened the original idea.' },
+  { id: 'overlap', label: 'Portfolio overlap', hint: "Where one sponsor's trials share registered sites and eligible patients." },
+  { id: 'terms-flow', label: 'Protocol to terms', hint: 'A schedule of assessments, turned into a coverage grid, a budget and a term sheet.' },
+  {
+    id: 'site-scores',
+    label: 'Site scores',
+    sub: 'In development',
+    hint: 'Historical per-site enrollment evidence, and how well it held up on later trials.',
+  },
+  {
+    id: 'financial',
+    label: 'Financial Coordination',
+    sub: 'Synthetic scenarios',
+    hint: 'A synthetic planning exercise: budgets, site resources and coverage at a fixed enrollment target.',
+  },
+  { id: 'research', label: 'Research', sub: 'In-sample model outputs', hint: 'The earlier site-clearing views, kept for reference. Not product claims.' },
 ] as const
 type TabId = (typeof TABS)[number]['id']
-/** A tab, or the QA page at #dev/components, which has no tab. */
-type ViewId = TabId | 'dev'
+/** A tab, the landing page (#home or no hash), or the QA page at #dev/components, which has no tab. */
+type ViewId = TabId | 'home' | 'dev'
 
 interface Route {
   tab: ViewId
   /** Research sub-tab named by the hash, if any. */
   sub: ResearchTabId | null
-  /** Trailing segment: #research/prices/NCT01234567, #research/portfolio/regeneron, #findings/allocation. */
+  /** Trailing segment: #research/prices/NCT01234567, #research/portfolio/regeneron, #findings/allocation, #home/tested. */
   arg: string | null
 }
 
-/** Hash routes: #findings[/<finding id>] (default), #overlap, #terms-flow, #site-scores[/<site id>], #research/<sub>[/<arg>]. The pre-pivot
- *  flat links (#clear, #map, #prices/NCT..., #portfolio/regeneron, ...) open the same research sub-tab. #dev/components is a QA page
- *  for the theme, density and hover-card building blocks, linked from nowhere. */
+/** Hash routes: no hash or #home[/<section>] is the landing page; #findings[/<finding id>], #overlap, #terms-flow,
+ *  #site-scores[/<site id>], #financial, #research/<sub>[/<arg>]. An unknown hash opens Findings. The pre-pivot flat
+ *  links (#clear, #map, #prices/NCT..., #portfolio/regeneron, ...) open the same research sub-tab. #dev/components
+ *  is a QA page for the shared building blocks, linked from nowhere. */
 function parseHash(hash: string = window.location.hash): Route {
   const [head = '', ...rest] = hash.replace(/^#\/?/, '').split('/').filter(Boolean)
   const h = head.toLowerCase()
+  if (h === '' || h === 'home') return { tab: 'home', sub: null, arg: rest[0] ?? null }
   if (h === 'dev' && rest[0]?.toLowerCase() === 'components') return { tab: 'dev', sub: null, arg: null }
   if (h === 'research') {
     const sub = researchTab(rest[0])
@@ -91,9 +107,14 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   // Deep link: #research/prices/NCT01234567 preselects a trial for the price-tag view.
   const [selectedTrial, setSelectedTrial] = useState<string | null>(() => trialArg(INITIAL_ROUTE))
-  // #findings/<id> scrolls the landing page to that finding (the Research views link to #findings/allocation).
+  // #findings/<id> scrolls the Findings page to that finding (the Research views link to #findings/allocation).
   const [findingFocus, setFindingFocus] = useState<{ id: string | null; n: number }>({
     id: INITIAL_ROUTE.tab === 'findings' ? INITIAL_ROUTE.arg : null,
+    n: 0,
+  })
+  // #home/<section> scrolls the landing page to that section (overlap, terms, tested).
+  const [landingFocus, setLandingFocus] = useState<{ id: string | null; n: number }>({
+    id: INITIAL_ROUTE.tab === 'home' ? INITIAL_ROUTE.arg : null,
     n: 0,
   })
   // A scenario a deep link asked for (the Regeneron preset), cleared once Research is showing.
@@ -117,11 +138,18 @@ export default function App() {
         setPresetTick((x) => x + 1)
       }
       if (r.tab === 'findings') setFindingFocus((f) => ({ id: r.arg, n: f.n + 1 }))
-      window.scrollTo({ top: 0 })
+      if (r.tab === 'home') setLandingFocus((f) => ({ id: r.arg, n: f.n + 1 }))
+      // The landing page scrolls itself to a named section.
+      if (!(r.tab === 'home' && r.arg)) window.scrollTo({ top: 0 })
     }
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
+
+  const tabLabel = TABS.find((t) => t.id === tab)?.label
+  useEffect(() => {
+    document.title = tabLabel ? `${tabLabel} · Concord` : 'Concord'
+  }, [tabLabel])
 
   const go = useCallback(
     (t: TabId) => {
@@ -164,7 +192,7 @@ export default function App() {
       })
   }, [])
 
-  // Nothing heavy runs on the landing page. The region list loads when Research is first opened, and the
+  // Nothing heavy runs on the landing page or Findings. The region list loads when Research is first opened, and the
   // default clear (about 2 minutes on the rebuilt DB) runs once, the first time a Research sub-tab that needs it is opened.
   const regionsLoaded = useRef(false)
   const autoCleared = useRef(false)
@@ -195,56 +223,62 @@ export default function App() {
     goSub('prices')
   }
 
+  // The landing page is its own page, outside the app shell.
+  if (tab === 'home') return <LandingView focus={landingFocus} />
+
   return (
     <div className="app">
-      <header className="topbar">
-        <div className="brand">
-          <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true">
-            <rect width="32" height="32" rx="7" fill="var(--accent)" />
-            <circle cx="11" cy="16" r="6" fill="none" stroke="#fff" strokeWidth="2.5" />
-            <circle cx="21" cy="16" r="6" fill="none" stroke="#fff" strokeWidth="2.5" />
-          </svg>
-          <span className="brand-name">Concord</span>
-          <span className="brand-tag">NSCLC trial portfolios on public ClinicalTrials.gov data</span>
-        </div>
-        <div className="topbar-end">
-          {/* Clearing is a Research-only computation: its status shows only there. */}
-          <div className="run-status small" aria-live="polite">
-            {tab !== 'research' ? null : loading ? (
-              <span>
-                <span className="dot dot-busy" /> Clearing {pendingParams?.region}… <span className="tnum">{elapsed.toFixed(0)} s</span>
-              </span>
-            ) : solvedParams ? (
-              <span>
-                <span className="dot dot-ok" /> Cleared {solvedParams.region}
-                {solvedParams.sponsor ? ` · ${solvedParams.sponsor}` : ''}
-                {solvedParams.as_of ? ` · ${solvedParams.as_of}` : ''}
-              </span>
-            ) : error ? (
-              <span>
-                <span className="dot dot-bad" /> Clear failed
-              </span>
-            ) : null}
+      <a className="skip" href="#main-content" onClick={(e) => skipTo(e, 'main-content')}>
+        Skip to content
+      </a>
+      <header className="appbar">
+        <div className="appbar-in">
+          <div className="appbar-top">
+            <a className="wordmark" href="#home" aria-label="Back to the Concord home page">
+              Concord
+            </a>
+            <div className="appbar-ctl">
+              {DENSITY_TOGGLE_ENABLED && <DensityControl />}
+              <ThemeControl />
+            </div>
           </div>
-          {DENSITY_TOGGLE_ENABLED && <DensityControl />}
-          <ThemeControl />
+          <nav className="tabs" role="tablist" aria-label="Views" ref={tabBar}>
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                role="tab"
+                aria-selected={tab === t.id}
+                className={`tab${tab === t.id ? ' tab-active' : ''}`}
+                title={t.hint}
+                onClick={() => go(t.id)}
+              >
+                <span className="tab-label">{t.label}</span>
+                {'sub' in t && <span className="tab-sub">{t.sub}</span>}
+              </button>
+            ))}
+          </nav>
         </div>
       </header>
-      <nav className="tabs" role="tablist" aria-label="Views" ref={tabBar}>
-        {TABS.map((t, i) => (
-          <button
-            key={t.id}
-            role="tab"
-            aria-selected={tab === t.id}
-            className={`tab${tab === t.id ? ' tab-active' : ''}`}
-            onClick={() => go(t.id)}
-          >
-            <span className="tab-num">{i + 1}</span>
-            {t.label}
-          </button>
-        ))}
-      </nav>
-      <main className="main">
+      <main className="main" id="main-content" tabIndex={-1}>
+        {/* Clearing is a Research-only computation: its status shows only there, in the page rather than the header,
+            so the header keeps one height on every tab and at every width. Always mounted, so changes are announced. */}
+        <div className="run-status small" aria-live="polite">
+          {tab !== 'research' ? null : loading ? (
+            <span>
+              <span className="dot dot-busy" /> Clearing {pendingParams?.region}… <span className="tnum">{elapsed.toFixed(0)} s</span>
+            </span>
+          ) : solvedParams ? (
+            <span>
+              <span className="dot dot-ok" /> Cleared {solvedParams.region}
+              {solvedParams.sponsor ? ` · ${solvedParams.sponsor}` : ''}
+              {solvedParams.as_of ? ` · ${solvedParams.as_of}` : ''}
+            </span>
+          ) : error ? (
+            <span>
+              <span className="dot dot-bad" /> Clear failed
+            </span>
+          ) : null}
+        </div>
         {tab === 'findings' && <FindingsView focus={findingFocus} />}
         {tab === 'overlap' && (
           <Suspense fallback={<Loading label="Loading portfolio overlap…" />}>
@@ -287,8 +321,11 @@ export default function App() {
           </Suspense>
         )}
       </main>
-      <footer className="footer small muted">
-        Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates; Financial Coordination uses explicitly synthetic scenarios. Decision support only, not clinical, legal or coverage advice.
+      <footer className="footer">
+        <div className="footer-in">
+          Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates; Financial
+          Coordination uses explicitly synthetic scenarios. Decision support only, not clinical, legal or coverage advice.
+        </div>
       </footer>
     </div>
   )

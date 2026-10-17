@@ -89,3 +89,15 @@
   width: 600px;
   padding: 0.2rem 0.3rem;
 }
+.dev-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+.dev-figs {
+  display: grid;
+  gap: var(--sp-4);
+}
+.dev-gap {
+  margin-top: var(--sp-4);
+}

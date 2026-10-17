@@ -109,6 +109,10 @@ export function HoverCard({ content, children, label, className }: HoverCardProp
     const r = t.getBoundingClientRect()
     const vw = document.documentElement.clientWidth
     const vh = document.documentElement.clientHeight
+    // Measure at the origin: a fixed card keeps the `left` of its last placement, and with that left near the
+    // right edge (after the viewport shrank) it would size itself to the sliver of room left of it.
+    c.style.left = '0px'
+    c.style.top = '0px'
     const w = c.offsetWidth
     const h = c.offsetHeight
     const fitsBelow = r.bottom + GAP + h <= vh - EDGE
@@ -283,15 +287,24 @@ export function HoverCard({ content, children, label, className }: HoverCardProp
   )
 }
 
-/** Icon-only "i" button; `label` is its accessible name and `content` what the card shows. */
-export function InfoTip({ label, content, className }: { label: string; content: ReactNode; className?: string }) {
+/** Icon-only "i" button; `label` is its accessible name and `content` what the card shows. `size="lg"` is the 2 rem
+ *  outlined circle that sits next to a section heading (copy deck: label "Details: {section title}"); the default is
+ *  an inline icon sized to the text around it. */
+export function InfoTip({ label, content, className, size = 'sm' }: { label: string; content: ReactNode; className?: string; size?: 'sm' | 'lg' }) {
   return (
-    <HoverCard content={content} label={label} className={`hc-info${className ? ` ${className}` : ''}`}>
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
-        <circle cx="8" cy="8" r="6.25" />
-        <path d="M8 7.4v3.9" />
-        <path d="M8 4.8v.1" strokeWidth="1.9" />
-      </svg>
+    <HoverCard content={content} label={label} className={`hc-info${size === 'lg' ? ' hc-info-lg' : ''}${className ? ` ${className}` : ''}`}>
+      {size === 'lg' ? (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+          <path d="M12 11v6" />
+          <path d="M12 7.25v.5" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+          <circle cx="8" cy="8" r="6.25" />
+          <path d="M8 7.4v3.9" />
+          <path d="M8 4.8v.1" strokeWidth="1.9" />
+        </svg>
+      )}
     </HoverCard>
   )
 }

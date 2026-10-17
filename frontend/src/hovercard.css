@@ -1,5 +1,7 @@
-/* Hover cards (hovercard.tsx): the trigger, the "i" InfoTip button and the floating card. Tokens only, so the
-   card follows the theme. */
+/* Hover cards (hovercard.tsx): the trigger, the "i" InfoTip button and the floating card, in the Calm skin.
+   Tokens only, so the card follows the theme. */
+
+/* A text trigger: a term with a dotted underline (the Calm "gloss"). */
 .hc-trigger {
   appearance: none;
   margin: 0;
@@ -10,8 +12,13 @@
   color: inherit;
   text-align: inherit;
   cursor: help;
-  text-decoration: underline dotted var(--muted);
-  text-underline-offset: 0.2em;
+  text-decoration: underline dotted var(--ctl);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+}
+.hc-trigger:hover,
+.hc-trigger[data-open] {
+  text-decoration-color: var(--ink);
 }
 .hc-trigger:focus-visible {
   outline: 2px solid var(--accent);
@@ -19,58 +26,114 @@
   border-radius: 2px;
 }
 
+/* The "i" button: a small outlined circle inline with text; `hc-info-lg` is the 2 rem section-level version next
+   to a heading (the Simple-mode info card). */
 .hc-info {
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: 1.15em;
-  height: 1.15em;
-  vertical-align: -0.2em;
-  color: var(--muted);
+  flex: none;
+  width: 1.25em;
+  height: 1.25em;
+  vertical-align: -0.25em;
+  color: var(--ink-2);
   text-decoration: none;
   border-radius: 50%;
+  cursor: pointer;
 }
 /* Hit area larger than the icon, for touch. */
 .hc-info::after {
   content: '';
   position: absolute;
-  inset: -5px;
+  inset: -6px;
 }
 .hc-info:hover,
 .hc-info[data-open] {
-  color: var(--text);
+  color: var(--accent);
 }
 .hc-info svg {
   width: 100%;
   height: 100%;
+}
+.hc-info-lg {
+  width: 2rem;
+  height: 2rem;
+  vertical-align: middle;
+  border: 1px solid var(--ctl);
+  background: var(--surface);
+}
+.hc-info-lg svg {
+  width: 1rem;
+  height: 1rem;
+}
+.hc-info-lg:hover,
+.hc-info-lg[data-open] {
+  border-color: var(--accent);
+}
+@media (pointer: coarse) {
+  .hc-info::after {
+    inset: auto;
+    left: 50%;
+    top: 50%;
+    width: var(--tap);
+    height: var(--tap);
+    transform: translate(-50%, -50%);
+  }
 }
 
 .hc-card {
   position: fixed;
   top: 0;
   left: 0;
-  /* Above the sticky tab bar (1000) and Leaflet's panes. */
+  /* Above the sticky header (1000) and Leaflet's panes. */
   z-index: 2000;
+  /* Sized by its content, never by where it was last placed. */
+  width: max-content;
   max-width: min(22rem, calc(100vw - 16px));
-  padding: 0.5rem 0.65rem;
+  padding: 0.875rem 1rem;
   background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-  font-size: 0.82rem;
-  line-height: 1.45;
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  box-shadow: var(--lift);
+  font-family: var(--font);
+  font-size: var(--fs-ui);
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: 0;
   text-align: left;
+  text-transform: none;
   white-space: normal;
   overflow-wrap: break-word;
 }
+/* Optional structure inside a card: a bold first line and a ruled source line. */
+.hc-card .hc-title {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+.hc-card .hc-src {
+  display: block;
+  margin-top: 0.625rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+}
+.hc-card p {
+  margin: 0 0 0.5rem;
+}
+.hc-card p:last-child {
+  margin-bottom: 0;
+}
 @media (prefers-reduced-motion: no-preference) {
   .hc-card {
-    animation: hc-in 0.12s ease-out;
+    animation: hc-in 140ms ease-out;
   }
 }
 @keyframes hc-in {
   from {
     opacity: 0;
+    transform: translateY(3px);
   }
 }

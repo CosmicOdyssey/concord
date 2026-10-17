@@ -81,22 +81,62 @@ export function useTheme(): ThemeState {
   return v
 }
 
-const OPTIONS: { id: ThemePref; label: string }[] = [
-  { id: 'light', label: 'Light' },
-  { id: 'dark', label: 'Dark' },
-  { id: 'system', label: 'System' },
+function ThemeIcon({ id }: { id: ThemePref }) {
+  const common = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true } as const
+  if (id === 'light')
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
+      </svg>
+    )
+  if (id === 'dark')
+    return (
+      <svg {...common}>
+        <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />
+      </svg>
+    )
+  // System: a screen.
+  return (
+    <svg {...common}>
+      <rect x="3" y="4.5" width="18" height="12" rx="2" />
+      <path d="M8.5 20h7M12 16.5V20" />
+    </svg>
+  )
+}
+
+// Copy deck B3.
+const OPTIONS: { id: ThemePref; label: string; name: string }[] = [
+  { id: 'light', label: 'Light theme', name: 'Light' },
+  { id: 'dark', label: 'Dark theme', name: 'Dark' },
+  { id: 'system', label: 'Match system theme', name: 'System' },
 ]
 
-/** Header control: Light / Dark / System as toggle buttons. */
+/** Light / Dark / System. Icon toggle buttons; on narrow screens (CSS: .theme-cycle) a single button that cycles
+ *  through the three, so the phone header keeps 44 px targets on one row. */
 export function ThemeControl() {
   const { pref, setPref } = useTheme()
+  const i = OPTIONS.findIndex((o) => o.id === pref)
+  const cur = OPTIONS[i] ?? OPTIONS[2]
+  const next = OPTIONS[(i + 1) % OPTIONS.length]
   return (
-    <div className="hdr-seg" role="group" aria-label="Colour theme">
-      {OPTIONS.map((o) => (
-        <button key={o.id} type="button" className="hdr-seg-btn" aria-pressed={pref === o.id} onClick={() => setPref(o.id)}>
-          {o.label}
-        </button>
-      ))}
-    </div>
+    <>
+      <div className="seg seg-inline seg-icons theme-seg" role="group" aria-label="Color theme">
+        {OPTIONS.map((o) => (
+          <button key={o.id} type="button" className="seg-btn" aria-label={o.label} title={o.label} aria-pressed={pref === o.id} onClick={() => setPref(o.id)}>
+            <ThemeIcon id={o.id} />
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        className="btn theme-cycle"
+        aria-label={`Theme: ${cur.name}. Change theme`}
+        title={`Theme: ${cur.name}. Next: ${next.name}`}
+        onClick={() => setPref(next.id)}
+      >
+        <ThemeIcon id={cur.id} />
+      </button>
+    </>
   )
 }

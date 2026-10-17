@@ -19,8 +19,14 @@ now does things that need no forecasting:
   much a site's rate varies from trial to trial, and the observed-outcome check
   that says raw differences are overstated about 3x on the log scale. Historical evidence, not a forecast;
   the default order is history depth, not score.
-- **Findings** (landing page): the research results that motivate both. The earlier clearing views live
+- **Findings** (`#findings`): the research results that motivate both. The earlier clearing views live
   under **Research**, labelled as in-sample model outputs.
+
+The home page (no hash, or `#home`) describes the two tools with live fragments of each (the Merck overlap
+matrix, a two-site price comparison) and the research results; `#home/overlap`, `#home/terms` and
+`#home/tested` open a section, and "See demo" opens Findings. The app header has a Simple | Detailed switch
+(Simple for a first visit; the choice is remembered) and a Light / Dark / System theme switch. The look is the
+"Calm" design system: tokens in `frontend/src/index.css`, shared building blocks in `frontend/src/components.tsx`.
 
 Rule for the whole app: no view shows a predicted speedup, time-to-fill or enrollment rate as a product
 claim. Site scores show past per-site rates as evidence, next to their validation, never as a forecast.
