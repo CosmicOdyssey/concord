@@ -1,0 +1,44 @@
+.financial { display: grid; gap: 1rem; max-width: 1480px; margin: 0 auto; }
+.financial-heading, .financial-toolbar, .financial-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.financial-heading p { max-width: 850px; color: var(--text-2); }
+.financial-eyebrow { text-transform: uppercase; letter-spacing: .09em; font-size: .72rem; font-weight: 700; }
+.financial-tag { border: 1px solid var(--warn-ink); color: var(--warn-ink); border-radius: 4px; padding: .35rem .6rem; font-size: .72rem; font-weight: 700; }
+.financial-warning { background: var(--warn-bg); color: var(--warn-ink); padding: .8rem 1rem; border-radius: 6px; font-size: .87rem; }
+.financial-error { background: var(--bad-bg); color: var(--bad-ink); padding: 1rem; border-radius: 6px; overflow-wrap: anywhere; }
+.financial section, .financial-panel { background: var(--surface); border: 1px solid var(--border); padding: 1.3rem; border-radius: var(--radius); min-width: 0; }
+.financial section { display: grid; gap: .9rem; }
+.financial-toolbar .financial-field { flex: 1; max-width: 690px; }
+.financial-field { display: grid; gap: .35rem; font-size: .82rem; color: var(--text-2); }
+.financial input:not([type=checkbox]), .financial select { background: var(--surface); border: 1px solid var(--border-strong); color: var(--text); border-radius: 5px; min-height: 36px; padding: .4rem .5rem; font: inherit; width: 100%; }
+.financial select { max-width: 100%; }
+.financial input:focus-visible, .financial select:focus-visible, .financial button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.financial input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; }
+.financial button { font: inherit; cursor: pointer; padding: .55rem .8rem; color: var(--text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: 5px; }
+.financial button:disabled { opacity: .6; cursor: wait; }
+.financial .financial-primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 650; }
+.financial-sections { display: flex; flex-wrap: wrap; gap: .4rem; border-bottom: 1px solid var(--border); padding-bottom: .7rem; }
+.financial-sections button { border-color: transparent; background: transparent; font-size: .85rem; }
+.financial-sections button[aria-current] { color: var(--accent); background: var(--accent-soft); font-weight: 650; border-color: var(--accent); }
+.financial-status { min-height: 1.5rem; color: var(--text-2); font-size: .85rem; }
+.financial-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .9rem; }
+.financial-check { display: flex; align-items: center; gap: .55rem; font-size: .85rem; }
+.financial-scroll { overflow: auto; max-width: 100%; border: 1px solid var(--border); border-radius: 6px; }
+.financial table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.financial caption { text-align: left; padding: .65rem; background: var(--surface-2); color: var(--text-2); }
+.financial th, .financial td { padding: .65rem; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+.financial thead th { background: var(--surface-2); font-size: .75rem; color: var(--text-2); }
+.financial th[scope=row] { min-width: 160px; }
+.financial td input[type=number] { min-width: 90px; }
+.financial .financial-text-button { padding: 0; border: 0; background: transparent; text-align: left; color: var(--accent); }
+.financial-selected { background: var(--accent-soft); }
+.financial-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+.financial-cards article { border: 1px solid var(--border); border-radius: 6px; padding: 1rem; }
+.financial-cards h3 { margin-top: 0; }
+.financial-cards strong { font-size: 1.5rem; }
+.financial-cards p { font-size: .82rem; color: var(--text-2); }
+.financial-provenance { display: grid; grid-template-columns: 140px 1fr; gap: .5rem; margin: 0; }
+.financial-provenance dd { margin: 0; overflow-wrap: anywhere; }
+.financial pre { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--surface-2); padding: 1rem; font-size: .75rem; }
+.financial-empty { background: var(--surface-2); padding: 1.3rem; color: var(--text-2); border-radius: 6px; }
+.financial-actions { justify-content: flex-start; }
+@media (max-width: 650px) { .financial section { padding: .8rem; } .financial-provenance { grid-template-columns: 1fr; } .financial-heading { align-items: flex-start; } }

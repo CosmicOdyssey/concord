@@ -337,3 +337,7 @@ Two findings from D that the final numbers must handle:
   1.32x live vs 1.28x in the grid for US-Northeast. Fixed: the solver now runs to a fixed evaluation budget.
 - **Near-ties.** "Share faster" counted near-ties. The API now also reports a material threshold
   (>= 1 month): "91% faster" is 62% at >= 1 month.
+
+## Sponsor-funded Financial Coordination pilot
+
+The additive **Financial Coordination** tab provides a live, explicitly synthetic financial demonstration linked to existing illustrative public-trial protocols. Coverage review, budget-constrained site alternatives, a three-party transfer/resource ledger, reinvestment and HTML/JSON evidence exports are available without a registry database. No insurer partnership, coverage approval, observed savings or clinical benefit is claimed. See [demo setup, equations, limitations and verification](docs/financial/README.md).

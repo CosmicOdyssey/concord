@@ -79,6 +79,7 @@ def _meta() -> dict:
         con.close()
 
 
+app.include_router(__import__("concord.financial", fromlist=["router"]).router)
 app.include_router(findings_api.router)  # findings landing page (W3)
 
 

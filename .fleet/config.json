@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "name": "concord-financial-coordination",
+    "languages": [],
+    "metadata": {}
+  },
+  "repository": {
+    "provider": "github"
+  },
+  "instructions": {
+    "repository": "AGENTS.md"
+  },
+  "verification": {
+    "stopOnFailure": true,
+    "timeoutMs": 120000,
+    "maxOutputBytes": 100000,
+    "checks": [
+      {
+        "id": "backend",
+        "label": "Backend tests",
+        "command": ".venv/bin/python",
+        "args": [
+          "-m",
+          "pytest",
+          "-q"
+        ],
+        "cwd": "backend",
+        "required": true
+      },
+      {
+        "id": "frontend-tests",
+        "label": "Financial client contracts",
+        "command": "npm",
+        "args": [
+          "run",
+          "test:financial"
+        ],
+        "cwd": "frontend",
+        "required": true
+      },
+      {
+        "id": "frontend-build",
+        "label": "Typecheck and build",
+        "command": "npm",
+        "args": [
+          "run",
+          "build"
+        ],
+        "cwd": "frontend",
+        "required": true
+      },
+      {
+        "id": "frontend-lint",
+        "label": "Lint",
+        "command": "npm",
+        "args": [
+          "run",
+          "lint"
+        ],
+        "cwd": "frontend",
+        "required": true
+      }
+    ]
+  },
+  "tools": [
+    {
+      "id": "github",
+      "adapter": "github-cli",
+      "enabled": true,
+      "mode": "read-only",
+      "capabilities": [
+        "repository-discovery",
+        "pr-inspect",
+        "ci-inspect",
+        "diff-retrieval"
+      ]
+    }
+  ],
+  "capabilities": {
+    "codex": [
+      "architecture",
+      "implementation",
+      "final-review",
+      "branch-create",
+      "commit",
+      "pr-create",
+      "pr-inspect",
+      "ci-inspect",
+      "task-write",
+      "task-publish",
+      "task-close",
+      "workflow-write",
+      "process-execute",
+      "process-stop",
+      "live-acceptance-record",
+      "policy-override"
+    ],
+    "copilot": [
+      "trace",
+      "test",
+      "audit",
+      "bounded-implementation"
+    ],
+    "gemini": [
+      "independent-review",
+      "large-context-investigation"
+    ],
+    "antigravity": [
+      "independent-review",
+      "adversarial-review",
+      "architecture-investigation",
+      "defect-analysis",
+      "test-gap-analysis",
+      "large-context-investigation"
+    ],
+    "sentry": [
+      "runtime-error-evidence"
+    ],
+    "datadog": [
+      "telemetry-evidence"
+    ],
+    "blackfire": [
+      "performance-evidence"
+    ],
+    "camber": [
+      "compute-job"
+    ]
+  },
+  "deployment": {
+    "environments": [],
+    "productionPolicy": "approval-required",
+    "metadata": {}
+  },
+  "risk": {
+    "paths": [
+      {
+        "pattern": ".github/workflows/**",
+        "level": "high",
+        "reason": "CI and release control plane"
+      },
+      {
+        "pattern": "**/migrations/**",
+        "level": "high",
+        "reason": "Persistent data changes"
+      },
+      {
+        "pattern": "**/*secret*",
+        "level": "high",
+        "reason": "Potential credential material"
+      },
+      {
+        "pattern": "**/auth/**",
+        "level": "high",
+        "reason": "Authentication and authorization boundary"
+      },
+      {
+        "pattern": "**/billing/**",
+        "level": "high",
+        "reason": "Financial behavior"
+      },
+      {
+        "pattern": "**/queues/**",
+        "level": "medium",
+        "reason": "Queue delivery semantics"
+      },
+      {
+        "pattern": "**/adapters/**",
+        "level": "medium",
+        "reason": "Provider abstraction boundary"
+      }
+    ],
+    "operations": {
+      "production-deploy": "approval-required",
+      "destructive-migration": "approval-required",
+      "secret-mutation": "approval-required",
+      "branch-delete": "approval-required",
+      "force-push": "approval-required",
+      "production-data-mutation": "approval-required",
+      "credential-change": "approval-required"
+    }
+  },
+  "context": {
+    "include": [
+      "README.md",
+      "AGENTS.md",
+      "package.json",
+      "pyproject.toml",
+      "Cargo.toml",
+      "go.mod",
+      "docs/architecture.md"
+    ],
+    "exclude": [
+      "node_modules/**",
+      "dist/**",
+      "coverage/**",
+      ".git/**",
+      ".fleet/state/**"
+    ],
+    "maxBytes": 100000
+  },
+  "ci": {
+    "setup": []
+  },
+  "integrations": {
+    "checks": []
+  },
+  "processes": [],
+  "telemetry": {
+    "estimatedBytesPerToken": 4
+  }
+}
