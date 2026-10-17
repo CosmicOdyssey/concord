@@ -58,3 +58,10 @@ Judgment calls made without being able to ask. Newest last. Each says what and w
 15. **Robustness grids regenerated** (US-Northeast, Regeneron) with the deterministic solver at beta 0.093 and its
     CI bounds (0, 0.297) plus the assumed 1.0. They are in-sample model outputs and appear only under Research.
     Pure coordination with no losers stays at 1.00-1.04x for every data-supported beta in US-Northeast.
+16. **Overlap view no longer shows estimated window ends after the registry snapshot.** QA found dates such as
+    2027-10-15 (start + 65% of the time to the registered primary completion) next to the view's own "no dates
+    after the registry snapshot" note. They are projections, so they now read "after the snapshot". Past
+    durations ("months both recruiting") stay, bounded by the snapshot.
+17. **Polish only after QA**: Clear it hint now says clears take 1-2 minutes (measured 96 s); the old research
+    term sheet tab is labelled "Term sheet (old)"; QA harness labels updated to match. The terms budget table
+    still needs a sideways swipe at 390 px; fixing it would be a restyle, so it is left and noted.

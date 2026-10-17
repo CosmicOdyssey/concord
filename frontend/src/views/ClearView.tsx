@@ -329,7 +329,7 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
           <button className="btn btn-primary btn-big" onClick={() => clear.run(form)} disabled={clear.loading}>
             {clear.loading ? 'Clearing…' : 'Clear the market'}
           </button>
-          <span className="muted small">Clears take about 15–25 s{form.region === 'US' ? ' (US-wide: about 25 s or more)' : ''}.</span>
+          <span className="muted small">Clears take about 1–2 minutes{form.region === 'US' ? ' (US-wide: longer)' : ''}.</span>
         </div>
         <details className="assumptions" open={modified || undefined}>
           <summary>Assumptions {modified && <Badge tone="info">modified</Badge>}</summary>

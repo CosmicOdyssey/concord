@@ -837,6 +837,14 @@ function SourceBadge({ t }: { t: OverlapTrial }) {
   )
 }
 
+/** Estimated window ends later than the registry snapshot would be projections, so they are not shown as dates. */
+function WindowEnd({ t, snapshot }: { t: OverlapTrial; snapshot: string }) {
+  if (!t.estimated_window_end) return <span className="muted">none (no completion date registered)</span>
+  if (t.estimated_window_end > snapshot)
+    return <span className="muted" title="Start + 65% of the time to the registered primary completion falls after the snapshot; not shown as a date">after the snapshot</span>
+  return <>{t.estimated_window_end}</>
+}
+
 function StatusNote({ t, snapshot }: { t: OverlapTrial; snapshot: string }) {
   return (
     <>
@@ -874,7 +882,9 @@ function TrialCard({ t, worldwide, snapshot }: { t: OverlapTrial; worldwide: boo
         <dt>Start</dt>
         <dd>{t.start_date}</dd>
         <dt>Estimated window end</dt>
-        <dd>{t.estimated_window_end ?? <span className="muted">none (no completion date registered)</span>}</dd>
+        <dd>
+          <WindowEnd t={t} snapshot={snapshot} />
+        </dd>
         <dt>CT.gov status at {snapshot}</dt>
         <dd>
           <StatusNote t={t} snapshot={snapshot} />
@@ -1202,7 +1212,7 @@ function TrialRow({
           {phaseLabel(t.phases)} · started {t.start_date}
         </div>
         <div>
-          Estimated window end {t.estimated_window_end ?? <span className="muted">none (no completion date registered)</span>}
+          Estimated window end <WindowEnd t={t} snapshot={snapshot} />
         </div>
         <div>
           CT.gov status at {snapshot}: <StatusNote t={t} snapshot={snapshot} />

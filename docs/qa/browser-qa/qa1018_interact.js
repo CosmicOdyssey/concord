@@ -80,7 +80,7 @@ const wait = (page, fn, arg, timeout = 90000) => page.waitForFunction(fn, { time
   await page.goto(`${BASE}/#research/clear`, { waitUntil: 'domcontentloaded' })
   await Q.waitCleared(page)
   const subs = {}
-  for (const label of ['Robustness', 'Map', 'Portfolio clearing', 'Price tags', 'Term sheet', 'Model & data', 'Clear it']) {
+  for (const label of ['Robustness', 'Map', 'Portfolio clearing', 'Price tags', 'Term sheet (old)', 'Model & data', 'Clear it']) {
     await Q.clickTab(page, label)
     await Q.sleep(1500)
     try {

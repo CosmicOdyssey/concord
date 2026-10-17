@@ -7,7 +7,7 @@ export const RESEARCH_TABS = [
   { id: 'map', label: 'Map' },
   { id: 'portfolio', label: 'Portfolio clearing' },
   { id: 'prices', label: 'Price tags' },
-  { id: 'terms', label: 'Term sheet' },
+  { id: 'terms', label: 'Term sheet (old)' },
   { id: 'model', label: 'Model & data' },
 ] as const
 export type ResearchTabId = (typeof RESEARCH_TABS)[number]['id']
