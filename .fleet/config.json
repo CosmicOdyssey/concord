@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "project": {
-    "name": "CONCORD-INDEPENDENT-ACCEPTANCE",
+    "name": "CONCORD-FINAL-INTEGRATION",
     "languages": [],
     "metadata": {}
   },
@@ -46,6 +46,17 @@
         "args": [
           "run",
           "test:portfolio"
+        ],
+        "cwd": "frontend",
+        "required": true
+      },
+      {
+        "id": "comparison-client",
+        "label": "Existing comparison client contracts",
+        "command": "npm",
+        "args": [
+          "run",
+          "test:compare"
         ],
         "cwd": "frontend",
         "required": true

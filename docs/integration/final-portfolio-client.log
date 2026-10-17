@@ -1,0 +1,18 @@
+
+> frontend@0.0.0 test:portfolio
+> node --experimental-strip-types --test tests/portfolio.test.mjs
+
+✔ complete portfolio inputs and seed cross the API boundary unchanged (8.784208ms)
+✔ nonfinite nested edits fail before they become null (0.219083ms)
+✔ reports point to immutable saved results rather than recomputing inputs (0.121125ms)
+✔ saved evidence loads by validated identifier (0.413375ms)
+✔ JSON import must validate before entering the editor state (0.205834ms)
+✔ validation errors and cancellation propagate (0.236917ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 78.081834

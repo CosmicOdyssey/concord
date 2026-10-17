@@ -1,0 +1,129 @@
+Browser tab: 1783081799, Title: "Sponsor budget · Concord", URL: "http://127.0.0.1:5178/#financial".
+0 AXWebArea Sponsor budget · Concord, URL: 127.0.0.1:5178/#financial
+	1 container root
+		2 link Description: Skip to content, Value: 127.0.0.1:5178/#main-content
+		3 container
+			4 link Description: Back to the Concord home page, Value: 127.0.0.1:5178/#home
+			5 container Display density
+				6 checkbox Simple, Help: One headline and one number per section. Hover or focus for details. Key caveats stay visible., Value: 1
+				7 checkbox Detailed, Help: Every table, note and source, at full density., Value: 0
+			8 container Color theme
+				9 checkbox Description: Light theme, Value: 0
+				10 checkbox Description: Dark theme, Value: 0
+				11 checkbox Description: Match system theme, Value: 1
+			12 tab group Views
+				13 tab (selectable, settable, boolean) Protocol to terms, Help: A schedule of assessments, turned into a coverage grid, a budget and a term sheet., Value: 0
+				14 tab (selectable, settable, boolean) Portfolio overlap, Help: Where one sponsor's trials share registered sites and eligible patients., Value: 0
+				15 tab (selectable, settable, boolean) Findings, Help: What we tested, including results that weakened the original idea., Value: 0
+				16 tab (selectable, settable, boolean) Site scores Historical, not a forecast, Help: Historical per-site enrollment evidence, and how well it held up on later trials., Value: 0
+				17 tab (selectable, settable, boolean) Research In-sample model outputs, Help: The earlier site-clearing views, kept for reference. Not product claims., Value: 0
+		18 container main-content
+			22 container
+				23 heading Sponsor budget, Value: 1
+					24 text Sponsor budget
+				25 text A sponsor-budget worksheet on synthetic site inputs: who pays for each protocol item, and what changes the sponsor’s commitment. Synthetic worksheet
+			26 container
+				27 text Synthetic worksheet. Every site, cost, capacity and payer share here is a synthetic input, not a registered site fact or a negotiated price, and no insurer takes part. Coverage classifications need human review. The public trial identifier gives context only.
+				28 button (collapsed) All 15 limitations, Secondary Actions: Expand
+					29 text All
+					30 text 15
+					31 text  limitations
+			32 container Worksheet inputs
+				33 container
+					34 text Public trial context
+					35 pop up button (collapsed, settable) Public trial context, Secondary Actions: Expand, Value: NCT05800015 · Fianlimab + cemiplimab + chemotherapy vs placebo + cemiplimab + chemotherapy, first-line advanced NSCLC
+						36 menu
+							37 (selected) NCT05800015 · Fianlimab + cemiplimab + chemotherapy vs placebo + cemiplimab + chemotherapy, first-line advanced NSCLC
+							38 NCT06627647 · Rilvegostomig vs pembrolizumab, each with platinum + pemetrexed, first-line non-squamous NSCLC (ARTEMIDE-Lung03)
+				39 link Description: Public registry record ↗, Value: clinicaltrials.gov/study/NCT05800015
+				40 button About the public record
+				41 container
+					42 text Sponsor budget (USD)
+					43 stepper (settable, integer) Sponsor budget (USD), Value: 1500000
+				44 container
+					45 text Participant target (demo value)
+					46 stepper (settable, integer) Participant target (demo value), Value: 60
+				47 container
+					48 text Budgeted contract period (months)
+					49 stepper (settable, integer) Budgeted contract period (months), Value: 24
+				50 container
+					51 text Sponsor administration (USD)
+					52 stepper (settable, integer) Sponsor administration (USD), Value: 120000
+				53 container
+					54 text The participant target is a demo value, the same in every scenario, and unrelated to the registered trial target. The budgeted contract period is an input that prices each site’s monthly cost. It is not a forecast.
+				55 button Compare budget scenarios
+				56 text Comparison computed from these inputs. Every figure rests on synthetic inputs.
+			57 container Budget scenarios
+				58 heading Budget scenarios, Value: 2
+					59 text Budget scenarios
+				85 button (collapsed) Description: Details: Budget scenarios, Secondary Actions: Expand
+				60 text Same participant target, budget and budgeted contract period in every scenario; only the inputs listed per scenario differ.
+				86 container
+					87 text Scenarios are listed A to E and are not ranked; none is preferred. Synthetic inputs
+				88 content list Scenarios A to E
+					89 container
+						90 button A. Existing site network
+							91 text A
+							92 text .
+							93 text Existing site network
+						94 text $657,800 Feasible under these inputs 43.9%  of budget Reference: B to E are compared with A.
+					95 container
+						96 button B. Lower sponsor administrative cost
+							97 text B
+							98 text .
+							99 text Lower sponsor administrative cost
+						100 text $627,800 Feasible under these inputs 41.9%  of budget
+						101 text −$30,000
+						102 text  against A : assumed 25% cut in sponsor administration.
+					103 container
+						104 button C. Site network with enough stated capacity
+							105 text C
+							106 text .
+							107 text Site network with enough stated capacity
+						108 text $657,800 Feasible under these inputs 43.9%  of budget
+						109 text $0
+						110 text  against A : no sites added, because the existing network’s stated capacity covers the target.
+					111 container
+						112 button D. Expanded participant access support
+							113 text D
+							114 text .
+							115 text Expanded participant access support
+						116 text $675,800 Feasible under these inputs 45.1%  of budget
+						117 text +$18,000
+						118 text  against A : participant access support +$300 each.
+					119 container
+						120 button E. B + C + D combined
+							121 text E
+							122 text .
+							123 text B + C + D combined
+						124 text $645,800 Feasible under these inputs 43.1%  of budget
+						125 text −$12,000
+						126 text  against A : assumed 25% cut in sponsor administration (−$30,000); participant access support +$300 each (+$18,000); no sites added, because the existing network’s stated capacity covers the target.
+				127 text Sponsor commitment includes held contingency. Bar: share of the sponsor budget. Hover a name for its definition.
+			61 container Who pays, per participant
+				62 heading Who pays, per participant, Value: 2
+					63 text Who pays, per participant
+				64 container
+					65 text Medicare and insurer amounts for routine care are benchmarks: they inform fair-market-value reasoning and are inputs to the sponsor's budget negotiation with each site or hospital.
+					66 button (collapsed) How payer amounts are used, Secondary Actions: Expand
+				67 container
+					68 text Payer: Medicare; insurer share 80% of the benchmark (clinical lab tests: 100% of the CLFS amount).  In this worksheet, payer type, payer share and the commercial-rate assumption change only the insurer and participant lines; the sponsor commitment does not fall because an insurer pays more for routine care.
+				69 container
+					70 text Sponsor pays $3,083.33 Research items at 1.00x the fee-schedule benchmark (synthetic negotiated rate, not an FMV finding) Insurer (illustrative) $4,807.30 Routine care that may be billed to insurance, pending coverage analysis Participant cost sharing (illustrative) $976.20 Routine-care coinsurance at the stated share, before deductibles and secondary coverage Held as sponsor contingency $2,500.00 Investigational-supply reserve $2,500.00 (operator assumption, not a drug price); unknown, conditional or review-required lines $0.00 From the coverage worksheet: 116 protocol items for NCT05800015, per participant.
+			71 container Other inputs, the worksheet and the report
+				72 heading Other inputs, the worksheet and the report, Value: 2
+					73 text Other inputs, the worksheet and the report
+				74 text Scenario, site, coverage and sensitivity inputs, and the exports. Any edit clears the comparison until you compare again.
+				75 button (collapsed) Scenario inputs, Secondary Actions: Expand
+					76 text Scenario inputs
+				77 button (collapsed) Synthetic sites (4), Secondary Actions: Expand
+					78 text Synthetic sites (4)
+				79 button (collapsed) Coverage worksheet (116 protocol items), Secondary Actions: Expand
+					80 text Coverage worksheet (116 protocol items)
+				81 button (collapsed) Cost sensitivity inputs, Secondary Actions: Expand
+					82 text Cost sensitivity inputs
+				83 button (collapsed) Report and exports, Secondary Actions: Expand
+					84 text Report and exports
+		21 text Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates; Sponsor budget is a worksheet on synthetic inputs with no time model. Decision support only, not clinical, legal or coverage advice.
+
+The focused UI element is 0 AXWebArea Sponsor budget · Concord, URL: 127.0.0.1:5178/#financial
