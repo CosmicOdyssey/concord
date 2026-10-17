@@ -35,8 +35,8 @@ export function LineBreakdown({
   /** auto follows Simple / Detailed; hover cards use compact. */
   variant?: 'auto' | 'compact' | 'full'
   editable?: boolean
-  /** Shown while no scope is available (e.g. the landing page with the API down). */
-  fallback?: LineDetail
+  /** Shown instead of an error box when the breakdown cannot be loaded (the landing page with the API down). */
+  fallback?: ReactNode
   /** Inside a hover card: no nested tooltips (opening one would close the card); sources are written out. */
   inCard?: boolean
 }) {
@@ -45,10 +45,11 @@ export function LineBreakdown({
   const [retry, setRetry] = useState(0)
   const url = scope && scope.siteA ? lineDetailUrl(scope, nodeId) : null
   const st = useLineDetail(url, retry)
-  const data = st.data && st.data.node_id === nodeId ? st.data : !url ? (fallback ?? null) : null
+  const data = st.data && st.data.node_id === nodeId ? st.data : null
   const full = variant === 'full' || (variant === 'auto' && detailed)
   if (!data) {
-    if (st.error) return <ErrorBox error={st.error} onRetry={() => setRetry((n) => n + 1)} />
+    if (st.error) return fallback !== undefined ? <>{fallback}</> : <ErrorBox error={st.error} onRetry={() => setRetry((n) => n + 1)} />
+    if (!url && fallback !== undefined) return <>{fallback}</>
     return <Loading label="Building the price step by step…" />
   }
   if (!data.applicable) return <p className="small muted lb-na">{data.reason}</p>
@@ -216,12 +217,17 @@ function FullTable({ d, scope }: { d: LineDetail; scope: LineDetailScope | null 
             </th>
             <th scope="col" rowSpan={2} className="num lb-units">
               Units for this code <InfoTip label="What the units are" content={d.glossary?.rvu ?? ''} />
-              <span className="lb-src">{d.units_source?.label}</span>
+              <span className="lb-src">
+                {d.units_source?.label} <InfoTip label="Exact file and columns for the units" content={d.units_source?.detail ?? ''} />
+              </span>
             </th>
             {sides.map(([k, s]) => (
               <th key={k} scope="colgroup" colSpan={span} className="lb-site">
                 {k} · {sideTitle(s)}
-                <span className="lb-src">{s.adjustment_source.label}</span>
+                <span className="lb-src">
+                  {s.adjustment_source.label}{' '}
+                  {s.adjustment_source.detail && <InfoTip label={`Exact file and row for ${k}'s adjustments`} content={s.adjustment_source.detail} />}
+                </span>
               </th>
             ))}
           </tr>
@@ -266,10 +272,11 @@ function FullTable({ d, scope }: { d: LineDetail; scope: LineDetailScope | null 
             <th scope="row">
               × Medicare dollars per unit (2026 conversion factor) <InfoTip label="About the conversion factor" content={d.glossary?.nonqpp ?? ''} />
               <span className="lb-src">
-                {d.conversion_factor_source?.label}: {d.conversion_factor_source?.detail}
+                {d.conversion_factor_source?.label}, the same in every locality{' '}
+                <InfoTip label="Exact file and column for the conversion factor" content={d.conversion_factor_source?.detail ?? ''} />
               </span>
             </th>
-            <td className="num muted">same at every site</td>
+            <td />
             {sides.map(([k]) => (
               <td key={k} className="num" colSpan={span}>
                 × {usd4(d.conversion_factor)}
@@ -483,9 +490,7 @@ function Notes({ d, full }: { d: LineDetail; full: boolean }) {
           </ul>
         </div>
       )}
-      <p className="lb-muted">
-        {d.rounding_note} {d.units_source?.detail}.
-      </p>
+      <p className="lb-muted">{d.rounding_note}</p>
       <p className="lb-muted">
         {lookup} Search code {d.code} for 2026 at the site’s Medicare locality and compare the non-facility amount.
       </p>

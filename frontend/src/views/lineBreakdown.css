@@ -143,14 +143,25 @@
 }
 /* inside a hover card: keep the compact table narrow enough for a phone */
 .hc-card .lb {
-  width: min(26rem, calc(100vw - 48px));
+  width: min(20rem, calc(100vw - 48px));
+}
+.hc-card .lb-tbl th,
+.hc-card .lb-tbl td {
+  padding: 0.3rem 0.375rem;
 }
 .hc-card .lb-tbl tbody th {
-  min-width: 7.5rem;
+  min-width: 6rem;
 }
 .tf-featured .lb,
 .lb-wrap .lb {
   margin-top: var(--sp-2);
+}
+/* landing: the Detailed term-sheet line */
+.lp-sheet-build {
+  margin-top: var(--sp-4);
+}
+.lp-sheet .lb-tbl thead th {
+  background: transparent;
 }
 .lb-stack {
   display: block;
@@ -163,7 +174,18 @@
   .lb-tbl tbody th {
     min-width: 7.5rem;
   }
-  .lb-full tbody th {
-    min-width: 9rem;
+  /* the step names stay in view while the site columns scroll beside them */
+  .lb-full tbody th,
+  .lb-full thead th.lb-step {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    min-width: 8.5rem;
+    max-width: 9.5rem;
+    background: var(--surface);
+    box-shadow: 1px 0 0 var(--rule);
+  }
+  .lb-full .lb-final th {
+    background: var(--surface-2);
   }
 }

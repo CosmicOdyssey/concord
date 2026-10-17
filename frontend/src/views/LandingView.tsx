@@ -31,7 +31,18 @@ import { highShare, pctInt, shadeStep } from '../shade'
 import { skipTo } from '../skip'
 import { DISCLAIMER, ILLUSTRATIVE, termsApi } from '../termsFlowApi'
 import { ThemeControl } from '../theme'
+import { LineDetailContext, type LineDetailScope } from '../lineDetailApi'
+import { LineBreakdown } from './LineBreakdown'
 import './landing.css'
+
+// The Detailed term-sheet line: CT chest at cycle 7 day 1, priced step by step at the same two sites and 100% of Medicare.
+const CT_NODE = 'C7D1:ct_chest'
+const LANDING_LINE_SCOPE: LineDetailScope = {
+  nct: TERMS_NCT,
+  siteA: TERMS_SITE_A,
+  siteB: TERMS_SITE_B,
+  params: { multiplier: 1, overrides: {}, standard: {} },
+}
 
 const SECTIONS = ['terms', 'overlap', 'tested'] as const
 type SectionId = (typeof SECTIONS)[number]
@@ -373,14 +384,19 @@ function TermsWindow({ f }: { f: TermsFragment }) {
                   </dd>
                 </div>
                 <div>
-                  <dt>Formula (Site A)</dt>
-                  <dd className="num lp-formula">{f.ctFormulaA}</dd>
-                </div>
-                <div>
                   <dt>Source</dt>
                   <dd>CMS 2026 Physician Fee Schedule, RVU file, October release (rvu26d.zip)</dd>
                 </div>
               </dl>
+              <p className="lp-sheet-h lp-sheet-build">How the price is built</p>
+              <LineDetailContext.Provider value={LANDING_LINE_SCOPE}>
+                <LineBreakdown
+                  nodeId={CT_NODE}
+                  variant="compact"
+                  editable={false}
+                  fallback={<p className="num lp-formula">Site A: {f.ctFormulaA}</p>}
+                />
+              </LineDetailContext.Provider>
             </div>
           )}
         </div>
