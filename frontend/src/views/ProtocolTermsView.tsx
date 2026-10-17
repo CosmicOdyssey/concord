@@ -41,6 +41,8 @@ import {
   ruleTitle,
 } from '../termsFlowApi'
 import { CoverageList, CoverageSplit, NodeDetail, RuleChip, RuleList, ScheduleGrid, VisitTimeline } from './ProtocolTermsSchedule'
+import { AnchorChip, BandInputs, BudgetTransparency, CompareWhy, GpciLabel, LineRange, OverheadInput } from './TermsAnchoring'
+import { GPCI_PLAIN } from './termsAnchoringText'
 import './protocolTerms.css'
 
 type Async<T> = { status: 'idle' } | { status: 'loading' } | { status: 'error'; error: string } | { status: 'ok'; data: T; pending: boolean }
@@ -210,6 +212,12 @@ export default function ProtocolTermsView() {
   const [pickB, setSiteB] = useState('')
   const [selected, setSelected] = useState<string | null>(null)
   const [withCompare, setWithCompare] = useState(true)
+  // Range on coded lines, percent of Medicare (an assumption; default 100%-150%).
+  const [band, setBand] = useState<[number, number]>(() => {
+    const v = readStore<unknown>('tf:band', null)
+    return Array.isArray(v) && v.length === 2 && v.every((x) => typeof x === 'number' && x >= 10 && x <= 500) && v[0] <= v[1] ? [v[0], v[1]] : [100, 150]
+  })
+  useEffect(() => writeStore('tf:band', band), [band])
 
   const selectTrial = useCallback((id: string) => {
     setNct(id)
@@ -260,7 +268,10 @@ export default function ProtocolTermsView() {
     return Object.fromEntries(Object.entries(overrides).filter(([k, v]) => ids.has(k) && (v === 'routine' || v === 'research'))) as Overrides
   }, [proto, overrides])
   const multiplier = Math.min(500, Math.max(10, Number.isFinite(multPct) ? multPct : 100)) / 100
-  const params: PriceParams = useMemo(() => ({ multiplier, overrides: validOverrides, standard }), [multiplier, validOverrides, standard])
+  const params: PriceParams = useMemo(
+    () => ({ multiplier, overrides: validOverrides, standard, band: [band[0] / 100, band[1] / 100] as [number, number] }),
+    [multiplier, validOverrides, standard, band],
+  )
   const dparams = useDebounced(params, 250)
   const pkey = JSON.stringify(dparams)
   const siteOk = !!proto && !!siteA
@@ -273,6 +284,7 @@ export default function ProtocolTermsView() {
   const states = useMemo(() => (proto ? nodeStates(proto, overrides) : new Map<string, NodeState>()), [proto, overrides])
   const bud = budget.status === 'ok' && budget.data.nct_id === nct ? budget.data : null
   const budStale = !!bud && budget.status === 'ok' && (budget.pending || pkey !== JSON.stringify(params))
+  const overItem = bud?.standard_schedule.find((i) => i.id === 'overhead')
   const cmpData = cmp.status === 'ok' && cmpOk && cmp.data.nct_id === nct ? cmp.data : null
   const cmpStale = !!cmpData && cmp.status === 'ok' && (cmp.pending || pkey !== JSON.stringify(params))
   const lineById = useMemo(() => new Map(bud?.visits.flatMap((v) => v.lines.map((l) => [l.node_id, l] as const)) ?? []), [bud])
@@ -480,6 +492,11 @@ export default function ProtocolTermsView() {
                   <li>
                     <Qualifier tone="muted">Coded items at {pctText(bud.multiplier)} of Medicare</Qualifier>
                   </li>
+                  {overItem?.amount != null && (
+                    <li>
+                      <Qualifier info={overItem.assumption_note}>Overhead {pctText(overItem.amount)} is an assumption</Qualifier>
+                    </li>
+                  )}
                   {bud.totals.per_participant_placeholder > 0 && (
                     <li>
                       <Qualifier>{PLACEHOLDER_TAG}</Qualifier>
@@ -518,6 +535,19 @@ export default function ProtocolTermsView() {
                         <span aria-hidden="true">%</span>
                       </span>
                     </label>
+                    <BandInputs lo={band[0]} hi={band[1]} onChange={(lo, hi) => setBand([lo, hi])} />
+                    {overItem && overItem.default != null && (
+                      <OverheadInput
+                        value={standard.overhead ?? overItem.default}
+                        def={overItem.default}
+                        onChange={(v) => {
+                          const next = { ...standard }
+                          if (v === null) delete next.overhead
+                          else next.overhead = v
+                          setStandard(next)
+                        }}
+                      />
+                    )}
                   </div>
                 )}
                 {bud && <LocalityLine b={bud} />}
@@ -538,7 +568,9 @@ export default function ProtocolTermsView() {
               )
             }
             detailsLabel="Visit lines, other payments and the proposed standard schedule"
-          />
+          >
+            {bud && <BudgetTransparency b={bud} stale={budStale} />}
+          </Step>
 
           {/* 4. Compare */}
           <Step
@@ -547,9 +579,9 @@ export default function ProtocolTermsView() {
             info={<CompareInfo />}
             lede={
               cmpData ? (
-                <CompareSentence c={cmpData} />
+                <CompareWhy c={cmpData} />
               ) : (
-                'Same protocol, same coverage labels, same multiplier at two sites. Every price difference traces to the published locality factors (GPCIs).'
+                'Same protocol, same coverage labels, same multiplier at two sites. Every price difference traces to Medicare’s published geographic adjustments (GPCIs).'
               )
             }
             quals={
@@ -900,8 +932,11 @@ function PricingInfo() {
         Physician services: the CMS 2026 physician fee schedule at the site’s Medicare locality, (work RVU × work GPCI + PE RVU × PE GPCI + MP RVU ×
         MP GPCI) × conversion factor, times the % of Medicare.
       </p>
-      <p>Lab tests: the CMS 2026 clinical lab fee schedule, national amounts.</p>
-      <p>Non-procedure fees, coordinator time and overhead: Concord’s proposed standard schedule, the same at every site.</p>
+      <p>
+        Medicare’s non-facility rates (the office-setting practice expense RVU) are used; hospital outpatient facility fees (OPPS) are not included.
+      </p>
+      <p>Lab tests: the CMS 2026 clinical lab fee schedule, one national amount per test, so lab prices do not vary by site.</p>
+      <p>Non-procedure fees and coordinator time: Concord’s proposed standard schedule, the same at every site. Overhead is an assumption you can edit.</p>
       <span className="hc-src">{PROPOSED_STANDARD_TAG}</span>
     </>
   )
@@ -921,13 +956,22 @@ function LocalityLine({ b }: { b: Budget }) {
                 Locality {l.code} · {localityTitle(l.name)} ({l.state})
               </span>
               <span className="tf-hc-kv">
-                <span>Work GPCI</span> <span className="num">{l.gpci_work.toFixed(3)}</span>
+                <span>
+                  {GPCI_PLAIN.work.label} <span className="muted">(work GPCI)</span>
+                </span>{' '}
+                <span className="num">{l.gpci_work.toFixed(3)}</span>
               </span>
               <span className="tf-hc-kv">
-                <span>Practice expense GPCI</span> <span className="num">{l.gpci_pe.toFixed(3)}</span>
+                <span>
+                  {GPCI_PLAIN.pe.label} <span className="muted">(practice expense GPCI)</span>
+                </span>{' '}
+                <span className="num">{l.gpci_pe.toFixed(3)}</span>
               </span>
               <span className="tf-hc-kv">
-                <span>Malpractice GPCI</span> <span className="num">{l.gpci_mp.toFixed(3)}</span>
+                <span>
+                  {GPCI_PLAIN.mp.label} <span className="muted">(malpractice GPCI)</span>
+                </span>{' '}
+                <span className="num">{l.gpci_mp.toFixed(3)}</span>
               </span>
               <span className="tf-hc-kv">
                 <span>Conversion factor</span> <span className="num">{b.conversion_factor?.toFixed(4) ?? '—'}</span>
@@ -998,6 +1042,12 @@ function PayerFigure({ b, stale }: { b: Budget; stale: boolean }) {
       <div className="tf-payer tf-payer-sponsor">
         <p className="tf-payer-label">Paid by the sponsor, per participant</p>
         <p className="tf-payer-value num">{usd(t.per_participant)}</p>
+        {b.band && t.per_participant_low != null && t.per_participant_high != null && (
+          <p className="tf-payer-sub">
+            Range <span className="num">{usd(t.per_participant_low)}</span> – <span className="num">{usd(t.per_participant_high)}</span> at{' '}
+            {pctText(b.band.lo)}–{pctText(b.band.hi)} of Medicare (assumption)
+          </p>
+        )}
         <dl className="tf-compose">
           <div>
             <dt>
@@ -1045,13 +1095,13 @@ function PayerFigure({ b, stale }: { b: Budget; stale: boolean }) {
               <HoverCard
                 content={
                   <>
-                    <span className="hc-title">Institutional overhead</span>
+                    <span className="hc-title">Institutional overhead (assumption)</span>
                     {over?.amount != null ? `${pctText(over.amount)} ${over.unit_label}.` : over?.unit_label}
-                    <span className="hc-src">{PROPOSED_STANDARD_TAG}</span>
+                    <span className="hc-src">{over?.assumption_note ?? PROPOSED_STANDARD_TAG}</span>
                   </>
                 }
               >
-                Overhead
+                Overhead{over?.amount != null ? ` ${pctText(over.amount)}` : ''} (assumption)
               </HoverCard>
             </dt>
             <dd className="num">{usd(t.per_participant_overhead)}</dd>
@@ -1106,7 +1156,7 @@ function VisitChart({ visits }: { visits: VisitBudget[] }) {
                     </span>
                   )}
                   <span className="tf-hc-kv">
-                    <span>Overhead</span> <span className="num">{usd(v.overhead)}</span>
+                    <span>Overhead (assumption)</span> <span className="num">{usd(v.overhead)}</span>
                   </span>
                   <span className="hc-src">
                     Billed to insurance at this visit (Medicare rates, not the sponsor’s): <span className="num">{usd(v.insurance_medicare)}</span>
@@ -1206,15 +1256,21 @@ function LocalityCard({ l, cf, source }: { l: Locality | null; cf: number | null
       </div>
       <dl className="tf-gpci">
         <div>
-          <dt>Work GPCI</dt>
+          <dt>
+            <GpciLabel k="work" />
+          </dt>
           <dd className="num">{l.gpci_work.toFixed(3)}</dd>
         </div>
         <div>
-          <dt>PE GPCI</dt>
+          <dt>
+            <GpciLabel k="pe" />
+          </dt>
           <dd className="num">{l.gpci_pe.toFixed(3)}</dd>
         </div>
         <div>
-          <dt>MP GPCI</dt>
+          <dt>
+            <GpciLabel k="mp" />
+          </dt>
           <dd className="num">{l.gpci_mp.toFixed(3)}</dd>
         </div>
         <div>
@@ -1249,7 +1305,7 @@ function BudgetTable({ b, rules }: { b: Budget; rules: Rule[] }) {
               Coordinator
             </th>
             <th scope="col" className="num tf-hide-sm">
-              Overhead
+              Overhead (assumption)
             </th>
             <th scope="col" className="num">
               Visit payment
@@ -1301,6 +1357,10 @@ function BudgetTable({ b, rules }: { b: Budget; rules: Rule[] }) {
                               <th scope="col" className="num">
                                 Sponsor
                               </th>
+                              <th scope="col" className="num">
+                                Range
+                              </th>
+                              <th scope="col">Anchored to</th>
                               <th scope="col">Provenance</th>
                             </tr>
                           </thead>
@@ -1321,6 +1381,12 @@ function BudgetTable({ b, rules }: { b: Budget; rules: Rule[] }) {
                                 <td>{l.payer === 'Sponsor' ? 'Sponsor' : 'Insurance'}</td>
                                 <td className="num">{usd(l.medicare_amount)}</td>
                                 <td className="num">{l.amount === null ? '—' : usd(l.amount)}</td>
+                                <td className="num">
+                                  <LineRange l={l} />
+                                </td>
+                                <td>
+                                  <AnchorChip l={l} />
+                                </td>
                                 <td className="tf-prov">
                                   <Provenance l={l} mult={b.multiplier} />
                                 </td>
@@ -1571,66 +1637,31 @@ function CompareInfo() {
     <>
       <span className="hc-title">Why two sites price differently</span>
       <p>
+        Medicare adjusts each physician fee for local costs in three parts: {GPCI_PLAIN.work.label.toLowerCase()} (work GPCI),{' '}
+        {GPCI_PLAIN.pe.label.toLowerCase()} (practice expense GPCI) and {GPCI_PLAIN.mp.label.toLowerCase()} (malpractice GPCI).
+      </p>
+      <p>
         Each physician-service line is (work RVU × work GPCI + PE RVU × PE GPCI + MP RVU × MP GPCI) × conversion factor × the % of Medicare. RVUs and
         the conversion factor are national, so the difference between two sites is CF × m × Σ RVU × ΔGPCI.
       </p>
-      <p>Lab fees (national) and the proposed standard schedule are the same at every site. Overhead is charged on the difference.</p>
-    </>
-  )
-}
-
-const PART_NAME = { work: 'physician work', pe: 'practice expense', mp: 'malpractice' } as const
-
-/** The copy deck's difference line (A4), built from the API's decomposition. */
-function CompareSentence({ c }: { c: Compare }) {
-  const sm = c.summary
-  const d = sm.delta_per_participant
-  const where = c.b.locality ? `in ${localityTitle(c.b.locality.name)}` : 'at the national rate'
-  if (Math.abs(d) < 0.005) {
-    const same = !!c.a.locality && !!c.b.locality && c.a.locality.code === c.b.locality.code && c.a.locality.state === c.b.locality.state
-    return (
-      <>
-        Site A and Site B have the same sponsor total per participant
-        {same ? `: both are in Medicare locality ${localityLabel(c.a.locality)}, so every fee-schedule price is the same.` : '.'}
-      </>
-    )
-  }
-  const dir = d < 0 ? 'lower' : 'higher'
-  const parts = (['work', 'pe', 'mp'] as const)
-    .map((k) => ({ k, v: k === 'work' ? sm.from_work : k === 'pe' ? sm.from_pe : sm.from_mp }))
-    .filter((p) => Math.sign(p.v) === Math.sign(sm.delta_research_items))
-    .sort((x, y) => Math.abs(y.v) - Math.abs(x.v))
-  const top = parts[0]
-  const lead = top && Math.abs(top.v) > Math.abs(sm.delta_research_items) / 2 ? 'mostly' : 'the largest part from'
-  return (
-    <>
-      Site B’s sponsor total is <span className="tnum strong">{usd(Math.abs(d))}</span> {dir} per participant because Medicare’s fee schedule prices the
-      same physician services {dir} {where}: <span className="tnum">{usd(Math.abs(sm.delta_research_items))}</span> through CMS’s geographic cost
-      indexes{' '}
-      <span className="nowrap">
-        (<Gloss term="gpci">GPCIs</Gloss>)
-      </span>
-      {top && (
-        <>
-          , {lead} {PART_NAME[top.k]} (<span className="tnum">{usd(Math.abs(top.v))}</span>)
-        </>
-      )}
-      , plus <span className="tnum">{usd(Math.abs(sm.delta_overhead))}</span> of {pctText(sm.overhead_rate)} overhead on that. It reflects the fee
-      schedule, not a saving.
+      <p>
+        Lab fees are one national amount (CLFS) and the proposed standard schedule is the same at every site. Overhead (an assumption) is charged on
+        the difference.
+      </p>
     </>
   )
 }
 
 function CompareFigure({ c, stale }: { c: Compare; stale: boolean }) {
   const sm = c.summary
-  const parts: [string, number][] = [
-    ['Work GPCI', sm.from_work],
-    ['Practice expense GPCI', sm.from_pe],
-    ['Malpractice GPCI', sm.from_mp],
-    [`Overhead (${pctText(sm.overhead_rate)}) on those`, sm.delta_overhead],
-    ['Cent rounding', sm.rounding],
+  const parts: [string, ReactNode, number][] = [
+    ['work', <GpciLabel key="w" k="work" />, sm.from_work],
+    ['pe', <GpciLabel key="p" k="pe" />, sm.from_pe],
+    ['mp', <GpciLabel key="m" k="mp" />, sm.from_mp],
+    ['over', `Overhead (${pctText(sm.overhead_rate)}, assumption) on those`, sm.delta_overhead],
+    ['rnd', 'Cent rounding', sm.rounding],
   ]
-  const max = Math.max(...parts.map(([, v]) => Math.abs(v)), 0.01)
+  const max = Math.max(...parts.map(([, , v]) => Math.abs(v)), 0.01)
   return (
     <div className={`tf-cmp-fig${stale ? ' tf-stale' : ''}`}>
       <div className="table-scroll">
@@ -1679,8 +1710,8 @@ function CompareFigure({ c, stale }: { c: Compare; stale: boolean }) {
           <span className="tf-decomp-total num">{signedUsd(sm.delta_per_participant)}</span>
         </div>
         <ul className="tf-decomp-parts">
-          {parts.map(([label, v]) => (
-            <li key={label}>
+          {parts.map(([key, label, v]) => (
+            <li key={key}>
               <span className="tf-decomp-name">{label}</span>
               <span className="tf-decomp-track" aria-hidden="true">
                 <span className="tf-decomp-bar" style={{ width: `${(Math.abs(v) / max) * 100}%` }} />
@@ -1723,13 +1754,15 @@ function CompareDetails({ c }: { c: Compare }) {
           <tbody>
             {(
               [
-                ['Work GPCI', 'gpci_work', 'work'],
-                ['Practice expense GPCI', 'gpci_pe', 'pe'],
-                ['Malpractice GPCI', 'gpci_mp', 'mp'],
+                ['gpci_work', 'work'],
+                ['gpci_pe', 'pe'],
+                ['gpci_mp', 'mp'],
               ] as const
-            ).map(([label, k, dk]) => (
+            ).map(([k, dk]) => (
               <tr key={k}>
-                <th scope="row">{label}</th>
+                <th scope="row">
+                  <GpciLabel k={dk} />
+                </th>
                 <td className="num">{g(a, k).toFixed(3)}</td>
                 <td className="num">{g(b, k).toFixed(3)}</td>
                 <td className="num strong">{signedNum(c.gpci_delta[dk])}</td>
@@ -1770,13 +1803,13 @@ function CompareDetails({ c }: { c: Compare }) {
                 Δ each
               </th>
               <th scope="col" className="num">
-                from work
+                <GpciLabel k="work">from doctor’s time</GpciLabel>
               </th>
               <th scope="col" className="num">
-                from PE
+                <GpciLabel k="pe">from practice costs</GpciLabel>
               </th>
               <th scope="col" className="num">
-                from MP
+                <GpciLabel k="mp">from malpractice</GpciLabel>
               </th>
               <th scope="col" className="num">
                 Δ per participant

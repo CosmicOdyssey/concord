@@ -170,7 +170,16 @@ export interface Line {
   standard_label?: string
   standard_unit?: string
   edited?: boolean
+  /** Anchoring of a sponsor-paid line (null for routine care billed to insurance). */
+  anchor?: AnchorId | null
+  anchor_reason?: string
+  /** Coded sponsor lines priced at Medicare x the band; others keep their point value. */
+  banded?: boolean
+  low?: number | null
+  high?: number | null
 }
+
+export type AnchorId = 'public' | 'standard' | 'open'
 
 export interface VisitBudget {
   visit_id: string
@@ -186,6 +195,8 @@ export interface VisitBudget {
   visit_total: number
   insurance_medicare: number
   placeholder_amount: number
+  visit_low?: number
+  visit_high?: number
 }
 
 export interface StandardItem {
@@ -198,6 +209,9 @@ export interface StandardItem {
   edited: boolean
   label_tag: string
   source: string
+  /** Set on the overhead rate: a proposed default, not a public rate. */
+  assumption?: boolean
+  assumption_note?: string
 }
 
 export interface Totals {
@@ -208,8 +222,12 @@ export interface Totals {
   per_participant_overhead: number
   per_participant_insurance_medicare: number
   per_participant_placeholder: number
-  per_occurrence: { visit_id: string; label: string; repeat: string; amount: number }[]
+  per_occurrence: { visit_id: string; label: string; repeat: string; amount: number; low?: number; high?: number }[]
   screen_failure: number
+  per_participant_low?: number
+  per_participant_high?: number
+  screen_failure_low?: number
+  screen_failure_high?: number
   per_site_one_time: number
   n_sponsor_lines: number
   n_insurance_lines: number
@@ -234,6 +252,71 @@ export interface Budget {
   overrides: { node_id: string; visit: string; procedure: string; rule: RuleId; coverage: Coverage; basis: string }[]
   rules: Rule[]
   ncd: string
+  band?: Band
+  anchoring?: Anchoring
+  breakdowns?: Breakdowns
+  pricing_basis?: PricingBasis
+}
+
+/** The negotiation band on coded lines: an assumption the user sets (fractions of Medicare). */
+export interface Band {
+  lo: number
+  hi: number
+  label: string
+  note: string
+  n_banded_lines: number
+  point_multiplier: number
+}
+
+export interface AnchorShare {
+  id: AnchorId
+  label: string
+  definition: string
+  amount: number
+  pct: number
+  low: number
+  high: number
+  n_lines: number
+  components: { label: string; amount: number; low: number; high: number; n: number }[]
+}
+
+export interface Anchoring {
+  total: number
+  scope: string
+  shares: AnchorShare[]
+  rounding_to_open: number
+  note: string
+}
+
+export interface BreakdownRow {
+  id: string
+  label: string
+  amount: number
+  low: number
+  high: number
+  n_lines: number
+  not_sponsor?: boolean
+}
+
+export interface Breakdowns {
+  scope: string
+  payer: BreakdownRow[]
+  cost_type: BreakdownRow[]
+  visit: BreakdownRow[]
+  anchoring: BreakdownRow[]
+  outside: {
+    one_time_fees: { label: string; amount: number; n_items: number }
+    per_occurrence: { label: string; amount: number; low: number; high: number }[]
+  }
+  note: string
+}
+
+export interface PricingBasis {
+  pfs: string
+  pfs_column: string
+  opps_included: boolean
+  lab: string
+  lab_varies_by_site: boolean
 }
 
 export interface CompareRow {
@@ -272,6 +355,8 @@ export interface Compare {
   pfs_source: string | null
   disclaimer: string
   label: string
+  band?: Band
+  pricing_basis?: PricingBasis
   a: CompareSide
   b: CompareSide
   gpci_delta: { work: number; pe: number; mp: number }
@@ -294,6 +379,8 @@ export interface PriceParams {
   multiplier: number
   overrides: Overrides
   standard: StandardEdits
+  /** Negotiation band on coded lines, fractions of Medicare [low, high] (an assumption; API default 1.0-1.5). */
+  band?: [number, number]
 }
 
 const BASE = '/api/terms-flow'
@@ -318,6 +405,10 @@ function priceQuery(p: PriceParams, extra: Record<string, string>): string {
   s.set('multiplier', String(p.multiplier))
   if (Object.keys(p.overrides).length) s.set('overrides', JSON.stringify(p.overrides))
   if (Object.keys(p.standard).length) s.set('standard', JSON.stringify(p.standard))
+  if (p.band) {
+    s.set('band_lo', String(p.band[0]))
+    s.set('band_hi', String(p.band[1]))
+  }
   return s.toString()
 }
 
