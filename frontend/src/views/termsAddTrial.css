@@ -131,3 +131,37 @@
 .ta-nowrap {
   white-space: nowrap;
 }
+/* Phone: each visit or item becomes a short stacked block instead of a wide table. */
+@media (max-width: 640px) {
+  .ta-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .ta-table,
+  .ta-table tbody,
+  .ta-table tr,
+  .ta-table td {
+    display: block;
+    width: auto;
+  }
+  .ta-table tr {
+    border-bottom: 1px solid var(--rule);
+    padding: 0.4rem 0;
+  }
+  .ta-table td,
+  .ta-table td:first-child,
+  .ta-src {
+    border: 0;
+    padding: 0.1rem 0;
+    min-width: 0;
+  }
+  .ta-table td:first-child {
+    font-weight: 600;
+  }
+  .ta-table td.ta-nowrap {
+    white-space: normal;
+  }
+}

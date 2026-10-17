@@ -186,7 +186,7 @@ def fetch_study(nct: str, timeout: float = FETCH_TIMEOUT) -> dict:
         with urllib.request.urlopen(req, timeout=timeout) as r:  # noqa: S310 - fixed https host
             data = json.loads(r.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
-        if e.code == 404:
+        if e.code in (400, 404):  # the API answers 404 for an unknown ID and 400 for one it cannot accept
             raise terms.NotFound(f"ClinicalTrials.gov has no study {nct}. Check the NCT ID.") from e
         raise terms.TermsError(f"ClinicalTrials.gov returned HTTP {e.code} for {nct}; try again later") from e
     except (urllib.error.URLError, TimeoutError, OSError) as e:
@@ -376,7 +376,9 @@ def draft_from_registry(st: dict) -> dict:
     first_tf = next((m for m in measures if 1 in m["days"]), None)
     visits = [{"id": "SCR", "label": "Screening (eligibility)", "short": "Scr", "kind": "screening", "day": -28,
                "day_end": -1, "window": "before Day 1 (timing not in the registry; Day -28 to -1 assumed)",
-               "inferred": _inferred("eligibilityModule.eligibilityCriteria", elig.split("\n")[0] or "eligibility")},
+               "inferred": _inferred("eligibilityModule.eligibilityCriteria", next(
+                   (ln.strip(" *-\t") for ln in elig.splitlines() if ln.strip(" *-\t") and not ln.strip().endswith(":")),
+                   "eligibility criteria"))},
               {"id": "D1", "label": "Day 1 (baseline, first dose)", "short": "D1", "kind": "treatment", "day": 1,
                "minus": 0, "plus": 0, "window": "Day 1",
                "inferred": _inferred(f"{first_tf['field']}.timeFrame", first_tf["timeFrame"]) if first_tf else
@@ -501,7 +503,9 @@ def draft_from_registry(st: dict) -> dict:
                         "'ip_dispense' (not a CMS code)", "inferred": reason}, ["D1"], reason)
 
     order = {v["id"]: i for i, v in enumerate(visits)}
-    proc_list = list(procs.values())
+    # items of one category together (the schedule grid and breakdowns group consecutive categories)
+    cats = list(dict.fromkeys(p["category"] for p in procs.values()))
+    proc_list = sorted(procs.values(), key=lambda p: cats.index(p["category"]))
     # one group per reason: an item placed at several visits from different registry fields keeps each quote
     schedule = []
     for pid, vs in sched.items():

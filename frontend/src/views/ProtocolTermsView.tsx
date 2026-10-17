@@ -5,7 +5,7 @@
 // their qualifiers, and puts rules, provenance and line items in hover cards and the full tables in a "Details"
 // disclosure; Detailed shows everything inline. Every control works in both densities.
 // No forecasting anywhere: no enrollment, speed or time-to-fill numbers, and no savings claims.
-import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { createContext, Fragment, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Badge, Banner, Details, ErrorBox, Gloss, HoverCard, InfoTip, KeyFigure, Loading, PageHead, Qualifier } from '../components'
 import { useDensity } from '../density'
 import { ctgovUrl, phaseLabel, usd } from '../format'
@@ -343,6 +343,7 @@ export default function ProtocolTermsView() {
 
   return (
     <section className="view tf" aria-label="Protocol to terms">
+      <StepLabel.Provider value={proto?.import ? proto.label : ILLUSTRATIVE}>
       <PageHead
         title="Protocol to terms"
         lede="A protocol's schedule of assessments, sorted into routine care and research, priced from CMS 2026 fee schedules and a proposed standard schedule for non-procedure fees, with a source on every line."
@@ -350,6 +351,7 @@ export default function ProtocolTermsView() {
         <Banner title={DISCLAIMER}>
           Prices come from CMS 2026 fee schedules and Concord’s proposed standard schedule, a starting point to negotiate against, not market data.
           Schedules are {ILLUSTRATIVE.toLowerCase()}, not the sponsors’ protocols.
+          {proto?.import && <> This added trial’s schedule: {proto.label}.</>}
         </Banner>
       </PageHead>
 
@@ -734,11 +736,15 @@ export default function ProtocolTermsView() {
           />
         </>
       )}
+      </StepLabel.Provider>
     </section>
   )
 }
 
 // ====================================================================== step frame
+
+/** The schedule's label on every step strip: illustrative (authored) or, for a trial added by NCT ID, its own. */
+const StepLabel = createContext<string>(ILLUSTRATIVE)
 
 /** One step: a Calm window laid out like the shared Section (claim, sentence, qualifiers and controls on the left;
  *  the key figure on the right; secondary content inline in Detailed and in a "Details" disclosure in Simple). The
@@ -768,6 +774,7 @@ function Step({
 }) {
   const { density } = useDensity()
   const hid = useId()
+  const stepLabel = useContext(StepLabel)
   return (
     <section id={`tf-step-${n}`} className="win section tf-step" aria-labelledby={hid}>
       <div className="win-strip">
@@ -776,7 +783,7 @@ function Step({
             Step {n} of {STEPS.length}
           </span>
         </span>
-        <span className="win-aside tf-strip-label">{ILLUSTRATIVE}</span>
+        <span className="win-aside tf-strip-label">{stepLabel}</span>
       </div>
       <div className="win-body">
         <div className={`section-row${figure ? '' : ' section-row-single'}`}>
