@@ -17,6 +17,8 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
+from concord.ratecard.cms import STATE_ABBR
+
 REGISTRY_DIR = Path(__file__).parent / "compiler" / "protocols" / "registry"
 
 
@@ -59,6 +61,14 @@ def site_rows(nct: str) -> list[dict]:
 
 
 def unresolved_note(city: str | None, state_abbr: str) -> str:
-    return (f"Medicare locality not resolved: {state_abbr} has several Medicare localities and the county of "
-            f"{city or 'this city'} is not in Concord's county crosswalk, so it is left unresolved rather than "
-            f"guessed. Coded lines use national amounts.")
+    """Why a snapshot site has no locality. Virginia and Maryland have one rest-of-state locality in the GPCI file
+    but are not one-locality states: their D.C. suburbs belong to the D.C. locality (CMS locality definitions)."""
+    state = next((k for k, v in STATE_ABBR.items() if v == state_abbr), state_abbr)
+    where = city or "this city"
+    if state_abbr in ("VA", "MD"):
+        why = (f"some {state} jurisdictions belong to the D.C. Medicare locality, and {where} is not in Concord's "
+               f"crosswalk")
+    else:
+        why = f"{state} has several Medicare localities, and the county for {where} is not in Concord's crosswalk"
+    return (f"Medicare locality not resolved. {why[0].upper()}{why[1:]}, so the locality is left unresolved rather "
+            f"than guessed. Coded lines use national amounts (an assumption).")

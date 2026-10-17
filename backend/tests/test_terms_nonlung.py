@@ -35,10 +35,23 @@ def test_protocol_loads_labelled_and_sourced():
     assert {"R1", "R2", "R3", "R4"} <= rules and "R5" not in rules  # no standard therapy in every arm
     std_ids = {i[0] for i in terms.STANDARD_ITEMS}
     for x in p["procedures"]:
-        assert x["pricing"] in ("cpt", "none") or x["pricing"].split(":")[1] in std_ids
+        assert x["pricing"] in ("cpt", "none", "unpriced") or x["pricing"].split(":")[1] in std_ids
     rule = {n["id"]: n["rule"] for n in p["nodes"]}
     assert rule["D1:inj_poz"] == "R1" and rule["W52:faf"] == "R3" and rule["W4:eye_int"] == "R4"
     assert rule["SCR:nm_cx"] == "R2"  # meningococcal carriage culture: registry exclusion 12
+    # one add-on administration code per additional vaccine (MenB, pneumococcal), like the lung 96417 lines
+    procs = {x["id"]: x for x in p["procedures"]}
+    add_on = [n["procedure"] for n in p["nodes"] if n["visit"] == "SCR" and procs[n["procedure"]].get("code") == "90472"]
+    assert add_on == ["vax_admin_menb", "vax_admin_pcv"]
+    assert next(v for v in p["visits"] if v["id"] == "DX")["occurrences"] == 20
+
+
+def test_rule_examples_are_per_protocol():
+    """The shared R4 text carries the lung CT example; the eye protocol shows its own."""
+    view = {r["id"]: r for r in terms.protocol_view(NCT)["rules"]}
+    assert "CT every 6 weeks" not in view["R4"]["text"] and "eye exams every 4 weeks" in view["R4"]["text"]
+    lung = {r["id"]: r for r in terms.protocol_view("NCT05800015")["rules"]}
+    assert lung["R4"]["text"] == terms.RULES["R4"]["text"] and "CT every 6 weeks" in lung["R4"]["text"]
 
 
 def test_registry_snapshot_has_source_and_us_sites():
@@ -91,6 +104,11 @@ def test_snapshot_sites_never_guess_a_locality():
     # a city whose county is not crosswalked, in a multi-locality state, stays unresolved and says so
     tampa = by_city[("FL", "Tampa")]
     assert tampa["locality"] is None and "not resolved" in tampa["locality_note"]
+    assert "Florida has several Medicare localities" in tampa["locality_note"]
+    # Virginia has one GPCI locality plus D.C. suburbs in the D.C. locality: the note says that, not "several"
+    rich = by_city[("VA", "Richmond")]
+    assert rich["locality"] is None and "belong to the D.C. Medicare locality" in rich["locality_note"]
+    assert "several" not in rich["locality_note"] and "county of" not in rich["locality_note"]
     assert all(s["locality"] is None or s["locality"]["verified"] for s in out["sites"])
     # the lung trials keep their existing behaviour (city-name match allowed, flagged unverified)
     assert terms.resolve_locality("Florida", "Tampa", "United States") is not None
@@ -112,19 +130,45 @@ def test_budget_prices_from_cms_and_never_zeroes_unpriced_codes():
             assert l["coverage"] == "routine" and l["amount"] is None and l["medicare_amount"] is not None
         if l["schedule"] in ("PFS", "CLFS"):
             assert l["verified"] and not l["placeholder"]
+    assert len(lines) == 76
+    assert sum(1 for l in lines if l["payer"] == "Sponsor" and l["schedule"] == "PFS") == 22
     unpriced = {l["code"] for l in lines if l["code"] and l["medicare_amount"] is None}
     assert unpriced == {"90620", "90677", "90734"}  # vaccine products: no PFS/CLFS amount in the rate card
     for l in lines:
         if l["code"] in unpriced:
             assert l["amount"] is None and "never counted as zero" in l["note"]
     vfx = [l for l in lines if l["procedure_id"] == "vfx"]
-    assert vfx and all(l["schedule"] == "None" and l["amount"] is None for l in vfx)
+    assert vfx and all(l["schedule"] is None and l["amount"] is None and l["unpriced"] for l in vfx)
     t = bud["totals"]
-    assert t["per_participant_scope"].startswith("screening through week 104")
+    assert t["per_participant_scope"].startswith("all 28 visits from screening through week 104")
+    assert "(" not in t["per_participant_scope"]  # it is quoted inside parentheses in the compare footnote
     assert t["per_participant"] == pytest.approx(
         t["per_participant_research_items"] + t["per_participant_coordinator"] + t["per_participant_overhead"], abs=0.02)
     assert t["per_participant_placeholder"] == 0  # CLFS loaded: no lab placeholders
-    assert [x["visit_id"] for x in t["per_occurrence"]] == ["DX"]
+    # The authored schedule fixes the other dosing visits at 20: all of them are inside the per-participant amount.
+    assert t["per_occurrence"] == []
+    (rep_,) = t["per_participant_repeats"]
+    dx = next(v for v in bud["visits"] if v["visit_id"] == "DX")
+    assert rep_["visit_id"] == "DX" and rep_["count"] == 20 and rep_["amount"] == dx["visit_total"]
+    fixed = sum(v["visit_total"] for v in bud["visits"] if v["kind"] != "repeat")
+    assert t["per_participant"] == pytest.approx(fixed + 20 * dx["visit_total"], abs=0.02)
+    assert t["per_participant_coordinator"] == pytest.approx(28 * 175.0)
+    # Research items with no amount are left out of the totals, and the totals say which ones.
+    assert t["n_unpriced_sponsor_lines"] == 6 and t["screen_failure_unpriced"] == 4
+    items = {i["procedure_id"]: i for i in t["unpriced_sponsor_items"]}
+    assert set(items) == {"vfx", "vax_acwy", "vax_b", "vax_pcv"} and items["vfx"]["per_participant"] == 3
+    assert t["unpriced_text"].startswith("Excludes 6 research items with no published Medicare amount")
+    for code in ("90734", "90620", "90677"):
+        assert code in t["unpriced_text"]
+
+
+@needs_pfs
+def test_lung_no_site_charge_is_not_unpriced():
+    """pdl1_central (pricing 'none') means no site charge: it is not listed as an unpriced item."""
+    st = terms.sites("NCT05800015")
+    t = terms.budget("NCT05800015", st["default_pair"][0])["totals"]
+    assert t["unpriced_sponsor_items"] == [] and t["unpriced_text"] is None and t["per_participant_repeats"] == []
+    assert t["per_occurrence"]  # open-ended later cycles stay per occurrence
 
 
 @needs_pfs
@@ -135,18 +179,41 @@ def test_compare_and_termsheet_exports():
     sm = c["summary"]
     assert sm["delta_per_participant"] == pytest.approx(
         sm["from_work"] + sm["from_pe"] + sm["from_mp"] + sm["delta_overhead"] + sm["rounding"], abs=0.02)
+    assert abs(sm["rounding"]) < 0.5
     assert sm["delta_per_participant"] < 0  # Mississippi GPCIs are below Manhattan's
+    assert sm["national_fallback"] == [] and sm["per_occurrence"] == []
+    rows = {r["procedure_id"]: r for r in c["rows"]}
+    assert rows["inj_poz"]["n_fixed"] == 26 and rows["inj_poz"]["visits_counted"] == [{"visit_id": "DX", "count": 20}]
+    assert rows["inj_poz"]["why"] == "published GPCI difference"
     ts = terms.termsheet(NCT, a, compare_site=b)
     md, html = terms.termsheet_markdown(ts), terms.termsheet_html(ts)
     for doc in (md, html):
         assert terms.DISCLAIMER in doc and terms.ILLUSTRATIVE in doc
         assert "clinicaltrials.gov/api/v2/studies/NCT06541704" in doc and "fetched 2026-10-17" in doc
         assert "screening through week 104" in doc and "cycle 8" not in doc
+        assert "period))" not in doc and "CT every 6 weeks" not in doc
+        assert "Excludes 6 research items with no published Medicare amount" in doc
+        assert "excludes the 4 unpriced research items at screening" in doc
+        assert "20 x $" in doc  # the 20 other dosing visits, inside the per-participant amount
         low = doc.lower()
         assert not any(f in low for f in FORBIDDEN)
     unresolved = _sid("Tampa", "University of South Florida")
     md2 = terms.termsheet_markdown(terms.termsheet(NCT, unresolved))
     assert "national amounts" in md2 and "left unresolved rather than guessed" in md2
+
+
+@needs_pfs
+def test_compare_with_an_unresolved_site_says_national_is_an_assumption():
+    a = _sid("New York", "Retina Associates of New York")
+    b = _sid("Richmond", "Retina Institute of Virginia")
+    c = terms.compare(NCT, a, b)
+    assert c["b"]["locality"] is None and c["summary"]["national_fallback"] == ["b"]
+    coded = [r for r in c["rows"] if r["rvu"]]
+    assert coded and all(r["why"] == "national amounts at Site B: locality not resolved (assumption)" for r in coded)
+    ts = terms.termsheet(NCT, a, compare_site=b)
+    for doc in (terms.termsheet_markdown(ts), terms.termsheet_html(ts)):
+        assert "On that assumption (GPCIs of 1.000 at Site B, not a published locality price)" in doc
+        assert "Site B: Medicare locality not resolved." in doc
 
 
 @needs_pfs
