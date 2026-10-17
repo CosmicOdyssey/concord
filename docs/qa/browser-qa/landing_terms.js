@@ -93,7 +93,7 @@ async function settle(page) {
               cardFoot: q('.lp-paircard-foot')?.innerText,
               legend: q('.lp-legend')?.innerText.replace(/\s+/g, ' '),
               figcap: q('.lp-figcap')?.innerText,
-              cells: document.querySelectorAll('.lp-cell').length,
+              cells: document.querySelectorAll('.lp-matrix-scroll .hg-cell').length,
               strip: q('#landing-overlap .win-strip')?.innerText.replace(/\s+/g, ' '),
               crit: !!q('.lp-crit'),
               tested: !!q('#landing-tested .lp-results'),
@@ -176,10 +176,10 @@ async function settle(page) {
       await settle(page)
       const top = await page.evaluate(() => Math.round(document.getElementById('landing-overlap').getBoundingClientRect().top))
       check('#home/overlap opens the landing at Portfolio overlap', Math.abs(top) < 90, { top })
-      await page.focus('.lp-cell[aria-label^="NCT05785767 and NCT06161441"]')
+      await page.focus('.lp-matrix-scroll .hg-cell[aria-label^="NCT05785767 and NCT06161441"]')
       await sleep(200)
       const t1 = await page.$eval('.lp-paircard-title', (e) => e.innerText.trim())
-      const other = await page.$('.lp-cell[aria-label^="NCT05557591 and NCT05785767"]')
+      const other = await page.$('.lp-matrix-scroll .hg-cell[aria-label^="NCT05557591 and NCT05785767"]')
       await other.hover()
       await sleep(250)
       const t2 = await page.$eval('.lp-paircard-title', (e) => e.innerText.trim())
