@@ -2,7 +2,7 @@
    index.css. Cells carry no shade: there is no eligibility share to shade by. */
 
 .ov-f-ind {
-  flex: 0 1 14rem;
+  flex: 0 1 17rem;
 }
 .ov-f-ind select {
   width: 100%;
@@ -18,6 +18,11 @@
 .ovs-label {
   margin: 0;
   font-size: var(--fs-sm);
+}
+/* The site-only label is long: let it wrap at phone width (qualifiers default to nowrap). */
+.ovs-label .qual,
+.ovs-noelig .qual {
+  white-space: normal;
 }
 .ovs-noelig {
   display: inline-flex;
@@ -52,7 +57,7 @@
   background: none;
   padding: 0;
   font: inherit;
-  color: var(--accent-ink);
+  color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 2px;
   cursor: pointer;

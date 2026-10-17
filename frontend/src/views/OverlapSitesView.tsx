@@ -548,7 +548,7 @@ export default function OverlapSitesView({
           )}
 
           {trials.length > 0 && (
-            <Window label="Trials" className="ov-trials" title={`Trials recruiting on ${shortDate(data.as_of)}`} meta="CT.gov status">
+            <Window label="Trials" title={`Trials recruiting on ${shortDate(data.as_of)}`} meta="CT.gov status">
               {detailed ? <TrialTable trials={trials} /> : <Details summary={`All ${plural(trials.length, 'trial')}`}>{<TrialTable trials={trials} />}</Details>}
             </Window>
           )}
