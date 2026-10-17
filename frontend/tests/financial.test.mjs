@@ -1,14 +1,18 @@
-// Sponsor budget (financialApi.ts) against docs/financial/CONTRACT.md. Fixtures are trimmed live-API outputs
-// (tests/fixtures/make_financial_fixtures.py): the default request, a capacity-short variant and a commercial payer
-// without the rate assumption.
+// Sponsor budget (financialApi.ts) against docs/financial/CONTRACT.md. Fixtures are trimmed live-API outputs of this
+// branch's backend (tests/fixtures/make_financial_fixtures.py): the default request, a capacity-short variant and a
+// commercial payer without the rate assumption.
 import { test, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import {
   commitment,
   financialApi,
+  firstSentence,
+  lineKind,
+  participantAssigned,
   payerFraming,
   pct,
+  responsibilityOptions,
   sameCoverageInputs,
   scenarioChange,
   signedUsd,
@@ -207,6 +211,62 @@ test('the worksheet amounts count as current only for the demo’s coverage inpu
     assert.ok(!sameCoverageInputs(request, { ...request, ...patch }), JSON.stringify(patch))
 })
 
+test('Simple’s payer guard is the first sentence of the API’s PAYER_INDEPENDENCE, verbatim', () => {
+  const independence = base.assumptions.payer_independence
+  const guard = firstSentence(independence)
+  assert.equal(
+    guard,
+    'In this worksheet, payer type, payer share and the commercial-rate assumption change only the insurer and participant lines; the sponsor commitment does not fall because an insurer pays more for routine care.',
+  )
+  assert.ok(independence.startsWith(guard))
+  // A contract term moves a line onto the sponsor; only coverage analysis takes one off it. No code names.
+  assert.doesNotMatch(independence, /onto or off|sponsor_rate_multiplier/)
+  assert.match(independence, /off the sponsor only when coverage analysis finds it is billable routine care/)
+  assert.equal(firstSentence(null), null)
+  assert.equal(firstSentence('One sentence only.'), 'One sentence only.')
+})
+
+/* --------------------------------------------------------------- coverage worksheet --------------------------------------------------------------- */
+
+const item = (r, id) => r.coverage.items.find((i) => i.id === id)
+
+test('Medicare pays CLFS lab tests in full: no participant share on them; default totals and ledger', () => {
+  const cbc = item(base, 'SCR:cbc')
+  assert.equal(cbc.payer_per_participant, cbc.unit_rate)
+  assert.equal(cbc.patient_per_participant, 0)
+  assert.match(cbc.explanation, /Medicare pays clinical diagnostic lab tests at 100% of the CLFS amount \(no Part B deductible or coinsurance\), so the participant share is 0$/)
+  const visit = item(base, 'SCR:em_new')
+  assert.equal(visit.payer_per_participant, Math.round(visit.unit_rate * 0.8 * 100) / 100)
+  assert.deepEqual([base.coverage.totals.payer, base.coverage.totals.patient], [5026.97, 1031.7])
+  const a = base.scenarios[0].economics
+  assert.deepEqual([usd(a.insurer.payments), usd(a.patient.cost_sharing), usd(a.hospital.net_contribution)], ['$301,618', '$61,902', '$200,489'])
+})
+
+test('research items and the supply reserve offer only sponsor-side statuses; Medicaid disables participant cost sharing', () => {
+  const sponsorSide = ['SPONSOR', 'CONDITIONAL', 'UNKNOWN', 'REVIEW_REQUIRED']
+  const statuses = (i, payer = 'Medicare') => responsibilityOptions(i, payer).map((o) => o.status)
+  const research = item(base, 'SCR:ecg')
+  const supply = item(base, 'drug-contingency')
+  const routine = item(base, 'SCR:em_new')
+  assert.deepEqual([lineKind(research), lineKind(supply), lineKind(routine)], ['research', 'supply', 'routine'])
+  assert.deepEqual(statuses(research), sponsorSide)
+  assert.deepEqual(statuses(supply), sponsorSide)
+  assert.equal(statuses(routine).length, 6)
+  assert.ok(responsibilityOptions(routine, 'Medicare').every((o) => !o.disabled))
+  assert.deepEqual(
+    responsibilityOptions(routine, 'Medicaid').filter((o) => o.disabled).map((o) => o.status),
+    ['POTENTIALLY_PATIENT_COST_SHARING'],
+  )
+  // An older API without allowed_statuses: an unedited authored SPONSOR line is still a research item.
+  const { allowed_statuses: _r, ...oldResearch } = research
+  const { allowed_statuses: _o, ...oldRoutine } = routine
+  assert.deepEqual(statuses(oldResearch), sponsorSide)
+  assert.equal(statuses(oldRoutine).length, 6)
+  assert.equal(lineKind({ ...oldRoutine, status: 'SPONSOR', review_status: 'operator_interpretation' }), 'routine')
+  assert.equal(participantAssigned(request), 0)
+  assert.equal(participantAssigned({ ...request, coverage_overrides: { 'SCR:em_new': 'POTENTIALLY_PATIENT_COST_SHARING', 'SCR:cbc': 'UNKNOWN' } }), 1)
+})
+
 /* ------------------------------------------------------------------ copy scan ------------------------------------------------------------------ */
 
 test('the view and its API module reference no removed field and use no speed, ranking or saving wording', () => {
@@ -216,6 +276,9 @@ test('the view and its API module reference no removed field and use no speed, r
     assert.equal(fields, null, `${name}: ${fields}`)
     const wording = text.match(/.{0,30}(faster|speed|accelerat|sooner|recommend|\bbest\b|saving|reinvest|pilot).{0,30}/gi)
     assert.equal(wording, null, `${name}: ${wording}`)
+    // Wording the review replaced: a settled-coverage reading, a hospital margin, a Medicare-rate-is-FMV reading.
+    const replaced = text.match(/operating contribution|billed under coverage rules|at the sponsor-site rate'|insurer amount at the benchmark, no participant share|Edit a responsibility and compare again/g)
+    assert.equal(replaced, null, `${name}: ${replaced}`)
     // "months" only as the contract-period input's name and unit.
     const months = text.replaceAll('budget_period_months', '').replaceAll('Budgeted contract period (months)', '').match(/.{0,30}\bmonths?\b.{0,30}/gi)
     assert.equal(months, null, `${name}: ${months}`)

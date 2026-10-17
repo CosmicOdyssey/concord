@@ -6,7 +6,11 @@
 // scenarios are listed A to E with nothing selected as preferred; every input reachable in both modes; hover cards
 // open on hover, keyboard focus and tap; edits clear the result; capacity-short, payer and coverage edits reach the
 // API; both exports download; no horizontal page scroll; no page or console errors; text contrast; 44 px touch
-// targets on the phone. Also scans the rendered text for time, speed, ranking and saving words and lists every hit.
+// targets on the phone. Review fixes: Simple shows the API's own "sponsor commitment does not fall" sentence next to
+// the payer line; the worksheet totals say what they rest on (negotiated-rate multiple, pending coverage analysis,
+// stated coinsurance share, supply reserve vs unresolved lines); each responsibility select offers only the API's
+// allowed_statuses; Medicaid disables and qualifies participant cost sharing; the hospital figure is "revenue minus
+// assumed cost". Also scans the rendered text for time, speed, ranking and saving words and lists every hit.
 // usage: NODE_PATH=C:/Users/micha/Projects/concord/data/work/D/node_modules node financial.js [base] [outDir]
 const fs = require('fs')
 const path = require('path')
@@ -28,6 +32,7 @@ const usd2 = (v) =>
 const signedUsd = (v) => (finite(v) ? `${v > 0 ? '+' : v < 0 ? '−' : ''}${usd(Math.abs(v))}` : 'Unknown')
 const pct = (v, d = 1) => (finite(v) ? `${(v * 100).toFixed(d)}%` : 'Unknown')
 const commitment = (p) => (p.costed ? usd(p.sponsor_total) : 'Not costed')
+const firstSentence = (t) => (t ? (t.match(/^.*?\.(?=\s+[A-Z])/)?.[0] ?? t) : null)
 
 const results = []
 function check(name, ok, detail) {
@@ -143,6 +148,24 @@ async function setPayer(page, value) {
     set.call(s, value)
     s.dispatchEvent(new Event('change', { bubbles: true }))
   }, value)
+  await sleep(200)
+}
+
+/** Set a responsibility select (by its aria-label) and fire React's change event. */
+async function setSelect(page, label, value) {
+  const ok = await page.evaluate(
+    (label, value) => {
+      const s = [...document.querySelectorAll('.financial select')].find((x) => x.getAttribute('aria-label') === label)
+      if (!s) return false
+      const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set
+      set.call(s, value)
+      s.dispatchEvent(new Event('change', { bubbles: true }))
+      return true
+    },
+    label,
+    value,
+  )
+  if (!ok) throw new Error(`no select "${label}"`)
   await sleep(200)
 }
 
@@ -348,6 +371,8 @@ const cellRows = (page, caption) =>
                 pressed: li.querySelector('[aria-pressed]')?.getAttribute('aria-pressed') ?? null,
               })),
               totals: [...document.querySelectorAll('.fin-totals .kf')].map((k) => [k.querySelector('.kf-label')?.innerText.trim(), k.querySelector('.kf-value')?.innerText.trim()]),
+              subs: [...document.querySelectorAll('.fin-totals .kf')].map((k) => k.querySelector('.kf-sub')?.innerText.trim()),
+              quals: [...document.querySelectorAll('.financial .section')].find((s) => s.querySelector('h2')?.innerText === 'Who pays, per participant')?.querySelector('.section-quals')?.innerText ?? '',
               lede: [...document.querySelectorAll('.financial .section')].find((s) => s.querySelector('h2')?.innerText === 'Who pays, per participant')?.querySelector('.section-lede')?.innerText ?? '',
               all: document.querySelector('.financial').textContent,
               visible: document.querySelector('.financial').innerText,
@@ -386,6 +411,21 @@ const cellRows = (page, caption) =>
                   ['Held as sponsor contingency', usd2(t.reserve)],
                 ]),
               ui.totals,
+            )
+            const supply = R.coverage.items.find((i) => i.id === 'drug-contingency').reserve_per_participant
+            const wantSubs = [
+              `Research items at ${R.request.sponsor_rate_multiplier.toFixed(2)}x the fee-schedule benchmark (synthetic negotiated rate, not an FMV finding)`,
+              'Routine care that may be billed to insurance, pending coverage analysis',
+              'Routine-care coinsurance at the stated share, before deductibles and secondary coverage',
+              `Investigational-supply reserve ${usd2(supply)} (operator assumption, not a drug price); unknown, conditional or review-required lines ${usd2(Math.round((t.reserve - supply) * 100) / 100)}`,
+            ]
+            check(`${tag}: totals say what they rest on (rate multiple, pending coverage analysis, coinsurance share, supply reserve vs unresolved)`, JSON.stringify(ui.subs) === JSON.stringify(wantSubs), { ui: ui.subs, want: wantSubs })
+            const guard = firstSentence(R.assumptions.payer_independence)
+            check(
+              `${tag}: visible payer line carries the API's "sponsor commitment does not fall" sentence, verbatim`,
+              /does not fall because an insurer pays more/.test(guard) &&
+                ui.quals.startsWith(`Payer: Medicare; insurer share ${pct(R.request.payer_fraction, 0)} of the benchmark (clinical lab tests: 100% of the CLFS amount). ${guard}`),
+              ui.quals,
             )
             check(`${tag}: the payer line is the API's benchmark sentence, verbatim`, ui.lede.includes(R.assumptions.payer_benchmarks) && /How payer amounts are used/.test(ui.lede), ui.lede)
             check(`${tag}: no ledger, net exposure or old wording in Simple (DOM, incl. folded)`, !/net (modeled )?exposure|Reinvestment|pilot|Modeled months|Capacity within horizon/i.test(ui.all), (ui.all.match(/.{40}(net exposure|Reinvestment|pilot|Modeled months).{40}/i) || [])[0])
@@ -503,6 +543,8 @@ const cellRows = (page, caption) =>
                   (e) => e.patient.access_support,
                   (e) => e.consolidated_resource_cost,
                 ]
+                const heads = await page.evaluate(() => [...document.querySelectorAll('.fin-section table')].map((t) => [...t.tHead.rows[0].cells].map((c) => c.innerText.trim())))
+                check(`${tag}: no "contribution" or margin column; "Hospital revenue minus assumed cost" in both ledger tables`, heads.filter((h) => h.includes('Hospital revenue minus assumed cost')).length === 2 && !/contribution|margin/i.test(JSON.stringify(heads)), heads)
                 check(`${tag}: ledger by scenario equals the API`, R.scenarios.every((sc, i) => rows?.[i] && get.every((g, j) => rows[i][j + 1] === usd(g(sc.economics)))), rows)
                 const d = await cellRows(page, 'Change against A by party')
                 const dk = ['sponsor_expenditure', 'resources', 'hospital_contribution', 'insurer_expenditure', 'patient_cost_sharing', 'access_support']
@@ -516,6 +558,8 @@ const cellRows = (page, caption) =>
                     party[0].includes(usd(e.sponsor.supply_resource_proxy)) &&
                     !party[1].includes('supply resource proxy') &&
                     party[1].includes(usd(e.hospital.net_contribution)) &&
+                    party[1].startsWith('Hospital revenue minus assumed cost') &&
+                    party[1].includes('Not a margin estimate or a fair-market-value test.') &&
                     party[2].includes(usd(e.insurer.total)) &&
                     party[3].includes(`Participant routine cost sharing (illustrative) ${usd(e.patient.cost_sharing)}`) &&
                     party[3].includes(`Sponsor access support ${usd(e.patient.access_support)}`),
@@ -549,6 +593,26 @@ const cellRows = (page, caption) =>
               if (s === 'Coverage worksheet') {
                 const noTime = R.limitations.find((l) => /^Nothing here models/.test(l))
                 check(`${tag}: worksheet shows the four payer sentences verbatim`, [R.assumptions.payer_benchmarks, R.assumptions.payer_billing, R.assumptions.payer_independence, noTime].every((x) => st.text.includes(x)))
+                const sel = await page.evaluate(() =>
+                  [...document.querySelectorAll('.fin-tbl-coverage tbody tr')].map((tr) => ({
+                    options: [...tr.querySelectorAll('select option')].map((o) => [o.value, o.disabled]),
+                    note: tr.cells[2].querySelector('.fin-sub')?.innerText.trim() ?? null,
+                  })),
+                )
+                const noteFor = (it) =>
+                  it.id === 'drug-contingency'
+                    ? 'Investigational supply: sponsor only.'
+                    : it.allowed_statuses.includes('POTENTIALLY_PAYER_COVERED')
+                      ? null
+                      : 'Research item: sponsor only; never billed to an insurer or participant (coverage rules).'
+                check(
+                  `${tag}: each responsibility select offers exactly the API's allowed_statuses (research ${R.coverage.items.filter((i) => i.allowed_statuses.length === 4).length - 1}, supply 1, routine ${R.coverage.items.filter((i) => i.allowed_statuses.length === 6).length})`,
+                  sel.length === R.coverage.items.length &&
+                    R.coverage.items.every((it, i) => JSON.stringify(sel[i].options) === JSON.stringify(it.allowed_statuses.map((x) => [x, false])) && sel[i].note === noteFor(it)),
+                  sel.slice(0, 3),
+                )
+                const cap = await page.evaluate(() => document.querySelector('.fin-tbl-coverage caption')?.innerText ?? '')
+                check(`${tag}: worksheet caption says an edit is an operator interpretation, not a coverage decision`, /follows the coverage analysis and billing grid \(protocol, contract, consent form\); an edit here is an operator interpretation, not a coverage decision\./.test(cap), cap)
                 const rows = await page.evaluate(() => [...document.querySelectorAll('.fin-tbl-coverage tbody tr')].map((tr) => [...tr.cells].slice(-4).map((c) => c.innerText.trim())))
                 check(
                   `${tag}: worksheet has every line, amounts equal the API`,
@@ -654,13 +718,40 @@ const cellRows = (page, caption) =>
       await setInput(page, 'Synthetic site A: Stated capacity', 60)
       await setInput(page, 'Synthetic site B: Stated capacity', 60)
 
-      // Payer: Medicaid disables the payer share; commercial without the assumption shows Unknown and leaves the sponsor unchanged.
+      // Payer: Medicaid disables the payer share and participant cost sharing, and qualifies a line that holds it;
+      // commercial without the assumption shows Unknown and leaves the sponsor unchanged.
+      await setSelect(page, 'Responsibility for New-patient oncology visit, high complexity', 'POTENTIALLY_PATIENT_COST_SHARING')
       await setPayer(page, 'Medicaid')
+      const mc = await page.evaluate(() => {
+        const sec = [...document.querySelectorAll('.financial .section')].find((s) => s.querySelector('h2')?.innerText === 'Who pays, per participant')
+        const routine = [...document.querySelectorAll('.fin-tbl-coverage select')].find((s) => s.getAttribute('aria-label') === 'Responsibility for New-patient oncology visit, high complexity')
+        return {
+          quals: sec?.querySelector('.section-quals')?.innerText ?? '',
+          value: routine?.value,
+          disabled: [...(routine?.options ?? [])].filter((o) => o.disabled).map((o) => o.value),
+        }
+      })
+      check(
+        'Medicaid: participant cost sharing disabled; the line holding it is qualified (42 CFR 447.15); payer line names the Medicare benchmark as a stand-in',
+        JSON.stringify(mc.disabled) === '["POTENTIALLY_PATIENT_COST_SHARING"]' &&
+          mc.value === 'POTENTIALLY_PATIENT_COST_SHARING' &&
+          mc.quals.startsWith('Payer: Medicaid; insurer amount uses the Medicare benchmark as a stand-in (state Medicaid rates differ); participant cost sharing shown as 0 on insurer-billed lines.') &&
+          mc.quals.includes('1 line assigned to the participant: Medicaid generally bars billing an enrollee beyond nominal cost sharing for a covered service (42 CFR 447.15); review before use.'),
+        mc,
+      )
+      await page.evaluate(() => [...document.querySelectorAll('.financial .section')].find((s) => s.querySelector('h2')?.innerText === 'Who pays, per participant')?.scrollIntoView({ block: 'center' }))
+      await sleep(200)
+      await page.screenshot({ path: `${OUT}/behaviour-3a-medicaid-participant-line.png`, fullPage: false })
+      await setSelect(page, 'Responsibility for New-patient oncology visit, high complexity', 'POTENTIALLY_PAYER_COVERED')
       const med = await page.evaluate(() => {
         const l = [...document.querySelectorAll('.financial label')].find((x) => x.querySelector('.field-label')?.textContent.startsWith('Insurer share'))
         return { disabled: l.querySelector('input').disabled, note: l.querySelector('.fin-field-note')?.innerText ?? '' }
       })
-      check('Medicaid: payer share disabled, with the reason', med.disabled && /Not applied for Medicaid/.test(med.note), med)
+      check(
+        'Medicaid: payer share disabled, with the reason',
+        med.disabled && med.note === 'Not applied for Medicaid: the insurer amount is the Medicare benchmark as a stand-in and the participant share on insurer-billed lines is 0.',
+        med,
+      )
       await setPayer(page, 'commercial')
       const comm = (await compare(page, log)).body
       await page.evaluate(() => document.querySelectorAll('.fin-more details').forEach((d) => (d.open = false)))

@@ -99,6 +99,14 @@
     "patient_per_participant": 47.36,
     "reserve_per_participant": 0.0,
     "insurer_amount_known": true,
+    "allowed_statuses": [
+     "SPONSOR",
+     "POTENTIALLY_PAYER_COVERED",
+     "POTENTIALLY_PATIENT_COST_SHARING",
+     "CONDITIONAL",
+     "UNKNOWN",
+     "REVIEW_REQUIRED"
+    ],
     "resource_cost_per_participant": 165.77,
     "resource_cost_kind": "explicit_synthetic_70_percent_of_benchmark",
     "jurisdiction": "MA",
@@ -127,6 +135,12 @@
     "patient_per_participant": 0.0,
     "reserve_per_participant": 0.0,
     "insurer_amount_known": true,
+    "allowed_statuses": [
+     "SPONSOR",
+     "CONDITIONAL",
+     "UNKNOWN",
+     "REVIEW_REQUIRED"
+    ],
     "resource_cost_per_participant": 10.75,
     "resource_cost_kind": "explicit_synthetic_70_percent_of_benchmark",
     "jurisdiction": "MA",
@@ -135,16 +149,16 @@
   ],
   "totals": {
    "sponsor": 3159.79,
-   "payer": 4847.14,
-   "patient": 1211.53,
+   "payer": 5026.97,
+   "patient": 1031.7,
    "reserve": 2500.0,
    "resource": 8952.97
   },
   "insurer_amounts_unknown": 0,
   "warnings": [
    "Every coverage determination and price requires review. Insurer and participant figures are illustrative splits, not approvals.",
-   "Medicare qualifying-trial, service and beneficiary eligibility remain unverified.",
-   "In this worksheet, payer type, payer share and the commercial-rate assumption change only the insurer and participant lines; the sponsor commitment does not fall because an insurer pays more for routine care. A line moves onto or off the sponsor only through its coverage status (who is billed), set by coverage review or a contract term, never through the insurer's payment amount. Payer and Medicare amounts can still inform the rate negotiated for research items (benchmark x sponsor_rate_multiplier)."
+   "Medicare qualifying-trial, service and beneficiary eligibility remain unverified. Clinical diagnostic lab tests priced from the CLFS are paid at 100% with no participant share; the payer share applies to the other routine lines.",
+   "In this worksheet, payer type, payer share and the commercial-rate assumption change only the insurer and participant lines; the sponsor commitment does not fall because an insurer pays more for routine care. A line moves onto the sponsor through coverage review or a contract term (for example, the site contract has the sponsor pay for a routine item), and off the sponsor only when coverage analysis finds it is billable routine care that the contract and consent form do not promise to provide free; never through the insurer's payment amount. Payer and Medicare amounts can still inform the rate negotiated for research items (benchmark x the sponsor-site negotiated rate)."
   ]
  },
  "limitations": [
@@ -152,7 +166,7 @@
   "The real trial identifier links an existing illustrative authored schedule; the registry does not publish the complete protocol. This is not a sponsor-approved protocol budget.",
   "Medicare and insurer amounts for routine care are benchmarks: they inform fair-market-value reasoning and are inputs to the sponsor's budget negotiation with each site or hospital.",
   "Whether an item may be billed to an insurer follows the protocol and coverage rules (for Medicare, NCD 310.1 routine costs in qualifying trials): research-only items are the sponsor's and are never billed to an insurer or participant. The site contract can still have the sponsor pay for a routine item (mark it SPONSOR here), and an item the sponsor pays for or supplies free is then not billed to the insurer. Insurer payment amounts are not a lever over who is billed.",
-  "In this worksheet, payer type, payer share and the commercial-rate assumption change only the insurer and participant lines; the sponsor commitment does not fall because an insurer pays more for routine care. A line moves onto or off the sponsor only through its coverage status (who is billed), set by coverage review or a contract term, never through the insurer's payment amount. Payer and Medicare amounts can still inform the rate negotiated for research items (benchmark x sponsor_rate_multiplier).",
+  "In this worksheet, payer type, payer share and the commercial-rate assumption change only the insurer and participant lines; the sponsor commitment does not fall because an insurer pays more for routine care. A line moves onto the sponsor through coverage review or a contract term (for example, the site contract has the sponsor pay for a routine item), and off the sponsor only when coverage analysis finds it is billable routine care that the contract and consent form do not promise to provide free; never through the insurer's payment amount. Payer and Medicare amounts can still inform the rate negotiated for research items (benchmark x the sponsor-site negotiated rate).",
   "Nothing here models negotiation length, enrollment speed, time to fill sites or trial duration, and no scenario is ranked or recommended; the budgeted contract period is an input that prices monthly site costs.",
   "Routine coverage is potential, subject to qualifying-trial, beneficiary, jurisdiction, plan, network and service review. No insurer participates or commits funding.",
   "Unknown responsibility is held as sponsor contingency, not billed to insurers or participants. Unresolved patient exposure is unknown, not evidence of zero liability.",

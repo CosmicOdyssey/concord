@@ -11,12 +11,15 @@ import { Banner, Details, ErrorBox, HoverCard, InfoTip, KeyFigure, Loading, Page
 import { useDensity } from '../density'
 import {
   commitment,
-  COVERAGE_STATUSES,
   financialApi,
   finite,
+  firstSentence,
+  lineKind,
   NONFINITE_MESSAGE,
+  participantAssigned,
   payerFraming,
   pct,
+  responsibilityOptions,
   sameCoverageInputs,
   scenarioChange,
   signedUsd,
@@ -272,7 +275,9 @@ function CoverageWorksheet({ c }: { c: Ctx }) {
           step={0.05}
           disabled={medicaid}
           onChange={(v) => c.field('payer_fraction', v)}
-          note={medicaid ? 'Not applied for Medicaid: the insurer amount is the benchmark and the participant share is 0.' : undefined}
+          note={
+            medicaid ? 'Not applied for Medicaid: the insurer amount is the Medicare benchmark as a stand-in and the participant share on insurer-billed lines is 0.' : undefined
+          }
         />
         <Numeric
           label="Insurer administration per participant (USD)"
@@ -319,7 +324,8 @@ function CoverageWorksheet({ c }: { c: Ctx }) {
           <table className="tbl fin-tbl fin-tbl-coverage">
             <caption>
               {coverage.items.length} protocol items, per participant ({coverage.items[0]?.jurisdiction ?? r.jurisdiction} · {coverage.items[0]?.payer_plan ?? r.payer_plan}).
-              Each line is assigned to one party. Edit a responsibility and compare again to update the amounts.
+              Each line is assigned to one party. Who may be billed follows the coverage analysis and billing grid (protocol, contract, consent form); an edit
+              here is an operator interpretation, not a coverage decision. Compare again to update the amounts.
             </caption>
             <thead>
               <tr>
@@ -369,12 +375,13 @@ function CoverageWorksheet({ c }: { c: Ctx }) {
                       value={r.coverage_overrides[item.id] ?? item.status}
                       onChange={(e) => c.field('coverage_overrides', { ...r.coverage_overrides, [item.id]: e.target.value as typeof item.status })}
                     >
-                      {COVERAGE_STATUSES.map((status) => (
-                        <option key={status} value={status}>
+                      {responsibilityOptions(item, r.payer_kind).map(({ status, disabled }) => (
+                        <option key={status} value={status} disabled={disabled}>
                           {words(status)}
                         </option>
                       ))}
                     </select>
+                    {LINE_NOTE[lineKind(item)] && <div className="fin-sub">{LINE_NOTE[lineKind(item)]}</div>}
                   </td>
                   <td>
                     <strong>{words(item.review_status)}</strong>
@@ -407,6 +414,12 @@ function CoverageWorksheet({ c }: { c: Ctx }) {
       ))}
     </>
   )
+}
+
+const LINE_NOTE: Record<ReturnType<typeof lineKind>, string | null> = {
+  research: 'Research item: sponsor only; never billed to an insurer or participant (coverage rules).',
+  supply: 'Investigational supply: sponsor only.',
+  routine: null,
 }
 
 /** Provenance, the two exports and the sources. `full` adds every assumption and limitation (Detailed); in Simple
@@ -915,9 +928,10 @@ function PartyLedger({ s, c }: { s: FinancialScenario; c: Ctx }) {
             hospital cost.
           </p>
         </Party>
-        <Party title="Hospital operating contribution" value={usd(e.hospital.net_contribution)}>
+        <Party title="Hospital revenue minus assumed cost" value={usd(e.hospital.net_contribution)}>
           <p>
-            Revenue {usd(e.hospital.revenue)} · resource cost {usd(e.hospital.resource_cost)} (excludes the investigational supply)
+            Revenue {usd(e.hospital.revenue)} · assumed resource cost {usd(e.hospital.resource_cost)} (synthetic: 80% of site payments, 70% of procedure
+            benchmarks; excludes the investigational supply). Not a margin estimate or a fair-market-value test.
           </p>
         </Party>
         <Party title="Insurer payments and administration" value={usd(e.insurer.total)}>
@@ -986,7 +1000,7 @@ function LedgerTables({ c }: { c: Ctx }) {
     ['Sponsor spending', (s) => s.economics?.sponsor.expenditure],
     ['Held contingency', (s) => s.economics?.sponsor.contingency_reserve],
     ['Supply resource proxy (sponsor-side)', (s) => s.economics?.sponsor.supply_resource_proxy],
-    ['Hospital contribution', (s) => s.economics?.hospital.net_contribution],
+    ['Hospital revenue minus assumed cost', (s) => s.economics?.hospital.net_contribution],
     ['Insurer payments and administration', (s) => s.economics?.insurer.total],
     ['Participant routine cost sharing (illustrative)', (s) => s.economics?.patient.cost_sharing],
     ['Sponsor access support', (s) => s.economics?.patient.access_support],
@@ -995,7 +1009,7 @@ function LedgerTables({ c }: { c: Ctx }) {
   const deltas: [string, keyof NonNullable<FinancialScenario['delta']>][] = [
     ['Sponsor spending', 'sponsor_expenditure'],
     ['Resource cost', 'resources'],
-    ['Hospital contribution', 'hospital_contribution'],
+    ['Hospital revenue minus assumed cost', 'hospital_contribution'],
     ['Insurer', 'insurer_expenditure'],
     ['Participant routine cost sharing', 'patient_cost_sharing'],
     ['Sponsor access support', 'access_support'],
@@ -1215,28 +1229,90 @@ function SensitivityTable({ c }: { c: Ctx }) {
   )
 }
 
-/** The coverage worksheet's totals per participant: sponsor, insurer, participant and held contingency. */
+/** The coverage worksheet's totals per participant: sponsor, insurer, participant and held contingency. Each
+ *  sub-label says what the figure rests on: the negotiated-rate assumption, pending coverage analysis, the stated
+ *  coinsurance share, and how much of the contingency is the investigational-supply reserve. */
 function CoverageTotals({ c, resource }: { c: Ctx; resource?: boolean }) {
   const t = c.coverage?.totals
-  const show = (v: number | null | undefined) => (c.coverageCurrent && t ? usd2(v) : 'Compare to update')
+  const current = c.coverageCurrent && !!t
+  const show = (v: number | null | undefined) => (current ? usd2(v) : 'Compare to update')
+  const inputs = c.result?.request ?? c.request
+  const multiplier = inputs.sponsor_rate_multiplier
+  const supply = c.coverage?.items.find((i) => i.id === 'drug-contingency')?.reserve_per_participant
+  const reserveSub =
+    current && t && finite(supply)
+      ? `Investigational-supply reserve ${usd2(supply)} (operator assumption, not a drug price); unknown, conditional or review-required lines ${usd2(Math.round((t.reserve - supply) * 100) / 100)}`
+      : 'Investigational-supply reserve (operator assumption) and unknown, conditional or review-required lines'
   return (
     <div className="fin-totals">
-      <KeyFigure label="Sponsor pays" value={show(t?.sponsor)} sub="Research items, at the sponsor-site rate" />
-      <KeyFigure label="Insurer (illustrative)" value={show(t?.payer)} sub="Routine care billed under coverage rules" />
-      <KeyFigure label="Participant cost sharing (illustrative)" value={show(t?.patient)} sub="Routine care, the participant’s share" />
-      <KeyFigure label="Held as sponsor contingency" value={show(t?.reserve)} sub="Unknown, conditional or review-required lines" />
+      <KeyFigure
+        label="Sponsor pays"
+        value={show(t?.sponsor)}
+        sub={
+          finite(multiplier)
+            ? `Research items at ${multiplier.toFixed(2)}x the fee-schedule benchmark (synthetic negotiated rate, not an FMV finding)`
+            : 'Research items at the sponsor-site negotiated rate (synthetic, not an FMV finding)'
+        }
+      />
+      <KeyFigure label="Insurer (illustrative)" value={show(t?.payer)} sub="Routine care that may be billed to insurance, pending coverage analysis" />
+      <KeyFigure
+        label="Participant cost sharing (illustrative)"
+        value={show(t?.patient)}
+        sub={
+          inputs.payer_kind === 'Medicaid'
+            ? 'Medicaid: 0 on insurer-billed lines'
+            : 'Routine-care coinsurance at the stated share, before deductibles and secondary coverage'
+        }
+      />
+      <KeyFigure label="Held as sponsor contingency" value={show(t?.reserve)} sub={reserveSub} />
       {resource && <KeyFigure label="Resource cost (assumed)" value={show(t?.resource)} sub="Delivery cost assumption, not a payment" />}
     </div>
   )
 }
 
 function payerLine(r: FinanceRequest): string {
-  if (r.payer_kind === 'Medicaid') return 'Payer: Medicaid; insurer amount at the benchmark, no participant share.'
+  if (r.payer_kind === 'Medicaid')
+    return 'Payer: Medicaid; insurer amount uses the Medicare benchmark as a stand-in (state Medicaid rates differ); participant cost sharing shown as 0 on insurer-billed lines.'
   if (r.payer_kind === 'commercial')
     return r.commercial_rate_assumption
       ? `Payer: commercial, allowed amount assumed equal to the Medicare benchmark; insurer share ${pct(r.payer_fraction, 0)}.`
       : 'Payer: commercial, allowed amounts unknown (no rate assumption).'
-  return `Payer: Medicare; insurer share ${pct(r.payer_fraction, 0)} of the benchmark.`
+  return `Payer: Medicare; insurer share ${pct(r.payer_fraction, 0)} of the benchmark (clinical lab tests: 100% of the CLFS amount).`
+}
+
+/** Under Medicaid, the lines the operator put on the participant in full. */
+function medicaidPatientNote(r: FinanceRequest): string | null {
+  const n = participantAssigned(r)
+  if (r.payer_kind !== 'Medicaid' || n === 0) return null
+  return `${n} line${n === 1 ? '' : 's'} assigned to the participant: Medicaid generally bars billing an enrollee beyond nominal cost sharing for a covered service (42 CFR 447.15); review before use.`
+}
+
+/** The payer line; in Simple, the first sentence of the API's PAYER_INDEPENDENCE verbatim (the sponsor commitment
+ *  does not fall because an insurer pays more); and any Medicaid or unknown-amount qualifier. */
+function PayerQualifiers({ c, independence }: { c: Ctx; independence: boolean }) {
+  const coverage = c.coverage
+  const guard = independence ? firstSentence(c.framing.independence) : null
+  const medicaid = medicaidPatientNote(c.request)
+  return (
+    <p className="fin-quals">
+      {payerLine(c.request)}
+      {guard && ` ${guard}`}
+      {medicaid && (
+        <>
+          {' '}
+          <Qualifier>{medicaid}</Qualifier>
+        </>
+      )}
+      {coverage && c.coverageCurrent && coverage.insurer_amounts_unknown > 0 && (
+        <>
+          {' '}
+          <Qualifier>
+            {coverage.insurer_amounts_unknown} routine line{coverage.insurer_amounts_unknown === 1 ? '' : 's'}: insurer amount unknown
+          </Qualifier>
+        </>
+      )}
+    </p>
+  )
 }
 
 /* ----------------------------------------------------------------- view ----------------------------------------------------------------- */
@@ -1494,19 +1570,7 @@ export default function FinancialView() {
                 {framing.benchmarks} {framingTrigger}
               </>
             }
-            qualifiers={
-              <p className="fin-quals">
-                {payerLine(request)}
-                {coverage && coverageCurrent && coverage.insurer_amounts_unknown > 0 && (
-                  <>
-                    {' '}
-                    <Qualifier>
-                      {coverage.insurer_amounts_unknown} routine line{coverage.insurer_amounts_unknown === 1 ? '' : 's'}: insurer amount unknown
-                    </Qualifier>
-                  </>
-                )}
-              </p>
-            }
+            qualifiers={<PayerQualifiers c={c} independence />}
             figure={coverage ? <CoverageTotals c={c} /> : <Empty>Compare to load the selected trial’s coverage worksheet.</Empty>}
             caption={
               coverage
@@ -1648,7 +1712,7 @@ function DetailedSection({ name, c }: { name: SectionName; c: Ctx }) {
                 <p key={l}>{l}</p>
               ))}
           </div>
-          <p className="fin-quals">{payerLine(c.request)}</p>
+          <PayerQualifiers c={c} independence={false} />
           {c.coverage && <CoverageTotals c={c} resource />}
           {c.coverage && c.coverageCurrent && (
             <p className="fin-text">

@@ -5,7 +5,8 @@ usage: python make_financial_fixtures.py [api_base]   (default http://localhost:
 Writes financial_demo.json and three trimmed comparisons next to this file: the default request, a capacity-short
 variant (SYN-A and SYN-B at 20 stated places each, so A, B and D are not costed and C/E add SYN-C) and a commercial
 payer without the rate assumption (insurer and participant amounts UNKNOWN). Trimming keeps every scenario field and
-drops only bulk (all but three worksheet lines, long assumption lists, most evidence keys).
+drops only bulk (all but a few worksheet lines: the first, a research item, an UNKNOWN line, a Medicare CLFS lab line
+when there is one, and the supply reserve; long assumption lists; most evidence keys).
 """
 import json
 import pathlib
@@ -30,7 +31,9 @@ def post(path, body):
 def trim(r):
     cov = dict(r['coverage'])
     items = cov['items']
-    cov['items'] = [items[0]] + [i for i in items if i['status'] == 'SPONSOR'][:1] + [i for i in items if i['status'] == 'UNKNOWN'][:1]
+    keep = [items[0]] + [i for i in items if i['status'] == 'SPONSOR'][:1] + [i for i in items if i['status'] == 'UNKNOWN'][:1]
+    keep += [i for i in items if 'CLFS amount' in i['explanation']][:1] + [i for i in items if i['id'] == 'drug-contingency']
+    cov['items'] = [i for n, i in enumerate(keep) if i['id'] not in {k['id'] for k in keep[:n]}]
     r['coverage'] = cov
     r['evidence'] = {k: r['evidence'][k] for k in ('commit', 'financial_input_kind', 'cache_policy')}
     for s in r['scenarios']:

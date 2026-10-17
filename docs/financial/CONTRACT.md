@@ -4,6 +4,8 @@ For the frontend pass that moves `frontend/src/financialApi.ts` and `FinancialVi
 
 **Revision 2 (same day, review fixes)** changed: `economics.patient` (no `net_cash_exposure`), `delta` (`patient_exposure` -> `patient_cost_sharing`, new `access_support`), `economics.sponsor.supply_resource_proxy` (new; the supply reserve left `hospital.resource_cost`), `plan.participant_split` (new), `budget_reallocation.added_sites_cost` (new), Medicaid participant share (0, `payer_fraction` not applied), and the payer, billing, administration and per-participant-cost wording. Items marked **(rev 2)** below.
 
+**Revision 3 (branch `financial-ui`, review fixes)** changed: `coverage.items[].allowed_statuses` (new: the statuses the API accepts for the line; research items and `drug-contingency` get only `SPONSOR`/`CONDITIONAL`/`UNKNOWN`/`REVIEW_REQUIRED`), the Medicare split of clinical lab tests (a `POTENTIALLY_PAYER_COVERED` line priced from the CLFS: payer = `unit_rate`, patient = 0, because Medicare pays clinical diagnostic lab tests at 100% of the CLFS amount with no Part B deductible or coinsurance; default per participant insurer 4,847.14 -> 5,026.97 and participant 1,211.53 -> 1,031.70; ledger A insurer payments 290,828.20 -> 301,618.20 and participant cost sharing 72,692 -> 61,902; sponsor commitments and hospital figures unchanged), the `PAYER_INDEPENDENCE` sentence (a contract term moves a line onto the sponsor; only coverage analysis takes one off it; no code names), the Medicare payer note in `coverage.warnings[1]`, and the HTML report's ledger column "Hospital revenue minus assumed cost". Items marked **(rev 3)** below.
+
 Endpoints are unchanged: `GET /api/financial/demo`, `POST /api/financial/compare`, `POST /api/financial/report?format=json|html`. The request model still forbids unknown fields, so **posting any removed field is a 422**.
 
 ## 1. Removed and renamed
@@ -133,12 +135,13 @@ interface CoverageItem {
   patient_per_participant: number | null   // null = UNKNOWN
   reserve_per_participant: number
   insurer_amount_known: boolean
+  allowed_statuses: CoverageStatus[]       // rev 3: research items and drug-contingency: SPONSOR, CONDITIONAL, UNKNOWN, REVIEW_REQUIRED; routine: all six
   resource_cost_per_participant: number; resource_cost_kind: string
   jurisdiction: string; payer_plan: string
 }
 ```
 
-Line rules: `SPONSOR` -> sponsor = `sponsor_unit_rate`. `UNKNOWN`/`CONDITIONAL`/`REVIEW_REQUIRED` -> reserve = `sponsor_unit_rate`. `POTENTIALLY_PAYER_COVERED` -> payer + patient = `unit_rate` split by `payer_fraction` (Medicare, assumed commercial), payer = `unit_rate` and patient = 0 for Medicaid, or both `null` for commercial without the assumption; sponsor and reserve are 0. `POTENTIALLY_PATIENT_COST_SHARING` -> patient = `unit_rate`.
+Line rules: `SPONSOR` -> sponsor = `sponsor_unit_rate`. `UNKNOWN`/`CONDITIONAL`/`REVIEW_REQUIRED` -> reserve = `sponsor_unit_rate`. `POTENTIALLY_PAYER_COVERED` -> payer + patient = `unit_rate` split by `payer_fraction` (Medicare, assumed commercial), payer = `unit_rate` and patient = 0 for Medicaid and **(rev 3)** for a Medicare line priced from the CLFS (clinical diagnostic lab tests: no Part B deductible or coinsurance), or both `null` for commercial without the assumption; sponsor and reserve are 0. `POTENTIALLY_PATIENT_COST_SHARING` -> patient = `unit_rate`.
 
 ### Scenario
 
@@ -233,4 +236,7 @@ Scenario semantics: A = baseline-active sites, entered admin and support. B = A 
 - **(rev 2)** Ledger: show `economics.sponsor.supply_resource_proxy` as a sponsor-side line, not under the hospital.
 - **(rev 2)** Label site `per_participant_cost` as costs not itemized in the worksheet. Do not show "no double billing" or any compliance claim.
 - **(rev 2)** When `payer_kind` is Medicaid, disable or annotate the payer-share input (not applied; participant share 0).
+- **(rev 3)** Offer only `coverage.items[].allowed_statuses` in a line's responsibility select (research items and the supply reserve are sponsor-side only; any other status is a 422). Under Medicaid, disable participant cost sharing and qualify any line that holds it (42 CFR 447.15).
+- **(rev 3)** Next to the payer line, show the first sentence of `assumptions.payer_independence` verbatim (the sponsor commitment does not fall because an insurer pays more), not only in a hover card.
+- **(rev 3)** Label `economics.hospital.net_contribution` "Hospital revenue minus assumed cost" with its synthetic 80% / 70% cost basis; it is not a margin estimate or a fair-market-value test. Label the sponsor's per-participant amount with the negotiated-rate multiple (not an FMV finding), the insurer amount as pending coverage analysis, and split held contingency into the investigational-supply reserve and unresolved lines.
 - Current view breakpoints: `FinancialView.tsx` line 16 (`plan.projected_capacity`, `plan.modeled_months` column), line 57 (`recommended_scenario_id`), line 92 (`horizon_months` input), line 94 (`rate_multiplier`), line 96 (`no_loser` checkbox; per-site rate and lag columns), lines 92/100 (`rate_spread`), and the Reinvestment Lab section; `financialApi.ts` types `FinancialSite`, `FinanceRequest`, `FinancialScenario`, `FinancialResult`.

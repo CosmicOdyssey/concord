@@ -4,6 +4,8 @@
 
 export const COVERAGE_STATUSES = ['SPONSOR', 'POTENTIALLY_PAYER_COVERED', 'POTENTIALLY_PATIENT_COST_SHARING', 'CONDITIONAL', 'UNKNOWN', 'REVIEW_REQUIRED'] as const
 export type CoverageStatus = (typeof COVERAGE_STATUSES)[number]
+/** What research items and the investigational-supply reserve may be: never billed to an insurer or participant. */
+export const SPONSOR_SIDE_STATUSES = ['SPONSOR', 'CONDITIONAL', 'UNKNOWN', 'REVIEW_REQUIRED'] as const satisfies readonly CoverageStatus[]
 export type PayerKind = 'Medicare' | 'commercial' | 'Medicaid'
 export type ScenarioId = 'A' | 'B' | 'C' | 'D' | 'E'
 
@@ -75,6 +77,9 @@ export interface CoverageItem {
   patient_per_participant: number | null
   reserve_per_participant: number
   insurer_amount_known: boolean
+  /** The statuses the API accepts for this line: SPONSOR_SIDE_STATUSES for research items and the supply reserve,
+   *  all six for routine care. Missing from an older API. */
+  allowed_statuses?: CoverageStatus[]
   resource_cost_per_participant: number
   resource_cost_kind: string
   jurisdiction: string
@@ -301,6 +306,36 @@ export function payerFraming(limitations: readonly string[], assumptions?: Recor
     independence: assumptions?.payer_independence ?? pick('independence'),
     noTime: pick('noTime'),
   }
+}
+
+/** The first sentence of an API sentence group, verbatim (up to the first ". " before a capital letter). */
+export function firstSentence(text: string | null): string | null {
+  if (!text) return null
+  const m = text.match(/^.*?\.(?=\s+[A-Z])/)
+  return m ? m[0] : text
+}
+
+/* ------------------------------------------------------------ responsibility options ------------------------------------------------------------ */
+
+/** What kind of line this is, for the responsibility select: a research item or the investigational-supply reserve
+ *  (sponsor side only), or routine care. Read from allowed_statuses; for an older API without it, an unedited
+ *  authored SPONSOR line is a research item. */
+export function lineKind(item: CoverageItem): 'supply' | 'research' | 'routine' {
+  if (item.id === 'drug-contingency') return 'supply'
+  if (item.allowed_statuses) return item.allowed_statuses.includes('POTENTIALLY_PAYER_COVERED') ? 'routine' : 'research'
+  return item.status === 'SPONSOR' && item.review_status !== 'operator_interpretation' ? 'research' : 'routine'
+}
+
+/** The statuses offered for a line: research items and the supply reserve get only the sponsor-side four. Under
+ *  Medicaid, participant cost sharing is offered but disabled (42 CFR 447.15); a line already holding it still shows it. */
+export function responsibilityOptions(item: CoverageItem, payer: PayerKind): { status: CoverageStatus; disabled: boolean }[] {
+  const base: readonly CoverageStatus[] = item.allowed_statuses ?? (lineKind(item) === 'routine' ? COVERAGE_STATUSES : SPONSOR_SIDE_STATUSES)
+  return base.map((status) => ({ status, disabled: payer === 'Medicaid' && status === 'POTENTIALLY_PATIENT_COST_SHARING' }))
+}
+
+/** Lines the request puts on the participant in full. */
+export function participantAssigned(request: FinanceRequest): number {
+  return Object.values(request.coverage_overrides).filter((s) => s === 'POTENTIALLY_PATIENT_COST_SHARING').length
 }
 
 /* -------------------------------------------------------------- coverage currency -------------------------------------------------------------- */
