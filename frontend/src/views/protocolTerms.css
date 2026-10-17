@@ -118,6 +118,7 @@
 /* Long qualifiers wrap (the shared mark is nowrap, made for short words). */
 .tf-quals .qual,
 .tf-ovcount .qual,
+.tf-payer .qual,
 .tf-step .section-quals > .qual {
   white-space: normal;
 }

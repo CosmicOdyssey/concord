@@ -1,7 +1,9 @@
 // Protocol to terms with the non-lung protocol (SIENNA, NCT06541704, geographic atrophy): screenshots in Simple and
 // Detailed, light and dark, at 1440 and 390 px; page and console errors; horizontal page scroll; the picker label
 // next to the lung protocols; the always-visible labels; on-screen per-participant total equal to the API; an
-// unresolved-locality site that says why; the term sheet (md and html) export.
+// unresolved-locality site that says why; the unpriced research items and the 20 counted dosing visits under the
+// payer figure (both densities); a two-site compare against an unresolved site that states the national-amount
+// assumption first; the term sheet (md and html) export.
 // Usage (NODE_PATH must reach puppeteer-core): node terms_nonlung.js [baseUrl] [outDir]
 const fs = require('fs')
 const path = require('path')
@@ -85,6 +87,10 @@ async function ready(page) {
                 return { illustrative: t.includes(ILLUSTRATIVE), disclaimer: t.includes(DISCLAIMER) }
               }),
               payerValues: [...document.querySelectorAll('.tf-payer-value')].map((e) => e.textContent),
+              // text clipped inside a payer card (a nowrap qualifier wider than its card)
+              payerClipped: [...document.querySelectorAll('.tf-payer, .tf-payer .qual')]
+                .filter((e) => e.scrollWidth > e.clientWidth + 1 || e.getBoundingClientRect().right > (e.closest('.tf-payer')?.getBoundingClientRect().right ?? 1e9) + 1)
+                .map((e) => e.className),
               main: txt('main'),
             }
           },
@@ -102,6 +108,10 @@ async function ready(page) {
         check(`${name} disclaimer visible`, r.main.includes(DISCLAIMER))
         check(`${name} illustrative visible`, r.main.includes(ILLUSTRATIVE))
         check(`${name} per-participant equals API`, r.main.includes(usd(bud.totals.per_participant)), usd(bud.totals.per_participant))
+        check(`${name} nothing clipped in the payer cards`, r.payerClipped.length === 0, JSON.stringify(r.payerClipped))
+        check(`${name} unpriced items stated`, !!bud.totals.unpriced_text && r.main.includes(bud.totals.unpriced_text), bud.totals.unpriced_text)
+        for (const x of bud.totals.per_participant_repeats ?? [])
+          check(`${name} counted dosing visits stated`, r.main.includes(`${x.count} × ${usd(x.amount)} = ${usd(x.subtotal)}`), usd(x.amount))
         const low = r.main.toLowerCase()
         check(`${name} no forecast wording`, !FORBIDDEN.some((f) => low.includes(f)))
         await page.close()
@@ -127,11 +137,38 @@ async function ready(page) {
     await page.close()
   }
 
+  // Compare against an unresolved site: the sentence states the national-amount assumption first.
+  const rich = sites.sites.find((s) => s.city === 'Richmond' && s.locality === null)
+  if (check('Richmond unresolved site present', !!rich)) {
+    for (const density of ['simple', 'detailed']) {
+      const page = await open(`compare-unresolved-${density}`, 1440, { density })
+      const sels = await page.$$('#tf-step-4 select')
+      if (check(`${density} compare selects present`, sels.length === 2, String(sels.length))) {
+        await sels[1].select(rich.site_id)
+        await page
+          .waitForFunction(() => (document.querySelector('#tf-step-4 .section-lede')?.innerText ?? '').includes('On that assumption'), {
+            timeout: 30000,
+            polling: 300,
+          })
+          .catch(() => {})
+        const lede = await page.evaluate(() => document.querySelector('#tf-step-4 .section-lede')?.innerText ?? '')
+        log[`compareUnresolved_${density}`] = lede
+        check(`${density} compare opens with the locality note`, lede.startsWith('Site B: Medicare locality not resolved.'), lede)
+        check(`${density} compare says on that assumption`, lede.includes('On that assumption'), lede)
+        check(`${density} compare does not claim a published GPCI difference`, !lede.includes('because Medicare'), lede)
+        const step = await page.$('#tf-step-4')
+        await step.screenshot({ path: path.join(OUT, `nonlung_compare_unresolved_${density}.png`) })
+      }
+      await page.close()
+    }
+  }
+
   // Term sheet exports.
   const md = await (await fetch(`${BASE}/api/terms-flow/${NCT}/termsheet.md?site_id=${A}&compare_site=${B}&download=false`)).text()
   fs.writeFileSync(path.join(OUT, 'term-sheet_NCT06541704.md'), md)
   check('md disclaimer', md.includes(DISCLAIMER))
   check('md snapshot source', md.includes('clinicaltrials.gov/api/v2/studies/NCT06541704'))
+  check('md unpriced items in totals', md.includes('Excludes 6 research items with no published Medicare amount'))
   for (const width of [1440, 390]) {
     const page = await browser.newPage()
     page.on('pageerror', (e) => log.pageerrors.push(`sheet-${width}: ${e}`))

@@ -31,6 +31,7 @@ import {
   type SitesResp,
   type StandardEdits,
   type StandardItem,
+  type Totals,
   type TrialCard,
   type VisitBudget,
   coverageLabel,
@@ -181,10 +182,15 @@ function dateText(s: string, short = false): string {
   return d === '—' ? s : d
 }
 
-/** Visits inside the per-participant amount (screening through cycle 8, end of treatment, safety follow-up); the
- *  repeating visits are priced per occurrence. */
+/** Visits inside the per-participant amount (screening through cycle 8, end of treatment, safety follow-up), plus a
+ *  repeating visit whose number per participant the schedule fixes; open-ended repeats are priced per occurrence. */
 function fixedVisits(b: Budget): VisitBudget[] {
-  return b.visits.filter((v) => v.kind !== 'repeat')
+  return b.visits.filter((v) => v.kind !== 'repeat' || !!v.occurrences)
+}
+
+/** How many times a visit counts in the per-participant amount. */
+function occ(v: VisitBudget): number {
+  return v.occurrences ?? 1
 }
 
 const reduceMotion = () => {
@@ -982,7 +988,11 @@ function OtherPayments({ b }: { b: Budget }) {
         </span>
       ))}
       <span className="tf-hc-kv">
-        <span>Screen failure, as incurred</span> <span className="num">{usd(t.screen_failure)}</span>
+        <span>
+          Screen failure, as incurred
+          {t.screen_failure_unpriced ? <span className="muted"> (excludes {t.screen_failure_unpriced} unpriced research items)</span> : null}
+        </span>{' '}
+        <span className="num">{usd(t.screen_failure)}</span>
       </span>
       <span className="tf-hc-kv">
         <span>Per site, one time</span> <span className="num">{usd(t.per_site_one_time)}</span>
@@ -997,7 +1007,7 @@ function PayerFigure({ b, stale }: { b: Budget; stale: boolean }) {
   const fixed = fixedVisits(b)
   const coord = b.standard_schedule.find((i) => i.id === 'coordinator')
   const over = b.standard_schedule.find((i) => i.id === 'overhead')
-  const nCoord = fixed.filter((v) => v.coordinator > 0).length
+  const nCoord = fixed.reduce((s, v) => s + (v.coordinator > 0 ? occ(v) : 0), 0)
   // Research items by price source, shown only when they add up to the API's total.
   const sources = new Map<string, { n: number; amount: number }>()
   for (const v of fixed)
@@ -1005,7 +1015,7 @@ function PayerFigure({ b, stale }: { b: Budget; stale: boolean }) {
       if (l.payer === 'Sponsor' && l.amount !== null) {
         const k = l.schedule ?? 'None'
         const cur = sources.get(k) ?? { n: 0, amount: 0 }
-        sources.set(k, { n: cur.n + 1, amount: cur.amount + l.amount })
+        sources.set(k, { n: cur.n + occ(v), amount: cur.amount + l.amount * occ(v) })
       }
   const sourcesSum = [...sources.values()].reduce((s, x) => s + x.amount, 0)
   const bySource = Math.abs(sourcesSum - t.per_participant_research_items) < 0.01 ? sources : null
@@ -1079,6 +1089,13 @@ function PayerFigure({ b, stale }: { b: Budget; stale: boolean }) {
             <dd className="num">{usd(t.per_participant_overhead)}</dd>
           </div>
         </dl>
+        {(t.per_participant_repeats ?? []).map((x) => (
+          <p key={x.visit_id} className="tf-payer-sub">
+            Includes {x.label.charAt(0).toLowerCase() + x.label.slice(1)}: <span className="tnum">{x.count}</span> ×{' '}
+            <span className="tnum">{usd(x.amount)}</span> = <span className="tnum">{usd(x.subtotal)}</span>.
+          </p>
+        ))}
+        <UnpricedNote t={t} />
       </div>
       <div className="tf-payer tf-payer-ins">
         <p className="tf-payer-label">Billable to insurance, per participant (Medicare rates)</p>
@@ -1093,6 +1110,39 @@ function PayerFigure({ b, stale }: { b: Budget; stale: boolean }) {
       </p>
       <VisitChart visits={fixed} />
     </div>
+  )
+}
+
+/** Research items with no published amount: left out of the totals, so the totals say so (both densities). */
+function UnpricedNote({ t }: { t: Totals }) {
+  const items = t.unpriced_sponsor_items ?? []
+  if (!t.unpriced_text || items.length === 0) return null
+  const scr = t.screen_failure_unpriced ?? 0
+  return (
+    <p className="tf-payer-sub">
+      <Qualifier
+        info={
+          <>
+            <span className="hc-title">Research items with no published Medicare amount</span>
+            {items.map((i) => (
+              <span key={i.procedure_id} className="tf-hc-kv">
+                <span>
+                  {i.code && <span className="num">{i.code} </span>}
+                  {i.label}
+                </span>{' '}
+                <span className="muted">{i.visits.join(', ')}</span>
+              </span>
+            ))}
+            <span className="hc-src">
+              No amount in the loaded CMS physician (PFS) or lab (CLFS) fee schedules, or no CPT code. Left out of the totals and to be negotiated,
+              never counted as zero.{scr > 0 ? ` The screen-failure payment excludes the ${scr} at screening.` : ''}
+            </span>
+          </>
+        }
+      >
+        {t.unpriced_text}
+      </Qualifier>
+    </p>
   )
 }
 
@@ -1112,6 +1162,7 @@ function VisitChart({ visits }: { visits: VisitBudget[] }) {
                 <>
                   <span className="hc-title">
                     {v.label}: <span className="num">{usd(v.visit_total)}</span>
+                    {v.occurrences ? ` each, ${v.occurrences} per participant` : ''}
                   </span>
                   {lines.map((l) => (
                     <span key={l.node_id} className="tf-hc-kv">
@@ -1144,12 +1195,17 @@ function VisitChart({ visits }: { visits: VisitBudget[] }) {
               </span>
               <span className="sr-only">
                 {v.label}: {usd(v.visit_total)}
+                {v.occurrences ? ` each, ${v.occurrences} per participant` : ''}
               </span>
             </HoverCard>
           )
         })}
       </div>
-      <figcaption>Sponsor payment per visit, highest {usd(max)}. Hover, focus or tap a visit for its lines.</figcaption>
+      <figcaption>
+        Sponsor payment per visit, highest {usd(max)}
+        {visits.some((v) => v.occurrences) ? '; a repeating visit is shown once and counted each time it occurs' : ''}. Hover, focus or tap a visit
+        for its lines.
+      </figcaption>
     </figure>
   )
 }
@@ -1191,7 +1247,10 @@ function BudgetDetails({
             ))}
             <tr>
               <th scope="row">Screen failure</th>
-              <td>as incurred (the screening visit payment)</td>
+              <td>
+                as incurred (the screening visit payment
+                {t.screen_failure_unpriced ? `; excludes the ${t.screen_failure_unpriced} unpriced research items at screening` : ''})
+              </td>
               <td className="num">{usd(t.screen_failure)}</td>
             </tr>
             <tr>
@@ -1298,7 +1357,14 @@ function BudgetTable({ b, rules }: { b: Budget; rules: Rule[] }) {
                       {isOpen ? '▾' : '▸'}
                     </span>
                     {v.label}
-                    <span className="tf-vwin"> {v.kind === 'repeat' ? `· per occurrence, ${v.repeat}` : `· ${v.window}`}</span>
+                    <span className="tf-vwin">
+                      {' '}
+                      {v.kind !== 'repeat'
+                        ? `· ${v.window}`
+                        : v.occurrences
+                          ? `· each, ${v.repeat}; all ${v.occurrences} are in the per-participant amount`
+                          : `· per occurrence, ${v.repeat}`}
+                    </span>
                   </th>
                   <td className="num">{usd(v.research_subtotal)}</td>
                   <td className="num tf-hide-sm">{usd(v.coordinator)}</td>
@@ -1602,6 +1668,7 @@ function CompareInfo() {
 }
 
 const PART_NAME = { work: 'physician work', pe: 'practice expense', mp: 'malpractice' } as const
+const NATIONAL_ASSUMED = 'national amounts assumed (GPCIs of 1.000), because no locality was resolved'
 
 /** The copy deck's difference line (A4), built from the API's decomposition. */
 function CompareSentence({ c }: { c: Compare }) {
@@ -1618,6 +1685,21 @@ function CompareSentence({ c }: { c: Compare }) {
     )
   }
   const dir = d < 0 ? 'lower' : 'higher'
+  // A site without a resolved locality is priced at national amounts: an assumption, not a published GPCI difference.
+  const fallback = (['a', 'b'] as const).filter((k) => !c[k].locality)
+  if (fallback.length > 0) {
+    return (
+      <>
+        {fallback.map((k) => (
+          <span key={k}>
+            Site {k.toUpperCase()}: {c[k].site.locality_note ?? 'Medicare locality not resolved. Coded lines use national amounts (an assumption).'}{' '}
+          </span>
+        ))}
+        On that assumption, Site B’s sponsor total is <span className="tnum strong">{usd(Math.abs(d))}</span> {dir} per participant than Site A’s. It
+        is not a published locality price, and it is not a saving.
+      </>
+    )
+  }
   const parts = (['work', 'pe', 'mp'] as const)
     .map((k) => ({ k, v: k === 'work' ? sm.from_work : k === 'pe' ? sm.from_pe : sm.from_mp }))
     .filter((p) => Math.sign(p.v) === Math.sign(sm.delta_research_items))
@@ -1653,6 +1735,7 @@ function CompareFigure({ c, stale }: { c: Compare; stale: boolean }) {
     ['Cent rounding', sm.rounding],
   ]
   const max = Math.max(...parts.map(([, v]) => Math.abs(v)), 0.01)
+  const fallback = (['a', 'b'] as const).filter((k) => !c[k].locality)
   return (
     <div className={`tf-cmp-fig${stale ? ' tf-stale' : ''}`}>
       <div className="table-scroll">
@@ -1700,6 +1783,13 @@ function CompareFigure({ c, stale }: { c: Compare; stale: boolean }) {
           <span className="tf-decomp-label">Sponsor difference per participant, Site B − Site A</span>
           <span className="tf-decomp-total num">{signedUsd(sm.delta_per_participant)}</span>
         </div>
+        {fallback.length > 0 && (
+          <p className="small note">
+            Assumption: {fallback.map((k) => `Site ${k.toUpperCase()}`).join(' and ')} {fallback.length > 1 ? 'have' : 'has'} no resolved Medicare
+            locality, so {fallback.length > 1 ? 'their' : 'its'} factors are taken as 1.000 (national amounts). The parts below are differences from
+            those national amounts, not published locality differences.
+          </p>
+        )}
         <ul className="tf-decomp-parts">
           {parts.map(([label, v]) => (
             <li key={label}>
@@ -1767,7 +1857,7 @@ function CompareDetails({ c }: { c: Compare }) {
         </table>
       </div>
       <p className="small muted">
-        {locName(a)}: {a?.method ?? 'national amounts'}. {locName(b)}: {b?.method ?? 'national amounts'}.
+        Site A, {locName(a)}: {a?.method ?? NATIONAL_ASSUMED}. Site B, {locName(b)}: {b?.method ?? NATIONAL_ASSUMED}.
       </p>
       <h3>Every sponsor-paid item</h3>
       <p className="small muted tf-sub">
@@ -1855,7 +1945,14 @@ function CompareDetails({ c }: { c: Compare }) {
                             {r.why}: {usd(r.unit_a)} at both sites.
                           </div>
                         )}
-                        <div className="muted">Visits: {[...r.visits_fixed, ...r.visits_repeat.map((v) => `${v} (each occurrence)`)].join(', ')}</div>
+                        <div className="muted">
+                          Visits:{' '}
+                          {[
+                            ...r.visits_fixed,
+                            ...(r.visits_counted ?? []).map((x) => `${x.visit_id} (${x.count} times)`),
+                            ...r.visits_repeat.map((v) => `${v} (each occurrence)`),
+                          ].join(', ')}
+                        </div>
                       </td>
                     </tr>
                   )}
