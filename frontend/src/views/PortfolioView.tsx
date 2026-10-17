@@ -123,7 +123,7 @@ export default function PortfolioView({ clear, regions, form, setForm, onOpenTri
         {sponsorErr && <ErrorBox error={sponsorErr} />}
         <p className="muted small">
           Sponsors with two or more concurrent industry Phase II/III lung trials {form.as_of ? `on ${form.as_of}` : 'recruiting today'}.
-          Counts come from /api/sponsors and are not filtered by region. The sponsor name is matched as a case-insensitive
+          Counts come from /api/sponsors and are for trials with sites in {form.region}. The sponsor name is matched as a case-insensitive
           substring, so “Regeneron” matches “Regeneron Pharmaceuticals”.
         </p>
       </div>

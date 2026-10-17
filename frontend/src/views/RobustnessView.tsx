@@ -229,7 +229,7 @@ export default function RobustnessView({ clear }: { clear: ClearState }) {
             </div>
             <Caveat>
               Ratios are total trial-months, baseline ÷ alternative; the bracket is the median per-trial speedup. Red rows use
-              β = 1, the elasticity the master doc assumed; the within-site regression on 3,400 completed trials does not
+              β = 1, the elasticity the master doc assumed; the within-site regression on completed trials does not
               support it (see Model &amp; data). The trial count varies slightly by row because trials whose model time
               exceeds the plausibility cap are held out as background. Rows were computed with a shorter solver time limit
               than an interactive clear, so they can differ slightly from the Clear it view.
