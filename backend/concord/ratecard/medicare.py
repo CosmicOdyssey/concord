@@ -80,20 +80,15 @@ def _locality(state: str | None, city: str | None) -> dict | None:
     return next((l for l in locs if l["name"].startswith("REST OF")), locs[0])
 
 
-def price(code: str, state: str | None = None, city: str | None = None, country: str | None = None,
-          loc: dict | None = None) -> dict | None:
+def price(code: str, state: str | None = None, city: str | None = None, country: str | None = None) -> dict | None:
     """Medicare amount for one code: CMS PFS (locality-adjusted for U.S. sites) or CLFS (national),
-    else the flagged placeholder. None if unknown (never silently zero).
-
-    `loc` (a locality row from ratecard.json) skips the city-name match when the caller has
-    already resolved the site's Medicare locality (concord.terms resolves it by county)."""
+    else the flagged placeholder. None if unknown (never silently zero)."""
     cms = _cms()
     pfs = cms.get("pfs", {})
     row = pfs.get("codes", {}).get(code)
     placeholder = RATES.get(code)
     if row and row["national"]:
-        if loc is None:
-            loc = _locality(state, city) if (country in (None, "United States")) else None
+        loc = _locality(state, city) if (country in (None, "United States")) else None
         amt = row["national"]
         if loc:
             amt = round((row["work"] * loc["gpci_work"] + row["pe_nf"] * loc["gpci_pe"] + row["mp"] * loc["gpci_mp"])

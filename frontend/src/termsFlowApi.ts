@@ -43,6 +43,8 @@ export interface Visit {
   minus?: number
   plus?: number
   window: string
+  /** Compact window for the grid header and timeline (e.g. "q9w"). */
+  short_window?: string
   repeat?: string
   anchor?: string
   coordinator?: boolean
@@ -97,6 +99,8 @@ export interface Protocol {
   trial: TrialFacts
   design: { design: string; confidence: string | null } | null
   disclaimer: string
+  /** How registry excerpts are quoted (verbatim; ellipsis marks omissions). */
+  quote_note: string
 }
 
 export interface Locality {
@@ -163,6 +167,8 @@ export interface Line {
   note: string | null
   multiplier: number | null
   standard_item?: string
+  standard_label?: string
+  standard_unit?: string
   edited?: boolean
 }
 

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import html
 import json
+import math
 import sqlite3
 from datetime import date
 from functools import lru_cache
@@ -37,6 +38,8 @@ DISCLAIMER = "Decision support. Not a fair-market-value legal opinion."
 CLFS_NOTE = "placeholder until the CLFS file is loaded"
 NCD = "Medicare NCD 310.1 (routine costs in clinical trials)"
 STANDARD_LABEL = "Proposed standard"
+QUOTE_NOTE = ("Registry excerpts are quoted verbatim from the ClinicalTrials.gov record (field path given); "
+              "'…' marks omitted text and ' / ' separates excerpts from different entries.")
 STANDARD_SOURCE = "Concord proposed standard schedule v1: a starting point to negotiate against, not market data"
 
 
@@ -62,8 +65,9 @@ RULES: dict[str, dict] = {
            "text": f"Visits, labs and imaging a patient on this therapy would receive anyway, at the standard-care "
                    f"frequency: billable to Medicare or the insurer under {NCD}."},
     "R4": {"coverage": "research", "title": "More frequent than standard care",
-           "text": "A routine item repeated more often than the standard-care reference: the extra occurrences "
-                   "are research."},
+           "text": "A routine item scheduled more often than the standard-care reference. Standard care's number "
+                   "of occurrences stays routine (R3); only the extra occurrences are research, and each node's "
+                   "reason names which ones (CT every 6 weeks against a 9-week reference: one scan in three)."},
     "R5": {"coverage": "routine", "title": "Standard-of-care comparator or backbone administration",
            "text": f"Administration of approved standard therapy given in every arm is routine under {NCD}. "
                    "Drug supplied free by the sponsor is never billed."},
@@ -113,6 +117,9 @@ UNIT_LABEL = {"per_site": "per site, one time", "per_visit": "per completed visi
               "as_incurred": "as incurred"}
 
 
+MAX_STANDARD_AMOUNT = 1_000_000.0  # sanity bound on one edited item, in dollars
+
+
 def standard_schedule(edits: dict[str, float] | None = None) -> dict[str, dict]:
     edits = edits or {}
     unknown = set(edits) - {i[0] for i in STANDARD_ITEMS if i[3] != "as_incurred"}
@@ -122,9 +129,14 @@ def standard_schedule(edits: dict[str, float] | None = None) -> dict[str, dict]:
     for iid, label, default, unit in STANDARD_ITEMS:
         amt = default
         if iid in edits:
-            v = float(edits[iid])
-            if not (v >= 0) or (unit == "rate" and v > 1):
-                raise TermsError(f"{iid}: amount must be >= 0" + (" and <= 1" if unit == "rate" else ""))
+            raw = edits[iid]
+            if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+                raise TermsError(f"{iid}: amount must be a number")
+            v = float(raw)
+            hi = 1.0 if unit == "rate" else MAX_STANDARD_AMOUNT
+            if not math.isfinite(v) or v < 0 or v > hi:
+                raise TermsError(f"{iid}: amount must be a finite number from 0 to "
+                                 + ("1 (a fraction)" if unit == "rate" else f"{hi:,.0f}"))
             amt = v
         out[iid] = {"id": iid, "label": label, "amount": amt, "default": default, "unit": unit,
                     "unit_label": UNIT_LABEL[unit], "edited": iid in edits and edits[iid] != default,
@@ -228,7 +240,7 @@ def protocol_view(nct: str) -> dict:
         "visits": p["visits"], "procedures": p["procedures"], "nodes": p["nodes"], "edges": _edges(p["visits"]),
         "rules": [{"id": k, **v, "nodes": counts.get(k, 0)} for k, v in RULES.items()],
         "standard_care_reference": STANDARD_CARE_REFERENCE, "standard_care_source": STANDARD_CARE_SOURCE,
-        "trial": _trial_facts(nct), "design": _design(nct), "disclaimer": DISCLAIMER,
+        "trial": _trial_facts(nct), "design": _design(nct), "disclaimer": DISCLAIMER, "quote_note": QUOTE_NOTE,
     }
 
 
@@ -452,14 +464,19 @@ def _site(nct: str, site_id: str) -> dict:
 LAB_PLACEHOLDERS = {"84439": 10.0, "87340": 10.0, "86803": 14.0, "81003": 2.0}
 
 
+LAB_PLACEHOLDER_SOURCE = ("Concord approximate national amount (not from a CMS file); replace with the CMS CLFS "
+                          "amount")
+
+
 def _price_code(code: str, loc: dict | None) -> dict | None:
-    loc_row = ({"name": loc["name"], "gpci_work": loc["gpci_work"], "gpci_pe": loc["gpci_pe"],
-                "gpci_mp": loc["gpci_mp"]} if loc else None)
-    r = medicare.price(code, loc=loc_row) if loc_row else medicare.price(code)
+    """Medicare amount of one code at a resolved locality. medicare.price(code) gives the national row
+    (schedule, verified flag, source); the locality amount is computed here from the same CMS RVUs, GPCIs
+    and conversion factor, with the same rounding, because the site's locality is resolved by county."""
+    r = medicare.price(code)
     if r is None and code in LAB_PLACEHOLDERS:
         v = LAB_PLACEHOLDERS[code]
         r = {"amount": v, "national": v, "schedule": "CLFS", "verified": False, "locality": "national",
-             "source": medicare.PLACEHOLDER_SOURCE + " (CLFS file not loaded)"}
+             "source": LAB_PLACEHOLDER_SOURCE}
     if r is None:
         return None
     out = dict(r)
@@ -472,6 +489,9 @@ def _price_code(code: str, loc: dict | None) -> dict | None:
         out["cf"] = pfs["conversion_factor"]
         exact = (row["work"] * g["gpci_work"] + row["pe_nf"] * g["gpci_pe"] + row["mp"] * g["gpci_mp"]) * pfs[
             "conversion_factor"]
+        if loc:
+            out["amount"] = round(exact, 2)
+            out["locality"] = loc["name"]
         out["formula"] = (f"({row['work']:.2f} x {g['gpci_work']:.3f} + {row['pe_nf']:.2f} x {g['gpci_pe']:.3f} + "
                           f"{row['mp']:.2f} x {g['gpci_mp']:.3f}) x {pfs['conversion_factor']:.4f} = "
                           f"${exact:,.2f}")
@@ -562,7 +582,8 @@ def budget(nct: str, site_id: str, multiplier: float = 1.0, overrides: dict[str,
             elif pricing.startswith("standard:"):
                 it = std[pricing.split(":", 1)[1]]
                 line.update({"schedule": "Standard", "source": f"{STANDARD_LABEL}: {it['label']}",
-                             "verified": False, "standard_item": it["id"], "edited": it["edited"]})
+                             "verified": False, "standard_item": it["id"], "standard_label": it["label"],
+                             "standard_unit": it["unit_label"], "edited": it["edited"]})
                 if c["coverage"] == "research":
                     line["unit_amount"] = _r2(it["amount"])
             else:  # no site charge
@@ -716,10 +737,15 @@ def _provenance(l: dict, b: dict) -> str:
         return f"CMS PFS {src}, {where}: {l['formula']}{tail}"
     if l["schedule"] == "CLFS":
         if l["placeholder"]:
-            return f"CLFS national amount {_money(l['medicare_amount'])}, {CLFS_NOTE}{tail}"
+            return (f"CLFS national amount {_money(l['medicare_amount'])}, {CLFS_NOTE}; amount from: "
+                    f"{l['source'] or 'unknown'}{tail}")
         return f"{l['source']}{tail}"
     if l["schedule"] == "Standard":
-        return (f"{STANDARD_LABEL} schedule: {l.get('standard_item')} {_money(l['unit_amount'])}"
+        label = l.get("standard_label") or l.get("standard_item")
+        if l["unit_amount"] is None:
+            return f"{STANDARD_LABEL} schedule v1 (section 5): {label}; not billed to the sponsor (routine)"
+        unit = f" {l['standard_unit']}" if l.get("standard_unit") else ""
+        return (f"{STANDARD_LABEL} schedule v1 (section 5): {label}, {_money(l['unit_amount'])}{unit}"
                 + (" (edited)" if l.get("edited") else ""))
     if l["schedule"] == "None":
         return l["note"] or "no site charge"
@@ -728,6 +754,47 @@ def _provenance(l: dict, b: dict) -> str:
 
 def _basis(l: dict) -> str:
     return l["basis"] if l["override"] else f"rule {l['rule']}"
+
+
+def _std_prov(b: dict, iid: str) -> str:
+    """Provenance of a per-visit standard item (coordinator time, overhead) by its label, not its id."""
+    it = next(i for i in b["standard_schedule"] if i["id"] == iid)
+    amt = f"{it['amount'] * 100:.0f}%" if it["unit"] == "rate" else _money(it["amount"])
+    return (f"{STANDARD_LABEL} schedule v1 (section 5): {it['label']}, {amt} {it['unit_label']}"
+            + (" (edited)" if it["edited"] else ""))
+
+
+CMP_NOTE = ("Times per participant counts the fixed schedule (screening through cycle 8, end of treatment and "
+            "safety follow-up); '+' means the item also recurs in a per-occurrence visit (see Visits), priced "
+            "each time at the same unit amounts.")
+CMP_FORMULA = ("Per line: amount = (work RVU x work GPCI + PE RVU x PE GPCI + MP RVU x MP GPCI) x conversion "
+               "factor x multiplier. RVUs and the conversion factor are national, so the difference B - A = "
+               "conversion factor x multiplier x (work RVU x work GPCI difference + PE RVU x PE GPCI difference + "
+               "MP RVU x MP GPCI difference), plus cent rounding.")
+
+
+def _cmp_cells(r: dict, c: dict) -> dict[str, str]:
+    """Plain-text cells of one comparison row (shared by the markdown and HTML exports)."""
+    pct = f"{c['multiplier'] * 100:.0f}%"
+    times = f"{r['n_fixed']}{'+' if r['visits_repeat'] else ''}"
+    visits = ", ".join(r["visits_fixed"] + [f"{v} (each occurrence)" for v in r["visits_repeat"]])
+    if r["rvu"]:
+        parts = [_money(r["delta_work"]), _money(r["delta_pe"]), _money(r["delta_mp"]), _money(r["rounding"])]
+        fa = f"{r['formula_a']} x {pct} = {_money(r['unit_a'])}"
+        fb = f"{r['formula_b']} x {pct} = {_money(r['unit_b'])}"
+    else:
+        parts = ["-", "-", "-", "-"]
+        fa = fb = f"{r['why']}: {_money(r['unit_a'])} at both sites"
+    return {"code": r["code"] or "-", "label": r["label"], "times": times, "visits": visits,
+            "a": _money(r["unit_a"]), "b": _money(r["unit_b"]), "d": _money(r["delta_unit"]),
+            "dw": parts[0], "dpe": parts[1], "dmp": parts[2], "rnd": parts[3], "dfix": _money(r["delta_fixed"]),
+            "fa": fa, "fb": fb}
+
+
+def _gpci_delta_text(c: dict) -> str:
+    g = c["gpci_delta"]
+    return (f"GPCI difference (B - A): work {g['work']:+.3f}, PE {g['pe']:+.3f}, MP {g['mp']:+.3f}; conversion "
+            f"factor {c['conversion_factor']} at both sites; multiplier {c['multiplier'] * 100:.0f}% at both sites")
 
 
 def termsheet(nct: str, site_id: str, multiplier: float = 1.0, overrides: dict[str, str] | None = None,
@@ -781,10 +848,10 @@ def termsheet_markdown(ts: dict) -> str:
               f"{_provenance(l, b)} |")
         if v["coordinator"]:
             w(f"| - | Coordinator time and data entry | Standard | per completed visit | - | {_money(v['coordinator'])} | "
-              f"{STANDARD_LABEL} schedule item 'coordinator' |")
+              f"{_std_prov(b, 'coordinator')} |")
         rate = next(i["amount"] for i in b["standard_schedule"] if i["id"] == "overhead")
         w(f"| - | Institutional overhead | Standard | {rate * 100:.0f}% of the lines above | - | "
-          f"{_money(v['overhead'])} | {STANDARD_LABEL} schedule item 'overhead' |")
+          f"{_money(v['overhead'])} | {_std_prov(b, 'overhead')} |")
         w(f"| | **Visit payment** | | | | **{_money(v['visit_total'])}** | |")
         w("")
     t = b["totals"]
@@ -851,14 +918,28 @@ def termsheet_markdown(ts: dict) -> str:
           f"{_money(sm['from_work'])} + practice-expense GPCI {_money(sm['from_pe'])} + malpractice GPCI "
           f"{_money(sm['from_mp'])} + overhead on those {_money(sm['delta_overhead'])} + rounding "
           f"{_money(sm['rounding'])}")
+        for x in sm["per_occurrence"]:
+            w(f"- {x['label']}, per occurrence: A {_money(x['a'])}, B {_money(x['b'])} (difference {_money(x['delta'])})")
+        w(f"- Screen failure: A {_money(sm['screen_failure']['a'])}, B {_money(sm['screen_failure']['b'])} "
+          f"(difference {_money(sm['screen_failure']['delta'])})")
+        w(f"- {_gpci_delta_text(c)}")
+        w(f"- {CMP_FORMULA}")
         w("")
-        w("| Code | Item | Times per participant | A each | B each | Difference each | Why |")
-        w("|---|---|---:|---:|---:|---:|---|")
+        w("| Code | Item | Times per participant* | A each | B each | Difference each | From work GPCI | "
+          "From PE GPCI | From MP GPCI | Cent rounding | Difference per participant | Formula at A | Formula at B | "
+          "Visits |")
+        w("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|")
         for r in c["rows"]:
-            w(f"| {r['code'] or '-'} | {r['label']} | {r['n_fixed']} | {_money(r['unit_a'])} | {_money(r['unit_b'])} | "
-              f"{_money(r['delta_unit'])} | {r['why']} |")
+            x = _cmp_cells(r, c)
+            w(f"| {x['code']} | {x['label']} | {x['times']} | {x['a']} | {x['b']} | {x['d']} | {x['dw']} | "
+              f"{x['dpe']} | {x['dmp']} | {x['rnd']} | {x['dfix']} | {x['fa']} | {x['fb']} | {x['visits']} |")
+        w("")
+        w(f"\\* {CMP_NOTE} Routine items billed to insurance differ by the same factors but are not the sponsor's "
+          f"to pay.")
         w("")
     w("## Sources and assumptions")
+    w("")
+    w(f"{QUOTE_NOTE}")
     w("")
     for src in p["sources"]:
         w(f"- Registry {src['field']}: \"{src['quote']}\" (used for: {src['used_for']})")
@@ -882,6 +963,7 @@ _CSS = """
 *{box-sizing:border-box}body{font:13px/1.45 system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:var(--text);
 background:#fff;margin:0;padding:24px;max-width:1100px;margin:0 auto}
 h1{font-size:20px;margin:0 0 6px}h2{font-size:15px;margin:22px 0 6px;border-bottom:1px solid var(--border);padding-bottom:4px}
+h1,h3,p,li{overflow-wrap:break-word}
 h3{font-size:13px;margin:14px 0 4px}table{border-collapse:collapse;width:100%;margin:4px 0 10px;font-variant-numeric:tabular-nums}
 th,td{border-bottom:1px solid var(--border);padding:4px 6px;text-align:left;vertical-align:top}th{font-size:11px;
 text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}td.n,th.n{text-align:right;white-space:nowrap}
@@ -889,13 +971,18 @@ text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}td.n,th.n{text-
 margin:8px 0;font-weight:600}.tag{display:inline-block;font-size:11px;padding:0 6px;border-radius:999px;background:var(--soft);
 color:var(--muted);font-weight:600}.ov{background:#fde9e7;color:#a12a1d}.total td{font-weight:700}
 ul{margin:4px 0;padding-left:18px}.noprint{margin:10px 0}button{font:inherit;padding:6px 12px;border-radius:6px;
-border:1px solid var(--border);background:#fff;cursor:pointer}
+border:1px solid var(--border);background:#fff;cursor:pointer}.mono{font-family:ui-monospace,Consolas,monospace;font-size:10.5px}
+.wide tr.main td{border-bottom:0;padding-bottom:1px}.wide tr.sub td{padding-top:0}
+.wide th.n{white-space:normal;min-width:5.5em}.wide tr.main td:nth-child(2){min-width:14em}
+@media screen{.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}}
+@media screen and (max-width:640px){body{padding:12px}.tw table{min-width:560px}.wide table{min-width:900px}}
 @media print{body{padding:0;max-width:none}.noprint{display:none}h2{break-after:avoid}tr{break-inside:avoid}}
 """
 
 
 def termsheet_html(ts: dict) -> str:
-    """Print-friendly page (use the browser's print to PDF). Same content as the markdown."""
+    """Print-friendly page (use the browser's print to PDF). Same content as the markdown. Tables sit in
+    horizontally scrolling wrappers on screen so the page itself never scrolls sideways on a phone."""
     b, c, p = ts["budget"], ts["compare"], ts["protocol"]
     e = html.escape
     s = b["site"]
@@ -927,8 +1014,9 @@ def termsheet_html(ts: dict) -> str:
     for v in b["visits"]:
         head = f"{v['label']} (window: {v['window']})" + (f": priced per occurrence, {v['repeat']}" if v["kind"] == "repeat"
                                                    else "")
-        w(f"<h3>{e(head)}</h3><table><thead><tr><th>Code</th><th>Item</th><th>Schedule</th><th>Coverage basis</th>"
-          "<th class='n'>Medicare at locality</th><th class='n'>Sponsor amount</th><th>Provenance</th></tr></thead><tbody>")
+        w(f"<h3>{e(head)}</h3><div class='tw'><table><thead><tr><th>Code</th><th>Item</th><th>Schedule</th>"
+          "<th>Coverage basis</th><th class='n'>Medicare at locality</th><th class='n'>Sponsor amount</th>"
+          "<th>Provenance</th></tr></thead><tbody>")
         for l in v["lines"]:
             if l["payer"] != "Sponsor":
                 continue
@@ -939,13 +1027,13 @@ def termsheet_html(ts: dict) -> str:
               f"<td class='prov'>{e(_provenance(l, b))}</td></tr>")
         if v["coordinator"]:
             w(f"<tr><td>-</td><td>Coordinator time and data entry</td><td>Standard</td><td>per completed visit</td>"
-              f"<td class='n'>-</td><td class='n'>{_money(v['coordinator'])}</td><td class='prov'>{e(STANDARD_LABEL)} "
-              f"schedule item 'coordinator'</td></tr>")
+              f"<td class='n'>-</td><td class='n'>{_money(v['coordinator'])}</td><td class='prov'>"
+              f"{e(_std_prov(b, 'coordinator'))}</td></tr>")
         w(f"<tr><td>-</td><td>Institutional overhead</td><td>Standard</td><td>{rate * 100:.0f}% of the lines above</td>"
-          f"<td class='n'>-</td><td class='n'>{_money(v['overhead'])}</td><td class='prov'>{e(STANDARD_LABEL)} "
-          f"schedule item 'overhead'</td></tr>")
+          f"<td class='n'>-</td><td class='n'>{_money(v['overhead'])}</td><td class='prov'>"
+          f"{e(_std_prov(b, 'overhead'))}</td></tr>")
         w(f"<tr class='total'><td></td><td>Visit payment</td><td></td><td></td><td></td>"
-          f"<td class='n'>{_money(v['visit_total'])}</td><td></td></tr></tbody></table>")
+          f"<td class='n'>{_money(v['visit_total'])}</td><td></td></tr></tbody></table></div>")
     w("<h2>3. Totals</h2><ul>")
     w(f"<li>Per participant, {e(t['per_participant_scope'])}: <b>{_money(t['per_participant'])}</b> (research items "
       f"{_money(t['per_participant_research_items'])}, coordinator time {_money(t['per_participant_coordinator'])}, "
@@ -957,8 +1045,9 @@ def termsheet_html(ts: dict) -> str:
     w(f"<li>Per site, one time: {_money(t['per_site_one_time'])}</li>")
     w(f"<li>Routine care billed to insurance per participant (Medicare amounts at this locality, for reference): "
       f"{_money(t['per_participant_insurance_medicare'])}</li></ul>")
-    w("<h2>4. Billed to insurance (routine care)</h2><table><thead><tr><th>Visit</th><th>Code</th><th>Item</th>"
-      "<th>Coverage basis</th><th class='n'>Medicare at locality</th><th>Provenance</th></tr></thead><tbody>")
+    w("<h2>4. Billed to insurance (routine care)</h2><div class='tw'><table><thead><tr><th>Visit</th><th>Code</th>"
+      "<th>Item</th><th>Coverage basis</th><th class='n'>Medicare at locality</th><th>Provenance</th></tr></thead>"
+      "<tbody>")
     for v in b["visits"]:
         for l in v["lines"]:
             if l["payer"] == "Insurance":
@@ -966,14 +1055,14 @@ def termsheet_html(ts: dict) -> str:
                 w(f"<tr><td>{e(v['short'])}</td><td>{e(l['code'] or '-')}</td><td>{e(l['label'])}</td>"
                   f"<td><span{cls}>{e(_basis(l))}</span></td><td class='n'>{_money(l['medicare_amount'])}</td>"
                   f"<td class='prov'>{e(_provenance(l, b))}</td></tr>")
-    w(f"</tbody></table><h2>5. {e(STANDARD_LABEL)} non-procedure schedule</h2><table><thead><tr><th>Item</th>"
-      "<th class='n'>Amount</th><th>Unit</th><th>Note</th></tr></thead><tbody>")
+    w(f"</tbody></table></div><h2>5. {e(STANDARD_LABEL)} non-procedure schedule</h2><div class='tw'><table><thead>"
+      "<tr><th>Item</th><th class='n'>Amount</th><th>Unit</th><th>Note</th></tr></thead><tbody>")
     for it in b["standard_schedule"]:
         amt = (f"{it['amount'] * 100:.0f}%" if it["unit"] == "rate" else
                _money(t["screen_failure"]) if it["unit"] == "as_incurred" else _money(it["amount"]))
         note = "edited from the proposed standard" if it["edited"] else STANDARD_LABEL
         w(f"<tr><td>{e(it['label'])}</td><td class='n'>{amt}</td><td>{e(it['unit_label'])}</td><td>{e(note)}</td></tr>")
-    w(f"</tbody></table><p class='prov'>Source: {e(STANDARD_SOURCE)}.</p>")
+    w(f"</tbody></table></div><p class='prov'>Source: {e(STANDARD_SOURCE)}.</p>")
     w("<h2>6. Coverage rules and reviewer overrides</h2><ul>")
     for r in b["rules"]:
         w(f"<li><b>{e(r['id'])} ({e(r['coverage'])})</b>, {e(r['title'])}: {e(r['text'])}</li>")
@@ -994,15 +1083,31 @@ def termsheet_html(ts: dict) -> str:
         w(f"<li>Difference (B - A) per participant: <b>{_money(sm['delta_per_participant'])}</b> = work GPCI "
           f"{_money(sm['from_work'])} + practice-expense GPCI {_money(sm['from_pe'])} + malpractice GPCI "
           f"{_money(sm['from_mp'])} + overhead on those {_money(sm['delta_overhead'])} + rounding "
-          f"{_money(sm['rounding'])}</li></ul>")
-        w("<table><thead><tr><th>Code</th><th>Item</th><th class='n'>Times per participant</th><th class='n'>A each</th>"
-          "<th class='n'>B each</th><th class='n'>Difference each</th><th>Why</th></tr></thead><tbody>")
+          f"{_money(sm['rounding'])}</li>")
+        for x in sm["per_occurrence"]:
+            w(f"<li>{e(x['label'])}, per occurrence: A {_money(x['a'])}, B {_money(x['b'])} (difference "
+              f"{_money(x['delta'])})</li>")
+        w(f"<li>Screen failure: A {_money(sm['screen_failure']['a'])}, B {_money(sm['screen_failure']['b'])} "
+          f"(difference {_money(sm['screen_failure']['delta'])})</li>")
+        w(f"<li>{e(_gpci_delta_text(c))}</li><li>{e(CMP_FORMULA)}</li></ul>")
+        w("<div class='tw wide'><table><thead><tr><th>Code</th><th>Item</th><th class='n'>Times per participant*</th>"
+          "<th class='n'>A each</th><th class='n'>B each</th><th class='n'>Difference each</th>"
+          "<th class='n'>From work GPCI</th><th class='n'>From PE GPCI</th><th class='n'>From MP GPCI</th>"
+          "<th class='n'>Cent rounding</th><th class='n'>Difference per participant</th></tr></thead><tbody>")
         for r in c["rows"]:
-            w(f"<tr><td>{e(r['code'] or '-')}</td><td>{e(r['label'])}</td><td class='n'>{r['n_fixed']}</td>"
-              f"<td class='n'>{_money(r['unit_a'])}</td><td class='n'>{_money(r['unit_b'])}</td>"
-              f"<td class='n'>{_money(r['delta_unit'])}</td><td class='prov'>{e(r['why'])}</td></tr>")
-        w("</tbody></table>")
-    w("<h2>Sources and assumptions</h2><ul>")
+            x = _cmp_cells(r, c)
+            w(f"<tr class='main'><td>{e(x['code'])}</td><td>{e(x['label'])}</td><td class='n'>{e(x['times'])}</td>"
+              f"<td class='n'>{x['a']}</td><td class='n'>{x['b']}</td><td class='n'>{x['d']}</td>"
+              f"<td class='n'>{x['dw']}</td><td class='n'>{x['dpe']}</td><td class='n'>{x['dmp']}</td>"
+              f"<td class='n'>{x['rnd']}</td><td class='n'>{x['dfix']}</td></tr>")
+            formulas = (f"<span class='mono'>A: {e(x['fa'])}</span><br><span class='mono'>B: {e(x['fb'])}</span>"
+                        if r["rvu"] else e(x["fa"]))
+            w(f"<tr class='sub'><td></td><td colspan='10' class='prov'>{formulas}<br>Visits: {e(x['visits'])}"
+              f"</td></tr>")
+        w(f"</tbody></table></div><p class='prov'>* {e(CMP_NOTE)} Routine items billed to insurance differ by the "
+          f"same factors but are not the sponsor's to pay.</p>")
+    w("<h2>Sources and assumptions</h2>")
+    w(f"<p class='prov'>{e(QUOTE_NOTE)}</p><ul>")
     for src in p["sources"]:
         w(f"<li>Registry {e(src['field'])}: &ldquo;{e(src['quote'])}&rdquo; (used for: {e(src['used_for'])})</li>")
     for a in p["assumptions"]:

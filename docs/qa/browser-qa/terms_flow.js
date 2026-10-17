@@ -69,6 +69,15 @@ async function ready(page) {
     await page.screenshot({ path: path.join(OUT, 'terms-flow_1440_full.png'), fullPage: true })
     log.desktopText = await page.evaluate(() => document.querySelector('main')?.innerText ?? '')
     log.desktopOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+    log.stepLabels = await page.evaluate(() =>
+      [4, 6].map((n) => {
+        const t = document.querySelector(`#tf-step-${n} .tf-step-head`)?.textContent ?? ''
+        return { step: n, illustrative: t.includes('Illustrative, authored from public trial information'), disclaimer: t.includes('Decision support. Not a fair-market-value legal opinion.') }
+      }),
+    )
+    log.statsText = await page.evaluate(() => document.querySelector('.tf-stats')?.innerText ?? '')
+    log.composeText = await page.evaluate(() => document.querySelector('.tf-compose')?.innerText ?? '')
+    log.compareText = await page.evaluate(() => document.querySelector('#tf-step-6')?.innerText ?? '')
   })
 
   await run('mobile', 390, 844, async (page) => {
@@ -148,6 +157,49 @@ async function ready(page) {
     await page.goto(`${BASE}/api/terms-flow/NCT05800015/termsheet.html?site_id=${a}&compare_site=${b}&multiplier=1`, { waitUntil: 'load' })
     await page.screenshot({ path: path.join(OUT, 'termsheet_print_view.png') })
     await page.pdf({ path: path.join(OUT, 'termsheet_print_view.pdf'), format: 'Letter', printBackground: true })
+    const md = await (await fetch(`${BASE}/api/terms-flow/NCT05800015/termsheet.md?site_id=${a}&compare_site=${b}&multiplier=1`)).text()
+    fs.writeFileSync(path.join(OUT, 'termsheet_NCT05800015_NYU_vs_Hattiesburg.md'), md)
+  })
+
+  // The print view must not scroll sideways on a phone: wide tables scroll inside their own wrappers.
+  await run('print390', 390, 844, async (page) => {
+    const sites = await (await fetch(`${BASE}/api/terms-flow/NCT05800015/sites`)).json()
+    const [a, b] = sites.default_pair
+    await page.goto(`${BASE}/api/terms-flow/NCT05800015/termsheet.html?site_id=${a}&compare_site=${b}&multiplier=1`, { waitUntil: 'load' })
+    log.print390 = await page.evaluate(() => ({ scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth }))
+    await page.screenshot({ path: path.join(OUT, 'termsheet_print_view_390.png') })
+  })
+
+  // Leaving the tab and coming back keeps the trial; the address bar carries it.
+  await run('persist', 1440, 900, async (page) => {
+    await page.goto(`${BASE}/#terms-flow/NCT06627647`, { waitUntil: 'domcontentloaded' })
+    await ready(page)
+    const tabBtn = async (label) =>
+      page.evaluate((l) => {
+        // tab buttons render "<number><label>"
+        const b = [...document.querySelectorAll('[role="tab"]')].find((x) => x.textContent.trim().endsWith(l))
+        b?.click()
+        return !!b
+      }, label)
+    const left = await tabBtn('Model & data')
+    await sleep(800)
+    const hashAway = await page.evaluate(() => window.location.hash)
+    const back = await tabBtn('Protocol to terms')
+    await ready(page)
+    log.persist = {
+      left,
+      hashAway,
+      back,
+      hash: await page.evaluate(() => window.location.hash),
+      selected: await page.evaluate(() => document.querySelector('.tf-trial-on a')?.textContent ?? ''),
+    }
+    await page.evaluate(() => {
+      try {
+        localStorage.clear()
+      } catch {
+        /* ignore */
+      }
+    })
   })
 
   await browser.close()
@@ -162,6 +214,11 @@ async function ready(page) {
         mobileOverflow: log.mobileOverflow,
         mobileWide: log.mobileWide,
         interact: log.interact,
+        stepLabels: log.stepLabels,
+        print390: log.print390,
+        persist: log.persist,
+        stats: log.statsText,
+        compose: log.composeText,
       },
       null,
       1,

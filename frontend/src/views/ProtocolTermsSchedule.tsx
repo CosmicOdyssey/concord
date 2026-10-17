@@ -18,6 +18,10 @@ const X0 = 46
 const X1 = 470
 const D0 = -30
 const D1 = 160
+// Visits after cycle 8 (per-occurrence and follow-up) are spread evenly to the right of the break.
+const VIEW_W = 800
+const LATER_X0 = 524
+const LATER_X1 = 780
 
 function xOf(day: number): number {
   return X0 + ((day - D0) / (D1 - D0)) * (X1 - X0)
@@ -32,10 +36,10 @@ export function VisitTimeline({ protocol }: { protocol: Protocol }) {
   const timed = protocol.visits.filter((v) => v.kind === 'screening' || v.kind === 'treatment')
   const later = protocol.visits.filter((v) => v.kind === 'repeat' || v.kind === 'follow_up')
   const scr = timed.find((v) => v.kind === 'screening')
-  const step = later.length > 1 ? (704 - 524) / (later.length - 1) : 0
+  const step = later.length > 1 ? (LATER_X1 - LATER_X0) / (later.length - 1) : 0
   return (
     <div className="tf-timeline-wrap">
-      <svg className="tf-timeline" viewBox="0 0 720 132" role="img" aria-label="Visit timeline: screening, 21-day cycles with windows, then repeating and follow-up visits">
+      <svg className="tf-timeline" viewBox={`0 0 ${VIEW_W} 132`} role="img" aria-label="Visit timeline: screening, 21-day cycles with windows, then per-occurrence and follow-up visits">
         <line x1={X0 - 10} x2={X1 + 12} y1={70} y2={70} className="tf-tl-axis" />
         {scr && scr.day !== undefined && (
           <g>
@@ -83,7 +87,7 @@ export function VisitTimeline({ protocol }: { protocol: Protocol }) {
           ⋯
         </text>
         {later.map((v, i) => {
-          const x = 524 + i * step
+          const x = LATER_X0 + i * step
           return (
             <g key={v.id}>
               <circle cx={x} cy={70} r={4.5} className={v.kind === 'repeat' ? 'tf-tl-rep' : 'tf-tl-dot'} />
@@ -196,13 +200,10 @@ function GroupRows({ category, span, children }: { category: string; span: numbe
 }
 
 function shortWindow(v: Visit): string {
+  if (v.short_window) return v.short_window
   if (v.kind === 'screening') return 'd −28 to −1'
   if (v.kind === 'treatment') return v.minus ? `d${v.day} ±${v.minus}` : `d${v.day}`
-  if (v.id === 'CX') return 'q3w'
-  if (v.id === 'TAX') return 'q6w→q9w'
-  if (v.id === 'LTFU') return 'q12w'
-  if (v.id === 'SFU') return '+30 d'
-  return 'at stop'
+  return v.kind === 'repeat' ? 'repeats' : 'follow-up'
 }
 
 // ------------------------------------------------------------------ selected node

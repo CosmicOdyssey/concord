@@ -48,6 +48,26 @@ def test_investigational_and_comparator_rules():
     assert rule["C3D1:ct_chest"] == "R3" and rule["C7D1:ct_chest"] == "R4"  # more frequent than standard care
 
 
+@pytest.mark.parametrize("nct", NCTS)
+def test_r4_labels_only_the_extra_scans(nct):
+    """Weeks 13-48: the protocol scans every 6 weeks (weeks 18, 24, 30, 36, 42, 48) and the standard-care
+    reference about every 9 weeks (4 scans). Exactly the 2 extra scans are research (R4); the other 4 and
+    every scan after week 48 (every 9 weeks, matching the reference) are routine (R3)."""
+    p = terms.load_protocol(nct)
+    visits = {v["id"]: v for v in p["visits"]}
+    rule = {n["id"]: n["rule"] for n in p["nodes"]}
+    # occurrences per participant still on study at week 48, by visit
+    occ = {"C7D1": 1, "TA6": 4, "TA36": 1}
+    for proc in ("ct_chest", "ct_abd"):
+        research = sum(k for vid, k in occ.items() if rule[f"{vid}:{proc}"] == "R4")
+        routine = sum(k for vid, k in occ.items() if rule[f"{vid}:{proc}"] == "R3")
+        assert (research, routine) == (2, 4)
+        assert rule[f"TA9:{proc}"] == "R3"
+        assert terms.RULES[rule[f"TA9:{proc}"]]["coverage"] == "routine"
+    assert "24, 30, 42 and 48" in visits["TA6"]["label"] and "36" in visits["TA36"]["label"]
+    assert "TAX" not in visits  # the old single q6w-then-q9w column mixed routine and extra scans
+
+
 def test_edges_follow_windows():
     pv = terms.protocol_view("NCT05800015")
     e = {(x["src"], x["dst"]): x for x in pv["edges"]}
@@ -62,6 +82,10 @@ def test_unknown_protocol_and_bad_inputs_rejected():
         terms.standard_schedule({"screen_fail": 1})  # computed, never editable
     with pytest.raises(terms.TermsError):
         terms.standard_schedule({"overhead": 2})
+    for bad in (float("inf"), float("nan"), -1, 1e9, "50", True):
+        with pytest.raises(terms.TermsError):
+            terms.standard_schedule({"startup": bad})
+    assert terms.standard_schedule({"startup": 9000})["startup"]["amount"] == 9000
 
 
 # ---------------------------------------------------------------- localities
@@ -116,7 +140,9 @@ def test_pfs_line_matches_published_formula_and_medicare_price():
     rvu, cf = line["rvu"], bud["conversion_factor"]
     exact = (rvu["work"] * loc["gpci_work"] + rvu["pe"] * loc["gpci_pe"] + rvu["mp"] * loc["gpci_mp"]) * cf
     assert line["medicare_amount"] == round(exact, 2)
-    assert line["medicare_amount"] == medicare.price("96417", loc=loc)["amount"]
+    # Manhattan: the shared city-name lookup in medicare.price reaches the same locality and amount
+    assert loc["name"] == "MANHATTAN"
+    assert line["medicare_amount"] == medicare.price("96417", "New York", "New York", "United States")["amount"]
     assert line["schedule"] == "PFS" and line["verified"]
 
 
@@ -180,7 +206,21 @@ def test_termsheet_has_provenance_labels_and_no_forecasts():
     for v in ts["budget"]["visits"]:
         for l in v["lines"]:
             if l["payer"] == "Sponsor":
-                assert terms._provenance(l, ts["budget"])  # noqa: SLF001
+                prov = terms._provenance(l, ts["budget"])  # noqa: SLF001
+                assert prov
+                if l["schedule"] == "CLFS" and l["placeholder"]:
+                    assert "amount from: " in prov and l["source"] in prov  # names where the amount comes from
+                if l["schedule"] == "Standard":
+                    assert l["standard_label"] in prov and l["standard_item"] not in prov.split(":")[0]
+    # standard items by label, never internal ids
+    assert "schedule item 'coordinator'" not in md and "Coordinator time and data entry, $180.00" in md
+    # section 7 carries both per-line formulas, the GPCI split and the '+' marker for per-occurrence items
+    sec7 = md.split("## 7. Site comparison")[1].split("## Sources")[0]
+    assert "Formula at A" in sec7 and "Formula at B" in sec7 and "From PE GPCI" in sec7
+    assert "x 100% = $" in sec7 and "GPCI difference (B - A)" in sec7
+    assert "| 0+ |" in sec7  # CT chest after the C7 override recurs only at week 36; survival contact likewise
+    # print page: formulas for both sites under each compare row; tables scroll inside wrappers on a phone
+    assert "<tr class='sub'>" in page and "A: (" in page and "B: (" in page and "<div class='tw" in page
 
 
 @needs_db

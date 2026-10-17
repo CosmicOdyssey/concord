@@ -17,6 +17,30 @@
   max-width: 100%;
 }
 
+/* Signed amounts ("−$18.89") never break between the sign and the number. */
+.tf td.num,
+.tf th.num {
+  white-space: nowrap;
+}
+
+/* Labels repeated on the price-bearing steps (budget, compare). */
+.tf-flowlabels {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem 0.5rem;
+  max-width: 100%;
+}
+.tf-flowlabels .badge {
+  white-space: normal;
+}
+.tf-flowlabel-dis {
+  font-size: 0.76rem;
+  font-weight: 650;
+  color: var(--warn-ink);
+}
+
 /* ---------- steps ---------- */
 .tf-steps {
   display: flex;

@@ -47,6 +47,22 @@ function nctFromHash(): string | null {
   return window.location.hash.match(/^#terms-flow\/(NCT\d{8})/i)?.[1]?.toUpperCase() ?? null
 }
 
+/** The trial to open: the deep link if there is one, else the last trial picked here, else the default. */
+function initialNct(): string {
+  const stored = readStore<unknown>('tf:nct', null)
+  return nctFromHash() ?? (typeof stored === 'string' && /^NCT\d{8}$/.test(stored) ? stored : DEFAULT_NCT)
+}
+
+/** Keep the address bar on #terms-flow/<nct> so a reload or a shared link reopens the same trial. */
+function writeHash(nct: string) {
+  try {
+    if (/^#terms-flow(\/|$)/i.test(window.location.hash) && nctFromHash() !== nct)
+      window.history.replaceState(null, '', `#terms-flow/${nct}`)
+  } catch {
+    /* ignore */
+  }
+}
+
 function readStore<T>(key: string, fallback: T): T {
   try {
     const raw = window.localStorage.getItem(key)
@@ -122,8 +138,8 @@ function locName(l: Locality | null): string {
 }
 
 export default function ProtocolTermsView() {
-  const [nct, setNct] = useState<string>(() => nctFromHash() ?? DEFAULT_NCT)
-  const [overrides, setOverrides] = useState<Overrides>(() => readStore(`tf:overrides:${nctFromHash() ?? DEFAULT_NCT}`, {}))
+  const [nct, setNct] = useState<string>(initialNct)
+  const [overrides, setOverrides] = useState<Overrides>(() => readStore(`tf:overrides:${initialNct()}`, {}))
   const [standard, setStandard] = useState<StandardEdits>(() => readStore('tf:standard:v1', {}))
   const [multPct, setMultPct] = useState<number>(() => {
     const v = readStore<unknown>('tf:multiplier', 100)
@@ -140,12 +156,15 @@ export default function ProtocolTermsView() {
     setSelected(null)
     setSiteA('')
     setSiteB('')
-    try {
-      window.history.replaceState(null, '', `#terms-flow/${id}`)
-    } catch {
-      /* ignore */
-    }
+    writeHash(id)
   }, [])
+
+  // Remember the trial across tab switches (App.go() resets the hash to plain #terms-flow) and
+  // reflect it in the address bar.
+  useEffect(() => {
+    writeStore('tf:nct', nct)
+    writeHash(nct)
+  }, [nct])
 
   // Deep link #terms-flow/<nct>; other tabs own the rest of the hash.
   useEffect(() => {
@@ -285,7 +304,7 @@ export default function ProtocolTermsView() {
               <span>
                 <span className="tf-cell tf-cell-research tf-cell-ov tf-cell-demo">R4✎</span> Reviewer override
               </span>
-              <span className="tf-legend-rep">Shaded columns repeat and are priced per occurrence</span>
+              <span className="tf-legend-rep">Shaded columns are priced per occurrence (they happen only while the participant stays on study)</span>
             </div>
             <ScheduleGrid protocol={proto} states={states} selected={selected} onSelect={setSelected} />
             {selNode ? (
@@ -303,7 +322,7 @@ export default function ProtocolTermsView() {
               <summary>How this schedule was authored ({proto.sources.length} registry facts, {proto.assumptions.length} assumptions)</summary>
               <p className="small muted">
                 Authored {proto.authored} from the ClinicalTrials.gov record of {proto.nct_id}. Where the registry is
-                silent we used standard NSCLC practice.
+                silent we used standard NSCLC practice. {proto.quote_note}
               </p>
               <ul className="tf-src-list small">
                 {proto.sources.map((s, i) => (
@@ -374,6 +393,7 @@ export default function ProtocolTermsView() {
               n={4}
               title="Budget at a registered site"
               sub="Only research items bill the sponsor. Routine items are shown at the Medicare amount billed to insurance."
+              badge={<FlowLabels />}
             />
             {sites.status === 'error' && <ErrorBox error={sites.error} onRetry={retrySites} />}
             {sitesData && (
@@ -427,6 +447,7 @@ export default function ProtocolTermsView() {
               n={6}
               title="Compare two sites"
               sub="Same protocol, same coverage labels, same multiplier. Every price difference traces to the published locality factors (GPCI)."
+              badge={<FlowLabels />}
             />
             {sitesData && (
               <>
@@ -496,6 +517,16 @@ function StepHead({ n, title, sub, badge }: { n: number; title: string; sub?: st
       </div>
       {badge && <div className="tf-step-badge">{badge}</div>}
     </div>
+  )
+}
+
+/** The two labels every price-bearing step carries, so a cropped screenshot keeps them. */
+function FlowLabels() {
+  return (
+    <span className="tf-flowlabels">
+      <Badge tone="warn">{ILLUSTRATIVE}</Badge>
+      <span className="tf-flowlabel-dis">{DISCLAIMER}</span>
+    </span>
   )
 }
 
@@ -633,11 +664,13 @@ function BudgetView({ b, stale }: { b: Budget; stale: boolean }) {
           <div className="stat-value tnum">{usd(occ('CX')?.amount)}</div>
           <div className="stat-sub">per occurrence, C9 on</div>
         </div>
-        <div className="stat">
-          <div className="stat-label">Each later tumor assessment</div>
-          <div className="stat-value tnum">{usd(occ('TAX')?.amount)}</div>
-          <div className="stat-sub">per occurrence</div>
-        </div>
+        {occ('TA36') && (
+          <div className="stat">
+            <div className="stat-label">{occ('TA36')?.label}</div>
+            <div className="stat-value tnum">{usd(occ('TA36')?.amount)}</div>
+            <div className="stat-sub">per occurrence; the extra scan (rule R4)</div>
+          </div>
+        )}
         <div className="stat">
           <div className="stat-label">Screen failure</div>
           <div className="stat-value tnum">{usd(t.screen_failure)}</div>
@@ -653,9 +686,16 @@ function BudgetView({ b, stale }: { b: Budget; stale: boolean }) {
         Per participant = research items <strong className="tnum">{usd(t.per_participant_research_items)}</strong> + coordinator time{' '}
         <strong className="tnum">{usd(t.per_participant_coordinator)}</strong> + overhead{' '}
         <strong className="tnum">{usd(t.per_participant_overhead)}</strong>. Lab placeholders inside it:{' '}
-        <span className="tnum">{usd(t.per_participant_placeholder)}</span>. Survival contact:{' '}
-        <span className="tnum">{usd(occ('LTFU')?.amount)}</span> each. Routine care billed to insurance over the same visits (Medicare amounts, for
-        reference): <span className="tnum">{usd(t.per_participant_insurance_medicare)}</span>.
+        <span className="tnum">{usd(t.per_participant_placeholder)}</span>.{' '}
+        {t.per_occurrence
+          .filter((x) => !['CX', 'TA36'].includes(x.visit_id))
+          .map((x) => (
+            <Fragment key={x.visit_id}>
+              {x.label}: <span className="tnum">{usd(x.amount)}</span> each.{' '}
+            </Fragment>
+          ))}
+        Routine care billed to insurance over the same visits (Medicare amounts, for reference):{' '}
+        <span className="tnum">{usd(t.per_participant_insurance_medicare)}</span>.
       </p>
       <div className="table-scroll">
         <table className="tbl tbl-compact tf-budget">
@@ -747,7 +787,7 @@ function Provenance({ l, mult }: { l: Line; mult: number }) {
     )
   if (l.schedule === 'CLFS')
     return (
-      <span>
+      <span title={l.source ?? undefined}>
         <span className="tf-src-tag tf-src-ph">CLFS</span> national {usd(l.medicare_amount)}
         {l.placeholder && <span className="tf-ph"> placeholder until the CLFS file is loaded</span>}
         {m}
@@ -756,7 +796,8 @@ function Provenance({ l, mult }: { l: Line; mult: number }) {
   if (l.schedule === 'Standard')
     return (
       <span>
-        <span className="tf-src-tag tf-src-std">Proposed standard</span> {l.payer === 'Sponsor' ? 'itemized fee' : 'not billed (routine)'}
+        <span className="tf-src-tag tf-src-std">Proposed standard</span>{' '}
+        {l.payer === 'Sponsor' ? (l.standard_label ?? 'itemized fee') : 'not billed (routine)'}
         {l.edited && ' (edited)'}
       </span>
     )

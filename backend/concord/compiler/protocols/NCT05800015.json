@@ -10,28 +10,29 @@
     {"label": "Phase 2, Arm B", "text": "Fianlimab (lower dose) + cemiplimab + platinum-doublet chemotherapy"},
     {"label": "Phase 2, Arm C", "text": "Placebo + cemiplimab + platinum-doublet chemotherapy"}
   ],
-  "dosing": "All study drugs IV every 3 weeks (registry: \"Administered intravenously (IV) every 3 weeks (Q3W)\")",
-  "masking": "Double-blind (registry: quadruple masking, placebo-controlled)",
-  "registry_notes": ["Registry detailed description: \"Phase 3 was not initiated\". The schedule below describes the Phase 2 design."],
+  "dosing": "All study drugs IV every 3 weeks (registry, fianlimab: \"Administered intravenously (IV) every 3 weeks (Q3W)\")",
+  "masking": "Double-blind, placebo-controlled (registry masking: QUADRUPLE)",
+  "registry_notes": ["Registry detailed description: \"Phase 3 was not initiated …\" The schedule below describes the Phase 2 design."],
   "sources": [
-    {"field": "armsInterventionsModule.interventions", "quote": "fianlimab: Administered intravenously (IV) every 3 weeks (Q3W)", "used_for": "21-day cycle; fianlimab or placebo infusion on Day 1 of every cycle (rule R1)"},
-    {"field": "armsInterventionsModule.interventions", "quote": "cemiplimab: Administered IV Q3W", "used_for": "Cemiplimab infusion on Day 1 of every cycle, given in every arm (rule R5)"},
-    {"field": "armsInterventionsModule.interventions", "quote": "Pemetrexed: IV Infusion, Q3W; Carboplatin: IV Infusion, Q3W; Cisplatin: IV infusion, Q3W", "used_for": "Platinum doublet on Day 1 of each cycle (rule R5)"},
-    {"field": "armsInterventionsModule.armGroups", "quote": "Randomized 1:1:1 cemiplimab + platinum-doublet chemotherapy + placebo", "used_for": "Blinded fianlimab-or-placebo infusion; cemiplimab and chemotherapy in every arm"},
-    {"field": "designModule.maskingInfo", "quote": "QUADRUPLE (participant, care provider, investigator, outcomes assessor)", "used_for": "Study drug prepared blinded by the pharmacy"},
-    {"field": "outcomesModule.primaryOutcomes", "quote": "Objective response rate (ORR) as assessed by blinded independent review committee (BICR) using RECIST 1.1", "used_for": "Scans uploaded for central review at every tumor assessment (rule R2)"},
-    {"field": "outcomesModule.secondaryOutcomes", "quote": "Concentrations of cemiplimab in serum; Concentrations of fianlimab in serum; Immunogenicity, as measured by anti-drug antibodies (ADA) ... neutralizing antibodies (NAb)", "used_for": "PK / ADA / NAb serum samples (rule R2)"},
-    {"field": "outcomesModule.secondaryOutcomes", "quote": "EORTC QLQ-C30 ... EORTC QLQ-LC13 ... EQ-5D-5L ... PRO-CTCAE (Up to 108 weeks)", "used_for": "Questionnaires at treatment visits (rule R2)"},
-    {"field": "eligibilityModule", "quote": "Availability of an archival or on-study formalin-fixed, paraffin-embedded (FFPE) tumor tissue sample", "used_for": "Tissue retrieval and shipment at screening (rule R2)"},
-    {"field": "eligibilityModule", "quote": "For enrollment in phase 2, patients should have PD-L1 expression results ... determined by a CAP/CLIA accredited laboratory", "used_for": "Local PD-L1 test as standard work-up (rule R3)"},
-    {"field": "eligibilityModule", "quote": "Patients with tumors tested positive for actionable EGFR gene mutations, ALK gene translocations, or ROS1 fusions [excluded]", "used_for": "Driver-gene testing as standard work-up (rule R3)"},
-    {"field": "eligibilityModule", "quote": "Active or untreated brain metastases or spinal cord compression [excluded]", "used_for": "Brain MRI at screening as standard staging (rule R3)"}
+    {"field": "armsInterventionsModule.interventions[fianlimab].description", "quote": "Administered intravenously (IV) every 3 weeks (Q3W)", "used_for": "21-day cycle; fianlimab or placebo infusion on Day 1 of every cycle (rule R1)"},
+    {"field": "armsInterventionsModule.interventions[cemiplimab].description", "quote": "Administered IV Q3W", "used_for": "Cemiplimab infusion on Day 1 of every cycle, given in every arm (rule R5)"},
+    {"field": "armsInterventionsModule.interventions[Pemetrexed, Carboplatin, Cisplatin].description", "quote": "IV Infusion, Q3W / IV Infusion, Q3W / IV infusion, Q3W", "used_for": "Platinum doublet on Day 1 of each cycle (rule R5)"},
+    {"field": "armsInterventionsModule.armGroups[2].description", "quote": "Randomized 1:1:1 cemiplimab + platinum-doublet chemotherapy + placebo", "used_for": "Blinded fianlimab-or-placebo infusion; cemiplimab and chemotherapy in every arm"},
+    {"field": "designModule.designInfo.maskingInfo", "quote": "QUADRUPLE / PARTICIPANT, CARE_PROVIDER, INVESTIGATOR, OUTCOMES_ASSESSOR", "used_for": "Study drug prepared blinded by the pharmacy"},
+    {"field": "outcomesModule.primaryOutcomes[0].measure", "quote": "Objective response rate (ORR) as assessed by blinded independent review committee (BICR) using RECIST 1.1", "used_for": "Scans uploaded for central review at every tumor assessment (rule R2)"},
+    {"field": "outcomesModule.secondaryOutcomes[].measure", "quote": "Concentrations of cemiplimab in serum / Concentrations of fianlimab in serum / Immunogenicity, as measured by anti-drug antibodies (ADA) to fianlimab / Immunogenicity, as measured by neutralizing antibodies (NAb) to fianlimab", "used_for": "PK / ADA / NAb serum samples (rule R2)"},
+    {"field": "outcomesModule.secondaryOutcomes[].measure and .timeFrame", "quote": "… (EORTC QLQ-C30) / … per EORTC QLQ-LC13 / … (EQ-5D-5L) VAS / … per the PRO-CTCAE / Up to 108 weeks", "used_for": "Questionnaires at treatment visits (rule R2)"},
+    {"field": "eligibilityModule.eligibilityCriteria (Key Inclusion Criteria 2)", "quote": "Availability of an archival or on-study formalin-fixed, paraffin-embedded (FFPE) tumor tissue sample, without intervening therapy between biopsy collection and screening as described in the protocol", "used_for": "Tissue retrieval and shipment at screening (rule R2)"},
+    {"field": "eligibilityModule.eligibilityCriteria (Key Inclusion Criteria 3)", "quote": "For enrollment in phase 2, patients should have PD-L1, expression results (regardless of expression level) determined by a College of American Pathologists (CAP)/Clinical Laboratory Improvement Amendments (CLIA) (or equivalently licensed, according to local regulations) accredited laboratory, as described in the protocol.", "used_for": "Local PD-L1 test as standard work-up (rule R3)"},
+    {"field": "eligibilityModule.eligibilityCriteria (Key Exclusion Criteria 2)", "quote": "Patients with tumors tested positive for actionable epidermal growth factor receptor (EGFR) gene mutations, anaplastic lymphoma kinase (ALK) gene translocations, or ROS oncogene 1 (ROS1) fusions, as described in the protocol.", "used_for": "Driver-gene testing as standard work-up (rule R3)"},
+    {"field": "eligibilityModule.eligibilityCriteria (Key Exclusion Criteria 1)", "quote": "Active or untreated brain metastases or spinal cord compression.", "used_for": "Brain MRI at screening as standard staging (rule R3)"}
   ],
   "assumptions": [
     "The registry does not publish a schedule of assessments. Visit windows, lab panels and imaging cadence are authored from standard NSCLC practice and common first-line industry protocol design, not copied from the protocol.",
     "Priced reference regimen: carboplatin or cisplatin + pemetrexed for 4 cycles, then pemetrexed maintenance (non-squamous). Squamous participants receive paclitaxel; its 3-hour infusion would add two extra-hour infusion lines per induction cycle and is not modelled.",
     "Study drugs supplied by the sponsor are never billed; only their administration appears.",
-    "Tumor assessments every 6 weeks to week 48, then every 9 weeks (common first-line design; the registry is silent on cadence)."
+    "Tumor assessments every 6 weeks to week 48, then every 9 weeks (common first-line design; the registry is silent on cadence).",
+    "Coverage of scans after week 12: the protocol scans 6 times in weeks 13 to 48 (weeks 18, 24, 30, 36, 42, 48) where the standard-care reference (about every 9 weeks) gives 4. The 2 extra scans are labelled research (R4): by convention the first of each group of three, weeks 18 and 36. The other 4, and every scan after week 48, are routine (R3). A reviewer can move the research label to other weeks with overrides."
   ],
   "visits": [
     {"id": "SCR", "label": "Screening", "short": "Scr", "kind": "screening", "day": -28, "day_end": -1, "window": "Day -28 to -1"},
@@ -43,11 +44,13 @@
     {"id": "C6D1", "label": "Cycle 6 Day 1", "short": "C6", "kind": "treatment", "day": 106, "minus": 3, "plus": 3, "window": "Day 106 ±3"},
     {"id": "C7D1", "label": "Cycle 7 Day 1", "short": "C7", "kind": "treatment", "day": 127, "minus": 3, "plus": 3, "window": "Day 127 ±3"},
     {"id": "C8D1", "label": "Cycle 8 Day 1", "short": "C8", "kind": "treatment", "day": 148, "minus": 3, "plus": 3, "window": "Day 148 ±3"},
-    {"id": "CX", "label": "Each later cycle (C9 on)", "short": "C9+", "kind": "repeat", "day": 169, "repeat": "every 21 days (±3) until treatment stops", "window": "every 21 days ±3"},
-    {"id": "TAX", "label": "Each later tumor assessment", "short": "TA+", "kind": "repeat", "day": 169, "repeat": "every 6 weeks (±7 days) to week 48, then every 9 weeks", "window": "q6w ±7 d to wk 48, then q9w", "coordinator": false},
-    {"id": "EOT", "label": "End of treatment", "short": "EOT", "kind": "follow_up", "anchor": "decision to stop treatment", "window": "within 7 days of stopping"},
-    {"id": "SFU", "label": "Safety follow-up", "short": "SFU", "kind": "follow_up", "anchor": "last dose", "window": "30 days (±7) after last dose"},
-    {"id": "LTFU", "label": "Survival follow-up", "short": "Surv", "kind": "repeat", "repeat": "every 12 weeks (±14 days), by phone", "window": "every 12 weeks ±14 d", "coordinator": false}
+    {"id": "CX", "label": "Each later cycle (C9 on)", "short": "C9+", "short_window": "q3w", "kind": "repeat", "day": 169, "repeat": "every 21 days (±3) until treatment stops", "window": "every 21 days ±3"},
+    {"id": "TA6", "label": "Tumor assessments at weeks 24, 30, 42 and 48", "short": "TA×4", "short_window": "wk 24–48", "kind": "repeat", "day": 169, "repeat": "once each at weeks 24, 30, 42 and 48 (±7 days)", "window": "weeks 24, 30, 42 and 48, ±7 days", "coordinator": false},
+    {"id": "TA36", "label": "Tumor assessment at week 36", "short": "TA36", "short_window": "wk 36", "kind": "repeat", "day": 253, "repeat": "once, at week 36 (±7 days)", "window": "week 36 ±7 days", "coordinator": false},
+    {"id": "TA9", "label": "Each tumor assessment after week 48", "short": "TA57+", "short_window": "q9w", "kind": "repeat", "day": 400, "repeat": "every 9 weeks (±7 days) from week 57", "window": "every 9 weeks ±7 days, from week 57", "coordinator": false},
+    {"id": "EOT", "label": "End of treatment", "short": "EOT", "short_window": "at stop", "kind": "follow_up", "anchor": "decision to stop treatment", "window": "within 7 days of stopping"},
+    {"id": "SFU", "label": "Safety follow-up", "short": "SFU", "short_window": "+30 d", "kind": "follow_up", "anchor": "last dose", "window": "30 days (±7) after last dose"},
+    {"id": "LTFU", "label": "Survival follow-up", "short": "Surv", "short_window": "q12w", "kind": "repeat", "repeat": "every 12 weeks (±14 days), by phone", "window": "every 12 weeks ±14 d", "coordinator": false}
   ],
   "procedures": [
     {"id": "em_new", "label": "New-patient oncology visit, high complexity", "code": "99205", "category": "Visits"},
@@ -100,10 +103,12 @@
       {"visits": ["SFU"], "rule": "R2", "reason": "Labs at a protocol-timed safety visit."}]},
     {"proc": "tsh", "at": [
       {"visits": ["SCR"], "rule": "R3", "reason": "Baseline thyroid function before PD-1 therapy is standard care."},
-      {"visits": ["C3D1", "C5D1", "C7D1", "TAX"], "rule": "R3", "reason": "Thyroid tests about every 6 weeks on PD-1 therapy match the standard-care reference."}]},
+      {"visits": ["C3D1", "C5D1", "C7D1", "TA6", "TA36"], "rule": "R3", "reason": "Thyroid tests about every 6 weeks on PD-1 therapy match the standard-care reference."},
+      {"visits": ["TA9"], "rule": "R3", "reason": "Thyroid tests every 9 weeks are no more frequent than the standard-care reference (about every 6 weeks on PD-1 therapy)."}]},
     {"proc": "ft4", "at": [
       {"visits": ["SCR"], "rule": "R3", "reason": "Baseline thyroid function before PD-1 therapy is standard care."},
-      {"visits": ["C3D1", "C5D1", "C7D1", "TAX"], "rule": "R3", "reason": "Thyroid tests about every 6 weeks on PD-1 therapy match the standard-care reference."}]},
+      {"visits": ["C3D1", "C5D1", "C7D1", "TA6", "TA36"], "rule": "R3", "reason": "Thyroid tests about every 6 weeks on PD-1 therapy match the standard-care reference."},
+      {"visits": ["TA9"], "rule": "R3", "reason": "Thyroid tests every 9 weeks are no more frequent than the standard-care reference (about every 6 weeks on PD-1 therapy)."}]},
     {"proc": "hcg", "at": [
       {"visits": ["SCR"], "rule": "R3", "reason": "A pregnancy test before chemotherapy is standard care for people who could become pregnant."}]},
     {"proc": "hbv", "at": [
@@ -122,18 +127,22 @@
       {"visits": ["SCR"], "rule": "R3", "reason": "Baseline staging CT is standard care."},
       {"visits": ["C3D1"], "window": "Week 6: up to 7 days before dosing", "rule": "R3", "reason": "Response imaging about every 6 weeks during induction is standard care."},
       {"visits": ["C5D1"], "window": "Week 12: up to 7 days before dosing", "rule": "R3", "reason": "Response imaging at the end of induction is standard care."},
-      {"visits": ["C7D1"], "window": "Week 18: up to 7 days before dosing", "rule": "R4", "reason": "Week 18 comes 6 weeks after week 12; the standard-care reference in maintenance is about every 9 weeks, so this scan is extra."},
-      {"visits": ["TAX"], "rule": "R4", "reason": "Every 6 weeks to week 48 is more often than the standard-care reference (about every 9 weeks in maintenance). After week 48 (every 9 weeks) a reviewer can relabel these routine."}]},
+      {"visits": ["C7D1"], "window": "Week 18: up to 7 days before dosing", "rule": "R4", "reason": "Weeks 13-48: the protocol scans 6 times (every 6 weeks) where the standard-care reference gives 4 (about every 9 weeks), so one scan in three is extra. The extra scans are labelled at weeks 18 and 36 (the first of each three)."},
+      {"visits": ["TA6"], "rule": "R3", "reason": "Weeks 13-48: standard care gives about 4 scans (every 9 weeks); the protocol scans at weeks 24, 30, 42 and 48 are counted as those 4. Only weeks 18 and 36 are extra (R4)."},
+      {"visits": ["TA36"], "rule": "R4", "reason": "Weeks 13-48: the protocol scans 6 times (every 6 weeks) where the standard-care reference gives 4 (about every 9 weeks), so one scan in three is extra. The extra scans are labelled at weeks 18 and 36 (the first of each three)."},
+      {"visits": ["TA9"], "rule": "R3", "reason": "Every 9 weeks after week 48 matches the standard-care reference."}]},
     {"proc": "ct_abd", "at": [
       {"visits": ["SCR"], "rule": "R3", "reason": "Baseline staging CT is standard care."},
       {"visits": ["C3D1"], "window": "Week 6: up to 7 days before dosing", "rule": "R3", "reason": "Response imaging about every 6 weeks during induction is standard care."},
       {"visits": ["C5D1"], "window": "Week 12: up to 7 days before dosing", "rule": "R3", "reason": "Response imaging at the end of induction is standard care."},
-      {"visits": ["C7D1"], "window": "Week 18: up to 7 days before dosing", "rule": "R4", "reason": "Week 18 comes 6 weeks after week 12; the standard-care reference in maintenance is about every 9 weeks, so this scan is extra."},
-      {"visits": ["TAX"], "rule": "R4", "reason": "Every 6 weeks to week 48 is more often than the standard-care reference (about every 9 weeks in maintenance). After week 48 (every 9 weeks) a reviewer can relabel these routine."}]},
+      {"visits": ["C7D1"], "window": "Week 18: up to 7 days before dosing", "rule": "R4", "reason": "Weeks 13-48: the protocol scans 6 times (every 6 weeks) where the standard-care reference gives 4 (about every 9 weeks), so one scan in three is extra. The extra scans are labelled at weeks 18 and 36 (the first of each three)."},
+      {"visits": ["TA6"], "rule": "R3", "reason": "Weeks 13-48: standard care gives about 4 scans (every 9 weeks); the protocol scans at weeks 24, 30, 42 and 48 are counted as those 4. Only weeks 18 and 36 are extra (R4)."},
+      {"visits": ["TA36"], "rule": "R4", "reason": "Weeks 13-48: the protocol scans 6 times (every 6 weeks) where the standard-care reference gives 4 (about every 9 weeks), so one scan in three is extra. The extra scans are labelled at weeks 18 and 36 (the first of each three)."},
+      {"visits": ["TA9"], "rule": "R3", "reason": "Every 9 weeks after week 48 matches the standard-care reference."}]},
     {"proc": "mri", "at": [
       {"visits": ["SCR"], "rule": "R3", "reason": "Brain MRI is standard staging for stage IIIB-IV NSCLC (the registry excludes active brain metastases)."}]},
     {"proc": "img_upload", "at": [
-      {"visits": ["SCR", "C3D1", "C5D1", "C7D1", "TAX"], "rule": "R2", "reason": "The primary outcome is read by a blinded independent central review (registry); uploading scans exists only for the trial."}]},
+      {"visits": ["SCR", "C3D1", "C5D1", "C7D1", "TA6", "TA36", "TA9"], "rule": "R2", "reason": "The primary outcome is read by a blinded independent central review (registry); uploading scans exists only for the trial."}]},
     {"proc": "inf_first", "at": [
       {"visits": ["C1D1", "C2D1", "C3D1", "C4D1"], "rule": "R5", "reason": "Platinum-doublet chemotherapy is standard first-line care and is given in every arm."},
       {"visits": ["C5D1", "C6D1", "C7D1", "C8D1", "CX"], "rule": "R5", "reason": "Pemetrexed maintenance is standard care and is given in every arm."}]},
