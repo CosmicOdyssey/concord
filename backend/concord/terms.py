@@ -29,6 +29,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from concord.paths import DB_PATH
+from concord import terms_registry
 from concord.ratecard import medicare
 from concord.ratecard.cms import STATE_ABBR
 
@@ -55,8 +56,8 @@ class NotFound(TermsError):
 
 RULES: dict[str, dict] = {
     "R1": {"coverage": "research", "title": "Investigational product and its administration",
-           "text": "The investigational agent (or its blinded placebo), its preparation and the infusion that "
-                   "delivers it are paid by the sponsor."},
+           "text": "The investigational agent (or its blinded placebo), its preparation and the infusion or injection "
+                   "that delivers it are paid by the sponsor."},
     "R2": {"coverage": "research", "title": "Protocol-only test or activity",
            "text": "Items that exist only because of the protocol: PK and anti-drug-antibody samples, central "
                    "confirmation, protocol ECGs, eligibility-only serology, questionnaires, central scan upload, "
@@ -197,16 +198,17 @@ def _edges(visits: list[dict]) -> list[dict]:
 
 
 def _trial_facts(nct: str) -> dict:
-    """Descriptive registry facts from the database (no enrollment figures)."""
+    """Descriptive registry facts from the database (no enrollment figures); for a trial outside the database,
+    from its static registry snapshot (terms_registry)."""
     if not DB_PATH.exists():
-        return {}
+        return terms_registry.trial_facts(nct)
     con = sqlite3.connect(DB_PATH)
     con.row_factory = sqlite3.Row
     try:
         r = con.execute("SELECT nct_id, title, acronym, status, phases, sponsor, sponsor_class, start_date, n_sites "
                         "FROM trials WHERE nct_id=?", (nct,)).fetchone()
         if r is None:
-            return {}
+            return terms_registry.trial_facts(nct)
         us, us_wd = con.execute("SELECT COUNT(*), COALESCE(SUM(ts.site_status='WITHDRAWN'), 0) FROM trial_sites ts "
                                 "JOIN sites s USING(site_id) WHERE ts.nct_id=? AND s.country='United States'",
                                 (nct,)).fetchone()
@@ -239,7 +241,10 @@ def protocol_view(nct: str) -> dict:
         "registry_notes": p.get("registry_notes", []), "sources": p["sources"], "assumptions": p["assumptions"],
         "visits": p["visits"], "procedures": p["procedures"], "nodes": p["nodes"], "edges": _edges(p["visits"]),
         "rules": [{"id": k, **v, "nodes": counts.get(k, 0)} for k, v in RULES.items()],
-        "standard_care_reference": STANDARD_CARE_REFERENCE, "standard_care_source": STANDARD_CARE_SOURCE,
+        "standard_care_reference": p.get("standard_care_reference", STANDARD_CARE_REFERENCE),
+        "standard_care_source": p.get("standard_care_source", STANDARD_CARE_SOURCE),
+        "area": p.get("area"), "condition": p.get("condition"),
+        "practice_basis": p.get("practice_basis", "standard NSCLC practice"),
         "trial": _trial_facts(nct), "design": _design(nct), "disclaimer": DISCLAIMER, "quote_note": QUOTE_NOTE,
     }
 
@@ -251,6 +256,7 @@ def trials() -> list[dict]:
         out.append({"nct_id": nct, "short_title": p["short_title"], "why_chosen": p["why_chosen"],
                     "arms": p["arms"], "dosing": p["dosing"], "masking": p["masking"],
                     "registry_notes": p.get("registry_notes", []), "label": p["label"],
+                    "area": p.get("area"), "condition": p.get("condition"),
                     "trial": _trial_facts(nct), "design": _design(nct)})
     # Regeneron first: it is the reference case of the demo.
     out.sort(key=lambda t: (0 if (t["trial"].get("sponsor") or "").startswith("Regeneron") else 1, t["nct_id"]))
@@ -346,9 +352,11 @@ def _localities() -> list[dict]:
     return medicare._cms().get("pfs", {}).get("localities", [])  # noqa: SLF001 - same package
 
 
-def resolve_locality(state: str | None, city: str | None, country: str | None) -> dict | None:
+def resolve_locality(state: str | None, city: str | None, country: str | None,
+                     name_match: bool = True) -> dict | None:
     """Medicare PFS locality of a site, with how it was matched. None for non-U.S. sites or when the
-    CMS GPCI file is not loaded (national amounts are used and the line says so)."""
+    CMS GPCI file is not loaded (national amounts are used and the line says so). name_match=False never
+    falls back to a city-name match: an uncrosswalked county in a multi-locality state stays None."""
     if country not in (None, "United States") or not state:
         return None
     locs = _localities()
@@ -371,6 +379,8 @@ def resolve_locality(state: str | None, city: str | None, country: str | None) -
             method, verified = f"{c} is in {county}; CMS assigns {county} to this locality", True
     if row is None and len(in_state) == 1 and abbr not in ("VA", "MD"):
         row, method, verified = in_state[0], "the whole state is one Medicare locality", True
+    if row is None and not name_match:
+        return None
     if row is None:
         row = medicare._locality(state, city)  # noqa: SLF001 - same package
         if row is None:
@@ -390,6 +400,8 @@ def _gpci_source() -> str:
 
 def _site_rows(nct: str) -> list[dict]:
     if not DB_PATH.exists():
+        if terms_registry.snapshot(nct):
+            return terms_registry.site_rows(nct)
         raise NotFound("database not built")
     con = sqlite3.connect(DB_PATH)
     con.row_factory = sqlite3.Row
@@ -400,17 +412,25 @@ def _site_rows(nct: str) -> list[dict]:
                            (nct,)).fetchall()
     finally:
         con.close()
+    if not rows:  # not in the (lung-only) database: the trial's static registry snapshot, if it has one
+        return terms_registry.site_rows(nct)
     return [dict(r) for r in rows]
 
 
 def _site_out(r: dict) -> dict:
-    loc = resolve_locality(r["state"], r["city"], r["country"])
+    snap = bool(r.get("from_snapshot"))
+    loc = resolve_locality(r["state"], r["city"], r["country"], name_match=not snap)
     anon = bool(r["anonymized"])
     name = "Research site (name withheld by sponsor)" if anon else r["facility"]
     abbr = STATE_ABBR.get(r["state"] or "", r["state"] or "")
-    return {"site_id": r["site_id"], "facility": name, "city": r["city"], "state": r["state"], "state_abbr": abbr,
-            "zip": r["zip"], "anonymized": anon, "status": r["site_status"], "locality": loc,
-            "label": f"{name}, {r['city']}, {abbr}"}
+    out = {"site_id": r["site_id"], "facility": name, "city": r["city"], "state": r["state"], "state_abbr": abbr,
+           "zip": r["zip"], "anonymized": anon, "status": r["site_status"], "locality": loc,
+           "label": f"{name}, {r['city']}, {abbr}"}
+    if snap:
+        out["source"] = "registry snapshot"
+        if loc is None:
+            out["locality_note"] = terms_registry.unresolved_note(r["city"], abbr)
+    return out
 
 
 def sites(nct: str) -> dict:
@@ -608,7 +628,8 @@ def budget(nct: str, site_id: str, multiplier: float = 1.0, overrides: dict[str,
     all_lines = [l for v in visits_out for l in v["lines"]]
     totals = {
         "per_participant": _r2(sum(v["visit_total"] for v in fixed)),
-        "per_participant_scope": "screening through cycle 8, end of treatment and safety follow-up",
+        "per_participant_scope": p.get("per_participant_scope",
+                                       "screening through cycle 8, end of treatment and safety follow-up"),
         "per_participant_research_items": _r2(sum(v["research_subtotal"] for v in fixed)),
         "per_participant_coordinator": _r2(sum(v["coordinator"] for v in fixed)),
         "per_participant_overhead": _r2(sum(v["overhead"] for v in fixed)),
@@ -767,6 +788,12 @@ def _std_prov(b: dict, iid: str) -> str:
 CMP_NOTE = ("Times per participant counts the fixed schedule (screening through cycle 8, end of treatment and "
             "safety follow-up); '+' means the item also recurs in a per-occurrence visit (see Visits), priced "
             "each time at the same unit amounts.")
+
+
+def _cmp_note(scope: str) -> str:
+    return CMP_NOTE.replace("screening through cycle 8, end of treatment and safety follow-up", scope)
+
+
 CMP_FORMULA = ("Per line: amount = (work RVU x work GPCI + PE RVU x PE GPCI + MP RVU x MP GPCI) x conversion "
                "factor x multiplier. RVUs and the conversion factor are national, so the difference B - A = "
                "conversion factor x multiplier x (work RVU x work GPCI difference + PE RVU x PE GPCI difference + "
@@ -804,6 +831,7 @@ def termsheet(nct: str, site_id: str, multiplier: float = 1.0, overrides: dict[s
     cmp_ = compare(nct, site_id, compare_site, multiplier, overrides, standard) if compare_site else None
     return {"budget": b, "compare": cmp_, "protocol": {k: p[k] for k in ("short_title", "sources", "assumptions",
                                                                          "arms", "dosing", "masking")},
+            "registry_source": _trial_facts(nct).get("source"),
             "generated": date.today().isoformat(), "filename": f"term-sheet_{nct}_{site_id}.md"}
 
 
@@ -824,7 +852,7 @@ def termsheet_markdown(ts: dict) -> str:
     w(f"- Dosing (registry): {p['dosing']}")
     w(f"- Masking (registry): {p['masking']}")
     w(f"- Site: {s['label']}" + (f" {s['zip']}" if s.get("zip") else "") + f" (registry status: {s['status'] or 'not reported'})")
-    w(f"- Medicare locality: {_loc_text(b['locality'])}")
+    w(f"- Medicare locality: {_loc_text(b['locality'])}" + (f". {s['locality_note']}" if s.get("locality_note") else ""))
     w(f"- Physician fee schedule: {b['pfs_source'] or 'not loaded'}; conversion factor {b['conversion_factor']}")
     w(f"- Multiplier on coded items: {b['multiplier'] * 100:.0f}% of Medicare")
     w(f"- Lab (CLFS) codes: {'CMS CLFS file' if b['clfs_loaded'] else 'approximate national amounts, ' + CLFS_NOTE}")
@@ -934,7 +962,7 @@ def termsheet_markdown(ts: dict) -> str:
             w(f"| {x['code']} | {x['label']} | {x['times']} | {x['a']} | {x['b']} | {x['d']} | {x['dw']} | "
               f"{x['dpe']} | {x['dmp']} | {x['rnd']} | {x['dfix']} | {x['fa']} | {x['fb']} | {x['visits']} |")
         w("")
-        w(f"\\* {CMP_NOTE} Routine items billed to insurance differ by the same factors but are not the sponsor's "
+        w(f"\\* {_cmp_note(b['totals']['per_participant_scope'])} Routine items billed to insurance differ by the same factors but are not the sponsor's "
           f"to pay.")
         w("")
     w("## Sources and assumptions")
@@ -943,6 +971,8 @@ def termsheet_markdown(ts: dict) -> str:
     w("")
     for src in p["sources"]:
         w(f"- Registry {src['field']}: \"{src['quote']}\" (used for: {src['used_for']})")
+    if ts.get("registry_source"):
+        w(f"- Trial facts and registered sites: {ts['registry_source']}")
     for a in p["assumptions"]:
         w(f"- Assumption: {a}")
     w("- Codes are shown with Concord's own short labels, not AMA CPT descriptors.")
@@ -1003,7 +1033,8 @@ def termsheet_html(ts: dict) -> str:
                f"Masking (registry): {p['masking']}",
                f"Site: {s['label']}{(' ' + s['zip']) if s.get('zip') else ''} (registry status: "
                f"{s['status'] or 'not reported'})",
-               f"Medicare locality: {_loc_text(b['locality'])}",
+               f"Medicare locality: {_loc_text(b['locality'])}"
+               + (f". {s['locality_note']}" if s.get("locality_note") else ""),
                f"Physician fee schedule: {b['pfs_source'] or 'not loaded'}; conversion factor {b['conversion_factor']}",
                f"Multiplier on coded items: {b['multiplier'] * 100:.0f}% of Medicare",
                f"Lab (CLFS) codes: {'CMS CLFS file' if b['clfs_loaded'] else 'approximate national amounts, ' + CLFS_NOTE}",
@@ -1104,12 +1135,14 @@ def termsheet_html(ts: dict) -> str:
                         if r["rvu"] else e(x["fa"]))
             w(f"<tr class='sub'><td></td><td colspan='10' class='prov'>{formulas}<br>Visits: {e(x['visits'])}"
               f"</td></tr>")
-        w(f"</tbody></table></div><p class='prov'>* {e(CMP_NOTE)} Routine items billed to insurance differ by the "
+        w(f"</tbody></table></div><p class='prov'>* {e(_cmp_note(b['totals']['per_participant_scope']))} Routine items billed to insurance differ by the "
           f"same factors but are not the sponsor's to pay.</p>")
     w("<h2>Sources and assumptions</h2>")
     w(f"<p class='prov'>{e(QUOTE_NOTE)}</p><ul>")
     for src in p["sources"]:
         w(f"<li>Registry {e(src['field'])}: &ldquo;{e(src['quote'])}&rdquo; (used for: {e(src['used_for'])})</li>")
+    if ts.get("registry_source"):
+        w(f"<li>Trial facts and registered sites: {e(ts['registry_source'])}</li>")
     for a in p["assumptions"]:
         w(f"<li>Assumption: {e(a)}</li>")
     w("<li>Codes are shown with Concord's own short labels, not AMA CPT descriptors.</li>")
