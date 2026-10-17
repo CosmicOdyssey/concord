@@ -97,3 +97,25 @@ def termsheet_html(nct: str, site_id: str, multiplier: float = 1.0, overrides: s
     """Print-friendly term sheet (print to PDF from the browser)."""
     ts = _sheet(nct, site_id, multiplier, overrides, standard, compare_site)
     return HTMLResponse(terms.termsheet_html(ts))
+
+
+# ---------------------------------------------------------------- locality distribution and spreads (P2.5, P2.6)
+
+from concord import terms_spread  # noqa: E402 - kept with the routes it serves
+
+
+@router.get("/{nct}/locality-distribution")
+def locality_distribution(nct: str, site_a: str | None = None, site_b: str | None = None,
+                          overrides: str | None = None) -> dict:
+    """Per-participant procedure cost in every Medicare locality at 100% of Medicare, sites marked."""
+    return _call(terms_spread.locality_distribution, nct.upper(), site_a or None, site_b or None,
+                 _json_map(overrides, "overrides"))
+
+
+@router.get("/{nct}/spreads")
+def spreads(nct: str, site_a: str, site_b: str | None = None, mult_lo: float = 1.0, mult_hi: float = 1.5,
+            fee_lo: float = 0.75, fee_hi: float = 1.25, overrides: str | None = None,
+            standard: str | None = None) -> dict:
+    """Per-participant ranges from geography, the multiplier band and a band on non-procedure fees."""
+    return _call(terms_spread.spreads, nct.upper(), site_a, site_b or None, mult_lo, mult_hi, fee_lo, fee_hi,
+                 _json_map(overrides, "overrides"), _json_map(standard, "standard"))
