@@ -33,6 +33,7 @@ import {
 } from '../overlapApi'
 import { highShare, shadeStep } from '../shade'
 import { useTheme } from '../theme'
+import { IndicationSwitch } from './OverlapIndication'
 import './overlap.css'
 
 const UB = '†'
@@ -322,7 +323,12 @@ function cellLabel(o: Oriented, A: OverlapTrial, B: OverlapTrial, known: boolean
   )
 }
 
+/** Indication selector (OverlapIndication.tsx): lung cancer by default, rendered by LungOverlapView unchanged. */
 export default function OverlapView({ regions }: { regions?: string[] }) {
+  return <IndicationSwitch regions={regions ?? FALLBACK_REGIONS} renderLung={(field) => <LungOverlapView regions={regions} indicationField={field} />} />
+}
+
+function LungOverlapView({ regions, indicationField }: { regions?: string[]; indicationField?: ReactNode }) {
   const regionList = regions ?? FALLBACK_REGIONS
   const regionsRef = useRef(regionList)
   regionsRef.current = regionList
@@ -626,6 +632,7 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
 
       <div className="ov-controls">
         <div className="ov-filters" role="group" aria-label="Overlap filters">
+          {indicationField}
           <div className="field ov-f-sponsor">
             <label className="field-label" htmlFor={`${ids}-sponsor`}>
               Sponsor

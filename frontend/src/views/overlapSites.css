@@ -1,0 +1,92 @@
+/* Portfolio overlap, site-only indications (OverlapSitesView). Builds on overlap.css and halfgrid.css; tokens from
+   index.css. Cells carry no shade: there is no eligibility share to shade by. */
+
+.ov-f-ind {
+  flex: 0 1 14rem;
+}
+.ov-f-ind select {
+  width: 100%;
+}
+.ovs-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: var(--ctl, 2.25rem);
+  font-size: var(--fs-ui);
+  color: var(--ink);
+}
+.ovs-label {
+  margin: 0;
+  font-size: var(--fs-sm);
+}
+.ovs-noelig {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+/* A cell without shade: the plain surface with a hairline, so it never reads as a 0% share. */
+.hg-cell.ovs-cell {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--rule-strong);
+}
+.hg-cell.ovs-cell:hover {
+  background: var(--surface-2);
+}
+.ovs-head {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0 0.5rem;
+}
+.ovs-pair .ov-tip-rows {
+  margin: 0.5rem 0 0.75rem;
+}
+.ovs-pair-sub {
+  margin: 0;
+}
+.ovs-linkbtn {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  text-align: left;
+}
+.ovs-linkbtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.ovs-row-sel td {
+  background: var(--accent-soft);
+}
+.ovs-title {
+  max-width: 40rem;
+}
+.ovs-nowrap {
+  white-space: nowrap;
+}
+.ovs-defs code {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  overflow-wrap: anywhere;
+}
+.ovs-dl {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+  font-size: var(--fs-sm);
+}
+.ovs-dl dt {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.ovs-dl dd {
+  margin: 0;
+  color: var(--text-2);
+}
