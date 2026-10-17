@@ -88,3 +88,16 @@ its last columns. Fixing it would be a restyle, so I left it.
   - Task C (transfers) is not merged, by your decision.
 - **Cleanup you may want (not done; irreversible):** 12 agent worktrees under `.claude/worktrees/` and
   their branches. They're ignored by git and safe to remove with `git worktree remove` once you've looked.
+
+## Which split the ~1.7x site-selection figure uses (added before you left)
+
+Both splits exist in `data/robustness/holdout.json` (`scenarios.<scenario>.splits.<split>.summary.indep_vs_actual`),
+so nothing was rerun. US-Northeast, best response vs registered sites:
+
+| split | in-sample (half history) | held-out (geomean) | by direction | share slower held-out |
+|---|---|---|---|---|
+| alternating | 1.59x | 1.73x | 1.52x / 1.97x | 14% |
+| time (older half -> newer half, and reverse) | 1.72x | 1.70x | 1.88x / 1.54x | 13% |
+
+The "~1.7x" quoted overnight is either: 1.73x on the alternating split or 1.70x on the time split. Full-history
+in-sample is 1.76x. Regeneron (5 trials): 1.69x alternating, 1.42x time split (1.63x / 1.23x by direction).
