@@ -24,9 +24,10 @@ def main() -> None:
     ap.add_argument("--region", default="US-Northeast")
     ap.add_argument("--sponsor", default=None)
     ap.add_argument("--as-of", default=None)
-    ap.add_argument("--time-limit", type=float, default=4.0)
+    ap.add_argument("--eval-budget", type=int, default=None, help="default: service.Params.eval_budget")
     a = ap.parse_args()
-    p = service.Params(region=a.region, sponsor=a.sponsor, as_of=a.as_of, time_limit=a.time_limit)
+    kw = {"eval_budget": a.eval_budget} if a.eval_budget else {}
+    p = service.Params(region=a.region, sponsor=a.sponsor, as_of=a.as_of, **kw)
     out = service.robustness(p)
     path = path_for(p)
     path.parent.mkdir(parents=True, exist_ok=True)

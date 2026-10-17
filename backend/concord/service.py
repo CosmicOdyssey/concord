@@ -101,7 +101,11 @@ class Params:
     capacity_add: int = 0  # k_s = round(peak x capacity_scale) + capacity_add
     capacity_unlimited: bool = False  # capacity never binds
     max_trials: int | None = None
-    time_limit: float = 6.0
+    # Solver work budget in objective evaluations (allocator.core.Budget): results depend only on the
+    # instance, seed and budget, not on CPU load. Chosen by objective convergence (smallest budget where
+    # doubling improves every solve objective by < 0.5%), never by the headline. data/logs/budget_calibration.*
+    eval_budget: int = 500000
+    time_limit: float = 600.0  # safety cap only; solver stats report "deterministic": false if hit
     calibrate: bool = True  # de-congest busy sites so the registered allocation reproduces history
     level: bool = True  # scale rates by the backtest bias
     f_clip: tuple[float, float] = (0.25, 4.0)
@@ -374,12 +378,15 @@ def solve(params: Params, b: Built | None = None, cache: bool = True) -> dict:
 
     T_act = core.evaluate(inst, b.x_actual)
     x_ind = core.independent(inst, order=b.order, background=b.x_actual)
-    x_free, st_free = core.coordinate(inst, x0=background, time_limit=params.time_limit)
+    x_free, st_free = core.coordinate(inst, x0=background, eval_budget=params.eval_budget,
+                                      time_limit=params.time_limit)
     # No-loser: every trial, background included, capped at its registered-allocation time.
     capped = inst.replace(caps=T_act)
-    x_nl, st_nl = core.coordinate(capped, x0=b.x_actual, time_limit=params.time_limit)
+    x_nl, st_nl = core.coordinate(capped, x0=b.x_actual, eval_budget=params.eval_budget,
+                                  time_limit=params.time_limit)
     T_ind = core.evaluate(inst, x_ind)
-    x_nli, st_nli = core.coordinate(inst.replace(caps=T_ind), x0=x_ind, time_limit=params.time_limit)
+    x_nli, st_nli = core.coordinate(inst.replace(caps=T_ind), x0=x_ind, eval_budget=params.eval_budget,
+                                    time_limit=params.time_limit)
     out = {"built": b, "x": {"actual": b.x_actual, "indep": x_ind, "coord_free": x_free, "coord": x_nl,
                              "coord_nl_indep": x_nli},
            "solver": {"coord_free": st_free, "coord": st_nl, "coord_nl_indep": st_nli}}

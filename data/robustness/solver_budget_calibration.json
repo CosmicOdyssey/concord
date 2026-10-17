@@ -1,0 +1,117 @@
+{
+ "rule": "smallest budget B such that doubling it improves each of the three solve objectives (coord_free, coord, coord_nl_indep) by < 0.5%, in both default scenarios; default = the larger of the two. Fixed before running; never looks at comparison ratios.",
+ "US-Northeast": {
+  "log_lines": [
+   "US-Northeast 250000 {'coord_free': (2552.356, 250187, 10.672, True), 'coord': (3757.126, 250170, 12.656, True), 'coord_nl_indep': (4379.159, 250156, 11.547, True)}\n",
+   "US-Northeast 500000 {'coord_free': (2552.356, 500138, 21.125, True), 'coord': (3577.493, 500139, 25.515, True), 'coord_nl_indep': (4377.373, 500242, 20.438, True)}\n",
+   "US-Northeast 1000000 {'coord_free': (2552.356, 1001214, 62.797, True), 'coord': (3577.493, 1000038, 109.359, True), 'coord_nl_indep': (4377.373, 1000171, 92.563, True)}\n",
+   "US-Northeast 2000000 {'coord_free': (2552.356, 2000032, 146.781, True), 'coord': (3577.493, 2000037, 124.547, True), 'coord_nl_indep': (4377.373, 2000066, 84.89, True)}\n",
+   "US-Northeast 4000000 {'coord_free': (2552.356, 3905592, 172.907, False), 'coord': (3577.493, 4000053, 356.922, True), 'coord_nl_indep': (4377.373, 4000058, 201.094, True)}\n"
+  ],
+  "chosen": 500000,
+  "note": "250k->500k improved coord by 4.8%; 500k->1M, 1M->2M, 2M->4M unchanged. Run stopped after 4M (8M cannot change the choice). Determinism: two service.solve runs at 500k identical (data/logs/determinism_ne.log)."
+ },
+ "Regeneron": {
+  "rows": {
+   "250000": {
+    "coord_free": {
+     "objective": 105.97821773336854,
+     "evals": 250006,
+     "seconds": 18.0,
+     "hit_budget": true,
+     "deterministic": true
+    },
+    "coord": {
+     "objective": 172.9766164858152,
+     "evals": 189874,
+     "seconds": 12.031,
+     "hit_budget": false,
+     "deterministic": true
+    },
+    "coord_nl_indep": {
+     "objective": 107.05608509439611,
+     "evals": 148390,
+     "seconds": 10.032,
+     "hit_budget": false,
+     "deterministic": true
+    }
+   },
+   "500000": {
+    "coord_free": {
+     "objective": 105.97821773336854,
+     "evals": 275155,
+     "seconds": 20.109,
+     "hit_budget": false,
+     "deterministic": true
+    },
+    "coord": {
+     "objective": 172.9766164858152,
+     "evals": 189874,
+     "seconds": 12.516,
+     "hit_budget": false,
+     "deterministic": true
+    },
+    "coord_nl_indep": {
+     "objective": 107.05608509439611,
+     "evals": 148390,
+     "seconds": 9.484,
+     "hit_budget": false,
+     "deterministic": true
+    }
+   },
+   "1000000": {
+    "coord_free": {
+     "objective": 105.97821773336854,
+     "evals": 275155,
+     "seconds": 18.469,
+     "hit_budget": false,
+     "deterministic": true
+    },
+    "coord": {
+     "objective": 172.9766164858152,
+     "evals": 189874,
+     "seconds": 12.531,
+     "hit_budget": false,
+     "deterministic": true
+    },
+    "coord_nl_indep": {
+     "objective": 107.05608509439611,
+     "evals": 148390,
+     "seconds": 19.391,
+     "hit_budget": false,
+     "deterministic": true
+    }
+   },
+   "2000000": {
+    "coord_free": {
+     "objective": 105.97821773336854,
+     "evals": 275155,
+     "seconds": 39.609,
+     "hit_budget": false,
+     "deterministic": true
+    },
+    "coord": {
+     "objective": 172.9766164858152,
+     "evals": 189874,
+     "seconds": 24.641,
+     "hit_budget": false,
+     "deterministic": true
+    },
+    "coord_nl_indep": {
+     "objective": 107.05608509439611,
+     "evals": 148390,
+     "seconds": 18.875,
+     "hit_budget": false,
+     "deterministic": true
+    }
+   }
+  },
+  "identical_reruns": {
+   "coord_free": true,
+   "coord": true,
+   "coord_nl_indep": true
+  },
+  "chosen": 250000
+ },
+ "default_eval_budget": 500000
+}
