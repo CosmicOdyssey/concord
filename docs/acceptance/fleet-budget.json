@@ -1,0 +1,16 @@
+{
+  "activeWorkers": 0,
+  "maxActiveWorkers": 4,
+  "queuedWorkCount": 0,
+  "poolCapacity": {
+    "host": {
+      "active": 0,
+      "max": 4
+    },
+    "repositoryCoding": {
+      "active": 0,
+      "max": 1
+    }
+  },
+  "accounts": []
+}

@@ -1,0 +1,33 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_____________ test_legacy_robustness_rejects_incompatible_artifact _____________
+
+    def test_legacy_robustness_rejects_incompatible_artifact():
+        client=TestClient(app)
+        accepted=client.get('/api/robustness',params={'region':'US-Northeast'})
+        assert accepted.status_code==200
+>       assert accepted.json()['execution_mode']=='artifact_replay'
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'execution_mode'
+
+backend/tests/test_acceptance_independent.py:100: KeyError
+__________ test_unverified_historical_speedups_not_used_as_headlines ___________
+
+    def test_unverified_historical_speedups_not_used_as_headlines():
+        result=TestClient(app).get('/api/findings').json()
+        finding=next(f for f in result['findings'] if f['id']=='allocation')
+>       assert finding['validation_status']=='UNVERIFIED'
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'validation_status'
+
+backend/tests/test_acceptance_independent.py:110: KeyError
+=============================== warnings summary ===============================
+backend/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /Users/sadius/concord-independent-acceptance/backend/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED backend/tests/test_acceptance_independent.py::test_legacy_robustness_rejects_incompatible_artifact
+FAILED backend/tests/test_acceptance_independent.py::test_unverified_historical_speedups_not_used_as_headlines
+2 failed, 24 deselected, 1 warning in 0.59s

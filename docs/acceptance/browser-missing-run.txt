@@ -1,0 +1,130 @@
+Browser tab: 1783081691, Title: "Concord", URL: "http://127.0.0.1:5177/#portfolio-command".
+1 AXWebArea Concord, URL: 127.0.0.1:5177/#portfolio-command
+	2 container root
+		3 container
+			4 text Concord NSCLC trial portfolios on public ClinicalTrials.gov data
+		5 tab group Views
+			6 tab (selectable, settable, boolean) 1 Findings, Value: 0
+			7 tab (selectable, settable, boolean) 2 Portfolio overlap, Value: 0
+			8 tab (selectable, settable, boolean) 3 Protocol to terms, Value: 0
+			9 tab (selectable, settable, boolean) 4 Site scores, Value: 0
+			10 tab (selectable, settable, boolean) 5 Financial Coordination, Value: 0
+			11 tab (selected, settable, boolean) 6 Portfolio Command, Value: 1
+			12 tab (selectable, settable, boolean) 7 Research, Value: 0
+		615 container
+			616 text CONCORD / SPONSOR PLANNING
+			617 heading Portfolio Command, Value: 1
+				618 text Portfolio Command
+			619 text Where should the next dollar go?
+			620 text LIVE COMPUTATION
+			621 text SYNTHETIC OPERATIONS Regeneron registry context · hypothetical hospitals, enrollment progress, financial inputs and recruitment effects. Planning tool; no live sponsor or payer relationship. Sponsor budget (USD)
+			622 stepper (settable, integer) Description: Sponsor budget (USD), Value: 3000000
+			623 text Portfolio objective
+			624 pop up button (collapsed, settable) Description: Portfolio objective, Value: Minimize maximum weighted completion, Secondary Actions: Expand
+				625 menu
+					626 (selected) Minimize maximum weighted completion
+					627 Minimize sum of weighted durations
+					628 Minimize cost within expected deadlines
+			629 text Planning horizon (months)
+			630 stepper (settable, integer) Description: Planning horizon (months), Value: 36
+			631 button Run portfolio comparison
+			632 text Error: Enter a 32-character saved run ID.
+			633 container Portfolio sections
+				634 button 01 Executive Overview
+					635 text 0
+					636 text 1
+					637 text Executive Overview
+				638 button 02 Trial Portfolio
+					639 text 0
+					640 text 2
+					641 text Trial Portfolio
+				642 button 03 Site Capacity
+					643 text 0
+					644 text 3
+					645 text Site Capacity
+				646 button 04 Financial Allocation
+					647 text 0
+					648 text 4
+					649 text Financial Allocation
+				650 button 05 Scenario Lab
+					651 text 0
+					652 text 5
+					653 text Scenario Lab
+				654 button 06 Evidence and Reports
+					655 text 0
+					656 text 6
+					657 text Evidence and Reports
+			658 container Evidence and Reports
+				659 heading Reproduce every planning decision, Value: 2
+					660 text Reproduce every planning decision
+				661 text Each completed comparison is saved as immutable evidence, including its request, source hashes, coverage ledger and all six strategies. Editing inputs marks old results stale. Exports retain the exact saved result.
+				662 container
+					663 text Saved run ID
+					664 text field (settable) Description: Saved run ID, Value: missing
+				665 button Load saved scenario
+				666 button Reset bundled portfolio
+				667 button (collapsed) Full request editor · import / edit all site costs and constraints, Secondary Actions: Expand
+					668 text Full request editor · import / edit all site costs and constraints
+				669 heading Source-backed registry context, Value: 3
+					670 text Source-backed registry context
+				671 container
+					672 link Value: clinicaltrials.gov/api/v2/studies/NCT05800015, Description: NCT05800015 · A Trial to Learn How the Combination of Fianlimab With Cemiplimab and Chemotherapy Works Compared With Cemiplimab and Chemotherapy for Treating Adult Patients With Advanced Non-small Cell Lung Cancer
+					673 text Regeneron Pharmaceuticals  · captured  2026-10-17 Registry context only; current capture is not an as-of historical snapshot. No site, outcome or operational inputs imported.
+				674 container
+					675 link Value: clinicaltrials.gov/api/v2/studies/NCT05785767, Description: NCT05785767 · A Study to Learn if a Combination of Fianlimab and Cemiplimab Versus Cemiplimab Alone is More Effective for Adult Participants With Advanced Non-Small Cell Lung Cancer (NSCLC)
+					676 text Regeneron Pharmaceuticals  · captured  2026-10-17 Registry context only; current capture is not an as-of historical snapshot. No site, outcome or operational inputs imported.
+				677 heading Assumptions and limitations, Value: 3
+					678 text Assumptions and limitations
+				679 content list
+					680 container
+						681 AXListMarker •
+						682 text Live computation on explicitly synthetic operational inputs; registry records supply identifiers, titles and sponsors only. No live Regeneron relationship or actual recruitment progress.
+					683 container
+						684 AXListMarker •
+						685 text Current registry captures are retrospective context, never historical as-of features. No clinical outcomes, historical backtest or acceleration evidence is inferred.
+					686 container
+						687 AXListMarker •
+						688 text Independent mean-one lognormal edge-rate shocks and continuous enrollment are assumptions. P10–P90 ranges and deadline draw fractions are not calibrated predictive probabilities.
+					689 container
+						690 AXListMarker •
+						691 text Bounded deterministic beam search is a heuristic, not a global optimum. Objective selection and no-loser compare expected horizon-capped times on the same assumed draws.
+					692 container
+						693 AXListMarker •
+						694 text Site capacity is shared proportionally between activated unfinished trials. Static concurrent-trial slots are reserved for the whole network; outside trials and eligibility overlap are unknown.
+					695 container
+						696 AXListMarker •
+						697 text Budget feasibility reserves operating/monitoring costs for the full horizon and maximum selected per-participant cost for all remaining participants. Budget assurance is limited to the modeled cost scope and horizon.
+					698 container
+						699 AXListMarker •
+						700 text Unfinished draws are censored at the horizon. Their capped durations are lower bounds; no complete-time estimate is claimed and such networks are ineligible for recommendation.
+					701 container
+						702 AXListMarker •
+						703 text Both Regeneron-context trials use the NCT05800015 illustrative authored financial schedule; it is an explicit proxy for NCT05785767, not its actual protocol.
+					704 container
+						705 AXListMarker •
+						706 text Potential payer costs, participant cost sharing and reserves reuse Financial Coordination. Coverage is fixed across scenarios and never optimized; no reduction of care or cost shifting is used.
+					707 container
+						708 AXListMarker •
+						709 text Additional support does not change rates unless an explicit hypothetical effect is supplied. Administrative reductions release budget only when marked realized.
+					710 container
+						711 AXListMarker •
+						712 text Hospital contribution uses the inherited 80% operating-resource and 70% procedure-resource assumptions. A nonnegative contribution is an economic scenario constraint, not a fair-market-value or legal determination.
+					713 container
+						714 AXListMarker •
+						715 text Synthetic financial demonstration: all candidate sites, rates, capacities, costs, margins and payer shares are hypothetical, not registered site facts or negotiated prices.
+					716 container
+						717 AXListMarker •
+						718 text The real trial identifier links an existing illustrative authored schedule; the registry does not publish the complete protocol. This is not a sponsor-approved protocol budget.
+					719 container
+						720 AXListMarker •
+						721 text Routine coverage is potential, subject to qualifying-trial, beneficiary, jurisdiction, plan, network and service review. No insurer participates or commits funding.
+					722 container
+						723 AXListMarker •
+						724 text Unknown responsibility is held as sponsor contingency, not billed to insurers or participants. Unresolved patient exposure is unknown, not evidence of zero liability.
+					725 container
+						726 AXListMarker •
+						727 text Only the authored fixed visit horizon is priced. Actual drug acquisition/manufacturing, treatment beyond this horizon, complications and downstream outcomes are unknown; the drug contingency is an assumption, not a complete trial cost.
+			728 text Concord · Portfolio Command · reproducible planning, explicitly bounded evidence.
+		614 text Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates; Financial Coordination uses explicitly synthetic scenarios. Decision support only, not clinical, legal or coverage advice.
+
+The focused UI element is 665 button Load saved scenario

@@ -348,3 +348,12 @@ Two findings from D that the final numbers must handle:
 ## Sponsor budget: synthetic sponsor-budget worksheet
 
 The additive **Sponsor budget** tab (sub-label "Synthetic worksheet"; formerly Financial Coordination) provides a live, explicitly synthetic sponsor-budget worksheet linked to existing illustrative public-trial protocols: a coverage worksheet, five sponsor-budget scenarios at a fixed participant target over a budgeted contract period (listed, not ranked), a three-party transfer/resource ledger, cost-input sensitivity and HTML/JSON evidence exports, without a registry database. It outputs no time, speed or enrollment estimate, and in the worksheet payer assumptions do not change the sponsor commitment (only a line's coverage status does): insurer and Medicare amounts are benchmarks for fair-value reasoning and site negotiation, not a lever that lowers sponsor cost or speeds a trial (decision 24). No insurer partnership, coverage approval, observed savings or clinical benefit is claimed. See [what it computes, what it does not, and verification](docs/financial/README.md).
+
+# Portfolio Command
+
+Budget-constrained multi-trial planning with shared site capacity, financial
+coordination, paired sensitivity and immutable evidence exports is available at
+`#portfolio-command`. The demo computes live on explicitly synthetic operational
+inputs; ClinicalTrials.gov supplies registry context only. See
+[reproduction and assumptions](docs/portfolio/README.md) and
+[verification evidence](docs/portfolio/VERIFICATION.md).
