@@ -55,25 +55,30 @@ const clearNE = clears.find((a) => JSON.parse(a.post).region === 'US-Northeast' 
 const clearRG = clears.find((a) => JSON.parse(a.post).sponsor === 'Regeneron')?.body
 
 // ---------- headline / decomposition (shared by Clear it and Portfolio) ----------
+// Labels as shown since the Calm redesign (summary.tsx COMPARISONS).
 const COMPS = [
-  ['coord_vs_actual', 'Headline: coordinated, no trial worse off (vs registered)'],
+  ['coord_vs_actual', 'Capped at registered times (vs registered; in-sample)'],
   ['indep_vs_actual', 'Site selection alone (best response vs registered)'],
   ['coordination_no_loser_vs_indep', 'Pure coordination, no losers (vs best response)'],
   ['coord_free_vs_actual', 'Joint optimum, losers allowed (vs registered)'],
   ['coord_free_vs_indep', 'Joint optimum, losers allowed (vs best response)'],
 ]
+// A ShareCell: the material share, then the any-change share as small text.
+const shareCell = (material, any) => norm(`${pct(material)} ${pct(any)} any change`)
 function checkHeadline(view, g, r) {
   const s = r.summary
   const h = s.coord_vs_actual
   const st = Object.fromEntries(g.stats.map((x) => [(x.label ?? '').toLowerCase(), x]))
-  eq(view, 'headline ratio', st['enrollment-time ratio']?.value, times(h.ratio))
-  eq(view, 'median speedup', st['median per-trial speedup']?.value, times(h.median_speedup))
-  eq(view, 'share faster', st['trials faster']?.value, pct(h.share_faster))
-  eq(view, 'share slower sub', norm(st['trials faster']?.sub), norm(`${pct(h.share_slower)} slower (${worst(h)}) by construction`))
-  eq(view, 'dividend', norm(st['coordination dividend']?.value), norm(`${int(h.dividend_trial_months)} trial-months`))
-  eq(view, 'median T', norm(st['coordination dividend']?.sub), norm(`median T ${num(h.median_T_base)} → ${num(h.median_T_new)} months`))
-  eq(view, 'dollars', st['dollar conversion']?.value, money(s.dollars_direct))
-  eq(view, 'dollars sub', norm(st['dollar conversion']?.sub), norm(`direct cost · ${money(s.dollars_lost_sales)} lost-sales equivalent · ${int(s.dividend_days)} trial-days`))
+  const faster = Object.keys(st).find((k) => k.startsWith('trials faster by'))
+  eq(view, 'headline ratio', st['enrollment-time ratio (in-sample)']?.value, times(h.ratio))
+  eq(view, 'median per-trial ratio', st['median per-trial ratio (in-sample)']?.value, times(h.median_speedup))
+  eq(view, 'share faster (material)', st[faster]?.value, pct(h.share_faster_material))
+  contains(view, 'share slower sub', norm(st[faster]?.sub), `slower by ≥ 1 mo: ${pct(h.share_slower_material)}`)
+  eq(view, 'trial-months', norm(st['trial-months (in-sample)']?.value), norm(`${int(h.dividend_trial_months)} trial-months`))
+  eq(view, 'median T', norm(st['trial-months (in-sample)']?.sub), norm(`median T ${num(h.median_T_base)} → ${num(h.median_T_new)} months`))
+  // The dollar conversion was removed (no savings claims): it must not come back.
+  eq(view, 'no dollar conversion on screen', /dollar|lost-sales|\$\d/i.test(g.main ?? ''), false)
+  eq(view, 'no "months saved" or "speedup" wording', /months saved|speed ?up/i.test(g.main ?? ''), false)
   contains(view, 'trials compared line', norm(g.main), `${int(h.trials)} trials compared · ${int(s.background_trials)} held fixed as background`)
   // decomposition table
   const t = g.tables.find((x) => (x.head[0] || [])[0] === 'comparison')
@@ -84,8 +89,8 @@ function checkHeadline(view, g, r) {
     contains(view, `decomp ${k} label`, row[0], label)
     eq(view, `decomp ${k} ratio`, row[1], times(c.ratio))
     eq(view, `decomp ${k} median`, row[2], times(c.median_speedup))
-    eq(view, `decomp ${k} faster`, row[3], pct(c.share_faster))
-    eq(view, `decomp ${k} slower`, row[4], pct(c.share_slower))
+    eq(view, `decomp ${k} faster`, norm(row[3]), shareCell(c.share_faster_material, c.share_faster))
+    eq(view, `decomp ${k} slower`, norm(row[4]), shareCell(c.share_slower_material, c.share_slower))
     eq(view, `decomp ${k} worst`, row[5], worst(c))
     eq(view, `decomp ${k} trial-months`, row[6], int(c.dividend_trial_months))
     eq(view, `decomp ${k} median T`, norm(row[7]), norm(`${num(c.median_T_base)} → ${num(c.median_T_new)}`))
@@ -166,7 +171,7 @@ function checkMap() {
       `map/${a}`,
       'concentration sentence',
       norm(g.main),
-      `The 10 busiest sites hold ${pct(stats.actual.top10)} of trial–site slots as registered, ${pct(stats.indep.top10)} under each trial’s best response, ${pct(stats.coord_free.top10)} under the joint optimum and ${pct(stats.coord.top10)} under the no-loser headline allocation.`,
+      `The 10 busiest sites hold ${pct(stats.actual.top10)} of trial–site slots as registered, ${pct(stats.indep.top10)} under each trial’s best response, ${pct(stats.coord_free.top10)} under the joint optimum and ${pct(stats.coord.top10)} under the allocation capped at registered times.`,
     )
     // busiest list
     const top = [...r.sites].filter((s) => s[`load_${a}`] > 0).sort((x, y) => y[`load_${a}`] - x[`load_${a}`] || y.k - x.k).slice(0, 10)
@@ -201,7 +206,7 @@ function checkClear() {
   contains('clear', 'rate cap', m, `capped at q${num(s.assumptions.rate_cap_q * 100, 0)}`)
   contains('clear', 'candidate sites', m, `${int(s.assumptions.candidate_sites)} candidate sites`)
   contains('clear', 'plausible cap', m, `trials over ${int(s.assumptions.plausible_T_cap_months)} mo held as background`)
-  contains('clear', 'beta hint', m, `Blank = data estimate (${num(b.beta, 3)}, 95% CI ${num(b.ci95[0], 3)} to ${num(b.ci95[1], 3)}).`)
+  contains('clear', 'beta hint', m, `Blank = default β = full-sample estimate (${num(b.beta, 3)}, 95% CI ${num(b.ci95[0], 3)} to ${num(b.ci95[1], 3)}).`)
   const c = s.calibration_check
   contains('clear', 'calib phase3', m, `${num(c.model_median_T_actual_phase3)} mo (${int(c.phase3_trials_in_instance)} trials)`)
   contains('clear', 'calib real', m, `median enrollment window ${num(c.real_completed_phase3_median_enrollment_window)} mo (start to primary completion ${num(c.real_completed_phase3_median_start_to_primary_completion)} mo`)
@@ -210,7 +215,8 @@ function checkClear() {
   if (ratio > 1.25) contains('clear', 'calib badge', m, `${num(ratio, 1)}× longer than completed trials`)
   for (const [k, st] of Object.entries(s.solver))
     contains('clear', `solver ${k}`, m, `${ALLOC_LABEL[k] ?? k}: ${num(st.seconds, 1)} s, ${int(st.improvements)} improving moves`)
-  contains('clear', 'background note', m, `${int(s.background_trials)} background trials are held at their registered sites and excluded from every number. Under the joint optimum with losers allowed, ${int(s.background_worse_under_coord_free)} of them would be slower`)
+  contains('clear', 'background note', m, `${int(s.background_trials)} background trials are held at their registered sites and excluded from every number. Under the joint optimum with losers allowed,`)
+  contains('clear', 'background note (any amount)', m, `(${int(s.background_worse_under_coord_free)} by any amount)`)
   // Trials table
   const t = g.tables.find((x) => x.cls.includes('tbl-trials'))
   const byId = new Map(r.trials.map((x) => [x.nct_id, x]))
@@ -268,9 +274,10 @@ function checkRobust(viewName, matchFn) {
   const assumed = (r) => r.beta_label.toLowerCase().includes('assumed')
   const data = rows.filter((r) => !assumed(r))
   const m = norm(g.main)
-  contains(viewName, 'pure data range', m, `${rng(data.map((r) => r.coordination_no_loser_vs_indep.ratio))} with β from the data`)
+  // The "What survives" list (Detailed shows it inline).
+  contains(viewName, 'pure data range', m, `no losers): ${rng(data.map((r) => r.coordination_no_loser_vs_indep.ratio))} with the`)
   if (rows.some(assumed)) contains(viewName, 'pure assumed range', m, `against ${rng(rows.filter(assumed).map((r) => r.coordination_no_loser_vs_indep.ratio))} under the assumed β = 1`)
-  contains(viewName, 'headline range', m, `(no trial worse off vs registered sites): ${rng(data.map((r) => r.coord_vs_actual.ratio))}`)
+  contains(viewName, 'headline range', m, `(in-sample; does not hold out of sample): ${rng(data.map((r) => r.coord_vs_actual.ratio))}`)
   contains(viewName, 'selection range', m, `(best response vs registered): ${rng(data.map((r) => r.indep_vs_actual.ratio))}`)
   const t = g.tables.find((x) => x.cls.includes('tbl-robust'))
   eq(viewName, 'grid rows', t.rows.length, rows.length)
@@ -280,7 +287,7 @@ function checkRobust(viewName, matchFn) {
     eq(viewName, `row ${i} headline`, norm(row[3]), norm(`${times(r.coord_vs_actual.ratio)} (${times(r.coord_vs_actual.median_speedup)})`))
     eq(viewName, `row ${i} pure`, row[4], times(r.coordination_no_loser_vs_indep.ratio, 3))
     eq(viewName, `row ${i} joint`, row[5], times(r.coord_free_vs_actual.ratio))
-    eq(viewName, `row ${i} share slower`, row[6], pct(r.coord_free_vs_actual.share_slower))
+    eq(viewName, `row ${i} share slower`, norm(row[6]), shareCell(r.coord_free_vs_actual.share_slower_material, r.coord_free_vs_actual.share_slower))
     eq(viewName, `row ${i} selection`, row[7], times(r.indep_vs_actual.ratio))
     eq(viewName, `row ${i} trials`, row[8], int(r.coord_vs_actual.trials))
   })
@@ -426,12 +433,19 @@ function checkModel() {
   contains('model', 'cong n', m, `${int(cg.n_trials)} completed trials (${int(cg.n_trial_sites)} trial–site rows)`)
   contains('model', 'cong implied', m, `assumed a coefficient of ${num(cg.model_implied_coef_overlap, 0)} on log(1 + Σ overlap)`)
   eq('model', 'cong estimate', sts['within-site estimate']?.value, num(prim.coef, 3))
-  eq('model', 'cong ci', norm(sts['within-site estimate']?.sub), norm(`95% CI ${num(prim.ci95[0], 3)} to ${num(prim.ci95[1], 3)} · p = ${num(prim.p, 2)}`))
+  // The stat's first line: the CI, the standard-error method when the API names one, and p (later lines: other SEs).
+  contains(
+    'model',
+    'cong ci',
+    norm(sts['within-site estimate']?.sub),
+    norm(`95% CI ${num(prim.ci95[0], 3)} to ${num(prim.ci95[1], 3)}${cg.se_method ? ` (${cg.se_method})` : ''} · p = ${num(prim.p, 2)}`),
+  )
   eq('model', 'cong assumed', sts['model had assumed']?.value, num(cg.model_implied_coef_overlap, 0))
   const outside = cg.model_implied_coef_overlap < prim.ci95[0] || cg.model_implied_coef_overlap > prim.ci95[1]
   eq('model', 'cong outside', sts['model had assumed']?.sub, outside ? 'Outside the 95% CI' : 'Inside the 95% CI')
   eq('model', 'cong n rows', sts['observations']?.value, int(prim.n_rows))
-  if (cg.results.pooled_overlap) contains('model', 'pooled', m, `(pooled coefficient ${num(cg.results.pooled_overlap.coef, 3)}, 95% CI ${num(cg.results.pooled_overlap.ci95[0], 3)} to ${num(cg.results.pooled_overlap.ci95[1], 3)})`)
+  // The view adds ", which includes 0" inside the bracket when the interval spans zero.
+  if (cg.results.pooled_overlap) contains('model', 'pooled', m, `(pooled coefficient ${num(cg.results.pooled_overlap.coef, 3)}, 95% CI ${num(cg.results.pooled_overlap.ci95[0], 3)} to ${num(cg.results.pooled_overlap.ci95[1], 3)}`)
   const spec = g.tables.find((x) => (x.head[0] || [])[0] === 'design')
   const keys = []
   for (const sp of ['within', 'site_fe', 'pooled']) for (const ex of ['overlap', 'start', 'avg']) if (cg.results[`${sp}_${ex}`]) keys.push(`${sp}_${ex}`)
@@ -519,7 +533,8 @@ function checkPortfolio() {
     eq('portfolio', `${tr.nct_id} saved`, row[7], signedMonths(tr.T_actual - tr.T_coord))
     eq('portfolio', `${tr.nct_id} realized`, row[8], num(tr.realized_window_months))
   })
-  contains('portfolio', 'background', m, `${int(r.summary.background_trials)} other trials are held fixed at their registered sites. Under the joint optimum with losers allowed, ${int(r.summary.background_worse_under_coord_free)} of them would enroll more slowly`)
+  contains('portfolio', 'background', m, `${int(r.summary.background_trials)} other trials are held fixed at their registered sites. Under the joint optimum with losers allowed,`)
+  contains('portfolio', 'background (any amount)', m, `(${int(r.summary.background_worse_under_coord_free)} by any amount) because this portfolio moves onto their sites`)
   // Shared registered sites recomputed from assignments.actual
   const ownIds = new Set(own.map((x) => x.nct_id))
   const bySite = new Map()

@@ -45,8 +45,9 @@ const wait = (page, fn, arg, timeout = 60000) => page.waitForFunction(fn, { time
   {
     const page = await fresh(browser, '#overlap/regeneron')
     await wait(page, () => {
-      const rl = document.querySelector('.ov-runline')?.innerText ?? ''
-      return rl.includes('Regeneron') && rl.includes('2024-09-01') && (document.querySelector('.ov-detail h2')?.innerText ?? '').includes('NCT05785767 × NCT05800015')
+      const strip = document.querySelector('.ov-win .win-strip')?.innerText ?? ''
+      const sum = document.querySelector('.ov-sumline')?.innerText ?? ''
+      return strip.includes('Regeneron') && sum.includes('September 1, 2024') && (document.querySelector('.ov-detail h2')?.innerText ?? '').includes('NCT05785767 × NCT05800015')
     })
     const s = await state(page)
     const sel = await page.$eval('.ov-matrix td.ov-sel', (td) => td.dataset.cell).catch(() => null)

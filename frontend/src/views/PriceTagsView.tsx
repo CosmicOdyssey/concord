@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, DEFAULT_SCENARIO, scenarioKey, type PriceTags, type SlotValue } from '../api'
 import type { ClearState } from '../App'
-import { Badge, Caveat, ErrorBox, Loading, NeedsClear, RunLine } from '../components'
+import { Badge, Caveat, ErrorBox, Gloss, InfoTip, Loading, NeedsClear, Qualifier, RunLine, Section } from '../components'
+import { useDensity } from '../density'
 import { EligBadge } from './ClearView'
 import { ctgovUrl, int, num, phaseLabel, siteName, times, trialName } from '../format'
-
+import { InSampleLine, InSampleMark, RsHead } from './researchParts'
 
 interface Props {
   clear: ClearState
@@ -14,9 +15,15 @@ interface Props {
 
 type Async<T> = { status: 'idle' } | { status: 'loading' } | { status: 'error'; error: string } | { status: 'ok'; data: T }
 
+/** "−3.2 mo" when dropping the criterion shortens the modeled time, "+0.4 mo" when it lengthens it. */
+function signed(m: number): string {
+  return `${m > 0 ? '−' : m < 0 ? '+' : ''}${num(Math.abs(m))}`
+}
+
 export default function PriceTagsView({ clear, selected, setSelected }: Props) {
   const r = clear.result
   const solved = clear.solvedParams
+  const simple = useDensity().density === 'simple'
   const tagsCache = useRef(new Map<string, PriceTags>())
   const slotsCache = useRef(new Map<string, SlotValue[]>())
   const [tags, setTags] = useState<Async<PriceTags>>({ status: 'idle' })
@@ -92,23 +99,23 @@ export default function PriceTagsView({ clear, selected, setSelected }: Props) {
 
   const tagData = tags.status === 'ok' ? tags.data : null
   const maxTrialSaved = tagData ? Math.max(0.01, ...tagData.criteria.map((c) => Math.abs(c.months_saved_trial))) : 1
+  const eligSource = tagData?.eligibility_source ?? trial?.eligibility_source ?? 'unknown'
 
   return (
-    <section className="view">
-      <div className="view-head">
-        <div>
-          <h1>What each eligibility criterion costs</h1>
-          <p className="lede">
-            For one trial, drop each parsed criterion in turn, recompute the eligible pool and overlaps, and re-clear.
-            The result is a price tag in months of enrollment.
-          </p>
-        </div>
+    <section className="view rs-view">
+      <RsHead
+        title="What each eligibility criterion costs"
+        lede="For one trial, drop each parsed criterion in turn, recompute the eligible pool and overlaps, and re-clear. The result is a price tag in months of enrollment."
+      >
+        <InSampleLine>Price tags are modeled months, not observed enrollment.</InSampleLine>
         <RunLine params={solved} stale={clear.loading} />
-      </div>
+      </RsHead>
 
-      <div className="card controls">
+      <div className="card controls rs-controls">
         <label className="field field-wide">
-          <span className="field-label">Trial ({trials.length} in {solved.region})</span>
+          <span className="field-label">
+            Trial ({trials.length} in {solved.region})
+          </span>
           <select value={selected ?? ''} onChange={(e) => setSelected(e.target.value || null)}>
             <option value="">Select a trial…</option>
             {trials.map((t) => (
@@ -164,6 +171,10 @@ export default function PriceTagsView({ clear, selected, setSelected }: Props) {
               eligible fraction (synthetic) <strong>{num(trial.f !== null ? trial.f * 100 : null, 1)}%</strong>
             </span>
           </div>
+          <p className="rs-qual-line rs-qual-muted">
+            <InSampleMark />: T = months to fill the regional target, <Gloss term="scored-by-model">scored by our enrollment model</Gloss>.
+            The eligible fraction is computed on the <Gloss term="synthetic-population">synthetic population</Gloss>.
+          </p>
         </div>
       )}
 
@@ -173,66 +184,121 @@ export default function PriceTagsView({ clear, selected, setSelected }: Props) {
       {trial && tags.status === 'error' && <ErrorBox error={tags.error} onRetry={() => setReloadTick((x) => x + 1)} />}
 
       {tagData && (
-        <div className="card">
-          <h2>Price tags · {tagData.criteria.length} parsed criteria</h2>
+        <Section
+          id="rs-tags"
+          title={`Price tags · ${tagData.criteria.length} parsed criteria`}
+          lede={
+            <>
+              How this trial’s modeled time to fill changes if each criterion is dropped, against a reference re-solve of the joint optimum
+              (T = <span className="num rs-fig">{num(tagData.T_coord)}</span> months). − means a shorter modeled time.
+            </>
+          }
+          qualifiers={
+            <p className="rs-qual-line">
+              <InSampleMark /> · <Gloss term="scored-by-model">scored by our enrollment model</Gloss> ·{' '}
+              <Qualifier tone="muted">Eligibility: {eligSource}</Qualifier>; review parsed criteria against the source text.
+            </p>
+          }
+          details={
+            <>
+              {tagData.alternatives_not_priced && tagData.alternatives_not_priced.length > 0 && (
+                <p className="muted small">
+                  Not priced (one of several OR’ed alternatives; dropping it narrows the pool rather than relaxing it):{' '}
+                  {tagData.alternatives_not_priced.join(', ')}.
+                </p>
+              )}
+              <Caveat>
+                {tagData.note} The months are relative to this trial’s time in a reference re-solve of the joint optimum (T ={' '}
+                {num(tagData.T_coord)} months), and the relaxed market is re-solved with the same deterministic procedure, so solver
+                progress is not credited to the criterion. “Pool” is the eligible-population multiplier from dropping the criterion.
+                Eligibility: {eligSource}; review parsed criteria against the source text.
+              </Caveat>
+            </>
+          }
+          detailsLabel="Details: method and unpriced criteria"
+        >
           {tagData.criteria.length === 0 && <p className="muted">No criteria were parsed from this trial’s CT.gov text.</p>}
-          <ul className="tags">
-            {tagData.criteria.map((c) => {
-              const w = (100 * Math.abs(c.months_saved_trial)) / maxTrialSaved
-              return (
-                <li key={c.id} className="tag">
-                  <div className="tag-main">
+          {simple ? (
+            <ul className="tags">
+              {tagData.criteria.map((c) => {
+                const w = (100 * Math.abs(c.months_saved_trial)) / maxTrialSaved
+                return (
+                  <li key={c.id} className="rs-tag-simple">
                     <div className="tag-title">
                       <span className="strong">{c.label}</span>
-                      <Badge tone={c.kind === 'exclusion' ? 'bad' : 'ok'}>{c.kind}</Badge>
-                      {c.pool_multiplier === 1 && (
-                        <Badge tone="neutral" title="Dropping this criterion does not change the synthetic eligible pool">
-                          pool unchanged
-                        </Badge>
-                      )}
+                      <Qualifier tone="muted">{c.kind}</Qualifier>
+                      {c.pool_multiplier === 1 && <Qualifier tone="muted">· pool unchanged</Qualifier>}
+                      <InfoTip
+                        label={`Details: ${c.label}`}
+                        content={
+                          <>
+                            <span className="hc-title">{c.label}</span>“{c.source}”
+                            <span className="hc-src">
+                              Portfolio {num(c.months_saved_portfolio)} trial-mo · pool {times(c.pool_multiplier)} · source sentence from
+                              ClinicalTrials.gov
+                            </span>
+                          </>
+                        }
+                      />
                     </div>
-                    <blockquote className="source" title="Source sentence from ClinicalTrials.gov eligibility text">
-                      “{c.source}”
-                    </blockquote>
-                  </div>
-                  <div className="tag-nums tnum">
-                    <div>
-                      <span className="muted small">this trial, if relaxed</span>
-                      <div className={c.months_saved_trial > 0 ? 'pos strong' : c.months_saved_trial < 0 ? 'neg strong' : 'strong'}>
-                        {c.months_saved_trial > 0 ? '−' : c.months_saved_trial < 0 ? '+' : ''}
-                        {num(Math.abs(c.months_saved_trial))} mo
-                      </div>
+                    <div className="rs-tag-num">
+                      <span className={c.months_saved_trial > 0 ? 'pos' : c.months_saved_trial < 0 ? 'neg' : ''}>
+                        {signed(c.months_saved_trial)} mo
+                      </span>{' '}
+                      <span className="muted small">this trial, modeled</span>
                       <div className="minibar" aria-hidden="true">
                         <span style={{ width: `${w}%` }} className={c.months_saved_trial < 0 ? 'minibar-neg' : ''} />
                       </div>
                     </div>
-                    <div>
-                      <span className="muted small">portfolio</span>
-                      <div>{num(c.months_saved_portfolio)} trial-mo</div>
+                  </li>
+                )
+              })}
+            </ul>
+          ) : (
+            <ul className="tags">
+              {tagData.criteria.map((c) => {
+                const w = (100 * Math.abs(c.months_saved_trial)) / maxTrialSaved
+                return (
+                  <li key={c.id} className="tag">
+                    <div className="tag-main">
+                      <div className="tag-title">
+                        <span className="strong">{c.label}</span>
+                        <Badge tone={c.kind === 'exclusion' ? 'bad' : 'ok'}>{c.kind}</Badge>
+                        {c.pool_multiplier === 1 && (
+                          <Badge tone="neutral" title="Dropping this criterion does not change the synthetic eligible pool">
+                            pool unchanged
+                          </Badge>
+                        )}
+                      </div>
+                      <blockquote className="source" title="Source sentence from ClinicalTrials.gov eligibility text">
+                        “{c.source}”
+                      </blockquote>
                     </div>
-                    <div>
-                      <span className="muted small">pool</span>
-                      <div>{times(c.pool_multiplier)}</div>
+                    <div className="tag-nums tnum">
+                      <div>
+                        <span className="muted small">this trial, if relaxed</span>
+                        <div className={c.months_saved_trial > 0 ? 'pos strong' : c.months_saved_trial < 0 ? 'neg strong' : 'strong'}>
+                          {signed(c.months_saved_trial)} mo
+                        </div>
+                        <div className="minibar" aria-hidden="true">
+                          <span style={{ width: `${w}%` }} className={c.months_saved_trial < 0 ? 'minibar-neg' : ''} />
+                        </div>
+                      </div>
+                      <div>
+                        <span className="muted small">portfolio</span>
+                        <div>{num(c.months_saved_portfolio)} trial-mo</div>
+                      </div>
+                      <div>
+                        <span className="muted small">pool</span>
+                        <div>{times(c.pool_multiplier)}</div>
+                      </div>
                     </div>
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-          {tagData.alternatives_not_priced && tagData.alternatives_not_priced.length > 0 && (
-            <p className="muted small">
-              Not priced (one of several OR’ed alternatives; dropping it narrows the pool rather than relaxing it):{' '}
-              {tagData.alternatives_not_priced.join(', ')}.
-            </p>
+                  </li>
+                )
+              })}
+            </ul>
           )}
-          <Caveat>
-            {tagData.note} Months saved are relative to this trial’s time in a reference re-solve of the joint optimum
-            (T = {num(tagData.T_coord)} months), and the relaxed market is re-solved with the same deterministic procedure, so
-            solver progress is not credited to the criterion. “Pool” is the eligible-population multiplier from dropping the
-            criterion. Eligibility: {tagData.eligibility_source ?? trial?.eligibility_source ?? 'unknown'}; review parsed
-            criteria against the source text.
-          </Caveat>
-        </div>
+        </Section>
       )}
 
       {!trial && !selected && (
@@ -241,16 +307,18 @@ export default function PriceTagsView({ clear, selected, setSelected }: Props) {
         </div>
       )}
 
-      <div className="card">
-        <div className="section-head">
-          <div>
-            <h2>Slot values</h2>
-            <p className="muted small">
-              Portfolio trial-months saved by one more concurrent-trial slot at sites already at capacity in the cleared
-              joint optimum (up to 12, highest enrollment rate first). Each is compared with the same deterministic re-solve of
-              the unchanged market.
-            </p>
-          </div>
+      <Section
+        id="rs-slots"
+        title="Slot values"
+        lede="Portfolio trial-months by one more concurrent-trial slot at sites already at capacity in the cleared joint optimum (up to 12, highest enrollment rate first)."
+        qualifiers={
+          <p className="rs-qual-line">
+            <InSampleMark /> · <Gloss term="scored-by-model">scored by our enrollment model</Gloss>. Each is compared with the same
+            deterministic re-solve of the unchanged market.
+          </p>
+        }
+      >
+        <div className="rs-slot-action">
           <button className="btn" onClick={loadSlots} disabled={slots.status === 'loading'}>
             {slots.status === 'ok' ? 'Recompute' : 'Compute slot values'}
           </button>
@@ -268,7 +336,9 @@ export default function PriceTagsView({ clear, selected, setSelected }: Props) {
                     <th className="num">Capacity</th>
                     <th className="num">Hist. rate (pts/mo)</th>
                     <th className="num">n hist</th>
-                    <th className="num">Months saved</th>
+                    <th className="num" title="Portfolio trial-months, model estimate, in-sample">
+                      Trial-months (model)
+                    </th>
                     <th className="bar-col" />
                   </tr>
                 </thead>
@@ -304,12 +374,12 @@ export default function PriceTagsView({ clear, selected, setSelected }: Props) {
               </table>
             </div>
             <p className="muted small">
-              Hist. rate = fitted patients per month per trial at the site (posterior mean; bracket = 10th–90th
-              percentile), from n hist past trials at the site.
+              Hist. rate = fitted patients per month per trial at the site (posterior mean; bracket = 10th–90th percentile), from n hist
+              past trials at the site.
             </p>
           </>
         )}
-      </div>
+      </Section>
     </section>
   )
 }

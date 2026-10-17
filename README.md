@@ -15,11 +15,18 @@ now does things that need no forecasting:
   real CMS 2026 physician fee schedule with Medicare locality, a proposed standard non-procedure schedule,
   and a term sheet with provenance on every line. Decision support, not a fair-market-value legal opinion.
 - **Site scores** (`#site-scores`): each U.S. site's historical lung-trial enrollment score, with every step
-  that forms it (prior, the site's own trials, posterior, low-history cap) and the observed-outcome check
+  that forms it (prior, the site's own trials, posterior, low-history cap), a 10th-90th range that counts how
+  much a site's rate varies from trial to trial, and the observed-outcome check
   that says raw differences are overstated about 3x on the log scale. Historical evidence, not a forecast;
   the default order is history depth, not score.
-- **Findings** (landing page): the research results that motivate both. The earlier clearing views live
+- **Findings** (`#findings`): the research results that motivate both. The earlier clearing views live
   under **Research**, labelled as in-sample model outputs.
+
+The home page (no hash, or `#home`) describes the two tools with live fragments of each (the Merck overlap
+matrix, a two-site price comparison) and the research results; `#home/overlap`, `#home/terms` and
+`#home/tested` open a section, and "See demo" opens Findings. The app header has a Simple | Detailed switch
+(Simple for a first visit; the choice is remembered) and a Light / Dark / System theme switch. The look is the
+"Calm" design system: tokens in `frontend/src/index.css`, shared building blocks in `frontend/src/components.tsx`.
 
 Rule for the whole app: no view shows a predicted speedup, time-to-fill or enrollment rate as a product
 claim. Site scores show past per-site rates as evidence, next to their validation, never as a forecast.
@@ -167,7 +174,7 @@ not just a conservative choice. Calibration slope of actual on predicted rate: 0
 dates, the model's times for the same trials are within 15-40% of what they actually took (June 2019:
 31 vs 37 months).
 
-**Observed-outcome check of the site scores** (`analysis/selection_validation.py`, 18 Oct). Completed trials
+**Observed-outcome check of the site scores** (`analysis/selection_validation.py`, 17 Oct). Completed trials
 started 2018 or later: each trial's registered site list is scored with rates fit only on pre-2018 trials,
 and the actual log per-site enrollment rate is regressed on that score with phase, log site count and
 start-year controls:
@@ -203,7 +210,7 @@ of trials slower than the baseline. Output: `data/robustness/holdout.json`; earl
 | Coordination capped at best-response times, vs best response | 1.00x (0% slower) | 1.00x (0% slower) | 1.00x (2% slower) | 1.01x (0% slower) | 0.99x (16% slower) |
 
 **Re-scored with calibrated site rates (post hoc, not pre-registered; `analysis/selection_calibrated.py`,
-18 Oct).** The observed-outcome check in section 2 says the scores overstate differences between site
+17 Oct).** The observed-outcome check in section 2 says the scores overstate differences between site
 lists. So the same saved allocations, not re-solved, are re-scored with every site's log rate shrunk
 toward the U.S. mean by b, the observed-outcome slope. b = 1 reproduces the table above exactly (largest
 difference 4e-16). Output: `data/findings/selection_calibrated.json`.
@@ -338,9 +345,10 @@ Two findings from D that the final numbers must handle:
 - **Near-ties.** "Share faster" counted near-ties. The API now also reports a material threshold
   (>= 1 month): "91% faster" is 62% at >= 1 month.
 
-## Sponsor-funded Financial Coordination pilot
+## Financial Coordination: sponsor-budget worksheet
 
-The additive **Financial Coordination** tab provides a live, explicitly synthetic financial demonstration linked to existing illustrative public-trial protocols. Coverage review, budget-constrained site alternatives, a three-party transfer/resource ledger, reinvestment and HTML/JSON evidence exports are available without a registry database. No insurer partnership, coverage approval, observed savings or clinical benefit is claimed. See [demo setup, equations, limitations and verification](docs/financial/README.md).
+The additive **Financial Coordination** tab provides a live, explicitly synthetic sponsor-budget worksheet linked to existing illustrative public-trial protocols: a coverage worksheet, five sponsor-budget scenarios at a fixed participant target over a budgeted contract period (listed, not ranked), a three-party transfer/resource ledger, cost-input sensitivity and HTML/JSON evidence exports, without a registry database. It outputs no time, speed or enrollment estimate, and in the worksheet payer assumptions do not change the sponsor commitment (only a line's coverage status does): insurer and Medicare amounts are benchmarks for fair-value reasoning and site negotiation, not a lever that lowers sponsor cost or speeds a trial (decision 24). No insurer partnership, coverage approval, observed savings or clinical benefit is claimed. See [what it computes, what it does not, and verification](docs/financial/README.md).
+
 # Portfolio Command
 
 Budget-constrained multi-trial planning with shared site capacity, financial
@@ -349,3 +357,4 @@ coordination, paired sensitivity and immutable evidence exports is available at
 inputs; ClinicalTrials.gov supplies registry context only. See
 [reproduction and assumptions](docs/portfolio/README.md) and
 [verification evidence](docs/portfolio/VERIFICATION.md).
+

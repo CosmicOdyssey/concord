@@ -360,3 +360,39 @@ export function nodeStates(p: Protocol, overrides: Overrides): Map<string, NodeS
 
 export const ILLUSTRATIVE = 'Illustrative, authored from public trial information'
 export const DISCLAIMER = 'Decision support. Not a fair-market-value legal opinion.'
+
+// Copy deck B7 (verbatim).
+export const ROUTINE_LEGEND = "Routine care: billable to Medicare (NCD 310.1) or the insurer, by Concord's rules; the payer decides coverage."
+export const RESEARCH_LEGEND = 'Research-only: paid by the sponsor.'
+export const PROPOSED_STANDARD_TAG = 'Proposed standard: a starting point to negotiate against, not market data.'
+export const PLACEHOLDER_TAG = 'Includes placeholder lab prices'
+
+const UPPER_WORDS = new Set(['NYC', 'DC', 'II', 'III'])
+const LOWER_WORDS = new Set(['of', 'and', 'the'])
+
+/** CMS locality names come in capitals ("REST OF FLORIDA", "NYC SUBURBS/LONG ISLAND"); show them in title case. */
+export function localityTitle(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\p{L}[\p{L}.']*/gu, (w, offset: number) => {
+      if (UPPER_WORDS.has(w.toUpperCase())) return w.toUpperCase()
+      if (offset > 0 && LOWER_WORDS.has(w)) return w
+      return w.charAt(0).toUpperCase() + w.slice(1)
+    })
+}
+
+/** "MANHATTAN" in locality 01 -> "01 · Manhattan"; no locality -> national amounts. */
+export function localityLabel(l: Locality | null): string {
+  return l ? `${l.code} · ${localityTitle(l.name)}` : 'No locality: national amounts'
+}
+
+/** The API writes formulas with an ASCII "x"; show the multiplication sign. */
+export function formulaText(f: string): string {
+  return f.replace(/ x /g, ' × ')
+}
+
+/** A rule's id and title as the term sheet prints it ("R4: More frequent than standard care"). */
+export function ruleTitle(rules: Rule[], id: RuleId): string {
+  const r = rules.find((x) => x.id === id)
+  return r ? `${id}: ${r.title}` : id
+}

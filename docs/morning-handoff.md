@@ -1,4 +1,4 @@
-# Morning handoff (18 Oct)
+# Morning handoff (17 Oct)
 
 App running at http://localhost:5173 (UI) and http://localhost:8000 (API). Everything is on `main` and
 pushed. Overnight decisions, with reasons: [docs/decisions.md](decisions.md) (17 entries).
@@ -17,7 +17,7 @@ script, unchanged, beta 0.093, 46 US-Northeast trials) shows:
 - **The data doesn't support:** "choosing sites from registry data doesn't beat sponsors' own choices out
   of sample". In our model it does, by about 1.7x held-out. That is still scored by our enrollment model,
   which typically misses by about 2x, not by observed enrollment.
-- **Update (18 Oct): calibrated to observed enrollment, it is about 1.2x.** Re-scoring the same allocations
+- **Update (17 Oct): calibrated to observed enrollment, it is about 1.2x.** Re-scoring the same allocations
   with site rates shrunk by the observed-outcome slope (post hoc, not pre-registered): site selection alone is
   1.18x (alternating) and 1.17x (time) held-out at b = 0.33, and 1.07x / 1.06x at b = 0.16. Coordination is
   1.03x held-out either way. b = 1 reproduces the table above exactly.
@@ -80,7 +80,7 @@ its last columns. Fixing it would be a restyle, so I left it.
 
 ## Needs you
 
-- ~~CLFS lab fee schedule~~ **Done (18 Oct):** loaded from `clfs_cy2026_q4v1.zip` (2,117 codes). The demo
+- ~~CLFS lab fee schedule~~ **Done (17 Oct):** loaded from `clfs_cy2026_q4v1.zip` (2,117 codes). The demo
   protocols now have 0 placeholder lab lines; the "placeholder" labels show only if a total still contains one.
 - **Decide how to pitch the site-selection result** (top of this file).
 - **Open audit notes** (all disclosed in the README; none blocks the demo):
@@ -111,7 +111,7 @@ Reading: the scores carry real signal on observed enrollment, but predicted diff
 (`analysis/selection_calibrated.py`, `data/findings/selection_calibrated.json`) and a unit test
 (`tests/test_selection_validation.py`).
 
-## Added 18 Oct (afternoon)
+## Added 17 Oct (afternoon)
 
 - **Site scores tab** (`#site-scores`, after Protocol to terms): each U.S. site's historical lung-trial enrollment
   score with every step that forms it (prior, the site's own trials, posterior, low-history cap, calibrated value)

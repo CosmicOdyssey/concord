@@ -1,0 +1,250 @@
+/* Calm building blocks (components.tsx): PageHead, Window, Qualifier, KeyFigure, Section, Banner, Segmented.
+   Measurements follow the C mockups (C-Findings, C-Overlap, C-Landing). */
+
+/* ---------- page head ---------- */
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--sp-4) var(--sp-6);
+  margin-bottom: var(--sp-2);
+}
+.page-head-main {
+  max-width: 46rem;
+  min-width: 0;
+}
+.page-head .lede {
+  margin: var(--sp-4) 0 0;
+}
+.page-head-meta {
+  margin: 0;
+  font-size: var(--fs-ui);
+  color: var(--muted);
+}
+.page-head-extra {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+/* ---------- window ---------- */
+.win {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  min-width: 0;
+}
+.win-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--sp-1) var(--sp-5);
+  padding: 0.875rem clamp(1rem, 2.5vw, 1.75rem);
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--fs-ui);
+  line-height: 1.5;
+  color: var(--muted);
+}
+.win-title {
+  color: var(--ink);
+  font-weight: 600;
+}
+.win-aside {
+  min-width: 0;
+}
+.win-body {
+  padding: var(--win-pad);
+  min-width: 0;
+}
+.win-body.win-flush {
+  padding: 0;
+}
+/* Something that opens on click may lift 2 px on hover; nothing else moves. */
+@media (prefers-reduced-motion: no-preference) {
+  .lift {
+    transition:
+      transform 180ms ease-out,
+      box-shadow 180ms ease-out;
+  }
+  .lift:hover,
+  a:focus-visible > .lift {
+    transform: translateY(-2px);
+    box-shadow: var(--lift);
+  }
+}
+
+/* ---------- qualifier ---------- */
+.qual {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.qual-caution {
+  color: var(--caution-ink);
+}
+.qual-muted {
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+/* ---------- key figure ---------- */
+.kf {
+  margin: 0;
+  min-width: 0;
+}
+.kf-value {
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.kf-md .kf-value {
+  font-size: var(--fs-fig);
+}
+.kf-lg .kf-value {
+  font-size: 1.5rem;
+}
+.kf-stack .kf-label {
+  font-size: var(--fs-ui);
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.kf-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.125rem 0.5rem;
+  margin-top: 0.25rem;
+}
+.kf-q {
+  font-size: var(--fs-sm);
+}
+.kf-inline {
+  font-size: var(--fs-md);
+  color: var(--ink-2);
+}
+.kf-sub {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+/* ---------- section ---------- */
+.section-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-6) var(--sp-9);
+  align-items: flex-start;
+}
+.section-text {
+  flex: 1 1 22rem;
+  min-width: 0;
+  max-width: 34rem;
+}
+.section-row-single .section-text {
+  max-width: 46rem;
+}
+.section-title {
+  display: flex;
+  gap: var(--sp-4);
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.section-title h2,
+.section-title h3 {
+  margin: 0;
+  font-size: clamp(1.375rem, 1.1rem + 0.8vw, 1.75rem);
+  line-height: 1.22;
+  font-weight: 700;
+}
+.section-title h3 {
+  font-size: 1.25rem;
+}
+.section-lede {
+  margin: var(--sp-4) 0 0;
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+.section-quals {
+  margin-top: var(--sp-4);
+  font-size: var(--fs-md);
+  line-height: 1.55;
+}
+.section-figure {
+  flex: 1.35 1 26rem;
+  min-width: 0;
+  margin: 0;
+}
+.section-row-single .section-figure {
+  flex-basis: 100%;
+}
+.section-figure > figcaption {
+  margin-top: 1.25rem;
+  padding-top: 0.875rem;
+  border-top: 1px solid var(--rule);
+  font-size: var(--fs-ui);
+  line-height: 1.55;
+  color: var(--muted);
+}
+.section-details {
+  margin-top: var(--sp-7);
+  padding-top: var(--sp-6);
+  border-top: 1px solid var(--rule);
+}
+.section-disclosure {
+  margin-top: var(--sp-6);
+}
+
+/* ---------- banner ---------- */
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  align-items: baseline;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-md);
+  line-height: 1.55;
+}
+.banner-caution {
+  background: var(--caution-bg);
+  color: var(--caution-ink);
+  border: 1px solid color-mix(in srgb, var(--caution-ink) 35%, transparent);
+}
+.banner-info {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+.banner-title {
+  font-weight: 700;
+}
+.banner-body {
+  flex: 1 1 20rem;
+  min-width: 0;
+}
+.banner a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+/* ---------- segmented control variants ---------- */
+.seg-inline {
+  margin: 0;
+  flex-wrap: nowrap;
+}
+.seg-icons .seg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  min-height: 2rem;
+  height: 2rem;
+  padding: 0;
+}
+@media (pointer: coarse) {
+  .seg-icons .seg-btn {
+    width: var(--tap);
+    height: var(--tap);
+  }
+}

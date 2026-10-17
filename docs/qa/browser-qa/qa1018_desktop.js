@@ -46,70 +46,78 @@ async function waitFor(page, fn, arg, timeout = 60000) {
   // ---------------------------------------------------------------- (a) Findings
   if (STEPS.includes('a')) {
     const ck = Q.checker('a Findings', checks)
+    // The Calm Findings page: Detailed mode shows each finding under the file's own title, with the full headline,
+    // tables, notes, caveats and sources inline (Simple folds them into a Details disclosure).
+    await page.evaluate(() => localStorage.setItem('concord.density', 'detailed'))
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await waitFor(page, () => document.querySelectorAll('.fd-card').length >= 3 && document.querySelector('.ci svg') && document.querySelector('.fd-related'))
+    await waitFor(page, () => document.querySelectorAll('.fd-card').length >= 3 && document.querySelector('.ci-plot') && document.querySelector('.fd-related-text'))
     await Q.settle(page, 800)
     await Q.snap(browser, page, '01-findings', { fullPage: true })
     await Q.snap(browser, page, '01-findings-top', { fullPage: false })
     const cards = await page.$$('.fd-card')
     const ids = await page.$$eval('.fd-card', (els) => els.map((e) => e.id.replace('finding-', '')))
-    for (let i = 0; i < cards.length; i++) await Q.snap(browser, cards[i], `01${'abc'[i]}-finding-${ids[i]}`, { element: true })
+    for (let i = 0; i < cards.length; i++) await Q.snap(browser, cards[i], `01${'abcde'[i]}-finding-${ids[i]}`, { element: true })
 
     const screen = await page.evaluate(() => {
       const t = (el) => (el ? el.innerText.replace(/\u00a0/g, ' ').trim() : null)
       return {
         meta: t(document.querySelector('.fd-meta')),
         related: t(document.querySelector('.fd-related-text')),
-        cards: [...document.querySelectorAll('.fd-card')].map((c) => ({
+        // The same-sponsor lead block (.fd-lead) comes first; the findings follow in findings.json order.
+        cards: [...document.querySelectorAll('.fd-card:not(.fd-lead)')].map((c) => ({
           id: c.id,
-          title: t(c.querySelector('.fd-title')),
-          status: t(c.querySelector('.fd-head .badge')),
-          headline: t(c.querySelector('.fd-headline')),
-          ciDesc: c.querySelector('.ci desc')?.textContent ?? null,
+          title: t(c.querySelector('h2')),
+          status: t(c.querySelector('.fd-status-v')),
+          headline: t(c.querySelector('.fd-full') ?? c.querySelector('.fd-headline')),
           ciVals: [...c.querySelectorAll('.ci-val')].map((x) => x.textContent),
-          ciRef: c.querySelector('.ci-ref-label')?.textContent ?? null,
+          ciInts: [...c.querySelectorAll('.ci-int')].map(t),
+          ciRef: t(c.querySelector('.ci-ref-label')),
           tables: [...c.querySelectorAll('.fd-table-block')].map((b) => ({
             title: t(b.querySelector('.fd-table-title')),
-            head: [...b.querySelectorAll('thead th')].map(t),
+            head: [...b.querySelectorAll('thead th')].map((x) => x.textContent.trim()),
             rows: [...b.querySelectorAll('tbody tr')].map((r) => [...r.children].map(t)),
             notes: [...b.querySelectorAll('.fd-notes li')].map(t),
           })),
-          caveats: [...c.querySelectorAll('.fd-foot > div:first-child .fd-list li')].map(t),
+          caveats: [...c.querySelectorAll('.fd-caveats li')].map(t),
           sources: [...c.querySelectorAll('.fd-sources li')].map(t),
           sourceHrefs: [...c.querySelectorAll('.fd-sources a')].map((a) => a.getAttribute('href')),
         })),
       }
     })
+    // The page typesets "1.42x" as "1.42×" and "-0.093" as "−0.093": compare on the stored glyphs.
+    const norm = (x) => (x == null ? x : String(x).replace(/×/g, 'x').replace(/\u2212/g, '-'))
     const api = (await Q.apiGet('/api/findings')).body
     const so = (await Q.apiGet('/api/findings/self-overlap')).body
     ck('finding count', api.findings.length, screen.cards.length)
     api.findings.forEach((f, i) => {
       const c = screen.cards[i] || {}
       ck(`${f.id} title`, f.title, c.title)
-      ck(`${f.id} headline`, f.headline, c.headline)
+      ck(`${f.id} headline`, f.headline, norm(c.headline))
       const statusLabel = { final: 'Final', provisional: 'Provisional', missing: 'Not computed' }[f.status] ?? f.status
       ck(`${f.id} status`, statusLabel, c.status)
       if (f.chart && f.chart.type === 'ci') {
         f.chart.items.forEach((it, j) => {
-          ck(`${f.id} CI label ${j}`, `${it.estimate.toFixed(2)}  [${it.lo.toFixed(2)}, ${it.hi.toFixed(2)}]`, c.ciVals?.[j])
+          ck(`${f.id} CI estimate ${j}`, it.estimate.toFixed(2), norm(c.ciVals?.[j]))
+          ck(`${f.id} CI interval ${j}`, true, !!norm(c.ciInts?.[j])?.includes(`${it.lo.toFixed(2)} to ${it.hi.toFixed(2)}`), c.ciInts?.[j])
         })
         const rv = f.chart.reference.value
-        ck(`${f.id} CI reference`, `${f.chart.reference.label}: ${Number.isInteger(rv) ? rv.toFixed(1) : rv.toFixed(2)}`, c.ciRef)
+        ck(`${f.id} CI reference`, true, !!norm(c.ciRef)?.startsWith(`${Number.isInteger(rv) ? rv.toFixed(1) : rv.toFixed(2)} · `), c.ciRef)
       }
       ;(f.tables || []).forEach((tb, j) => {
         const st = c.tables?.[j] || {}
-        ck(`${f.id} table ${j} title`, tb.title, st.title)
-        // Empty columns are dropped by the view; compare the non-empty cells row by row.
+        ck(`${f.id} table ${j} title`, tb.title, norm(st.title))
+        // Empty columns are dropped by the view; compare the non-empty cells row by row. An unnamed column's head
+        // reads "Note" to screen readers.
         const filled = (k) => tb.rows.some((r) => (r[k] ?? '').trim() !== '')
         const cols = tb.columns.map((_, k) => k).filter((k) => k === 0 || filled(k))
-        ck(`${f.id} table ${j} columns`, JSON.stringify(cols.map((k) => tb.columns[k])), JSON.stringify(st.head))
+        ck(`${f.id} table ${j} columns`, JSON.stringify(cols.map((k) => tb.columns[k] || 'Note')), JSON.stringify((st.head || []).map(norm)))
         tb.rows.forEach((r, k) => {
           const exp = cols.map((m) => ((r[m] ?? '').trim() ? r[m] : '—'))
-          ck(`${f.id} table ${j} row ${k}`, JSON.stringify(exp), JSON.stringify(st.rows?.[k]))
+          ck(`${f.id} table ${j} row ${k}`, JSON.stringify(exp), JSON.stringify((st.rows?.[k] || []).map(norm)))
         })
-        ck(`${f.id} table ${j} notes`, JSON.stringify(tb.notes || []), JSON.stringify(st.notes))
+        ck(`${f.id} table ${j} notes`, JSON.stringify(tb.notes || []), JSON.stringify((st.notes || []).map(norm)))
       })
-      ck(`${f.id} caveats`, JSON.stringify(f.caveats || []), JSON.stringify(c.caveats))
+      ck(`${f.id} caveats`, JSON.stringify(f.caveats || []), JSON.stringify((c.caveats || []).map(norm)))
       ck(`${f.id} source count`, (f.sources || []).length, (c.sources || []).length)
     })
     // Related overlap note: the headline count and its sponsors / upper-bound numbers from self_overlap.json.
@@ -128,17 +136,24 @@ async function waitFor(page, fn, arg, timeout = 60000) {
   }
 
   // ---------------------------------------------------------------- (b) Portfolio overlap, Regeneron preset
+  // Checked in the Detailed density (every cell keeps its full text; trial cards, the criteria compare, the shared
+  // sites table and the summary counts are inline), switched with the header control as a visitor would, and put
+  // back afterwards. calm_overlap.js covers Simple and the rest of the Calm view.
   if (STEPS.includes('b')) {
     const ck = Q.checker('b Overlap', checks)
     await Q.clickTab(page, 'Portfolio overlap')
+    const density0 = await page.evaluate(() => [...document.querySelectorAll('.density-seg .seg-btn')].find((b) => b.getAttribute('aria-pressed') === 'true')?.innerText)
+    await page.evaluate(() => [...document.querySelectorAll('.density-seg .seg-btn')].find((b) => b.innerText === 'Detailed')?.click())
     await waitFor(page, () => document.querySelector('.ov-preset'))
     await page.click('.ov-preset')
     await waitFor(
       page,
       () => {
-        const rl = document.querySelector('.ov-runline')?.innerText ?? ''
+        const strip = document.querySelector('.ov-win .win-strip')?.innerText ?? ''
+        const sum = document.querySelector('.ov-sumline')?.innerText ?? ''
+        const upd = document.querySelector('.ov-updating')?.textContent ?? ''
         const d = document.querySelector('.ov-detail h2')?.innerText ?? ''
-        return rl.includes('Regeneron Pharmaceuticals') && rl.includes('2024-09-01') && !rl.includes('updating') && d.includes('NCT05785767') && d.includes('NCT05800015')
+        return strip.includes('Regeneron Pharmaceuticals') && sum.includes('September 1, 2024') && !upd && d.includes('NCT05785767') && d.includes('NCT05800015')
       },
       null,
       90000,
@@ -146,15 +161,17 @@ async function waitFor(page, fn, arg, timeout = 60000) {
     await Q.settle(page, 800)
     report.steps.b = { hash: await page.evaluate(() => location.hash) }
     await Q.snap(browser, page, '02-overlap-regeneron', { fullPage: true })
-    await page.evaluate(() => document.querySelector('.ov-runline').scrollIntoView({ block: 'start' }))
+    await page.evaluate(() => document.querySelector('.ov-summary').scrollIntoView({ block: 'start' }))
     await Q.sleep(300)
     await Q.snap(browser, page, '02a-overlap-regeneron-top', { fullPage: false })
     await Q.snap(browser, await page.$('section[aria-label="Pair matrix"]'), '02b-overlap-matrix', { element: true })
-    await Q.snap(browser, await page.$('section[aria-label="Pair detail"]'), '02c-overlap-pair-detail', { element: true })
+    await Q.snap(browser, await page.$('.ov-detail'), '02c-overlap-pair-detail', { element: true })
 
     const screen = await page.evaluate(() => {
-      const t = (el) => (el ? el.innerText.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim() : null)
+      const t = (el) => (el ? el.innerText.replace(/ /g, ' ').replace(/\s+/g, ' ').trim() : null)
       return {
+        strip: t(document.querySelector('.ov-win .win-strip')),
+        sum: t(document.querySelector('.ov-sumline')),
         runline: t(document.querySelector('.ov-runline')),
         caveats: [...document.querySelectorAll('.caveat')].map(t),
         stats: [...document.querySelectorAll('.stats .stat')].map((s) => ({ label: t(s.querySelector('.stat-label')), value: t(s.querySelector('.stat-value')), sub: t(s.querySelector('.stat-sub')) })),
@@ -166,11 +183,12 @@ async function waitFor(page, fn, arg, timeout = 60000) {
           head: t(c.querySelector('.ov-tcard-head')),
           dl: Object.fromEntries([...c.querySelectorAll('dt')].map((dt) => [t(dt), t(dt.nextElementSibling)])),
         })),
-        facts: [...document.querySelectorAll('.ov-detail .ov-fact')].map((f) => ({ n: t(f.querySelector('.ov-fact-n')), p: t(f.querySelector('p')) })),
-        diffHeads: [...document.querySelectorAll('.ov-detail .ov-diff h4')].map(t),
+        // Shared sites, the two shares, months both recruiting (the Calm order).
+        facts: [...document.querySelectorAll('.ov-detail .ov-fact')].map((f) => ({ label: t(f.querySelector('dt')), n: t(f.querySelector('.ov-fig, .ov-fig-unk')), dd: t(f.querySelector('dd')) })),
+        diffHeads: [...document.querySelectorAll('.ov-detail .ov-pblock h3')].map(t),
         sharedSitesHead: t([...document.querySelectorAll('.ov-detail h3')].find((h) => h.innerText.startsWith('Shared sites'))),
         sharedSiteRows: [...document.querySelectorAll('.ov-detail .ov-sites-tbl tbody tr')].map((r) => [...r.children].map(t)),
-        trows: [...document.querySelectorAll('.ov-trow')].map((r) => ({ id: t(r.querySelector('.ov-trow-id a')), facts: t(r.querySelector('.ov-trow-facts')), count: t(r.querySelector('.ov-count')), ind: t(r.querySelector('.ov-count + .small')) })),
+        trows: [...document.querySelectorAll('.ov-trow')].map((r) => ({ id: t(r.querySelector('.ov-trow-id a')), facts: t(r.querySelector('.ov-trow-facts')), count: t(r.querySelector('.ov-count')), ind: t(r.querySelector('.ov-count-sub')) })),
         main: t(document.querySelector('main')),
       }
     })
@@ -179,8 +197,14 @@ async function waitFor(page, fn, arg, timeout = 60000) {
     report.steps.b.requests = pageReq
     const reqPath = pageReq.find((p) => p.includes('Regeneron')) ?? '/api/overlap?sponsor=Regeneron+Pharmaceuticals&as_of=2024-09-01&region=US'
     const d = (await Q.apiGet(reqPath)).body
+    // The view's dates: prose "September 1, 2024", tight UI "Sep 1, 2024".
+    const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    const longDate = (iso) => `${MONTHS[+iso.slice(5, 7) - 1]} ${+iso.slice(8, 10)}, ${iso.slice(0, 4)}`
+    const shortDate = (iso) => `${MONTHS[+iso.slice(5, 7) - 1].slice(0, 3)} ${+iso.slice(8, 10)}, ${iso.slice(0, 4)}`
     ck('request', '/api/overlap?sponsor=Regeneron+Pharmaceuticals&as_of=2024-09-01&region=US', reqPath)
-    ck('runline sponsor/date/region', true, screen.runline.includes(d.sponsor) && screen.runline.includes(`as of ${d.as_of}`) && screen.runline.includes(d.region_label), screen.runline.includes(d.sponsor) && screen.runline.includes(`as of ${d.as_of}`) && screen.runline.includes(d.region_label))
+    const ctx = screen.strip.includes(d.sponsor) && screen.strip.includes(d.region_label) && screen.sum.includes(`on ${longDate(d.as_of)}`)
+    ck('sponsor/date/region on screen', true, ctx)
+    ck('summary line (estimated basis)', `${d.trials.length} trials ${d.basis === 'registry' ? '' : 'estimated '}recruiting on ${longDate(d.as_of)} · ${d.pairs.length} pairs`, screen.sum)
     ck('runline population n', true, screen.runline.includes(`n = ${Q.fmt.int(d.population.n)}`), screen.runline.includes(`n = ${Q.fmt.int(d.population.n)}`))
     const nHand = d.trials.filter((x) => x.eligibility_source === 'hand-encoded').length
     ck('runline eligibility split', true, screen.runline.includes(`${nHand} hand-encoded, ${d.trials.length - nHand} rule-based parse`), screen.runline.includes(`${nHand} hand-encoded, ${d.trials.length - nHand} rule-based parse`))
@@ -197,37 +221,46 @@ async function waitFor(page, fn, arg, timeout = 60000) {
     ck('matrix trials', d.trials.length, screen.diag.length)
     d.trials.forEach((t, i) => ck(`diag ${t.nct_id}`, `${t.n_sites} site${t.n_sites === 1 ? '' : 's'}`, screen.diag[i]))
     const pairIdx = new Map(d.pairs.map((p) => [`${p.p}|${p.q}`, p]))
+    const tIdx = new Map(d.trials.map((t) => [t.nct_id, t]))
     for (const c of screen.cells) {
       const [a, b] = c.key.split('|')
       const p = pairIdx.get(`${a}|${b}`) ?? pairIdx.get(`${b}|${a}`)
       const fwd = pairIdx.has(`${a}|${b}`)
       const oab = fwd ? p.o_pq : p.o_qp
       const oba = fwd ? p.o_qp : p.o_pq
-      const exp = `${p.shared_sites} site${p.shared_sites === 1 ? '' : 's'} · ${p.overlap_informative ? `${Q.fmt.pct(oab)} / ${Q.fmt.pct(oba)}` : '—'}`
-      ck(`cell ${c.key}`, exp, c.text.replace(/[†‡]/g, '').trim())
+      const pcts = p.overlap_informative ? `${Q.fmt.pct(oab)} / ${Q.fmt.pct(oba)}` : '—'
+      // A pair whose shared sites can't be counted (a trial lists only anonymized sites) shows no site number.
+      const countable = tIdx.get(a).n_sites_identified > 0 && tIdx.get(b).n_sites_identified > 0
+      const exp = countable ? `${p.shared_sites} site${p.shared_sites === 1 ? '' : 's'} ${pcts}` : pcts
+      ck(`cell ${c.key}`, exp, c.text.replace(/[†‡]/g, '').replace(/\s+/g, ' ').trim())
+      ck(`cell ${c.key} marks`, true, (!p.upper_bound || c.text.includes('†')) && (!p.unreviewed_criteria || c.text.includes('‡')))
     }
     ck('selected cell', 'NCT05785767|NCT05800015', screen.cells.find((c) => c.sel)?.key)
     const p = pairIdx.get('NCT05785767|NCT05800015')
     const A = d.trials.find((x) => x.nct_id === 'NCT05785767')
     const B = d.trials.find((x) => x.nct_id === 'NCT05800015')
-    ck('detail title', 'Pair detail: NCT05785767 × NCT05800015', screen.detailTitle)
-    ck('fact o_ab', Q.fmt.pct(p.o_pq), screen.facts[0]?.n)
-    ck('fact o_ab text', `${Q.fmt.pct(p.o_pq)} of NCT05785767's eligible patients also qualify for NCT05800015`, screen.facts[0]?.p)
-    ck('fact o_ba', Q.fmt.pct(p.o_qp), screen.facts[1]?.n)
-    ck('fact shared sites', String(p.shared_sites), screen.facts[2]?.n)
-    ck('fact months', `${Q.fmt.num(p.months_both_recruiting_estimated, 1)} months`, screen.facts[3]?.n)
-    ck('fact months dates', true, screen.facts[3]?.p.includes(`${p.both_recruiting_from} to ${p.both_recruiting_to}`) && screen.facts[3]?.p.includes(d.snapshot_date), screen.facts[3]?.p.includes(`${p.both_recruiting_from} to ${p.both_recruiting_to}`))
+    ck('detail title', 'NCT05785767 × NCT05800015', screen.detailTitle)
+    ck('fact shared sites', String(p.shared_sites), screen.facts[0]?.n)
+    ck('fact o_ab', Q.fmt.pct(p.o_pq), screen.facts[1]?.n)
+    ck('fact o_ab label', "NCT05785767's eligible patients also eligible for NCT05800015", screen.facts[1]?.label)
+    ck('fact o_ba', Q.fmt.pct(p.o_qp), screen.facts[2]?.n)
+    ck('fact months', `${Q.fmt.num(p.months_both_recruiting_estimated, 1)} months`, screen.facts[3]?.dd.split(' ').slice(0, 2).join(' '))
+    const window = p.both_recruiting_at_snapshot ? `Since ${shortDate(p.both_recruiting_from)}` : `${shortDate(p.both_recruiting_from)} to ${shortDate(p.both_recruiting_to)}`
+    ck('fact months dates', true, !!screen.facts[3]?.dd.includes(window) && !!screen.facts[3]?.dd.includes(shortDate(d.snapshot_date)))
     for (const [i, T] of [A, B].entries()) {
       const dl = screen.cards[i]?.dl ?? {}
-      ck(`${T.nct_id} start`, T.start_date, dl['Start'])
-      ck(`${T.nct_id} window end`, T.estimated_window_end ?? 'none (no completion date registered)', dl['Estimated window end'])
+      const end = !T.estimated_window_end ? 'none (no completion date registered)' : T.estimated_window_end > d.snapshot_date ? 'after the snapshot' : shortDate(T.estimated_window_end)
+      ck(`${T.nct_id} start`, shortDate(T.start_date), dl['Start'])
+      ck(`${T.nct_id} window end`, end, dl['Estimated window end'])
       ck(`${T.nct_id} sites`, `${T.n_sites} in region`, dl['Registered sites'])
       ck(`${T.nct_id} criteria`, String(T.criteria.length), dl['Encoded criteria']?.split(' ')[0])
       ck(`${T.nct_id} eligible share`, `${Q.fmt.pct(T.eligible_share, 1)} of the synthetic population`, dl['Eligible share'])
     }
-    ck('diff only A', `Only NCT05785767 (${p.criteria_diff.only_p.length})`, screen.diffHeads[0])
-    ck('diff shared', true, screen.diffHeads[1]?.startsWith(`Both restrict (${p.criteria_diff.shared.length}`), screen.diffHeads[1])
-    ck('diff only B', `Only NCT05800015 (${p.criteria_diff.only_q.length})`, screen.diffHeads[2])
+    const same = p.criteria_diff.shared.filter((g) => g.same).length
+    ck('diff in both', `Criteria in both (${same})`, screen.diffHeads[0])
+    ck('diff restricted differently', `Restricted differently (${p.criteria_diff.shared.length - same})`, screen.diffHeads[1])
+    ck('diff only A', `Only in NCT05785767 (${p.criteria_diff.only_p.length})`, screen.diffHeads[2])
+    ck('diff only B', `Only in NCT05800015 (${p.criteria_diff.only_q.length})`, screen.diffHeads[3])
     ck('shared sites heading', `Shared sites (${p.shared_sites})`, screen.sharedSitesHead)
     ck('shared site rows', p.shared_site_ids.length, screen.sharedSiteRows.length)
     p.shared_site_ids.forEach((id, i) => {
@@ -240,6 +273,7 @@ async function waitFor(page, fn, arg, timeout = 60000) {
       ck(`trial row ${t.nct_id} industry`, `${t.other_sponsor_trials_at_sites_industry} of them industry-sponsored`, r.ind)
     })
     report.steps.b.api = { reqPath, as_of: d.as_of, basis: d.basis }
+    if (density0 && density0 !== 'Detailed') await page.evaluate((w) => [...document.querySelectorAll('.density-seg .seg-btn')].find((b) => b.innerText === w)?.click(), density0)
   }
 
   // ---------------------------------------------------------------- (c) Protocol to terms, NCT05800015

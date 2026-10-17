@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import { api, REGENERON_PRESET, type Scenario, type SponsorCount } from '../api'
 import type { ClearState } from '../App'
-import { Badge, Caveat, ErrorBox, Loading, RunLine } from '../components'
+import { Badge, Caveat, ErrorBox, Gloss, Loading, Qualifier, RunLine, Section } from '../components'
+import { useDensity } from '../density'
 import { ALLOC_HINT, ALLOC_LABEL, ctgovUrl, int, num, phaseLabel, signedMonths, siteName, trialName } from '../format'
-import { atLeast, backgroundSlowerMaterial, DecompositionTable, HeadlineBlock, materialMonths } from '../summary'
+import { atLeast, backgroundSlowerMaterial, DecompositionTable, HeadlineStats, InSampleResult, materialMonths } from '../summary'
 import { EligBadge, saved } from './ClearView'
+import { InSampleLine, InSampleMark, RsHead } from './researchParts'
 
 interface Props {
   clear: ClearState
@@ -17,6 +19,7 @@ interface Props {
 export default function PortfolioView({ clear, regions, form, setForm, onOpenTrial }: Props) {
   const [sponsors, setSponsors] = useState<SponsorCount[] | null>(null)
   const [sponsorErr, setSponsorErr] = useState<string | null>(null)
+  const simple = useDensity().density === 'simple'
   const r = clear.result
   const isPortfolio = !!r?.params.sponsor
 
@@ -64,18 +67,15 @@ export default function PortfolioView({ clear, regions, form, setForm, onOpenTri
   const sponsorInList = sponsors?.some((s) => s.sponsor === form.sponsor)
 
   return (
-    <section className="view">
-      <div className="view-head">
-        <div>
-          <h1>Portfolio mode</h1>
-          <p className="lede">
-            Clear one sponsor’s concurrent trials across its own registered sites, with every other trial held fixed as
-            background. This is the version a single sponsor can act on today.
-          </p>
-        </div>
-      </div>
+    <section className="view rs-view">
+      <RsHead
+        title="Portfolio mode"
+        lede="Clear one sponsor’s concurrent trials across its own registered sites, with every other trial held fixed as background. This is the version a single sponsor can act on today."
+      >
+        <InSampleLine />
+      </RsHead>
 
-      <div className="card controls">
+      <div className="card controls rs-controls">
         <div className="controls-row">
           <label className="field">
             <span className="field-label">Region</span>
@@ -150,120 +150,161 @@ export default function PortfolioView({ clear, regions, form, setForm, onOpenTri
             </div>
           ) : (
             <>
-              <HeadlineBlock r={r} />
-              <div className="card">
-                <h2>Decomposition</h2>
-                <DecompositionTable r={r} compact />
-                <p className="note small">
-                  {int(r.summary.background_trials)} other trials are held fixed at their registered sites. Under the joint
-                  optimum with losers allowed, <strong>{int(backgroundSlowerMaterial(r))}</strong> of them would enroll more
-                  slowly by {atLeast(materialMonths(r.summary.coord_free_vs_actual), true)} (
-                  {int(r.summary.background_worse_under_coord_free)} by any amount) because this portfolio moves onto their
-                  sites. The capped allocation holds every trial, background included, at its registered time under the
-                  same rates (in-sample only).
-                </p>
-              </div>
+              <InSampleResult
+                r={r}
+                qualifiers={
+                  <p className="rs-qual-line">
+                    <Qualifier>Other sponsors’ trials:</Qualifier> {int(r.summary.background_trials)} other trials are held fixed at their
+                    registered sites. Under the joint optimum with losers allowed, <strong>{int(backgroundSlowerMaterial(r))}</strong> of them
+                    would enroll more slowly by {atLeast(materialMonths(r.summary.coord_free_vs_actual), true)} (
+                    {int(r.summary.background_worse_under_coord_free)} by any amount) because this portfolio moves onto their sites. The
+                    capped allocation holds every trial, background included, at its registered time under the same rates (in-sample
+                    only).
+                  </p>
+                }
+                details={
+                  <>
+                    <HeadlineStats r={r} />
+                    {simple && (
+                      <>
+                        <h3>Decomposition</h3>
+                        <DecompositionTable r={r} compact />
+                      </>
+                    )}
+                  </>
+                }
+              />
+              {!simple && (
+                <Section title="Decomposition" lede="The same five comparisons as Clear it, over this sponsor’s trials only. All in-sample.">
+                  <DecompositionTable r={r} compact />
+                </Section>
+              )}
 
-              <div className="card">
-                <h2>
-                  {r.params.sponsor}’s trials ({own.length}
-                  {ownFlagged.length > 0 ? ` + ${ownFlagged.length} held out` : ''})
-                </h2>
-                <div className="table-scroll">
-                  <table className="tbl">
-                    <thead>
-                      <tr>
-                        <th>Trial</th>
-                        <th className="num">Regional target</th>
-                        <th className="num">Sites</th>
-                        <th className="num" title={ALLOC_HINT.actual}>
-                          {ALLOC_LABEL.actual}
-                        </th>
-                        <th className="num" title={ALLOC_HINT.indep}>
-                          {ALLOC_LABEL.indep}
-                        </th>
-                        <th className="num" title={ALLOC_HINT.coord}>
-                          {ALLOC_LABEL.coord}
-                        </th>
-                        <th className="num" title={ALLOC_HINT.coord_free}>
-                          {ALLOC_LABEL.coord_free}
-                        </th>
-                        <th className="num">Months saved</th>
-                        <th className="num" title="Realized enrollment window, only for trials finished by a past as-of date">
-                          Realized
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {own.map((t) => (
-                        <tr key={t.nct_id} className="clickable" onClick={() => onOpenTrial(t.nct_id)}>
-                          <td className="trial-cell">
-                            <div className="trial-id">
-                              <a href={ctgovUrl(t.nct_id)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
-                                {trialName(t)}
-                              </a>
-                            </div>
-                            <div className="muted small trunc" title={t.title}>
-                              {phaseLabel(t.phases)} · {t.title}
-                            </div>
-                            <EligBadge source={t.eligibility_source} />
-                          </td>
-                          <td className="num">{num(t.target_region)}</td>
-                          <td className="num nowrap">
-                            {int(t.sites_actual)} → {int(t.sites_coord)}
-                          </td>
-                          <td className="num">{num(t.T_actual)}</td>
-                          <td className="num">{num(t.T_indep)}</td>
-                          <td className="num">{num(t.T_coord)}</td>
-                          <td className="num">{num(t.T_coord_free)}</td>
-                          <td className="num pos">{signedMonths(saved(t))}</td>
-                          <td className="num">{num(t.realized_window_months)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="muted small">
-                  Months (model estimates). Sites = registered → coordinated (no losers). Months saved = Registered −
-                  Coordinated (no losers). Realized shows “—” when the trial had not finished enrolling.
-                </p>
-              </div>
-
-              <div className="card">
-                <h2>Shared registered sites</h2>
-                <p className="muted small">
-                  Sites where two or more of these trials registered, so they compete for the same patients and staff.
-                </p>
-                {shared.length === 0 ? (
-                  <p className="muted">None: no site is registered by more than one of these trials.</p>
-                ) : (
-                  <div className="table-scroll">
-                    <table className="tbl tbl-compact">
-                      <thead>
-                        <tr>
-                          <th>Site</th>
-                          <th className="num">Trials</th>
-                          <th>Which</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {shared.map(({ site, trials }) => (
-                          <tr key={site!.site_id}>
-                            <td>
-                              {siteName(site!)} {site!.is_amc && <Badge tone="neutral">AMC</Badge>}
-                            </td>
-                            <td className="num">{trials.length}</td>
-                            <td className="small">{trials.map((t) => (t ? trialName(t) : '?')).join(', ')}</td>
+              <Section
+                title={`${r.params.sponsor}’s trials (${own.length}${ownFlagged.length > 0 ? ` + ${ownFlagged.length} held out` : ''})`}
+                lede="Model-estimated months to fill each trial’s regional target under each allocation. Click a row for that trial’s criterion price tags."
+                qualifiers={
+                  <p className="rs-qual-line">
+                    <InSampleMark /> · <Gloss term="scored-by-model">scored by our enrollment model</Gloss>, not observed enrollment.
+                  </p>
+                }
+                details={
+                  <>
+                    <div className="table-scroll">
+                      <table className="tbl">
+                        <thead>
+                          <tr>
+                            <th>Trial</th>
+                            <th className="num">Regional target</th>
+                            <th className="num">Sites</th>
+                            <th className="num" title={ALLOC_HINT.actual}>
+                              {ALLOC_LABEL.actual}
+                            </th>
+                            <th className="num" title={ALLOC_HINT.indep}>
+                              {ALLOC_LABEL.indep}
+                            </th>
+                            <th className="num" title={ALLOC_HINT.coord}>
+                              {ALLOC_LABEL.coord}
+                            </th>
+                            <th className="num" title={ALLOC_HINT.coord_free}>
+                              {ALLOC_LABEL.coord_free}
+                            </th>
+                            <th className="num" title="Registered minus coordinated (no losers): model estimate, in-sample">
+                              Difference (mo)
+                            </th>
+                            <th className="num" title="Realized enrollment window, only for trials finished by a past as-of date">
+                              Realized
+                            </th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+                        </thead>
+                        <tbody>
+                          {own.map((t) => (
+                            <tr
+                              key={t.nct_id}
+                              className="clickable"
+                              tabIndex={0}
+                              onClick={() => onOpenTrial(t.nct_id)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') onOpenTrial(t.nct_id)
+                              }}
+                            >
+                              <td className="trial-cell">
+                                <div className="trial-id">
+                                  <a href={ctgovUrl(t.nct_id)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
+                                    {trialName(t)}
+                                  </a>
+                                </div>
+                                <div className="muted small trunc" title={t.title}>
+                                  {phaseLabel(t.phases)} · {t.title}
+                                </div>
+                                <EligBadge source={t.eligibility_source} />
+                              </td>
+                              <td className="num">{num(t.target_region)}</td>
+                              <td className="num nowrap">
+                                {int(t.sites_actual)} → {int(t.sites_coord)}
+                              </td>
+                              <td className="num">{num(t.T_actual)}</td>
+                              <td className="num">{num(t.T_indep)}</td>
+                              <td className="num">{num(t.T_coord)}</td>
+                              <td className="num">{num(t.T_coord_free)}</td>
+                              <td className="num pos">{signedMonths(saved(t))}</td>
+                              <td className="num">{num(t.realized_window_months)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="muted small">
+                      Months (model estimates, in-sample). Sites = registered → coordinated (no losers). Difference = Registered − Coordinated
+                      (no losers). Realized shows “—” when the trial had not finished enrolling.
+                    </p>
+                  </>
+                }
+                detailsLabel={`Show the trials table (${own.length})`}
+              />
+
+              <Section
+                title="Shared registered sites"
+                lede={
+                  shared.length === 0 ? (
+                    'None: no site is registered by more than one of these trials.'
+                  ) : (
+                    <>
+                      {int(shared.length)} <Gloss term="registered-site">registered sites</Gloss> are listed by two or more of these trials.
+                    </>
+                  )
+                }
+                details={
+                  shared.length > 0 ? (
+                    <div className="table-scroll">
+                      <table className="tbl tbl-compact">
+                        <thead>
+                          <tr>
+                            <th>Site</th>
+                            <th className="num">Trials</th>
+                            <th>Which</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {shared.map(({ site, trials }) => (
+                            <tr key={site!.site_id}>
+                              <td>
+                                {siteName(site!)} {site!.is_amc && <Badge tone="neutral">AMC</Badge>}
+                              </td>
+                              <td className="num">{trials.length}</td>
+                              <td className="small">{trials.map((t) => (t ? trialName(t) : '?')).join(', ')}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : undefined
+                }
+                detailsLabel={`Show the ${int(shared.length)} shared sites`}
+              />
               <Caveat>
-                Portfolio clearing only reassigns this sponsor’s trials among its own registered sites; other sponsors’
-                trials stay where they registered. Times are model estimates for the regional slice of each trial.
+                Portfolio clearing only reassigns this sponsor’s trials among its own registered sites; other sponsors’ trials stay
+                where they registered. Times are model estimates for the regional slice of each trial.
               </Caveat>
             </>
           )}

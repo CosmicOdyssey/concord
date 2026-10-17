@@ -1,4 +1,4 @@
-# Decisions log (overnight 17-18 Oct)
+# Decisions log (16-17 Oct)
 
 Judgment calls made without being able to ask. Newest last. Each says what and why.
 
@@ -65,31 +65,31 @@ Judgment calls made without being able to ask. Newest last. Each says what and w
 17. **Polish only after QA**: Clear it hint now says clears take 1-2 minutes (measured 96 s); the old research
     term sheet tab is labelled "Term sheet (old)"; QA harness labels updated to match. The terms budget table
     still needs a sideways swipe at 390 px; fixing it would be a restyle, so it is left and noted.
-18. **CLFS loaded (18 Oct, user-downloaded file `clfs_cy2026_q4v1.zip`).** Copied to its own folder
+18. **CLFS loaded (17 Oct, user-downloaded file `clfs_cy2026_q4v1.zip`).** Copied to its own folder
     `data/raw/cms/clfs26q4/` and loaded with the existing loader: 2,117 codes, numbers only. Real prices
     differ from the placeholders for venipuncture (36415: $9.34 vs $3.00), hCG (84702: $15.05 vs $15.00) and
     the 5-50 gene panel (81445: $597.91 vs $597.00). The Terms view's "includes placeholder lab prices"
     labels now appear only when a total still contains placeholder amounts. API restarted to reload the
     cached rate table.
-19. **Overlap matrix: anonymized sites are "sites hidden", not 0** (reported by the user, 18 Oct). With no preset,
+19. **Overlap matrix: anonymized sites are "sites hidden", not 0** (reported by the user, 17 Oct). With no preset,
     the tab defaulted to the sponsor with the most trials, AstraZeneca, whose 201 registered sites are all
     anonymized on CT.gov ("Research Site"), so every off-diagonal cell read "0 sites". That is unknown, not
     zero. Now: the sponsor list reports each sponsor's share of identifiable site rows; the default is the first
     sponsor with mostly identifiable sites (Merck at the snapshot); anonymized sponsors are labelled in the picker;
     cells involving a trial with no identifiable site read "sites hidden".
-20. **Calibrated re-score of site selection is shown, labelled post hoc** (18 Oct). The observed-outcome check
+20. **Calibrated re-score of site selection is shown, labelled post hoc** (17 Oct). The observed-outcome check
     (slope 0.33 industry, 0.16 all) says the model overstates site-list differences, so task A's saved
     allocations were re-scored, not re-solved, with site log rates shrunk by b. b = 1 reproduces holdout.json
     exactly. The pre-registered script was not touched; the new script imports its helpers. Findings, README and
     handoff now lead with the calibrated figure (about 1.2x held-out) alongside the uncalibrated 1.7x.
 21. **Overlap: shared sites that can't be counted show nothing, not "sites hidden" or 0** (user: "What's the use of
-    sites hidden matrix if you can't see the sites?", 18 Oct). One helper decides whether a pair's sites are
+    sites hidden matrix if you can't see the sites?", 17 Oct). One helper decides whether a pair's sites are
     countable (both trials list an identifiable site). Uncountable pairs show only eligibility overlap in the matrix
     and list, are left out of the site stats ("—" when no pair is countable), and the list drops its Shared sites
     column when nothing is countable; trial rows say other sponsors' trials at an all-anonymized trial's sites
     can't be counted. Only 4 of 80 sponsors are affected (AstraZeneca 0% identifiable; Novartis, Avistone,
     Hummingbird partly). Sponsors with identifiable sites render exactly as before (browser-checked).
-22. **Site scores tab** (user request: "a tab for the site scoring ... especially if we give a breakdown", 18 Oct).
+22. **Site scores tab** (user request: "a tab for the site scoring ... especially if we give a breakdown", 17 Oct).
     Placed after Protocol to terms. Score = the stored site_model.lam_eff; the backend re-runs the rate fit's loop
     to keep the final per-trial allocations (tests: posterior arrays equal recruitment.fit; every score equals
     lam_eff, max difference 0 over 27,434 sites). Calibrated = exp(m + b(log score - m)), m = mean log score over
@@ -97,3 +97,81 @@ Judgment calls made without being able to ask. Newest last. Each says what and w
     the validation file is missing. Default order is fitted trials, not score. Capped sites (3,472, tied at
     0.0757), unfitted and non-U.S. sites get no percentile. The 3x overstatement is stated on the log scale
     (10x raw is about 2.2x calibrated). Posterior intervals leave out the split uncertainty, and the view says so.
+23. **Site score ranges now count trial-to-trial variation** (user: "The site score intervals can be expanded as
+    long as it's within reason", 17 Oct). The old 10th-90th ranges treated EM-allocated patients as exact Poisson
+    counts (MD Anderson 0.676-0.696, Dana-Farber 0.150-0.162). The method was fixed before any width was looked
+    at: n_ts ~ Poisson(lam_s eps_ts e_ts), eps ~ Gamma(k, k); one global 1/k by the pooled moment estimator on the
+    final allocations over identifiable sites with 5+ fitted trials (anonymized "Anonymized site <city>" entries
+    pool several real sites, so they are left out; decided before computing k); N_eff = 1 / (1/sum n_hat +
+    1/(k n_eff)), n_eff = (sum e)^2 / sum e^2; range = gamma(alpha + N_eff, rate (alpha + N_eff) / posterior
+    mean), so it keeps the score's centre and is the prior's spread with no data. Result: 1/k = 2.15 [1.17, 2.70]
+    (k = 0.46; 3,300 sites, 40,510 site-trials from 2,456 trials); MD Anderson 0.606-0.769, Dana-Farber
+    0.132-0.181; median log width grows 1.6-2.2x across the history buckets (21+ trials: 0.49 to 0.96). Score,
+    cap, percentile and calibrated value are unchanged (tests). Reported below, not tuned:
+    - **1/k rests on a few sites.** A site's weight is its sum of mu^2, so high-volume sites dominate: the top 10
+      carry 64% of the weight, the top 50 carry 90% (they give 2.29 alone; the other 3,250 sites give 0.98). One
+      site carries 38% and supplies about half of the pooled value: University of Colorado Health Sciences
+      Center, Denver (6 fitted trials, own 1/k 2.95), 93% of it through one single-site non-treatment study,
+      NCT00103363 "Lung Cancer Screening and Tissue Procurement" (3,270 patients). Without that site 1/k is 1.67
+      (without just that study, 1.64), inside the CI, and ranges narrow a little (MD Anderson 0.615-0.759).
+      Other high-weight sites also owe much of theirs to one large non-treatment study (Bordeaux, a geriatric
+      screening-tool validation, 1,674 patients, 83% of its weight; Emory, its National Lung Screening Trial
+      share, 971, 80%; Fox Chase, survivorship-guideline adherence, 1,440, 51%). The API reports the
+      concentration under heterogeneity.concentration; the table note says the amount is set mostly by
+      high-volume sites instead of quoting 1/k.
+    - **Cross-check: the ranges are conservative at the typical deep-history site.** A trial-level bootstrap at
+      the 414 identifiable sites with 20+ fitted trials gives new/bootstrap log-width ratio median 2.56, IQR
+      1.58-3.34 (old/bootstrap 1.12); the new range is the wider one at 94% of them. At low-volume sites (under
+      about 0.75 allocated patients per trial) smoothed EM shares vary less than counts, so the bootstrap is not a
+      clean reference there (old/bootstrap 2.2). At the high-volume third (over about 3 patients per trial, 138
+      sites), where it is, the new ranges are still 1.6x the bootstrap (old 0.33x): those sites' own 1/k has
+      median 0.79, against the pooled 2.15, which a few high-weight sites pull up. The new range is narrower than
+      the bootstrap at 25 sites whose own 1/k is 2.1-8.1 (Fox Chase 8.1, Nebraska 6.7, Bordeaux 6.6, NIH Clinical
+      Center 4.9; MD Anderson 3.0). The median own 1/k over all 414 is -0.08.
+    - On simulated NB2 data with the real exposures the estimator returns about 0.65x the true 1/k, so under the
+      model it errs toward narrower ranges; the cross-check above points the other way for most deep sites.
+    The API keeps the old range as interval_poisson, and the view shows it in small text in Step 3. If 1/k
+    cannot be estimated, the ranges fall back to it, flagged, and every text that describes them says so.
+24. **Financial tab: the time model is removed, and insurer payment amounts do not move the sponsor commitment
+    (only coverage status does)** (user: "I
+    would also definitely revise/override any projections they had of insurance payouts speeding up trials
+    because that is conflating many different relationships. Insurance payouts and medicare estimates can impact
+    fair value estimates and are relevant in sponsor negotiations with sites / hospitals but it doesn't mean that
+    if the insurance pays more the sponsor necessarily pays less or that the negotiation / rest of the trial
+    speeds up.", 17 Oct; spelling corrected). The teammate's version ranked scenarios by modeled months from
+    synthetic recruitment rates and activation lags (recommended = fastest), bounded C/E by a "no loser"
+    duration, varied recruitment rates in its sensitivity, and its Reinvestment Lab chained lower costs to added
+    sites to shorter modeled time. All removed: modeled_months, core_modeled_months, site_completion_months,
+    modeled_time_change, modeled_months_quantiles, probability_horizon_exceeded, nominal_max_months, max_months,
+    no_loser, site rate and activation_lag_months, recommended_scenario_id. Now a sponsor-budget comparison at a
+    fixed target over a budgeted contract period (horizon_months renamed budget_period_months, an input that
+    prices monthly site costs): A existing network; B lower administration (an assumption); C the existing
+    network, extended at the lowest commitment only if its stated capacity is short; D more participant support;
+    E = B + C + D. Participants split by stated capacity; listed, not ranked. Sensitivity varies site costs
+    (rate_spread renamed cost_spread). Two payer changes follow the ruling: (1) a commercial plan without the
+    commercial-rate assumption used to move every routine line into sponsor contingency; its insurer amounts are
+    now UNKNOWN and stay off the sponsor. (2) rate_multiplier used to scale insurer payments too; it is now
+    sponsor_rate_multiplier, the negotiated multiple of the benchmark for research items and contingency only,
+    so the benchmark feeds the sponsor's numbers only through that explicit FMV step. Tests hold the sponsor side
+    identical across 24 payer_kind x payer_fraction x commercial-rate combinations and scan the JSON keys, JSON
+    text and HTML report for any time, speed or recommendation output. In the default fixture C equals A (120
+    stated places for 60 participants). Backend only: the Financial view still reads the old fields until the
+    restyle pass moves it to docs/financial/CONTRACT.md.
+    Review fixes the same day: (1) participant access support (travel and lodging) was netted against routine
+    cost sharing, so D showed participant exposure falling by the support increase; cost sharing and support
+    are now separate fields (net_cash_exposure and delta.patient_exposure removed; delta.patient_cost_sharing
+    and delta.access_support added), with a limitation that support does not pay insurer cost sharing and that
+    covering a beneficiary's cost sharing is a separate compliance question. (2) The investigational-supply
+    reserve was counted as a hospital resource cost; the sponsor supplies the product, so it is now
+    sponsor.supply_resource_proxy (default hospital contribution 50,489.40 -> 200,489.40). (3) The billing
+    sentence said billing follows coverage rules "not negotiation"; a site contract can have the sponsor pay a
+    routine item (the tool already accepts that override), so the text now says insurer payment amounts are not
+    a lever over who is billed. (4) The independence sentence is scoped to this worksheet, as the ruling's
+    "not necessarily" asks, and names what does move the sponsor: a line's coverage status. (5) The
+    coordination-pilot wording behind scenario B is gone; B's cut is an input with no modeled source. (6) When
+    C/E extend a short network, existing sites are filled to stated capacity before added sites (20/20/20
+    instead of 12/12/36 in the 20 + 20 variant), and budget_reallocation.added_sites_cost states what the
+    added sites cost even when A is uncosted. (7) Medicaid shows no enrollee cost sharing (42 CFR
+    447.50-447.57) instead of applying payer_fraction. (8) The report's "no double billing" claim is replaced
+    by a statement that the worksheet is not a billing-compliance review, and site per_participant_cost is
+    defined as excluding every itemized worksheet procedure.

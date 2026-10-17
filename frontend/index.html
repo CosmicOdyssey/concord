@@ -5,7 +5,26 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="description" content="Concord: a clearing mechanism for clinical-trial enrollment capacity." />
+    <script>
+      // Theme and density before first paint, so a stored or system dark theme never flashes light. A visitor
+      // with no stored density starts in Simple.
+      // Same keys and rules as src/theme.tsx and src/density.tsx.
+      ;(function () {
+        var root = document.documentElement
+        var theme = null
+        var density = null
+        try {
+          theme = localStorage.getItem('concord.theme')
+          density = localStorage.getItem('concord.density')
+        } catch (e) {}
+        if (theme !== 'light' && theme !== 'dark')
+          theme = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        root.setAttribute('data-theme', theme)
+        root.style.colorScheme = theme
+        root.setAttribute('data-density', density === 'detailed' ? 'detailed' : 'simple')
+      })()
+    </script>
+    <meta name="description" content="Concord: see where your lung cancer trials share registered sites and eligible patients, and price a protocol per participant from CMS 2026 fee schedules, with a source on every line." />
     <title>Concord</title>
   </head>
   <body>
