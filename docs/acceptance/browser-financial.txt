@@ -1,0 +1,205 @@
+Browser tab: 1783081691, Title: "Concord", URL: "http://127.0.0.1:5177/#financial".
+1 AXWebArea Concord, URL: 127.0.0.1:5177/#financial
+	2 container root
+		3 container
+			4 text Concord NSCLC trial portfolios on public ClinicalTrials.gov data
+		5 tab group Views
+			6 tab (selectable, settable, boolean) 1 Findings, Value: 0
+			7 tab (selectable, settable, boolean) 2 Portfolio overlap, Value: 0
+			8 tab (selectable, settable, boolean) 3 Protocol to terms, Value: 0
+			9 tab (selectable, settable, boolean) 4 Site scores, Value: 0
+			10 tab (selected, settable, boolean) 5 Financial Coordination, Value: 1
+			11 tab (selectable, settable, boolean) 6 Portfolio Command, Value: 0
+			12 tab (selectable, settable, boolean) 7 Research, Value: 0
+		615 container
+			616 text SPONSOR-FUNDED PLANNING PILOT
+			617 heading Financial Coordination, Value: 1
+				618 text Financial Coordination
+			619 text Compare trial budgets, site resources, coverage responsibilities, and reinvestment at a fixed enrollment target. SYNTHETIC FINANCIAL DEMO
+			620 text No verified financial inputs or insurer partnership.
+			621 text  Public trial identifiers provide context only. All site budgets, site identities, rates, recruitment, and payer assumptions in this financial exercise are synthetic. Coverage classifications require human review. No realized savings, clinical benefit, or validated acceleration is claimed. Public trial context
+			622 pop up button (collapsed, settable) Public trial context, Secondary Actions: Expand, Value: NCT05800015 · Fianlimab + cemiplimab + chemotherapy vs placebo + cemiplimab + chemotherapy, first-line advanced NSCLC
+				623 menu
+					624 (selected) NCT05800015 · Fianlimab + cemiplimab + chemotherapy vs placebo + cemiplimab + chemotherapy, first-line advanced NSCLC
+					625 NCT06627647 · Rilvegostomig vs pembrolizumab, each with platinum + pemetrexed, first-line non-squamous NSCLC (ARTEMIDE-Lung03)
+			626 link Description: View public registry record ↗, Value: clinicaltrials.gov/study/NCT05800015
+			627 button Compare funding scenarios
+			628 text The public record does not verify this illustrative procedure schedule, synthetic site network, or financial terms. Original Concord research and protocol-to-terms views remain available in the top navigation. Comparison computed from these inputs. Figures remain synthetic and conditional.
+			629 container Financial sections
+				630 button Overview
+				631 button Allocation Comparison
+				632 button Three-Party Economics
+				633 button Reinvestment Lab
+				634 button Coverage Review
+				635 button Evidence Report
+			636 container Three-Party Economics
+				637 heading Payments, economic effects, and resource costs, Value: 2
+					638 text Payments, economic effects, and resource costs
+				639 text Sponsor-to-hospital and payer-to-hospital payments are transfers. Consolidated resource costs count delivery and administration once. They are not the sum of every party’s expenditure.
+				640 table Fixed-target financial and allocation scenarios. All figures are synthetic assumptions.
+					641 text Fixed-target financial and allocation scenarios. All figures are synthetic assumptions.
+					642 row
+						643 cell
+							644 text Scenario
+						645 cell
+							646 text Feasibility
+						647 cell
+							648 text Sponsor commitment incl. contingency
+						649 cell
+							650 text Sites
+						651 cell
+							652 text Capacity within horizon
+						653 cell
+							654 text Modeled months
+						655 cell
+							656 text Unspent budget
+					657 row
+						658 cell
+							659 checkbox A. Existing allocation, Value: 0
+								660 text A
+								661 text .
+								662 text Existing allocation
+						663 cell
+							664 text Feasible under assumptions
+						665 cell
+							666 text $643,133
+						667 cell
+							668 text 2
+						669 cell
+							670 text 84.0
+						671 cell
+							672 text 17.3
+						673 cell
+							674 text $856,867
+					675 row
+						676 cell
+							677 checkbox B. Lower administrative expense, Value: 0
+								678 text B
+								679 text .
+								680 text Lower administrative expense
+						681 cell
+							682 text Feasible under assumptions
+						683 cell
+							684 text $613,133
+						685 cell
+							686 text 2
+						687 cell
+							688 text 84.0
+						689 cell
+							690 text 17.3
+						691 cell
+							692 text $886,867
+					693 row
+						694 cell
+							695 checkbox C. Additional feasible sites, Value: 1
+								696 text C
+								697 text .
+								698 text Additional feasible sites
+						699 cell
+							700 text Feasible under assumptions
+						701 cell
+							702 text $739,200
+						703 cell
+							704 text 4
+						705 cell
+							706 text 156.0
+						707 cell
+							708 text 10.8
+						709 cell
+							710 text $760,800
+					711 row
+						712 cell
+							713 checkbox D. Expanded participant support, Value: 0
+								714 text D
+								715 text .
+								716 text Expanded participant support
+						717 cell
+							718 text Feasible under assumptions
+						719 cell
+							720 text $631,133
+						721 cell
+							722 text 2
+						723 cell
+							724 text 84.0
+						725 cell
+							726 text 17.3
+						727 cell
+							728 text $868,867
+					729 row
+						730 cell
+							731 checkbox E. Combined funding and site comparison, Value: 0
+								732 text E
+								733 text .
+								734 text Combined funding and site comparison
+						735 cell
+							736 text Feasible under assumptions
+						737 cell
+							738 text $757,200
+						739 cell
+							740 text 4
+						741 cell
+							742 text 156.0
+						743 cell
+							744 text 10.8
+						745 cell
+							746 text $742,800
+				747 container
+					748 heading Sponsor, Value: 3
+						749 text Sponsor
+					750 text $589,200 Modeled spending excluding held reserve · change  +$96,067  vs A Contingency held  $150,000  · total commitment  $739,200
+				751 container
+					752 heading Hospital, Value: 3
+						753 text Hospital
+					754 text $66,444 Operating contribution Revenue  $816,210  · resource costs  $749,766
+				755 container
+					756 heading Insurer, Value: 3
+						757 text Insurer
+					758 text $279,412 Payments  $277,612  · administration  $1,800 Downstream clinical expenditure: UNKNOWN
+				759 container
+					760 heading Patient, Value: 3
+						761 text Patient
+					762 text $39,398 Net modeled exposure (specified lines only) · cost sharing  $69,398  · access support  $30,000 Unresolved exposure: UNKNOWN. A negative net is support less specified cost sharing, not a guaranteed patient gain.
+				763 table Gross financial transfers in Additional feasible sites
+					764 container
+						765 text Gross financial transfers in  Additional feasible sites
+					766 row
+						767 cell
+							768 text From
+						769 cell
+							770 text To
+						771 cell
+							772 text Payment
+					773 row
+						774 cell
+							775 text Sponsor
+						776 cell
+							777 text Hospital
+						778 cell
+							779 text $469,200
+					780 row
+						781 cell
+							782 text Sponsor
+						783 cell
+							784 text Participant
+						785 cell
+							786 text $30,000
+					787 row
+						788 cell
+							789 text Insurer
+						790 cell
+							791 text Hospital
+						792 cell
+							793 text $277,612
+					794 row
+						795 cell
+							796 text Participant
+						797 cell
+							798 text Hospital
+						799 cell
+							800 text $69,398
+				801 container
+					802 text Consolidated resource costs  $871,566  · change vs A  +$70,853  · transfer balance  $0
+				803 text No promise that every party benefits; a transfer reduction does not establish a resource saving.
+		614 text Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates; Financial Coordination uses explicitly synthetic scenarios. Decision support only, not clinical, legal or coverage advice.
+
+The focused UI element is 632 button Three-Party Economics
