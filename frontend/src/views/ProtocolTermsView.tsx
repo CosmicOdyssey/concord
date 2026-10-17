@@ -1,7 +1,7 @@
 // Protocol to terms: pick a trial, read its (illustrative) schedule of assessments, review who pays for each item,
 // price it at a registered U.S. site from the published Medicare fee schedules, edit the proposed standard
 // non-procedure schedule, compare two sites, export the term sheet.
-// Calm layout: five steps (protocol, coverage, budget, compare, term sheet). Simple shows each step's key totals with
+// Calm layout: six steps (protocol, coverage, budget, compare, site proposal check, term sheet). Simple shows each step's key totals with
 // their qualifiers, and puts rules, provenance and line items in hover cards and the full tables in a "Details"
 // disclosure; Detailed shows everything inline. Every control works in both densities.
 // No forecasting anywhere: no enrollment, speed or time-to-fill numbers, and no savings claims.
@@ -41,6 +41,7 @@ import {
   ruleTitle,
 } from '../termsFlowApi'
 import { CoverageList, CoverageSplit, NodeDetail, RuleChip, RuleList, ScheduleGrid, VisitTimeline } from './ProtocolTermsSchedule'
+import TermsProposalCheck from './TermsProposalCheck'
 import './protocolTerms.css'
 
 type Async<T> = { status: 'idle' } | { status: 'loading' } | { status: 'error'; error: string } | { status: 'ok'; data: T; pending: boolean }
@@ -52,6 +53,7 @@ const STEPS = [
   { name: 'Coverage', nav: 'Coverage' },
   { name: 'Budget at a site', nav: 'Budget' },
   { name: 'Compare two sites', nav: 'Compare' },
+  { name: 'Site proposal', nav: 'Site proposal' },
   { name: 'Term sheet', nav: 'Term sheet' },
 ] as const
 
@@ -616,9 +618,26 @@ export default function ProtocolTermsView() {
             detailsLabel="Locality factors and every sponsor-paid item, site by site"
           />
 
-          {/* 5. Term sheet */}
+          {/* 5. Site proposal (TermsProposalCheck.tsx) */}
           <Step
             n={5}
+            title="Site proposal check"
+            info={
+              <>
+                <span className="hc-title">How a proposal is checked</span>
+                Coded procedure and lab lines are compared with the Medicare amount at the site’s locality times a band you set (an assumption,
+                default 100% to 150%). Other fees need an itemized justification; Concord’s proposed standard is shown for reference, not as market
+                data. Medicare amounts inform fair-value reasoning; they are not the sponsor’s price.
+              </>
+            }
+            lede="Paste or upload a site’s price list. Each line is matched to this protocol at the site picked in step 3 and checked against the published fee schedules, or flagged for itemized justification."
+          >
+            {siteOk ? <TermsProposalCheck key={nct} nct={nct} siteId={siteA} params={params} /> : <Loading label="Loading sites…" />}
+          </Step>
+
+          {/* 6. Term sheet */}
+          <Step
+            n={6}
             title="Term sheet"
             lede="Every line carries its provenance: code, our short label, schedule, source file, locality and GPCI values, conversion factor, multiplier, and the coverage rule or reviewer override."
             quals={
