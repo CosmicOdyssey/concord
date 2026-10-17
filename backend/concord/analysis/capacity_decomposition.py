@@ -277,13 +277,80 @@ def run_scenario(name: str, noise_check: bool) -> dict:
     return out
 
 
+POST_HOC_TIME_LIMIT = 30.0
+
+
+def post_hoc(name: str) -> dict:
+    """NOT pre-registered; added after seeing results. Every default solve hit the 6 s time limit,
+    and the full-history unlimited no-loser solve made no move at all (coord = registered). Re-solve
+    peak and unlimited in-sample with a longer time limit to see how much of each number is solver
+    budget. Reported beside the pre-registered numbers, never in place of them."""
+    out = {"note": "post-hoc solver-budget check, not pre-registered", "time_limit": POST_HOC_TIME_LIMIT}
+    for label in ("peak", "unlimited"):
+        p = replace(SCENARIOS[name], time_limit=POST_HOC_TIME_LIMIT, **dict(SETTINGS)[label])
+        run = service.solve(p, cache=False)
+        c = _blocks(run["T"], run["built"].inst.movable)
+        out[label] = {"blocks": c, "solver": _solver(run)}
+        log(f"  post-hoc {label} (time_limit {POST_HOC_TIME_LIMIT}): free/indep {c['coord_free_vs_indep']['ratio']:.3f} "
+            f"no-loser/reg {c['coord_vs_actual']['ratio']:.3f}")
+    r_p, r_u = out["peak"]["blocks"]["coord_free_vs_indep"]["ratio"], out["unlimited"]["blocks"]["coord_free_vs_indep"]["ratio"]
+    out["capacity_share"] = _share(r_u, r_p)
+    return out
+
+
+def _f(x, fmt="{:.3f}") -> str:
+    return "n/a" if x is None else fmt.format(x)
+
+
+def print_tables(result: dict) -> None:
+    for name, sc in result["scenarios"].items():
+        print(f"\n== {name}: {sc['movable_trials']} movable of {sc['trials']} trials ==")
+        print(f"{'setting':16s} | free/indep full | half | held | slower full/held || "
+              f"no-loser/reg full | half | held || selection full | half | held || free/reg full | held || "
+              f"coord-NL/indep full | held")
+        for lab, s in sc["settings"].items():
+            fu, ha, ho = s["in_sample_full"], s["in_sample_half_geo"], s["held_out_geo"]
+            print(f"{lab:16s} | {_f(fu['coord_free_vs_indep']['ratio'])} | {_f(ha['coord_free_vs_indep']['ratio'])} | "
+                  f"{_f(ho['coord_free_vs_indep']['ratio'])} | {_f(fu['coord_free_vs_indep']['share_slower'], '{:.2f}')}/"
+                  f"{_f(ho['coord_free_vs_indep']['share_slower'], '{:.2f}')} || "
+                  f"{_f(fu['coord_vs_actual']['ratio'])} | {_f(ha['coord_vs_actual']['ratio'])} | "
+                  f"{_f(ho['coord_vs_actual']['ratio'])} || {_f(fu['indep_vs_actual']['ratio'])} | "
+                  f"{_f(ha['indep_vs_actual']['ratio'])} | {_f(ho['indep_vs_actual']['ratio'])} || "
+                  f"{_f(fu['coord_free_vs_actual']['ratio'])} | {_f(ho['coord_free_vs_actual']['ratio'])} || "
+                  f"{_f(fu['coordination_no_loser_vs_indep']['ratio'])} | {_f(ho['coordination_no_loser_vs_indep']['ratio'])}")
+            print(f"{'':16s}   medians free/indep {_f(fu['coord_free_vs_indep']['median_speedup'])} / held "
+                  f"{_f(ho['coord_free_vs_indep']['median_speedup'])}; by direction held "
+                  f"{[round(v, 3) for v in ho['coord_free_vs_indep']['by_direction_ratio']]}")
+        for view, d in sc["decomposition"].items():
+            print(f"decomposition [{view}]: r_peak {_f(d['ratio_peak'])} r_unl {_f(d['ratio_unlimited'])} "
+                  f"r_beta0 {_f(d['ratio_beta0'])} capacity share {_f(d['capacity_share'])} "
+                  f"congestion share {_f(d['congestion_share'])} -> {d['reading']}")
+        if "solver_noise_check" in sc:
+            n = sc["solver_noise_check"]
+            print(f"solver noise: free/indep {n['coord_free_vs_indep_ratio']:.3f} at {n['time_limit']}s vs "
+                  f"{n['default_time_limit_ratio']:.3f} at default")
+
+
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(ROOT / "data" / "robustness" / "capacity.json"))
     ap.add_argument("--scenarios", default="ne,regeneron", help="comma list of: ne, regeneron")
     ap.add_argument("--no-noise-check", action="store_true")
+    ap.add_argument("--print-only", action="store_true", help="print tables from an existing --out file")
+    ap.add_argument("--post-hoc", action="store_true",
+                    help="add the (not pre-registered) solver-budget check to an existing --out file")
     a = ap.parse_args()
+    if a.post_hoc:
+        result = json.loads(open(a.out, encoding="utf-8").read())
+        for key in [s.strip() for s in a.scenarios.split(",") if s.strip()]:
+            name = SCENARIO_KEYS[key]
+            result["scenarios"][name]["post_hoc_solver_budget"] = post_hoc(name)
+            open(a.out, "w", encoding="utf-8").write(json.dumps(result, indent=1))
+        return
+    if a.print_only:
+        print_tables(json.loads(open(a.out, encoding="utf-8").read()))
+        return
     names = [SCENARIO_KEYS[s.strip()] for s in a.scenarios.split(",") if s.strip()]
     result = {"task": "B: capacity decomposition of the joint optimum",
               "method": "pre-registered in concord/analysis/capacity_decomposition.py docstring",
@@ -295,6 +362,7 @@ def main() -> None:
         result["scenarios"][name] = run_scenario(name, noise_check=not a.no_noise_check and i == 0)
         path.write_text(json.dumps(result, indent=1))  # write after each scenario
         log(f"-> {path}")
+    print_tables(result)
 
 
 if __name__ == "__main__":
