@@ -28,6 +28,7 @@ from datetime import date
 from functools import lru_cache
 from pathlib import Path
 
+from concord import anchoring
 from concord.paths import DB_PATH
 from concord.ratecard import medicare
 from concord.ratecard.cms import STATE_ABBR
@@ -533,10 +534,13 @@ def _r2(x: float) -> float:
 
 
 def budget(nct: str, site_id: str, multiplier: float = 1.0, overrides: dict[str, str] | None = None,
-           standard: dict[str, float] | None = None) -> dict:
+           standard: dict[str, float] | None = None, band_lo: float = anchoring.BAND_DEFAULT[0],
+           band_hi: float = anchoring.BAND_DEFAULT[1]) -> dict:
     """Per-visit payments at one registered site. Research nodes bill the sponsor at
     multiplier x locality-adjusted Medicare (coded items) or the standard schedule (non-procedure items);
-    routine nodes are shown as billed to insurance at the Medicare amount."""
+    routine nodes are shown as billed to insurance at the Medicare amount. concord.anchoring adds each
+    sponsor line's anchoring, the band_lo..band_hi range on coded lines and the category breakdowns."""
+    anchoring.check_band(band_lo, band_hi)
     if not (0.1 <= multiplier <= 5.0):
         raise TermsError("multiplier must be between 0.1 and 5 (10% to 500% of Medicare)")
     p = load_protocol(nct)
@@ -624,7 +628,7 @@ def budget(nct: str, site_id: str, multiplier: float = 1.0, overrides: dict[str,
         "n_placeholder_lines": sum(1 for l in all_lines if l["placeholder"] and l["payer"] == "Sponsor"),
     }
     pfs = medicare._cms().get("pfs", {})  # noqa: SLF001
-    return {
+    return anchoring.annotate({
         "nct_id": nct, "short_title": p["short_title"], "label": p["label"], "disclaimer": DISCLAIMER,
         "site": site, "locality": loc, "multiplier": multiplier,
         "conversion_factor": pfs.get("conversion_factor"), "pfs_source": pfs.get("source"),
@@ -633,20 +637,21 @@ def budget(nct: str, site_id: str, multiplier: float = 1.0, overrides: dict[str,
         "overrides": [{"node_id": l["node_id"], "visit": l["visit_id"], "procedure": l["label"], "rule": l["rule"],
                        "coverage": l["coverage"], "basis": l["basis"]} for l in all_lines if l["override"]],
         "rules": [{"id": k, **v} for k, v in RULES.items()], "ncd": NCD,
-    }
+    }, band_lo, band_hi)
 
 
 # ---------------------------------------------------------------- two-site comparison
 
 def compare(nct: str, site_a: str, site_b: str, multiplier: float = 1.0, overrides: dict[str, str] | None = None,
-            standard: dict[str, float] | None = None) -> dict:
+            standard: dict[str, float] | None = None, band_lo: float = anchoring.BAND_DEFAULT[0],
+            band_hi: float = anchoring.BAND_DEFAULT[1]) -> dict:
     """The same protocol at two sites. Every sponsor-line difference is decomposed into the published
     GPCI differences: delta = CF x m x (work RVU x dGPCI_work + PE RVU x dGPCI_pe + MP RVU x dGPCI_mp),
     plus cent rounding; overhead moves by its rate times the line differences."""
     if site_a == site_b:
         raise TermsError("pick two different sites")
-    A = budget(nct, site_a, multiplier, overrides, standard)
-    B = budget(nct, site_b, multiplier, overrides, standard)
+    A = budget(nct, site_a, multiplier, overrides, standard, band_lo, band_hi)
+    B = budget(nct, site_b, multiplier, overrides, standard, band_lo, band_hi)
     cf = A["conversion_factor"] or 0.0
     la = {l["node_id"]: l for v in A["visits"] for l in v["lines"]}
     lb = {l["node_id"]: l for v in B["visits"] for l in v["lines"]}
@@ -692,7 +697,7 @@ def compare(nct: str, site_a: str, site_b: str, multiplier: float = 1.0, overrid
     gpci_sum = tw + tpe + tmp
     return {
         "nct_id": nct, "multiplier": multiplier, "conversion_factor": cf, "pfs_source": A["pfs_source"],
-        "disclaimer": DISCLAIMER, "label": A["label"],
+        "disclaimer": DISCLAIMER, "label": A["label"], "band": A["band"], "pricing_basis": A["pricing_basis"],
         "a": {"site": A["site"], "locality": A["locality"], "totals": ta},
         "b": {"site": B["site"], "locality": B["locality"], "totals": tb},
         "gpci_delta": dg, "rows": rows,

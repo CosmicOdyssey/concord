@@ -1,0 +1,244 @@
+/* Budget transparency in Protocol to terms (TermsAnchoring.tsx). Calm tokens only. */
+
+.tfa {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+.tfa-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--sp-3);
+}
+.tfa-card {
+  min-width: 0;
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+.tfa-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.tfa-card-head h3 {
+  margin: 0;
+  font-size: var(--fs-h3);
+}
+.tfa-bd-head {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--sp-2) var(--sp-4);
+}
+.tfa-lede {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-ui);
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.tfa-lede .strong {
+  color: var(--ink);
+}
+
+/* the anchored-share bar */
+.tfa-bar {
+  display: flex;
+  gap: 2px;
+  height: 0.875rem;
+  margin-top: var(--sp-3);
+}
+.tfa-bar > span {
+  flex-basis: 0;
+  flex-shrink: 1;
+  min-width: 2px;
+}
+.tfa-bar > span:first-child {
+  border-radius: 4px 0 0 4px;
+}
+.tfa-bar > span:last-child {
+  border-radius: 0 4px 4px 0;
+}
+.tfa-a-public {
+  background: var(--accent);
+}
+.tfa-a-standard {
+  background: var(--heat-4);
+}
+.tfa-a-open {
+  background: var(--series-2);
+}
+.tfa-legend {
+  list-style: none;
+  margin: var(--sp-3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+}
+.tfa-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.tfa-legend-v {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+.tfa-legend-v .strong {
+  color: var(--ink);
+}
+
+/* range */
+.tfa-range-v {
+  margin: var(--sp-2) 0 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.tfa-list {
+  margin: var(--sp-3) 0 0;
+  padding-left: 1.1rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.tfa-list li + li {
+  margin-top: 0.25rem;
+}
+.tfa-basis {
+  margin: 0;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+p.tfa-basis {
+  padding: 0 var(--sp-1);
+}
+
+/* inputs */
+.tfa-band {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.tfa-band legend {
+  padding: 0;
+  margin-bottom: 0.25rem;
+}
+.tfa-band-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--fs-ui);
+  color: var(--ink-2);
+}
+.tfa-band .tf-num-input input,
+.tfa-over .tf-num-input input {
+  width: 5.5rem;
+}
+
+/* tables */
+.tfa-tbl {
+  margin-top: var(--sp-3);
+}
+.tfa-tbl th[scope='row'] {
+  font-weight: 500;
+}
+.tfa-tbl-group th[scope='row'] {
+  font-weight: 600;
+}
+.tfa-tbl .tf-key {
+  vertical-align: -0.1rem;
+}
+.tfa-sub {
+  padding-left: 1.75rem !important;
+  color: var(--ink-2);
+}
+.tfa-bd-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  width: 100%;
+}
+.tfa-bd-track {
+  display: block;
+  width: 5rem;
+  height: 0.5rem;
+}
+.tfa-bd-bar {
+  display: block;
+  height: 100%;
+  min-width: 1px;
+  background: var(--accent);
+  border-radius: 3px;
+}
+.tfa-seg {
+  flex-wrap: wrap;
+}
+
+/* per-line chips in the budget table */
+.tfa-chip {
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  border-radius: var(--radius-xs);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--neutral-bg);
+  color: var(--ink);
+  box-shadow: inset 3px 0 0 var(--ctl);
+}
+.tfa-a-public-chip {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.tfa-a-standard-chip {
+  box-shadow: inset 3px 0 0 var(--heat-4);
+}
+.tfa-a-open-chip {
+  background: var(--caution-bg);
+  color: var(--caution-ink);
+  box-shadow: inset 3px 0 0 var(--series-2);
+}
+
+@media (max-width: 640px) {
+  .tfa-card {
+    padding: var(--sp-3) var(--sp-4);
+  }
+  .tfa-bd-track {
+    width: 2.5rem;
+  }
+  .tfa-legend-v {
+    margin-left: 1.375rem;
+  }
+}
+
+/* input notes: how to apply a typed value, or why the last one was not applied */
+.tfa-input-note {
+  display: block;
+  margin-top: 0.25rem;
+  max-width: 22rem;
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+.tfa-input-note-err {
+  color: var(--caution-ink);
+  font-weight: 500;
+}
+.tfa-band .tf-num-input input[aria-invalid='true'],
+.tfa-over .tf-num-input input[aria-invalid='true'] {
+  border-color: var(--caution-ink);
+  outline-color: var(--caution-ink);
+}
+.tfa-outside {
+  color: var(--caution-ink);
+}
