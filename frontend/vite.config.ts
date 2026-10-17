@@ -8,7 +8,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: process.env.API_TARGET ?? 'http://localhost:8000',
         changeOrigin: true,
         timeout: 300_000,
         proxyTimeout: 300_000,

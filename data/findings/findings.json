@@ -1,0 +1,301 @@
+{
+ "generated_at": "2026-10-17T06:56:20+00:00",
+ "rule": "No view shows a predicted speedup, time-to-fill or ratio as a product claim. Numbers on this page are research findings, labelled with how they were measured.",
+ "findings": [
+  {
+   "id": "congestion",
+   "title": "Competing trials barely slow each other within a site",
+   "status": "provisional",
+   "headline": "Within the same site, the congestion elasticity is about 0.09 (95% CI 0.00 to 0.21), against the 1.0 our original model assumed.",
+   "chart": {
+    "type": "ci",
+    "reference": {
+     "label": "assumed in original model",
+     "value": 1.0
+    },
+    "items": [
+     {
+      "label": "within-site beta (default)",
+      "estimate": 0.0925487103635646,
+      "lo": 0.0,
+      "hi": 0.21302675906797397
+     }
+    ]
+   },
+   "tables": [
+    {
+     "id": "estimates",
+     "title": "Coefficient on log(1 + overlapping competitors at the site)",
+     "columns": [
+      "Estimate",
+      "Coefficient",
+      "95% CI",
+      "p",
+      "Implied beta"
+     ],
+     "rows": [
+      [
+       "Assumed in the original model",
+       "-1",
+       "",
+       "",
+       "beta = 1.0"
+      ],
+      [
+       "Within site, all sites (default)",
+       "-0.093",
+       "[-0.213, +0.028]",
+       "0.13",
+       "beta = 0.093 (95% CI 0.000 to 0.213)"
+      ],
+      [
+       "Pooled across sites (confounded by site type)",
+       "-0.107",
+       "[-0.158, -0.056]",
+       "4.47e-05",
+       ""
+      ]
+     ],
+     "highlight_row": 1,
+     "notes": [
+      "Standard errors: clustered by trial."
+     ]
+    },
+    {
+     "id": "parser",
+     "title": "Beta under each eligibility-parser version",
+     "columns": [
+      "Parser",
+      "What changed",
+      "Coefficient",
+      "95% CI",
+      "Empty eligibility"
+     ],
+     "rows": [
+      [
+       "v0 (b8c576f)",
+       "'Key Exclusion Criteria' headers not recognized (exclusions read as requirements)",
+       "-0.136",
+       "[-0.260, -0.013]",
+       ""
+      ],
+      [
+       "v1 (c0050f4)",
+       "headers fixed; 646 trials with contradictory criteria (empty eligibility)",
+       "-0.026",
+       "[-0.121, +0.068]",
+       ""
+      ],
+      [
+       "v2 (4a87d33)",
+       "contradictions fixed (3 empty trials left)",
+       "-0.087",
+       "[-0.208, +0.034]",
+       ""
+      ],
+      [
+       "current (with hand-encoded demo trials)",
+       "v2 parser plus hand-encoded eligibility",
+       "-0.093",
+       "[-0.213, +0.028]",
+       ""
+      ]
+     ],
+     "notes": [
+      "recorded runs of the same regression (README section 1); trial-clustered SEs"
+     ]
+    }
+   ],
+   "caveats": [
+    "Measured at the resolution of public registry data: trial-level enrollment, registered site lists.",
+    "The estimate moved with each fix to the eligibility parser; the parser table shows by how much.",
+    "Across sites, busier sites are slower per trial, but that is confounded with site type."
+   ],
+   "sources": [
+    {
+     "label": "analysis/congestion.py (DB meta congestion_test)",
+     "path": "backend/concord/analysis/congestion.py"
+    },
+    {
+     "label": "subset checks",
+     "path": "data/robustness/congestion_subsets_maskfix.json"
+    }
+   ]
+  },
+  {
+   "id": "allocation",
+   "title": "Allocation gains from coordination don't survive a time split",
+   "status": "provisional",
+   "headline": "Coordination gains don't survive a time split: choosing with older trials and scoring with newer ones, the joint optimum is 1.02x each trial's best response in US-Northeast. Site selection alone (each trial's best response vs its registered sites) is 1.46x on the same split, scored by the same model rather than by observed enrollment.",
+   "tables": [
+    {
+     "id": "allocation-US-Northeast",
+     "title": "US-Northeast (103 trials)",
+     "columns": [
+      "Comparison",
+      "In-sample (all history)",
+      "Alternating split: in-sample",
+      "Alternating split: held-out (by direction)",
+      "Time split: in-sample",
+      "Time split: held-out (by direction)",
+      "Time split: share slower held-out"
+     ],
+     "rows": [
+      [
+       "Site selection alone (each trial's best response vs its registered sites)",
+       "1.23x",
+       "1.20x",
+       "1.27x (1.17x / 1.37x)",
+       "1.39x",
+       "1.46x (1.31x / 1.61x)",
+       "26%"
+      ],
+      [
+       "Coordination (joint optimum vs each trial's best response (losers allowed))",
+       "1.65x",
+       "1.59x",
+       "1.39x (1.30x / 1.48x)",
+       "1.41x",
+       "1.02x (1.35x / 0.77x)",
+       "51%"
+      ],
+      [
+       "Coordination capped at registered times (vs registered sites)",
+       "1.53x",
+       "1.40x",
+       "1.16x (1.14x / 1.19x)",
+       "1.52x",
+       "1.06x (1.43x / 0.78x)",
+       "41%"
+      ],
+      [
+       "Coordination capped at best-response times (vs each trial's best response)",
+       "1.00x",
+       "1.01x",
+       "0.91x (0.82x / 1.01x)",
+       "1.01x",
+       "1.06x (1.12x / 1.00x)",
+       "14%"
+      ]
+     ],
+     "notes": [
+      "Ratio = total trial-months, baseline / alternative, under the model."
+     ]
+    },
+    {
+     "id": "allocation-US_Regeneron_2024-09-01",
+     "title": "US Regeneron 2024-09-01 (5 trials)",
+     "columns": [
+      "Comparison",
+      "In-sample (all history)",
+      "Alternating split: in-sample",
+      "Alternating split: held-out (by direction)",
+      "Time split: in-sample",
+      "Time split: held-out (by direction)",
+      "Time split: share slower held-out"
+     ],
+     "rows": [
+      [
+       "Site selection alone (each trial's best response vs its registered sites)",
+       "2.07x",
+       "1.92x",
+       "1.70x (1.62x / 1.79x)",
+       "1.93x",
+       "1.53x (1.72x / 1.36x)",
+       "0%"
+      ],
+      [
+       "Coordination (joint optimum vs each trial's best response (losers allowed))",
+       "1.01x",
+       "1.00x",
+       "1.00x (1.00x / 1.01x)",
+       "1.00x",
+       "1.00x (0.99x / 1.01x)",
+       "30%"
+      ],
+      [
+       "Coordination capped at registered times (vs registered sites)",
+       "1.27x",
+       "1.30x",
+       "1.25x (1.26x / 1.23x)",
+       "1.25x",
+       "1.18x (1.24x / 1.13x)",
+       "10%"
+      ],
+      [
+       "Coordination capped at best-response times (vs each trial's best response)",
+       "1.00x",
+       "1.00x",
+       "1.00x (1.00x / 1.01x)",
+       "1.00x",
+       "1.01x (1.00x / 1.01x)",
+       "20%"
+      ]
+     ],
+     "notes": [
+      "Ratio = total trial-months, baseline / alternative, under the model."
+     ]
+    }
+   ],
+   "caveats": [
+    "Task A on earlier inputs (beta 0.026, before hand-encoded eligibility); final rerun pending.",
+    "Held-out means: allocations chosen with site rates fit on one half of history, scored with rates fit on the other half. Scores still come from our enrollment model, not observed enrollment.",
+    "Ratios above are research results. No product view in this app shows a predicted speedup."
+   ],
+   "sources": [
+    {
+     "label": "task A holdout output",
+     "path": "data/findings/sources/holdout_taskA_provisional.json"
+    },
+    {
+     "label": "task A script",
+     "path": "backend/concord/analysis/selection_holdout.py"
+    }
+   ]
+  },
+  {
+   "id": "implication",
+   "title": "Site-level enrollment data is the binding constraint",
+   "status": "final",
+   "headline": "Optimizing site selection needs site-level enrollment data, which is private today. Public registry data identifies site performance only weakly.",
+   "tables": [
+    {
+     "id": "data-limits",
+     "title": "What public data supports",
+     "columns": [
+      "Measure",
+      "Value",
+      "Context"
+     ],
+     "rows": [
+      [
+       "Typical miss predicting a held-out trial's enrollment time (industry Phase II/III)",
+       "1.9x (site model)",
+       "2.8x (naive median rate)"
+      ],
+      [
+       "U.S. sites with fewer than 3 lung trials of history",
+       "7,486 of 11,710",
+       "64%"
+      ],
+      [
+       "Site-level enrollment counts in the public registry",
+       "0",
+       "registry reports enrollment per trial only"
+      ]
+     ],
+     "notes": []
+    }
+   ],
+   "caveats": [
+    "Typical miss = exp(median absolute log error) on held-out trials (fit before 2018, predict after)."
+   ],
+   "sources": [
+    {
+     "label": "model/recruitment.py backtest (DB meta backtest)",
+     "path": "backend/concord/model/recruitment.py"
+    }
+   ]
+  }
+ ]
+}
