@@ -1,26 +1,24 @@
 {
-  "observed_at": "2026-10-17T21:33:36.792Z",
+  "observed_at": "2026-10-17T21:47:07.149Z",
+  "base_main": "e0bd6c7bd1484c3ba6646d7e6a23d95743671641",
   "resetDuringActualCompute": {
     "observedInFlight": true,
-    "afterResetKnownBaseline": true,
-    "oldResultNotRestored": true
+    "lateResultNotRestored": true
   },
-  "staticOnlyBackendUnavailable": {
-    "origin": "http://127.0.0.1:18082",
-    "actual_status": 404,
-    "errorShown": true,
+  "backendUnavailable": {
+    "actual_static_server_404": true,
     "honestUnavailableStatus": true,
     "noAutomaticReplay": true,
-    "explicitReplayLoaded": true
+    "explicitChecksumVerifiedReplay": true
   },
-  "reportDownloads": {
-    "json": "concord-portfolio-553f35a1268c310f35db133f840eb13e.json",
-    "html": "HTML export downloaded successfully; source-tab download-event watcher timed out because target opens another tab; file content independently validated"
-  },
-  "recording": "Browser exposes visibility and viewport only; no recording capability available. No recording fabricated.",
   "generalApplication": {
     "findingsRendered": true,
-    "returnedToDemoBaseline": true,
-    "scope": "Findings and navigation smoke check; data-dependent views not proven without SQLite"
-  }
+    "termsFirstPreserved": true,
+    "returnedToFreshDemo": true
+  },
+  "exports": {
+    "json": "concord-portfolio-516465c380548233a0419d0408018d76.json",
+    "html": "Corresponding HTML export clicked in browser and checked on disk"
+  },
+  "recording": "No screen-recording capability available; no recording fabricated"
 }
