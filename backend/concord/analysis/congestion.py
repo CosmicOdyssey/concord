@@ -97,6 +97,12 @@ Output: the meta key "congestion_test" (also written to data/robustness/congesti
 task, n_trials, n_trial_sites, results, primary, model_implied_coef_overlap, verdict (verdict from the
 two-way p) and adds se_method, subsets, multiple_comparisons, parser_sensitivity (+ the production
 reference), default_beta.
+
+ADDENDUM (post hoc, added after the V2 results; NOT part of the pre-registered method; no number
+above changes): concord.analysis.congestion_se_diagnostics decomposes the two-way variance of the
+trial-level estimators (unclipped value, CGM components, and a pairs-counted-once alternative), because
+their two-way SEs came out much wider than the trial-only ones with many eigenvalues clipped.
+estimate() takes an optional fit= hook for it; the default is unchanged.
 """
 
 from __future__ import annotations
@@ -302,8 +308,11 @@ def _fit(y, X, trial_ids, member_obs, member_site, w, x, n_rows: int, trial_site
     return r
 
 
-def estimate(trials: dict, rows: list[tuple[str, str, float]]) -> dict:
-    """pooled / site_fe / within for one exposure, on (trial, site, exposure) rows."""
+def estimate(trials: dict, rows: list[tuple[str, str, float]], fit=None) -> dict:
+    """pooled / site_fe / within for one exposure, on (trial, site, exposure) rows.
+
+    fit: same signature as _fit (the default); congestion_se_diagnostics passes its own."""
+    _fit_ = fit or _fit
     out: dict = {}
 
     # Pooled, trial level: mean exposure across the trial's (named) sites.
@@ -318,8 +327,8 @@ def estimate(trials: dict, rows: list[tuple[str, str, float]]) -> dict:
     C, _ = _design(trials, ids)
     mo = np.array([i for i, t in enumerate(ids) for _ in sites_of[t]])
     ms = np.array([s for t in ids for s in sites_of[t]])
-    out["pooled"] = _fit(y, np.column_stack([x, np.ones(len(ids)), C]), np.array(ids), mo, ms, None, x,
-                         len(ids), len(rows))
+    out["pooled"] = _fit_(y, np.column_stack([x, np.ones(len(ids)), C]), np.array(ids), mo, ms, None, x,
+                          len(ids), len(rows))
 
     # Site fixed effects, trial-site rows weighted so each trial counts once.
     sub = [r for r in rows if r[0] in trials]
@@ -335,7 +344,7 @@ def estimate(trials: dict, rows: list[tuple[str, str, float]]) -> dict:
     Cv, _ = _design(trials, list(tid))
     w = np.array([1.0 / trials[t]["n_sites"] for t in tid])
     M = _demean(np.column_stack([yv, xv, Cv]), sid, w)
-    r = _fit(M[:, 0], M[:, 1:], tid, np.arange(len(tid)), sid, w, xv, len(tid), len(tid))
+    r = _fit_(M[:, 0], M[:, 1:], tid, np.arange(len(tid)), sid, w, xv, len(tid), len(tid))
     r["sites"] = int(len(np.unique(sid)))
     out["site_fe"] = r
 
@@ -354,7 +363,7 @@ def estimate(trials: dict, rows: list[tuple[str, str, float]]) -> dict:
     C, _ = _design(trials, ids)
     mo = np.array([i for i, t in enumerate(ids) for _ in dsites[t]])
     ms = np.array([s for t in ids for s in dsites[t]])
-    r = _fit(y, np.column_stack([x, np.ones(len(ids)), C]), np.array(ids), mo, ms, None, x, len(ids), len(tid))
+    r = _fit_(y, np.column_stack([x, np.ones(len(ids)), C]), np.array(ids), mo, ms, None, x, len(ids), len(tid))
     r["sites"] = int(len(np.unique(sid)))
     out["within"] = r
     return out
