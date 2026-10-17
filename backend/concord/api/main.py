@@ -115,12 +115,22 @@ def regions() -> list[str]:
 @app.get("/api/sponsors")
 def sponsors(region: str = "US", as_of: str | None = None, min_trials: int = 2) -> list[dict]:
     """Sponsors with several concurrent industry Phase II/III lung trials (portfolio-clearing candidates)."""
+    if region not in service.REGIONS:
+        raise HTTPException(400, f"unknown region {region}")
+    from concord.model.recruitment import ENROLL_FRACTION
     con = sqlite3.connect(DB_PATH)
-    when = ("t.start_date <= ? AND COALESCE(t.primary_completion_date, '2100-01-01') > ?" if as_of
-            else "t.status='RECRUITING'")
-    rows = con.execute(f"""SELECT t.sponsor, COUNT(DISTINCT t.nct_id) FROM trials t WHERE {service.BASE_FILTER}
-                           AND {when} GROUP BY t.sponsor HAVING COUNT(DISTINCT t.nct_id) >= ?
-                           ORDER BY 2 DESC LIMIT 40""", ([as_of, as_of] if as_of else []) + [min_trials]).fetchall()
+    # Same definitions as the instance builder: region by site state, as_of = inside the enrollment window.
+    states = service.REGIONS[region]
+    region_sql = "s.country='United States'" + (f" AND s.state IN ({','.join('?' * len(states))})" if states else "")
+    when = (f"t.start_date <= ? AND julianday(t.start_date) + {ENROLL_FRACTION} * (julianday(COALESCE("
+            "t.primary_completion_date, t.completion_date, '2100-01-01')) - julianday(t.start_date)) > julianday(?)"
+            if as_of else "t.status='RECRUITING'")
+    rows = con.execute(f"""SELECT t.sponsor, COUNT(DISTINCT t.nct_id) FROM trials t
+                           JOIN trial_sites ts USING(nct_id) JOIN sites s USING(site_id)
+                           WHERE {service.BASE_FILTER} AND {when} AND {region_sql}
+                           GROUP BY t.sponsor HAVING COUNT(DISTINCT t.nct_id) >= ?
+                           ORDER BY 2 DESC LIMIT 40""",
+                       ([as_of, as_of] if as_of else []) + list(states or []) + [min_trials]).fetchall()
     con.close()
     return [{"sponsor": s, "trials": n} for s, n in rows]
 

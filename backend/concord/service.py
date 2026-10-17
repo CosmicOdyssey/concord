@@ -311,7 +311,7 @@ def compare(base: np.ndarray, new: np.ndarray, mask: np.ndarray) -> dict:
         "median_speedup": float(np.median(ratio)) if len(ratio) else None,
         "share_faster": float(np.mean(n < b - 1e-6)) if len(b) else None,
         "share_slower": float(np.mean(n > b + 1e-6)) if len(b) else None,
-        "worst_slowdown_months": float(np.max(n - b)) if len(b) else None,
+        "worst_slowdown_months": float(max(0.0, np.max(n - b))) if len(b) else None,  # 0 = none slower
         "median_T_base": float(np.median(b)) if len(b) else None,
         "median_T_new": float(np.median(n)) if len(n) else None,
     }

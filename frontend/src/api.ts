@@ -1,15 +1,45 @@
-// Types mirror the live FastAPI responses (see ../backend/concord/api/main.py).
+// Types mirror the live FastAPI v0.2 responses (see ../backend/concord/api/main.py and service.py).
 // Months are model-estimated enrollment durations; null means "no estimate", never zero.
 
-export type Region = string
+export type LowHistory = 'model' | 'prior' | 'exclude'
+export type Universe = 'registered' | 'history'
 
-export interface ClearParams {
-  region: Region
+/** Scenario parameters shared by POST /api/clear (body) and every GET analysis endpoint (query). */
+export interface Scenario {
+  region: string
+  as_of: string | null
+  sponsor: string | null
+  /** Congestion elasticity; null = the data estimate from the within-site regression. */
+  beta: number | null
+  low_history: LowHistory
+  universe: Universe
   activation_lag: number
   overlap_scale: number
   capacity_scale: number
   max_trials?: number | null
 }
+
+export const DEFAULT_SCENARIO: Scenario = {
+  region: 'US-Northeast',
+  as_of: null,
+  sponsor: null,
+  beta: null,
+  low_history: 'model',
+  universe: 'registered',
+  activation_lag: 0,
+  overlap_scale: 1,
+  capacity_scale: 1,
+}
+
+export const REGENERON_PRESET: Scenario = {
+  ...DEFAULT_SCENARIO,
+  region: 'US',
+  sponsor: 'Regeneron',
+  as_of: '2024-09-01',
+}
+
+/** Allocation keys used everywhere (assignments, trials T_* / sites_*, sites load_*). */
+export type AllocKey = 'actual' | 'indep' | 'coord_free' | 'coord' | 'coord_nl_indep'
 
 export interface Criterion {
   id: string
@@ -33,13 +63,23 @@ export interface Trial {
   target_region: number | null
   f: number | null
   f_rel: number | null
-  criteria: Criterion[]
+  criteria?: Criterion[]
+  eligibility_source: string
+  realized_window_months: number | null
+  /** Implausible model time: held fixed as background, excluded from every number. */
+  flagged: boolean
+  /** Reassignable in this scenario (not flagged; in portfolio mode, the sponsor's own trials). */
+  movable: boolean
   T_actual: number | null
   T_indep: number | null
+  T_coord_free: number | null
   T_coord: number | null
-  flagged: boolean
+  T_coord_nl_indep: number | null
+  sites_actual: number
   sites_indep: number
+  sites_coord_free: number
   sites_coord: number
+  sites_coord_nl_indep: number
 }
 
 export interface Site {
@@ -53,31 +93,38 @@ export interface Site {
   is_amc: boolean
   anonymized: boolean
   lam_hist: number | null
+  lam_raw?: number | null
   lam_flow: number | null
   lam_ci: [number, number] | null
   fitted?: boolean
   n_hist: number | null
+  low_history?: boolean
   k: number
   load_actual: number
   load_indep: number
+  load_coord_free: number
   load_coord: number
+  load_coord_nl_indep: number
 }
 
-export type AllocKey = 'actual' | 'indep' | 'coord'
-
-export interface Robust {
-  median_T_indep: number
-  median_T_coord: number
-  median_T_actual: number
-  median_speedup: number
-  share_trials_faster: number
-  share_trials_slower: number
-  trimmed_trials: number
-  flagged_trials: number
-  trimmed_dividend_trial_months: number
-  trimmed_poa: number
-  plausible_T_cap_months: number
+export interface Comparison {
+  trials: number
+  dividend_trial_months: number
+  ratio: number | null
+  median_speedup: number | null
+  share_faster: number | null
+  share_slower: number | null
+  worst_slowdown_months: number | null
+  median_T_base: number | null
+  median_T_new: number | null
 }
+
+export type ComparisonKey =
+  | 'coord_vs_actual'
+  | 'indep_vs_actual'
+  | 'coordination_no_loser_vs_indep'
+  | 'coord_free_vs_actual'
+  | 'coord_free_vs_indep'
 
 export interface SolverStats {
   greedy_objective?: number
@@ -85,36 +132,71 @@ export interface SolverStats {
   moves_evaluated?: number
   improvements?: number
   kicks?: number
+  exchanges_tried?: number
+  exchanges_made?: number
   seconds?: number
   hit_time_limit?: boolean
 }
 
-export interface ClearSummary {
-  poa: number
-  dividend_trial_months: number
-  objective_indep?: number
-  objective_coord?: number
-  trials_unfillable_indep?: number
-  trials_unfillable_coord?: number
-  poa_vs_actual: number
-  dividend_vs_actual_trial_months?: number
-  robust: Robust
+export interface BetaInfo {
+  beta: number
+  ci95: [number, number]
+  p?: number
+  source: string
+}
+
+export interface Assumptions {
+  beta: BetaInfo | number
+  level_log_bias?: number
+  level_factor?: number
+  low_history: LowHistory
+  low_history_n?: number
+  universe: Universe
+  rate_cap_q?: number
+  candidate_sites?: number
+  activation_lag_months?: number
+  f_clip?: [number, number]
+  plausible_T_cap_months?: number
+}
+
+export interface CalibrationCheck {
+  same_trials_model_vs_realized: {
+    n: number
+    median_model?: number
+    median_realized?: number
+    median_log_ratio?: number
+    median_abs_log_ratio?: number
+  }
+  model_median_T_actual_phase3: number | null
+  model_median_T_actual_all: number | null
+  phase3_trials_in_instance: number
+  real_completed_phase3_median_enrollment_window: number | null
+  real_completed_phase3_median_start_to_primary_completion: number | null
+  real_n: number
+}
+
+export type ClearSummary = Record<ComparisonKey, Comparison> & {
+  headline: string
+  background_trials: number
+  background_worse_under_coord_free: number
+  site_counts: Record<string, { max_excess_over_registered: number; total_sites: number }>
+  calibration_check: CalibrationCheck
+  assumptions: Assumptions
   dividend_days: number
   dollars_direct: number
   dollars_lost_sales: number
   dollars_note: string
-  solver: SolverStats
+  solver: Record<string, SolverStats>
 }
 
 export interface ClearResult {
-  params: ClearParams & { time_limit?: number; calibrate?: boolean; f_clip?: [number, number] }
+  params: Scenario & { rate_cap_q?: number; time_limit?: number; calibrate?: boolean; level?: boolean; f_clip?: [number, number] }
   counts: {
     trials: number
+    movable_trials: number
+    flagged_trials: number
     sites: number
-    sites_used_actual: number
-    sites_used_indep: number
-    sites_used_coord: number
-  }
+  } & Partial<Record<`sites_used_${AllocKey}`, number>>
   summary: ClearSummary
   trials: Trial[]
   sites: Site[]
@@ -129,13 +211,60 @@ export interface PriceTag extends Criterion {
 
 export interface PriceTags {
   nct_id: string
+  /** Trial's time in the reference re-solve of the joint optimum (coord_free), not the headline allocation. */
   T_coord: number | null
   criteria: PriceTag[]
+  alternatives_not_priced?: string[]
+  eligibility_source?: string
   note: string
 }
 
 export interface SlotValue extends Site {
   months_saved: number
+}
+
+export interface RobustnessRow {
+  beta_label: string
+  beta: number
+  low_history: LowHistory
+  universe: Universe
+  coord_vs_actual: Comparison
+  coordination_no_loser_vs_indep: Comparison
+  coord_free_vs_actual: Comparison
+  coord_free_vs_indep: Comparison
+  indep_vs_actual: Comparison
+}
+
+export interface Robustness {
+  params?: Partial<Scenario>
+  rows: RobustnessRow[]
+}
+
+export interface RegressionResult {
+  coef: number
+  se?: number
+  p: number
+  ci95: [number, number]
+  pct_per_competitor?: number
+  n_rows: number
+  clusters?: number
+  sites?: number
+  exposure_mean?: number
+  exposure_p90?: number
+}
+
+export interface CongestionTest {
+  n_trials: number
+  n_trial_sites: number
+  results: Record<string, RegressionResult>
+  primary: string
+  model_implied_coef_overlap: number
+  verdict?: string
+}
+
+export interface SponsorCount {
+  sponsor: string
+  trials: number
 }
 
 export interface TermSheet {
@@ -161,17 +290,23 @@ export interface TermSheet {
     payer: string
     rationale: string
     medicare_amount: number | null
+    schedule?: string
+    locality?: string | null
     verified: boolean
+    source?: string
   }[]
   budget: {
     multiplier: number
-    locality_factor: number
+    locality?: string | null
     locality_source: string
+    conversion_factor?: number
     procedure_lines: {
       node: string
       code: string
       procedure: string
+      schedule?: string
       amount: number | null
+      national?: number | null
       source: string
       verified: boolean
     }[]
@@ -179,13 +314,21 @@ export interface TermSheet {
     per_patient_items: { id: string; label: string; amount: number; unit: string }[]
     per_patient_total: number
     per_site_items: { id: string; label: string; amount: number; unit: string }[]
+    as_incurred_items?: { id: string; label: string; amount: number; unit: string }[]
     schedule_source: string
     unpriced_codes: string[]
   }
   expected_patients: number
   expected_site_total: number
+  expected_source?: string
   agreement: string[]
   disclaimer: string
+}
+
+export interface BacktestCell {
+  median_abs_log_error: number
+  median_signed_log_bias: number
+  n: number
 }
 
 export interface Status {
@@ -209,14 +352,20 @@ export interface Status {
       median_abs_log_error_naive: number
       model_beats_naive_share: number
       median_share_of_test_sites_seen_in_train?: number
+      by_model?: Record<string, Record<string, BacktestCell>>
+      calibration_slope_industry_p23?: { slope: number; se: number; n: number; mean_log_pred?: number }
+      level_log_bias_industry_p23?: number
+      low_history_rule?: { n_below: number; prior_quantile: number; rate: number }
       note?: string
     }
+    congestion_test?: CongestionTest
   } | null
 }
 
 export interface CompileResult {
   criteria: Criterion[]
-  eligible_fraction: number
+  /** null when nothing was parsed ("unknown is never 100%"). */
+  eligible_fraction: number | null
   parser: string
   review_required: boolean
 }
@@ -247,36 +396,56 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 function q(params: Record<string, string | number | null | undefined>): string {
   const s = new URLSearchParams()
-  for (const [k, v] of Object.entries(params)) if (v !== null && v !== undefined) s.set(k, String(v))
+  for (const [k, v] of Object.entries(params)) if (v !== null && v !== undefined && v !== '') s.set(k, String(v))
   return s.toString()
 }
 
-function solveParams(p: ClearParams) {
+/** Normalize a scenario for the wire: blank strings become null. */
+export function cleanScenario(s: Scenario): Scenario {
   return {
-    region: p.region,
-    activation_lag: p.activation_lag,
-    overlap_scale: p.overlap_scale,
-    capacity_scale: p.capacity_scale,
-    max_trials: p.max_trials ?? undefined,
+    region: s.region,
+    as_of: s.as_of?.trim() || null,
+    sponsor: s.sponsor?.trim() || null,
+    beta: s.beta === null || Number.isNaN(s.beta) ? null : s.beta,
+    low_history: s.low_history,
+    universe: s.universe,
+    activation_lag: s.activation_lag,
+    overlap_scale: s.overlap_scale,
+    capacity_scale: s.capacity_scale,
+    max_trials: s.max_trials ?? null,
   }
+}
+
+function scenarioQuery(s: Scenario): Record<string, string | number | null | undefined> {
+  const c = cleanScenario(s)
+  return { ...c }
+}
+
+export function scenarioKey(s: Scenario): string {
+  return JSON.stringify(cleanScenario(s))
 }
 
 export const api = {
   status: (signal?: AbortSignal) => request<Status>('/api/status', { signal }),
   regions: (signal?: AbortSignal) => request<string[]>('/api/regions', { signal }),
-  clear: (p: ClearParams, signal?: AbortSignal) =>
+  clear: (s: Scenario, signal?: AbortSignal) =>
     request<ClearResult>('/api/clear', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(p),
+      body: JSON.stringify(cleanScenario(s)),
       signal,
     }),
-  priceTags: (nct: string, p: ClearParams, signal?: AbortSignal) =>
-    request<PriceTags>(`/api/trials/${encodeURIComponent(nct)}/price-tags?${q(solveParams(p))}`, { signal }),
-  slotValues: (p: ClearParams, signal?: AbortSignal) =>
-    request<SlotValue[]>(`/api/slot-values?${q(solveParams(p))}`, { signal }),
-  termsheet: (site_id: string, nct_id: string, region: string, signal?: AbortSignal) =>
-    request<TermSheet>(`/api/termsheet?${q({ site_id, nct_id, region })}`, { signal }),
+  robustness: (s: Scenario, signal?: AbortSignal) =>
+    request<Robustness>(`/api/robustness?${q(scenarioQuery(s))}`, { signal }),
+  congestion: (signal?: AbortSignal) => request<CongestionTest>('/api/congestion-test', { signal }),
+  sponsors: (region: string, as_of: string | null, signal?: AbortSignal) =>
+    request<SponsorCount[]>(`/api/sponsors?${q({ region, as_of })}`, { signal }),
+  priceTags: (nct: string, s: Scenario, signal?: AbortSignal) =>
+    request<PriceTags>(`/api/trials/${encodeURIComponent(nct)}/price-tags?${q(scenarioQuery(s))}`, { signal }),
+  slotValues: (s: Scenario, signal?: AbortSignal) =>
+    request<SlotValue[]>(`/api/slot-values?${q(scenarioQuery(s))}`, { signal }),
+  termsheet: (site_id: string, nct_id: string, s: Scenario, signal?: AbortSignal) =>
+    request<TermSheet>(`/api/termsheet?${q({ site_id, nct_id, ...scenarioQuery(s) })}`, { signal }),
   compileEligibility: (text: string, signal?: AbortSignal) =>
     request<CompileResult>('/api/compile/eligibility', {
       method: 'POST',
@@ -284,20 +453,4 @@ export const api = {
       body: JSON.stringify({ text }),
       signal,
     }),
-}
-
-export const DEFAULT_PARAMS: ClearParams = {
-  region: 'US-Northeast',
-  activation_lag: 6,
-  overlap_scale: 1,
-  capacity_scale: 1,
-}
-
-export function isDefaultSolve(p: ClearParams): boolean {
-  return (
-    p.activation_lag === DEFAULT_PARAMS.activation_lag &&
-    p.overlap_scale === DEFAULT_PARAMS.overlap_scale &&
-    p.capacity_scale === DEFAULT_PARAMS.capacity_scale &&
-    (p.max_trials ?? null) === null
-  )
 }

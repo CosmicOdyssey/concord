@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { api, DEFAULT_PARAMS, type ClearParams, type PriceTags, type SlotValue } from '../api'
+import { api, DEFAULT_SCENARIO, scenarioKey, type PriceTags, type SlotValue } from '../api'
 import type { ClearState } from '../App'
 import { Badge, Caveat, ErrorBox, Loading, NeedsClear, RunLine } from '../components'
+import { EligBadge } from './ClearView'
 import { ctgovUrl, int, num, phaseLabel, siteName, times, trialName } from '../format'
 
-function paramsKey(p: ClearParams): string {
-  return [p.region, p.activation_lag, p.overlap_scale, p.capacity_scale, p.max_trials ?? ''].join('|')
-}
 
 interface Props {
   clear: ClearState
@@ -31,7 +29,7 @@ export default function PriceTagsView({ clear, selected, setSelected }: Props) {
     [r],
   )
   const trial = r?.trials.find((t) => t.nct_id === selected) ?? null
-  const pkey = solved ? paramsKey(solved) : ''
+  const pkey = solved ? scenarioKey(solved) : ''
 
   useEffect(() => {
     if (!solved || !trial) {
@@ -86,16 +84,14 @@ export default function PriceTagsView({ clear, selected, setSelected }: Props) {
     if (clear.loading) return <Loading label={`Clearing ${clear.pendingParams?.region ?? ''}…`} />
     return (
       <>
-        {clear.error && <ErrorBox error={clear.error} onRetry={() => clear.run(DEFAULT_PARAMS)} />}
-        <NeedsClear onRun={() => clear.run(DEFAULT_PARAMS)} busy={clear.loading} />
+        {clear.error && <ErrorBox error={clear.error} onRetry={() => clear.run(DEFAULT_SCENARIO)} />}
+        <NeedsClear onRun={() => clear.run(DEFAULT_SCENARIO)} busy={clear.loading} />
       </>
     )
   }
 
   const tagData = tags.status === 'ok' ? tags.data : null
   const maxTrialSaved = tagData ? Math.max(0.01, ...tagData.criteria.map((c) => Math.abs(c.months_saved_trial))) : 1
-  const unchanged = tagData ? tagData.criteria.filter((c) => c.pool_multiplier === 1) : []
-  const floor = unchanged.length ? Math.max(...unchanged.map((c) => c.months_saved_portfolio)) : null
 
   return (
     <section className="view">
@@ -119,7 +115,7 @@ export default function PriceTagsView({ clear, selected, setSelected }: Props) {
               <option key={t.nct_id} value={t.nct_id}>
                 {trialName(t)}
                 {t.sponsor ? ` · ${t.sponsor}` : ''}
-                {t.flagged ? ' · needs review' : ''}
+                {t.flagged ? ' · background (excluded)' : !t.movable ? ' · background' : ''}
               </option>
             ))}
           </select>
@@ -140,7 +136,9 @@ export default function PriceTagsView({ clear, selected, setSelected }: Props) {
             <a href={ctgovUrl(trial.nct_id)} target="_blank" rel="noreferrer" className="strong">
               {trialName(trial)}
             </a>
-            {trial.flagged && <Badge tone="warn">needs review</Badge>}
+            {trial.flagged && <Badge tone="warn">background (excluded)</Badge>}
+            {!trial.flagged && !trial.movable && <Badge tone="neutral">background</Badge>}
+            <EligBadge source={trial.eligibility_source} />
             <span className="muted small">
               {phaseLabel(trial.phases)} · {trial.sponsor ?? 'sponsor unknown'}
             </span>
@@ -148,13 +146,16 @@ export default function PriceTagsView({ clear, selected, setSelected }: Props) {
           <p className="small">{trial.title}</p>
           <div className="kv-row small tnum">
             <span>
-              T actual <strong>{num(trial.T_actual)}</strong> mo
+              T registered <strong>{num(trial.T_actual)}</strong> mo
             </span>
             <span>
-              T indep <strong>{num(trial.T_indep)}</strong> mo
+              T best response <strong>{num(trial.T_indep)}</strong> mo
             </span>
             <span>
-              T coord <strong>{num(trial.T_coord)}</strong> mo
+              T coordinated <strong>{num(trial.T_coord)}</strong> mo
+            </span>
+            <span>
+              T joint optimum <strong>{num(trial.T_coord_free)}</strong> mo
             </span>
             <span>
               regional target <strong>{num(trial.target_region)}</strong> pts
@@ -167,7 +168,7 @@ export default function PriceTagsView({ clear, selected, setSelected }: Props) {
       )}
 
       {trial && tags.status === 'loading' && (
-        <Loading label="Re-clearing once per criterion…" hint="Usually 5–15 seconds; the backend re-solves the market for each relaxation." />
+        <Loading label="Re-clearing once per criterion…" hint="Often 20 s or more: the backend re-solves the market once per relaxation." />
       )}
       {trial && tags.status === 'error' && <ErrorBox error={tags.error} onRetry={() => setReloadTick((x) => x + 1)} />}
 
@@ -218,17 +219,18 @@ export default function PriceTagsView({ clear, selected, setSelected }: Props) {
               )
             })}
           </ul>
-          {floor !== null && floor > 0 && (
-            <p className="note small">
-              <strong>Reading the portfolio column:</strong> criteria that leave the pool unchanged (×1.00) still show up
-              to {num(floor)} portfolio trial-months. That is the solver improving further on a time-limited baseline when it
-              re-clears, not an effect of the criterion. Compare portfolio figures against that baseline.
+          {tagData.alternatives_not_priced && tagData.alternatives_not_priced.length > 0 && (
+            <p className="muted small">
+              Not priced (one of several OR’ed alternatives; dropping it narrows the pool rather than relaxing it):{' '}
+              {tagData.alternatives_not_priced.join(', ')}.
             </p>
           )}
           <Caveat>
-            {tagData.note} Months saved are relative to the cleared time T<sub>coord</sub> = {num(tagData.T_coord)} months;
-            “pool” is the eligible-population multiplier from dropping the criterion. Review parsed criteria against the
-            source text: the rule-based parser can misread a sentence.
+            {tagData.note} Months saved are relative to this trial’s time in a reference re-solve of the joint optimum
+            (T = {num(tagData.T_coord)} months), and the relaxed market is re-solved with the same deterministic procedure, so
+            solver progress is not credited to the criterion. “Pool” is the eligible-population multiplier from dropping the
+            criterion. Eligibility: {tagData.eligibility_source ?? trial?.eligibility_source ?? 'unknown'}; review parsed
+            criteria against the source text.
           </Caveat>
         </div>
       )}
@@ -245,14 +247,15 @@ export default function PriceTagsView({ clear, selected, setSelected }: Props) {
             <h2>Slot values</h2>
             <p className="muted small">
               Portfolio trial-months saved by one more concurrent-trial slot at sites already at capacity in the cleared
-              allocation (up to 12, highest enrollment rate first).
+              joint optimum (up to 12, highest enrollment rate first). Each is compared with the same deterministic re-solve of
+              the unchanged market.
             </p>
           </div>
           <button className="btn" onClick={loadSlots} disabled={slots.status === 'loading'}>
             {slots.status === 'ok' ? 'Recompute' : 'Compute slot values'}
           </button>
         </div>
-        {slots.status === 'loading' && <Loading label="Re-clearing once per candidate site…" hint="Usually 10–20 seconds." />}
+        {slots.status === 'loading' && <Loading label="Re-clearing once per candidate site…" hint="Often 20 s or more." />}
         {slots.status === 'error' && <ErrorBox error={slots.error} onRetry={loadSlots} />}
         {slots.status === 'ok' && slots.data.length === 0 && <p className="muted">No site is at capacity in this allocation.</p>}
         {slots.status === 'ok' && slots.data.length > 0 && (
@@ -302,8 +305,7 @@ export default function PriceTagsView({ clear, selected, setSelected }: Props) {
             </div>
             <p className="muted small">
               Hist. rate = fitted patients per month per trial at the site (posterior mean; bracket = 10th–90th
-              percentile), from n hist past trials at the site. Months saved include the solver’s own re-optimization from a time-limited baseline, so
-              small differences between sites are not meaningful.
+              percentile), from n hist past trials at the site.
             </p>
           </>
         )}

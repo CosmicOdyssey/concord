@@ -18,12 +18,16 @@ npm run dev -- --port 5173     # http://localhost:5173
 
 ## Views
 
-1. **Congestion map**: sites drawn by trial load for the Actual (CT.gov), Independent and Coordinated allocations, plus a concentration table and the 10 busiest sites.
-2. **Clear it**: region and assumption sliders, then `POST /api/clear`. Shows the headline cards (median speedup, share faster, trimmed dividend, trimmed PoA, dollar conversion with its caveat) and a sortable trial table.
-3. **Price tags**: per-criterion months saved for one trial, and slot values. Deep link: `#prices/NCT03093116`.
-4. **Pre-cleared terms**: term sheet for a coordinated (site, trial) match.
-5. **Model & data**: crawl status, backtest, priors, and an eligibility-compiler playground.
+1. **Congestion map**: sites sized by trial load under Registered / Best response / Coordinated (no losers) / Joint optimum, with a concentration table and the 10 busiest sites.
+2. **Clear it**: scenario controls (region, β, low-history rule, universe, as-of date, sponsor, sliders) and `POST /api/clear`. Leads with the no-loser headline (coordinated vs registered), then a five-way decomposition, the assumptions and calibration check, and the trial table.
+3. **Robustness**: the precomputed β × site-rate rule × universe grid (`/api/robustness`). The β = 1 rows that the master doc assumed are marked.
+4. **Portfolio**: one sponsor's trials cleared with everyone else as background (`/api/sponsors`, preset "Regeneron, Sept 2024").
+5. **Price tags**: per-criterion months saved for one trial, plus slot values.
+6. **Pre-cleared terms**: term sheet for a headline (no-loser) match, with CMS 2026 PFS vs placeholder CLFS amounts.
+7. **Model & data**: crawl status, the "does congestion exist?" regression, the backtest (model vs raw vs naive), and an eligibility-compiler playground.
 
-The last clear result is held in app state and shared by all tabs. The default region (US-Northeast) is cleared automatically on load. The US-wide region can take up to a minute.
+Deep links: `#prices/NCT03093116` preselects a trial; `#portfolio/regeneron` loads the Regeneron portfolio instead of the default market.
+
+The last clear result is held in app state and shared by all tabs. The default region (US-Northeast) is cleared automatically on load. Clears take about 15–25 s (US-wide about 25 s).
 
 Map tiles: © OpenStreetMap contributors.

@@ -4,13 +4,13 @@ import type { LatLngBoundsExpression } from 'leaflet'
 import type { AllocKey, ClearResult, Site } from '../api'
 import type { ClearState } from '../App'
 import { Badge, ErrorBox, Loading, NeedsClear, RunLine, useDarkMode } from '../components'
-import { ALLOC_LABEL, int, pct } from '../format'
-import { DEFAULT_PARAMS } from '../api'
+import { ALLOC_HINT, ALLOC_LABEL, int, loadOf, pct } from '../format'
+import { DEFAULT_SCENARIO } from '../api'
 
-const ALLOCS: AllocKey[] = ['actual', 'indep', 'coord']
+const ALLOCS: AllocKey[] = ['actual', 'indep', 'coord', 'coord_free']
 
 function load(s: Site, a: AllocKey): number {
-  return a === 'actual' ? s.load_actual : a === 'indep' ? s.load_indep : s.load_coord
+  return loadOf(s, a)
 }
 
 function radius(n: number): number {
@@ -42,7 +42,7 @@ function allocStats(r: ClearResult, a: AllocKey): AllocStats {
     .sort((x, y) => y.n - x.n)
     .slice(0, 10)
     .reduce((acc, x) => acc + x.n, 0)
-  const used = a === 'actual' ? r.counts.sites_used_actual : a === 'indep' ? r.counts.sites_used_indep : r.counts.sites_used_coord
+  const used = r.counts[`sites_used_${a}`] ?? loads.filter((x) => x.n > 0).length
   return {
     used,
     slots,
@@ -67,7 +67,7 @@ export default function MapView({ clear }: { clear: ClearState }) {
   )
   const bounds = useMemo<LatLngBoundsExpression | null>(() => {
     if (mapped.length === 0) return null
-    const used = mapped.filter((s) => s.load_actual + s.load_indep + s.load_coord > 0)
+    const used = mapped.filter((s) => ALLOCS.some((a) => load(s, a) > 0))
     const pts = used.length > 0 ? used : mapped
     const lats = pts.map((s) => s.lat as number)
     const lons = pts.map((s) => s.lon as number)
@@ -94,13 +94,26 @@ export default function MapView({ clear }: { clear: ClearState }) {
     if (clear.loading) return <Loading label={`Clearing ${clear.pendingParams?.region ?? ''}…`} hint="The US-wide region can take up to a minute." />
     return (
       <>
-        {clear.error && <ErrorBox error={clear.error} onRetry={() => clear.run(DEFAULT_PARAMS)} />}
-        <NeedsClear onRun={() => clear.run(DEFAULT_PARAMS)} busy={clear.loading} />
+        {clear.error && <ErrorBox error={clear.error} onRetry={() => clear.run(DEFAULT_SCENARIO)} />}
+        <NeedsClear onRun={() => clear.run(DEFAULT_SCENARIO)} busy={clear.loading} />
       </>
     )
   }
 
   const unmapped = r.sites.length - mapped.length
+  const st = Object.fromEntries(stats)
+  const concentration =
+    st.actual && st.indep && st.coord_free && st.coord
+      ? `The 10 busiest sites hold ${pct(st.actual.top10Share)} of trial–site slots as registered, ${pct(
+          st.indep.top10Share,
+        )} under each trial’s best response, ${pct(st.coord_free.top10Share)} under the joint optimum and ${pct(
+          st.coord.top10Share,
+        )} under the no-loser headline allocation.${
+          r.params.beta === null && (st.coord_free.top10Share ?? 0) > (st.actual.top10Share ?? 0)
+            ? ' With the congestion elasticity estimated from data (near zero), piling onto the strongest sites costs little, so the optimizers concentrate demand rather than spread it.'
+            : ''
+        }`
+      : null
 
   return (
     <section className="view">
@@ -108,9 +121,10 @@ export default function MapView({ clear }: { clear: ClearState }) {
         <div>
           <h1>Where enrollment demand piles up</h1>
           <p className="lede">
-            Each circle is a trial site in the region; size is the number of concurrent trials assigned to it. Sponsors
-            choosing independently converge on the same academic centers. Clearing jointly spreads the load.
+            Each circle is a trial site in the region; size is the number of concurrent trials assigned to it. Toggle the
+            allocation to see where each one puts the demand.
           </p>
+          {concentration && <p className="lede small">{concentration}</p>}
         </div>
         <RunLine params={r.params} stale={clear.loading} />
       </div>
@@ -119,7 +133,7 @@ export default function MapView({ clear }: { clear: ClearState }) {
         <div className="map-wrap card">
           <div className="seg" role="radiogroup" aria-label="Allocation shown">
             {ALLOCS.map((a) => (
-              <button key={a} role="radio" aria-checked={alloc === a} className={`seg-btn${alloc === a ? ' seg-on' : ''}`} onClick={() => setAlloc(a)}>
+              <button key={a} role="radio" aria-checked={alloc === a} title={ALLOC_HINT[a]} className={`seg-btn${alloc === a ? ' seg-on' : ''}`} onClick={() => setAlloc(a)}>
                 {ALLOC_LABEL[a]}
               </button>
             ))}
@@ -153,7 +167,7 @@ export default function MapView({ clear }: { clear: ClearState }) {
                         {s.is_amc ? 'Academic center' : 'Other site'} · capacity {s.k} concurrent
                       </div>
                       <div className="tnum">
-                        trials: actual {s.load_actual} · indep {s.load_indep} · coord {s.load_coord}
+                        trials: registered {s.load_actual} · best resp. {s.load_indep} · coord. {s.load_coord} · joint {s.load_coord_free}
                       </div>
                     </div>
                   </Tooltip>
@@ -230,7 +244,7 @@ export default function MapView({ clear }: { clear: ClearState }) {
           </ol>
           <p className="muted small">
             Capacity (cap): the site’s historical peak of concurrent trials (never below its current CT.gov load),
-            times the capacity assumption. “Actual” is the site list each trial registered on ClinicalTrials.gov;
+            times the capacity assumption. “Registered” is the site list each trial registered on ClinicalTrials.gov;
             anonymized sites appear only there and cannot be reassigned.
           </p>
         </aside>

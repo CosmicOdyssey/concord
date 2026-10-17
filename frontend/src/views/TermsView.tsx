@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { api, DEFAULT_PARAMS, isDefaultSolve, type TermSheet } from '../api'
+import { api, DEFAULT_SCENARIO, scenarioKey, type TermSheet } from '../api'
 import type { ClearState } from '../App'
 import { Badge, Caveat, ErrorBox, Loading, NeedsClear, RunLine, Stat } from '../components'
-import { ctgovUrl, num, siteName, trialName, usd } from '../format'
+import { ctgovUrl, isNum, num, siteName, trialName, usd } from '../format'
 
 type Async<T> = { status: 'idle' } | { status: 'loading' } | { status: 'error'; error: string } | { status: 'ok'; data: T }
 
@@ -16,6 +16,16 @@ const CAP_LABEL: Record<string, string> = {
   mri: 'MRI',
   pk_processing: 'PK sample processing',
   tissue_handling: 'Tissue handling',
+}
+
+function SourceMark({ verified, schedule }: { verified: boolean; schedule?: string }) {
+  if (verified)
+    return <span className="srcmark srcmark-ok">CMS 2026 {schedule ?? ''}</span>
+  return (
+    <span className="srcmark srcmark-warn" title="Approximate national amount; the CMS lab fee schedule (CLFS) file is not loaded">
+      placeholder
+    </span>
+  )
 }
 
 function unitLabel(u: string): string {
@@ -59,10 +69,10 @@ export default function TermsView({ clear }: { clear: ClearState }) {
     }
   }, [siteOptions, trialsBySite, siteId, nctId])
 
-  const region = solved?.region ?? ''
+  const skey = solved ? scenarioKey(solved) : ''
   useEffect(() => {
-    if (!siteId || !nctId || !region) return
-    const key = `${region}|${siteId}|${nctId}`
+    if (!siteId || !nctId || !solved) return
+    const key = `${skey}|${siteId}|${nctId}`
     const hit = cache.current.get(key)
     if (hit) {
       setSheet({ status: 'ok', data: hit })
@@ -71,7 +81,7 @@ export default function TermsView({ clear }: { clear: ClearState }) {
     const ctl = new AbortController()
     setSheet({ status: 'loading' })
     api
-      .termsheet(siteId, nctId, region, ctl.signal)
+      .termsheet(siteId, nctId, solved, ctl.signal)
       .then((d) => {
         cache.current.set(key, d)
         setSheet({ status: 'ok', data: d })
@@ -80,14 +90,16 @@ export default function TermsView({ clear }: { clear: ClearState }) {
         if (!ctl.signal.aborted) setSheet({ status: 'error', error: e instanceof Error ? e.message : String(e) })
       })
     return () => ctl.abort()
-  }, [siteId, nctId, region, tick])
+    // solved is captured via skey
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [siteId, nctId, skey, tick])
 
   if (!r || !solved) {
     if (clear.loading) return <Loading label={`Clearing ${clear.pendingParams?.region ?? ''}…`} />
     return (
       <>
-        {clear.error && <ErrorBox error={clear.error} onRetry={() => clear.run(DEFAULT_PARAMS)} />}
-        <NeedsClear onRun={() => clear.run(DEFAULT_PARAMS)} busy={clear.loading} />
+        {clear.error && <ErrorBox error={clear.error} onRetry={() => clear.run(DEFAULT_SCENARIO)} />}
+        <NeedsClear onRun={() => clear.run(DEFAULT_SCENARIO)} busy={clear.loading} />
       </>
     )
   }
@@ -137,13 +149,6 @@ export default function TermsView({ clear }: { clear: ClearState }) {
             </select>
           </label>
         </div>
-        {!isDefaultSolve(solved) && (
-          <p className="note small">
-            The term-sheet endpoint takes only the region, so expected patients come from the default-assumption clearing
-            of {solved.region}. If this match is not in that allocation, the backend substitutes a placeholder of 10
-            patients.
-          </p>
-        )}
       </div>
 
       {sheet.status === 'loading' && <Loading label="Building term sheet…" />}
@@ -183,7 +188,17 @@ export default function TermsView({ clear }: { clear: ClearState }) {
           </div>
 
           <div className="stats stats-3">
-            <Stat label="Expected patients at this site" value={num(ts.expected_patients)} sub="From the trial’s cleared allocation (model estimate)" />
+            <Stat
+              label="Expected patients at this site"
+              value={num(ts.expected_patients)}
+              sub={
+                ts.expected_source?.startsWith('placeholder') ? (
+                  <Badge tone="warn">{ts.expected_source}</Badge>
+                ) : (
+                  <>Source: {ts.expected_source ?? 'unknown'} (model estimate)</>
+                )
+              }
+            />
             <Stat label="Per-patient budget" value={usd(b.per_patient_total)} sub="Sponsor-paid procedures + per-patient items" />
             <Stat emphasis label="Expected site total" value={usd(ts.expected_site_total)} sub="Per-site fixed items + per-patient × expected patients" />
           </div>
@@ -224,7 +239,8 @@ export default function TermsView({ clear }: { clear: ClearState }) {
                     <th>Coverage</th>
                     <th>Payer</th>
                     <th>Rationale</th>
-                    <th className="num">Medicare amount (national)</th>
+                    <th>Schedule</th>
+                    <th className="num">Medicare amount</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -240,13 +256,13 @@ export default function TermsView({ clear }: { clear: ClearState }) {
                       </td>
                       <td className="nowrap">{row.payer}</td>
                       <td className="muted small rationale">{row.rationale}</td>
-                      <td className="num nowrap">
+                      <td className="nowrap">
+                        <code>{row.schedule ?? '—'}</code>
+                      </td>
+                      <td className="num nowrap" title={row.source}>
                         {usd(row.medicare_amount)}
-                        {!row.verified && (
-                          <span className="unverified" title="Approximate national amount; not verified against the CMS fee schedule">
-                            unverified placeholder
-                          </span>
-                        )}
+                        <SourceMark verified={row.verified} schedule={row.schedule} />
+                        {row.locality && <span className="muted small block">{row.locality}</span>}
                       </td>
                     </tr>
                   ))}
@@ -259,12 +275,17 @@ export default function TermsView({ clear }: { clear: ClearState }) {
             <h2>Budget</h2>
             <div className="kv-row small">
               <span>
-                Locality factor <strong className="tnum">×{num(b.locality_factor, 2)}</strong>
+                Medicare locality <strong>{b.locality ?? 'national (no locality match)'}</strong>
               </span>
+              {isNum(b.conversion_factor) && (
+                <span>
+                  PFS conversion factor <strong className="tnum">${num(b.conversion_factor, 4)}</strong>
+                </span>
+              )}
               <span className="muted">{b.locality_source}</span>
             </div>
             <div className="kv-row small">
-              <span className="muted">Schedule: {b.schedule_source}</span>
+              <span className="muted">Non-procedure items: {b.schedule_source}</span>
               {b.multiplier !== 1 && <span>Multiplier ×{num(b.multiplier, 2)}</span>}
             </div>
 
@@ -275,20 +296,26 @@ export default function TermsView({ clear }: { clear: ClearState }) {
                   <tr>
                     <th>Procedure</th>
                     <th>Code</th>
-                    <th className="num">Amount</th>
+                    <th>Schedule</th>
+                    <th className="num">National</th>
+                    <th className="num">Local (billed)</th>
                     <th>Source</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {b.procedure_lines.map((l) => (
-                    <tr key={l.node}>
+                  {b.procedure_lines.map((l, i) => (
+                    <tr key={`${l.node}-${i}`}>
                       <td>{l.procedure}</td>
                       <td>
                         <code>{l.code}</code>
                       </td>
+                      <td>
+                        <code>{l.schedule ?? '—'}</code>
+                      </td>
+                      <td className="num nowrap">{usd(l.national)}</td>
                       <td className="num nowrap">
                         {usd(l.amount)}
-                        {!l.verified && <span className="unverified">unverified placeholder</span>}
+                        <SourceMark verified={l.verified} schedule={l.schedule} />
                       </td>
                       <td className="muted small">{l.source}</td>
                     </tr>
@@ -296,7 +323,7 @@ export default function TermsView({ clear }: { clear: ClearState }) {
                 </tbody>
                 <tfoot>
                   <tr>
-                    <th colSpan={2}>Procedures total</th>
+                    <th colSpan={4}>Procedures total</th>
                     <td className="num strong">{usd(b.procedures_total)}</td>
                     <td />
                   </tr>
@@ -339,9 +366,6 @@ export default function TermsView({ clear }: { clear: ClearState }) {
                       <tr key={i.id}>
                         <td>
                           {i.label} <span className="muted small">({unitLabel(i.unit)})</span>
-                          {i.unit !== 'per_site' && (
-                            <div className="muted small">Not in the totals: depends on screen-failure counts.</div>
-                          )}
                         </td>
                         <td className="num">{usd(i.amount)}</td>
                       </tr>
@@ -359,6 +383,25 @@ export default function TermsView({ clear }: { clear: ClearState }) {
               </div>
             </div>
           </div>
+
+          {b.as_incurred_items && b.as_incurred_items.length > 0 && (
+            <div className="card">
+              <h2>Billed as incurred</h2>
+              <p className="muted small">Not included in the per-patient or site totals above.</p>
+              <table className="tbl tbl-compact">
+                <tbody>
+                  {b.as_incurred_items.map((i) => (
+                    <tr key={i.id}>
+                      <td>
+                        {i.label} <span className="muted small">({unitLabel(i.unit)})</span>
+                      </td>
+                      <td className="num">{usd(i.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           <div className="card">
             <h2>Agreement</h2>

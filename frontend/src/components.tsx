@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import type { Scenario } from './api'
 
 export function useElapsed(running: boolean): number {
   const [secs, setSecs] = useState(0)
@@ -81,7 +82,7 @@ export function NeedsClear({ onRun, busy }: { onRun: () => void; busy: boolean }
     <div className="empty">
       <p>This view uses the cleared allocation. Run the clearing first.</p>
       <button className="btn btn-primary" onClick={onRun} disabled={busy}>
-        {busy ? 'Clearing…' : 'Clear the market (default region)'}
+        {busy ? 'Clearing…' : 'Clear the market (default scenario)'}
       </button>
     </div>
   )
@@ -105,7 +106,7 @@ export function RunLine({
   stale,
   extra,
 }: {
-  params: { region: string; activation_lag: number; overlap_scale: number; capacity_scale: number }
+  params: Scenario
   stale?: boolean
   extra?: ReactNode
 }) {
@@ -114,8 +115,17 @@ export function RunLine({
       <span>
         Region <strong>{params.region}</strong>
       </span>
+      {params.sponsor && (
+        <span>
+          Portfolio <strong>{params.sponsor}</strong>
+        </span>
+      )}
+      <span>{params.as_of ? <>as of <strong>{params.as_of}</strong></> : 'recruiting today'}</span>
       <span className="muted">
-        activation lag {params.activation_lag} mo · overlap ×{params.overlap_scale} · capacity ×{params.capacity_scale}
+        β {params.beta === null ? 'data estimate' : params.beta} · site rates {params.low_history} · universe{' '}
+        {params.universe} · activation lag {params.activation_lag} mo
+        {params.overlap_scale !== 1 && <> · overlap ×{params.overlap_scale}</>}
+        {params.capacity_scale !== 1 && <> · capacity ×{params.capacity_scale}</>}
       </span>
       {stale && <Badge tone="info">re-clearing…</Badge>}
       {extra}

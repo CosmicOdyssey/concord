@@ -1,21 +1,23 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from 'react'
-import { DEFAULT_PARAMS, type ClearParams, type Trial } from '../api'
+import { DEFAULT_SCENARIO, scenarioKey, type AllocKey, type LowHistory, type Scenario, type Trial, type Universe } from '../api'
 import type { ClearState } from '../App'
-import { Badge, Caveat, ErrorBox, Loading, RunLine, Stat } from '../components'
-import { ctgovUrl, int, isNum, money, num, pct, phaseLabel, times } from '../format'
+import { Badge, ErrorBox, Loading, RunLine } from '../components'
+import { ALLOC_HINT, ALLOC_LABEL, ctgovUrl, int, isNum, num, phaseLabel, signedMonths, tOf } from '../format'
+import { AssumptionsUsed, betaInfo, CalibrationLine, DecompositionTable, HeadlineBlock } from '../summary'
 
-type SortKey = 'trial' | 'sponsor' | 'target' | 'sites' | 'T_actual' | 'T_indep' | 'T_coord' | 'saved'
+type SortKey = 'trial' | 'sponsor' | 'target' | 'sites' | AllocKey | 'saved'
+const T_COLS: AllocKey[] = ['actual', 'indep', 'coord', 'coord_free']
 
 interface Props {
   clear: ClearState
   regions: string[]
-  form: ClearParams
-  setForm: Dispatch<SetStateAction<ClearParams>>
+  form: Scenario
+  setForm: Dispatch<SetStateAction<Scenario>>
   onOpenTrial: (nct: string) => void
 }
 
-function saved(t: Trial): number | null {
-  return isNum(t.T_indep) && isNum(t.T_coord) ? t.T_indep - t.T_coord : null
+export function saved(t: Trial): number | null {
+  return isNum(t.T_actual) && isNum(t.T_coord) ? t.T_actual - t.T_coord : null
 }
 
 function sortValue(t: Trial, k: SortKey): string | number | null {
@@ -27,15 +29,11 @@ function sortValue(t: Trial, k: SortKey): string | number | null {
     case 'target':
       return t.target_region
     case 'sites':
-      return t.sites_coord
-    case 'T_actual':
-      return t.T_actual
-    case 'T_indep':
-      return t.T_indep
-    case 'T_coord':
-      return t.T_coord
+      return t.sites_actual
     case 'saved':
       return saved(t)
+    default:
+      return tOf(t, k)
   }
 }
 
@@ -62,9 +60,7 @@ function Slider({
     <label className="slider">
       <span className="slider-head">
         <span>{label}</span>
-        <span className="tnum strong">
-          {unit === '×' ? `×${value.toFixed(2)}` : `${value} ${unit}`}
-        </span>
+        <span className="tnum strong">{unit === '×' ? `×${value.toFixed(2)}` : `${value} ${unit}`}</span>
       </span>
       <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
       <span className="muted small">{hint}</span>
@@ -72,14 +68,14 @@ function Slider({
   )
 }
 
-function TimeBar({ indep, coord, cap }: { indep: number | null; coord: number | null; cap: number }) {
+export function TimeBar({ base, coord, cap }: { base: number | null; coord: number | null; cap: number }) {
   const w = (x: number | null) => (isNum(x) ? Math.min(100, (100 * x) / cap) : 0)
   const over = (x: number | null) => isNum(x) && x > cap
   return (
-    <div className="tbar" title={`Independent ${num(indep)} mo · Coordinated ${num(coord)} mo`} aria-hidden="true">
+    <div className="tbar" title={`Registered ${num(base)} mo · Coordinated ${num(coord)} mo`} aria-hidden="true">
       <div className="tbar-row">
-        <span className="tbar-indep" style={{ width: `${w(indep)}%` }} />
-        {over(indep) && <span className="tbar-over">›</span>}
+        <span className="tbar-indep" style={{ width: `${w(base)}%` }} />
+        {over(base) && <span className="tbar-over">›</span>}
       </div>
       <div className="tbar-row">
         <span className="tbar-coord" style={{ width: `${w(coord)}%` }} />
@@ -89,21 +85,168 @@ function TimeBar({ indep, coord, cap }: { indep: number | null; coord: number | 
   )
 }
 
+export function BackgroundBadge({ t }: { t: Trial }) {
+  if (t.flagged)
+    return (
+      <Badge tone="warn" title="Implausible model time: held fixed at its registered sites and excluded from every number">
+        background (excluded)
+      </Badge>
+    )
+  if (!t.movable)
+    return (
+      <Badge tone="neutral" title="Another sponsor's trial, held fixed at its registered sites (portfolio mode)">
+        background
+      </Badge>
+    )
+  return null
+}
+
+export function EligBadge({ source }: { source: string }) {
+  return (
+    <Badge tone={source === 'hand-encoded' ? 'ok' : 'info'} title="How this trial's eligibility criteria were encoded">
+      {source}
+    </Badge>
+  )
+}
+
+export function AssumptionsForm({
+  form,
+  setForm,
+  regions,
+  betaHint,
+}: {
+  form: Scenario
+  setForm: Dispatch<SetStateAction<Scenario>>
+  regions?: string[]
+  betaHint?: string
+}) {
+  const [betaText, setBetaText] = useState(form.beta === null ? '' : String(form.beta))
+  const [lastBeta, setLastBeta] = useState(form.beta)
+  if (form.beta !== lastBeta) {
+    // Keep the text box in sync when the scenario is reset or a preset is loaded.
+    setLastBeta(form.beta)
+    if (form.beta === null ? betaText.trim() !== '' : Number(betaText) !== form.beta) setBetaText(form.beta === null ? '' : String(form.beta))
+  }
+  return (
+    <>
+      <div className="form-grid">
+        {regions && (
+          <label className="field">
+            <span className="field-label">Region</span>
+            <select value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })}>
+              {regions.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <label className="field">
+          <span className="field-label">Congestion elasticity β</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            min="0"
+            placeholder="data estimate"
+            value={betaText}
+            onChange={(e) => {
+              const v = e.target.value
+              setBetaText(v)
+              const n = v.trim() === '' ? null : Number(v)
+              setForm({ ...form, beta: n === null || Number.isNaN(n) ? null : n })
+            }}
+          />
+          <span className="muted small">{betaHint ?? 'Blank = estimate from the within-site regression.'} The master doc assumed 1.</span>
+        </label>
+        <label className="field">
+          <span className="field-label">Low-history site rates</span>
+          <select value={form.low_history} onChange={(e) => setForm({ ...form, low_history: e.target.value as LowHistory })}>
+            <option value="model">model: capped at prior 25th pct (wins backtest)</option>
+            <option value="prior">prior: raw posterior</option>
+            <option value="exclude">exclude low-history sites</option>
+          </select>
+        </label>
+        <label className="field">
+          <span className="field-label">Site universe</span>
+          <select value={form.universe} onChange={(e) => setForm({ ...form, universe: e.target.value as Universe })}>
+            <option value="registered">registered: sites some trial registered</option>
+            <option value="history">history: any site with lung-trial history</option>
+          </select>
+        </label>
+        <label className="field">
+          <span className="field-label">As of date</span>
+          <input
+            type="date"
+            value={form.as_of ?? ''}
+            min="2010-01-01"
+            max="2026-12-31"
+            onChange={(e) => setForm({ ...form, as_of: e.target.value || null })}
+          />
+          <span className="muted small">Blank = trials recruiting today.</span>
+        </label>
+        <label className="field">
+          <span className="field-label">Sponsor (portfolio mode)</span>
+          <input
+            type="text"
+            placeholder="all sponsors"
+            value={form.sponsor ?? ''}
+            onChange={(e) => setForm({ ...form, sponsor: e.target.value || null })}
+          />
+          <span className="muted small">Only this sponsor’s trials move; everyone else is background.</span>
+        </label>
+      </div>
+      <div className="sliders">
+        <Slider
+          label="Activation lag"
+          hint="Months from site selection to first patient."
+          value={form.activation_lag}
+          min={0}
+          max={12}
+          step={1}
+          unit="mo"
+          onChange={(v) => setForm({ ...form, activation_lag: v })}
+        />
+        <Slider
+          label="Patient-pool overlap"
+          hint="Scales how much concurrent trials compete for the same eligible patients."
+          value={form.overlap_scale}
+          min={0}
+          max={2}
+          step={0.05}
+          unit="×"
+          onChange={(v) => setForm({ ...form, overlap_scale: v })}
+        />
+        <Slider
+          label="Site capacity"
+          hint="Multiplies every site’s concurrent-trial capacity."
+          value={form.capacity_scale}
+          min={0.5}
+          max={2}
+          step={0.05}
+          unit="×"
+          onChange={(v) => setForm({ ...form, capacity_scale: v })}
+        />
+      </div>
+    </>
+  )
+}
+
 export default function ClearView({ clear, regions, form, setForm, onOpenTrial }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>('saved')
   const [asc, setAsc] = useState(false)
   const [query, setQuery] = useState('')
-  const [flaggedMode, setFlaggedMode] = useState<'last' | 'inline' | 'hide'>('last')
+  const [bgMode, setBgMode] = useState<'last' | 'inline' | 'hide'>('last')
   const r = clear.result
   const s = r?.summary
-  const rb = s?.robust
 
   const rows = useMemo(() => {
     if (!r) return []
     const ql = query.trim().toLowerCase()
     const filtered = r.trials.filter(
       (t) =>
-        (flaggedMode !== 'hide' || !t.flagged) &&
+        (bgMode !== 'hide' || t.movable) &&
         (!ql ||
           t.nct_id.toLowerCase().includes(ql) ||
           (t.acronym ?? '').toLowerCase().includes(ql) ||
@@ -111,17 +254,16 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
           t.title.toLowerCase().includes(ql)),
     )
     return filtered.sort((a, b) => {
-      if (flaggedMode === 'last' && a.flagged !== b.flagged) return a.flagged ? 1 : -1
+      if (bgMode === 'last' && a.movable !== b.movable) return a.movable ? -1 : 1
       const va = sortValue(a, sortKey)
       const vb = sortValue(b, sortKey)
-      // Unknowns always sort last, whichever direction.
       if (va === null && vb === null) return 0
       if (va === null) return 1
       if (vb === null) return -1
       const c = va < vb ? -1 : va > vb ? 1 : 0
       return asc ? c : -c
     })
-  }, [r, query, flaggedMode, sortKey, asc])
+  }, [r, query, bgMode, sortKey, asc])
 
   const setSort = (k: SortKey) => {
     if (k === sortKey) setAsc(!asc)
@@ -130,8 +272,8 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
       setAsc(k === 'trial' || k === 'sponsor')
     }
   }
-  const th = (k: SortKey, label: string, cls = '') => (
-    <th className={`sortable ${cls}`} aria-sort={sortKey === k ? (asc ? 'ascending' : 'descending') : 'none'}>
+  const th = (k: SortKey, label: string, cls = '', title?: string) => (
+    <th className={`sortable ${cls}`} aria-sort={sortKey === k ? (asc ? 'ascending' : 'descending') : 'none'} title={title}>
       <button onClick={() => setSort(k)}>
         {label}
         <span className="sort-ind">{sortKey === k ? (asc ? '▲' : '▼') : ''}</span>
@@ -139,11 +281,14 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
     </th>
   )
 
-  const cap = rb?.plausible_T_cap_months ?? 120
-  const modified =
-    form.activation_lag !== DEFAULT_PARAMS.activation_lag ||
-    form.overlap_scale !== DEFAULT_PARAMS.overlap_scale ||
-    form.capacity_scale !== DEFAULT_PARAMS.capacity_scale
+  const cap = s?.assumptions.plausible_T_cap_months ?? 120
+  const modified = scenarioKey({ ...form, region: DEFAULT_SCENARIO.region }) !== scenarioKey(DEFAULT_SCENARIO)
+  const b = s ? betaInfo(s.assumptions) : null
+  const betaHint =
+    b && r?.params.beta === null && isNum(b.ci95[0])
+      ? `Blank = data estimate (${num(b.beta, 3)}, 95% CI ${num(b.ci95[0], 3)} to ${num(b.ci95[1], 3)}).`
+      : undefined
+  const nBackground = r ? r.trials.filter((t) => !t.movable).length : 0
 
   return (
     <section className="view">
@@ -151,8 +296,8 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
         <div>
           <h1>Clear the market</h1>
           <p className="lede">
-            Allocate every concurrent trial’s sites jointly, then compare enrollment times against each sponsor picking
-            its own sites independently. The difference is the coordination dividend.
+            Allocate every concurrent trial’s sites jointly, then compare enrollment times with the sites sponsors actually
+            registered. All allocations are evaluated under the same model.
           </p>
         </div>
       </div>
@@ -172,47 +317,14 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
           <button className="btn btn-primary btn-big" onClick={() => clear.run(form)} disabled={clear.loading}>
             {clear.loading ? 'Clearing…' : 'Clear the market'}
           </button>
-          {form.region === 'US' && <span className="muted small">US-wide clears take roughly 30–60 s.</span>}
+          <span className="muted small">Clears take about 15–25 s{form.region === 'US' ? ' (US-wide: about 25 s or more)' : ''}.</span>
         </div>
         <details className="assumptions" open={modified || undefined}>
-          <summary>
-            Assumptions {modified && <Badge tone="info">modified</Badge>}
-          </summary>
-          <div className="sliders">
-            <Slider
-              label="Activation lag"
-              hint="Months from site selection to first patient."
-              value={form.activation_lag}
-              min={2}
-              max={12}
-              step={1}
-              unit="mo"
-              onChange={(v) => setForm({ ...form, activation_lag: v })}
-            />
-            <Slider
-              label="Patient-pool overlap"
-              hint="Scales how much concurrent trials compete for the same eligible patients (0 = none)."
-              value={form.overlap_scale}
-              min={0}
-              max={2}
-              step={0.05}
-              unit="×"
-              onChange={(v) => setForm({ ...form, overlap_scale: v })}
-            />
-            <Slider
-              label="Site capacity"
-              hint="Multiplies every site’s concurrent-trial capacity."
-              value={form.capacity_scale}
-              min={0.5}
-              max={2}
-              step={0.05}
-              unit="×"
-              onChange={(v) => setForm({ ...form, capacity_scale: v })}
-            />
-          </div>
+          <summary>Assumptions {modified && <Badge tone="info">modified</Badge>}</summary>
+          <AssumptionsForm form={form} setForm={setForm} betaHint={betaHint} />
           <button
             className="btn btn-small"
-            onClick={() => setForm({ ...DEFAULT_PARAMS, region: form.region })}
+            onClick={() => setForm({ ...DEFAULT_SCENARIO, region: form.region })}
             disabled={!modified}
           >
             Reset to defaults
@@ -222,93 +334,62 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
 
       {clear.loading && (
         <Loading
-          label={`Clearing ${clear.pendingParams?.region}…`}
-          hint="Solving independent and coordinated allocations. Results below are from the previous run until this finishes."
+          label={`Clearing ${clear.pendingParams?.region}${clear.pendingParams?.sponsor ? ` · ${clear.pendingParams.sponsor}` : ''}…`}
+          hint="Solving registered, best-response, joint-optimum and no-loser allocations. Results below are from the previous run until this finishes."
         />
       )}
       {clear.error && !clear.loading && <ErrorBox error={clear.error} onRetry={() => clear.run(form)} />}
 
-      {r && s && rb && (
+      {r && s && (
         <>
-          <RunLine params={r.params} stale={clear.loading} extra={<span className="muted">{int(r.counts.trials)} trials · {int(r.counts.sites)} sites</span>} />
-          <div className="stats">
-            <Stat
-              emphasis
-              label="Median speedup"
-              value={times(rb.median_speedup)}
-              sub={<>Median per-trial T<sub>indep</sub> ÷ T<sub>coord</sub>, all {int(r.counts.trials)} trials</>}
-            />
-            <Stat
-              label="Trials that fill faster"
-              value={pct(rb.share_trials_faster)}
-              sub={<>{pct(rb.share_trials_slower)} fill slower; the rest unchanged</>}
-            />
-            <Stat
-              label="Coordination dividend"
-              value={
-                <>
-                  {int(rb.trimmed_dividend_trial_months)} <span className="unit">trial-months</span>
-                </>
-              }
-              sub={
-                <>
-                  Trimmed: {int(rb.trimmed_trials)} trials; {int(rb.flagged_trials)} with model times over {int(cap)} mo excluded
-                </>
-              }
-            />
-            <Stat
-              label="Price of anarchy"
-              value={times(rb.trimmed_poa)}
-              sub={<>Trimmed: total months independent ÷ coordinated</>}
-            />
-            <Stat
-              label="Dollar conversion"
-              value={money(s.dollars_direct)}
-              sub={
-                <>
-                  direct cost · {money(s.dollars_lost_sales)} lost-sales equivalent · from {int(s.dividend_days)} trial-days
-                </>
-              }
-            />
+          <RunLine
+            params={r.params}
+            stale={clear.loading}
+            extra={
+              <span className="muted">
+                {int(r.counts.movable_trials)} trials compared · {int(r.counts.trials)} in instance · {int(r.counts.sites)} sites
+              </span>
+            }
+          />
+          <HeadlineBlock r={r} />
+
+          <div className="card">
+            <h2>Where the gain comes from</h2>
+            <p className="muted small">
+              Five comparisons over the same {int(s.coord_vs_actual.trials)} trials. Ratio = total trial-months, baseline ÷
+              alternative. If “pure coordination” is near 1×, the headline gain comes from better site selection, which a
+              single sponsor could make alone.
+            </p>
+            <DecompositionTable r={r} />
+            {s.background_trials > 0 && (
+              <p className="muted small">
+                {int(s.background_trials)} background trials are held at their registered sites and excluded from every number.
+                Under the joint optimum with losers allowed, {int(s.background_worse_under_coord_free)} of them would be slower;
+                the headline allocation caps every trial, background included, at its registered time.
+              </p>
+            )}
           </div>
-          <Caveat>
-            <strong>Dollar caveat:</strong> {s.dollars_note}
-          </Caveat>
 
           <div className="card raw">
-            <div className="raw-grid small">
-              <div>
-                <span className="muted">Median enrollment time</span>
-                <div className="tnum">
-                  actual {num(rb.median_T_actual)} · independent {num(rb.median_T_indep)} · coordinated {num(rb.median_T_coord)} months
+            <h2>Assumptions used</h2>
+            <AssumptionsUsed a={s.assumptions} />
+            <h3>Calibration check</h3>
+            <CalibrationLine c={s.calibration_check} />
+            <h3>Solver</h3>
+            <div className="small tnum">
+              {Object.entries(s.solver).map(([k, st]) => (
+                <div key={k}>
+                  <span className="muted">{ALLOC_LABEL[k as AllocKey] ?? k}:</span> {num(st.seconds, 1)} s,{' '}
+                  {int(st.improvements)} improving moves
+                  {st.hit_time_limit && ' · stopped at time limit (feasible, not proven optimal)'}
                 </div>
-              </div>
-              <div>
-                <span className="muted">Untrimmed (all trials; dominated by {int(rb.flagged_trials)} flagged trials)</span>
-                <div className="tnum">
-                  PoA {times(s.poa)} · dividend {int(s.dividend_trial_months)} trial-months
-                </div>
-              </div>
-              <div>
-                <span className="muted">Coordinated vs actual CT.gov sites (untrimmed)</span>
-                <div className="tnum">
-                  PoA {times(s.poa_vs_actual)}
-                  {isNum(s.dividend_vs_actual_trial_months) && <> · {int(s.dividend_vs_actual_trial_months)} trial-months</>}
-                </div>
-              </div>
-              <div>
-                <span className="muted">Solver</span>
-                <div className="tnum">
-                  {num(s.solver.seconds, 1)} s, {int(s.solver.improvements)} improving moves
-                  {s.solver.hit_time_limit && ' · stopped at time limit (feasible, not proven optimal)'}
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
           <div className="card">
             <div className="table-tools">
-              <h2>Trials in the region</h2>
+              <h2>Trials</h2>
               <input
                 type="search"
                 placeholder="Filter by NCT, acronym, sponsor, title"
@@ -317,16 +398,14 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
                 aria-label="Filter trials"
               />
               <label className="check small">
-                Flagged trials
-                <select value={flaggedMode} onChange={(e) => setFlaggedMode(e.target.value as 'last' | 'inline' | 'hide')}>
+                Background trials ({nBackground})
+                <select value={bgMode} onChange={(e) => setBgMode(e.target.value as 'last' | 'inline' | 'hide')}>
                   <option value="last">sorted last</option>
                   <option value="inline">sorted inline</option>
                   <option value="hide">hidden</option>
                 </select>
               </label>
-              <span className="muted small">
-                {rows.length} shown · click a row for its price tags
-              </span>
+              <span className="muted small">{rows.length} shown · click a row for its price tags</span>
             </div>
             <div className="table-scroll">
               <table className="tbl tbl-trials">
@@ -335,16 +414,14 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
                     {th('trial', 'Trial')}
                     {th('sponsor', 'Sponsor')}
                     {th('target', 'Regional target', 'num')}
-                    {th('sites', 'Sites indep → coord', 'num')}
-                    {th('T_actual', 'T actual', 'num')}
-                    {th('T_indep', 'T indep', 'num')}
-                    {th('T_coord', 'T coord', 'num')}
+                    {th('sites', 'Sites', 'num', 'Registered sites in the region')}
+                    {T_COLS.map((k) => th(k, ALLOC_LABEL[k], 'num', ALLOC_HINT[k]))}
                     <th className="bar-col">
                       <span className="legend-inline small">
-                        <i className="sw sw-indep" /> indep <i className="sw sw-coord" /> coord
+                        <i className="sw sw-indep" /> reg. <i className="sw sw-coord" /> coord.
                       </span>
                     </th>
-                    {th('saved', 'Months saved', 'num')}
+                    {th('saved', 'Months saved', 'num', 'Registered minus coordinated (no losers)')}
                   </tr>
                 </thead>
                 <tbody>
@@ -353,7 +430,7 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
                     return (
                       <tr
                         key={t.nct_id}
-                        className="clickable"
+                        className={`clickable${t.movable ? '' : ' row-bg'}`}
                         onClick={() => onOpenTrial(t.nct_id)}
                         tabIndex={0}
                         onKeyDown={(e) => {
@@ -365,32 +442,29 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
                             <a href={ctgovUrl(t.nct_id)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
                               {t.acronym ?? t.nct_id}
                             </a>
-                            {t.flagged && (
-                              <Badge tone="warn" title={`Model time over ${int(cap)} months; treat as an estimate failure until reviewed`}>
-                                needs review
-                              </Badge>
-                            )}
+                            <BackgroundBadge t={t} />
                           </div>
                           <div className="muted small trunc" title={t.title}>
                             {t.acronym ? `${t.nct_id} · ` : ''}
                             {phaseLabel(t.phases)}
                           </div>
+                          <EligBadge source={t.eligibility_source} />
                         </td>
                         <td className="sponsor-cell" title={t.sponsor ?? ''}>
                           {t.sponsor ?? '—'}
                         </td>
                         <td className="num">{num(t.target_region)}</td>
-                        <td className="num">
-                          {t.sites_indep} → {t.sites_coord}
-                        </td>
-                        <td className="num">{num(t.T_actual)}</td>
-                        <td className="num">{num(t.T_indep)}</td>
-                        <td className="num">{num(t.T_coord)}</td>
+                        <td className="num">{int(t.sites_actual)}</td>
+                        {T_COLS.map((k) => (
+                          <td key={k} className="num">
+                            {num(tOf(t, k))}
+                          </td>
+                        ))}
                         <td className="bar-col">
-                          <TimeBar indep={t.T_indep} coord={t.T_coord} cap={cap} />
+                          <TimeBar base={t.T_actual} coord={t.T_coord} cap={cap} />
                         </td>
-                        <td className={`num ${d !== null && d > 0 ? 'pos' : d !== null && d < 0 ? 'neg' : ''}`}>
-                          {d === null ? '—' : `${d > 0 ? '+' : ''}${num(d)}`}
+                        <td className={`num ${t.movable && d !== null && d > 0 ? 'pos' : ''}`}>
+                          {t.movable ? signedMonths(d) : <span className="muted">excluded</span>}
                         </td>
                       </tr>
                     )
@@ -399,9 +473,10 @@ export default function ClearView({ clear, regions, form, setForm, onOpenTrial }
               </table>
             </div>
             <p className="muted small">
-              T = model-estimated months to fill the trial’s regional enrollment target (regional target = total
-              enrollment pro-rated by the share of the trial’s CT.gov sites in this region). Bars are scaled to {int(cap)} months; › marks a value beyond that.
-              “Needs review” marks an implausible model time (over {int(cap)} months), excluded from the trimmed headline.
+              T = model-estimated months to fill the trial’s regional enrollment target (total enrollment pro-rated by the
+              share of its CT.gov sites in the region). Months saved = Registered − Coordinated (no losers). Bars are scaled to{' '}
+              {int(cap)} months; › marks a value beyond that. “Background (excluded)” marks an implausible model time (over{' '}
+              {int(cap)} months): the trial stays at its registered sites as congestion and is left out of every number.
               Unknown values show “—”.
             </p>
           </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, type CompileResult, type Status } from '../api'
+import { api, type BacktestCell, type CompileResult, type CongestionTest, type Status } from '../api'
 import { Badge, Caveat, ErrorBox, Loading, Stat } from '../components'
 import { int, isNum, num, pct } from '../format'
 
@@ -53,6 +53,18 @@ export default function ModelView() {
 
   const m = status?.model
   const bt = m?.backtest
+  const [cong, setCong] = useState<CongestionTest | null>(null)
+  const [congErr, setCongErr] = useState<string | null>(null)
+  useEffect(() => {
+    const ctl = new AbortController()
+    api
+      .congestion(ctl.signal)
+      .then(setCong)
+      .catch((e: unknown) => {
+        if (!ctl.signal.aborted) setCongErr(e instanceof Error ? e.message : String(e))
+      })
+    return () => ctl.abort()
+  }, [tick])
 
   return (
     <section className="view">
@@ -112,35 +124,50 @@ export default function ModelView() {
             {!status.db && <p className="note small">Database not built yet.</p>}
           </div>
 
+          <CongestionCard data={cong} error={congErr} />
+
           <div className="card">
             <h2>Backtest: predicting enrollment duration</h2>
             {bt ? (
               <>
                 <p className="muted small">
                   Fit on trials before {bt.cutoff} ({int(bt.train_trials)} trials), scored on {int(bt.test_trials)} later
-                  trials. Error is |log(predicted / actual)| of enrollment duration; lower is better.
+                  trials. Error = median |log(predicted / actual)| of enrollment duration, lower is better (in brackets as a
+                  typical “off by ×” factor). Bias = median signed log error; negative means the predictor expects enrollment
+                  to finish faster than it did.
                 </p>
-                <div className="stats stats-3">
-                  <Stat
-                    label="Model, median abs log error"
-                    value={num(bt.median_abs_log_error_model, 2)}
-                    sub={<>typical prediction off by a factor of {num(Math.exp(bt.median_abs_log_error_model), 1)}</>}
-                  />
-                  <Stat
-                    label="Naive baseline, median abs log error"
-                    value={num(bt.median_abs_log_error_naive, 2)}
-                    sub={<>off by a factor of {num(Math.exp(bt.median_abs_log_error_naive), 1)}</>}
-                  />
-                  <Stat
-                    label="Test trials where model beats naive"
-                    value={pct(bt.model_beats_naive_share)}
-                    sub={isNum(bt.median_share_of_test_sites_seen_in_train) ? <>median {pct(bt.median_share_of_test_sites_seen_in_train)} of a test trial’s sites seen in training</> : undefined}
-                  />
+                {bt.by_model ? (
+                  <BacktestTable byModel={bt.by_model} />
+                ) : (
+                  <p className="muted">Per-model breakdown not available.</p>
+                )}
+                <div className="kv-row small">
+                  {bt.calibration_slope_industry_p23 && (
+                    <span>
+                      Calibration slope, industry Ph II/III:{' '}
+                      <strong className="tnum">
+                        {num(bt.calibration_slope_industry_p23.slope, 2)} ± {num(bt.calibration_slope_industry_p23.se, 2)}
+                      </strong>{' '}
+                      <span className="muted">(1 = predictions scale correctly; n = {int(bt.calibration_slope_industry_p23.n)})</span>
+                    </span>
+                  )}
+                  {isNum(bt.level_log_bias_industry_p23) && (
+                    <span>Level correction applied: log bias {num(bt.level_log_bias_industry_p23, 3)}</span>
+                  )}
+                  {bt.low_history_rule && (
+                    <span>
+                      Low-history rule: {int(bt.low_history_rule.n_below)} sites below the prior’s{' '}
+                      {num(bt.low_history_rule.prior_quantile * 100, 0)}th-percentile rate ({num(bt.low_history_rule.rate, 3)}{' '}
+                      pts/mo) are capped there
+                    </span>
+                  )}
                 </div>
                 <p className="note small">
-                  Honest read: the model is better than the naive baseline more often than not, but individual predictions
-                  remain coarse (a factor of about {num(Math.exp(bt.median_abs_log_error_model), 1)} at the median). That is
-                  why the headline uses medians and a trimmed dividend rather than per-trial point estimates.
+                  Honest read: for industry Phase II/III trials the fitted model has lower error than the raw site rates and the
+                  naive baseline, and its bias is near zero where the raw rates were strongly optimistic. Individual predictions
+                  are still coarse (typically off by a factor of{' '}
+                  {num(Math.exp(bt.by_model?.model?.industry_p23?.median_abs_log_error ?? bt.median_abs_log_error_model), 1)}),
+                  so results are reported as ratios and medians across trials.
                   {bt.note && <> Backend note: “{bt.note}”.</>}
                 </p>
               </>
@@ -240,7 +267,7 @@ export default function ModelView() {
             <div className="kv-row">
               <span>
                 Eligible fraction{' '}
-                <strong className="tnum">{compiled.criteria.length > 0 ? pct(compiled.eligible_fraction, 1) : '—'}</strong>{' '}
+                <strong className="tnum">{compiled.eligible_fraction === null ? '—' : pct(compiled.eligible_fraction, 1)}</strong>{' '}
                 <span className="muted small">of the synthetic NSCLC population</span>
               </span>
               <span className="muted small">parser: {compiled.parser}</span>
@@ -248,8 +275,7 @@ export default function ModelView() {
             </div>
             {compiled.criteria.length === 0 ? (
               <p className="note small">
-                No criteria were recognized. The backend reports {pct(compiled.eligible_fraction)} eligible in that case,
-                which means “nothing parsed”, not “everyone qualifies”.
+                No criteria were recognized, so the eligible fraction is unknown (not 100%).
               </p>
             ) : (
               <div className="table-scroll">
@@ -290,5 +316,219 @@ export default function ModelView() {
         </Caveat>
       </div>
     </section>
+  )
+}
+
+const MODEL_LABEL: Record<string, string> = {
+  model: 'Fitted model (capped low-history rates)',
+  raw: 'Raw site rates',
+  naive: 'Naive baseline',
+}
+const SLICE_LABEL: Record<string, string> = {
+  industry_p23: 'Industry Phase II/III',
+  industry_p3: 'Industry Phase III',
+  all: 'All test trials',
+}
+
+function signedLog(x: number): string {
+  return `${x > 0 ? '+' : x < 0 ? '−' : ''}${num(Math.abs(x), 2)}`
+}
+
+function BacktestTable({ byModel }: { byModel: Record<string, Record<string, BacktestCell>> }) {
+  const models = ['model', 'raw', 'naive'].filter((k) => byModel[k])
+  const slices = ['industry_p23', 'industry_p3', 'all']
+  return (
+    <div className="table-scroll">
+      <table className="tbl">
+        <thead>
+          <tr>
+            <th />
+            {slices.map((sl) => (
+              <th key={sl} className="num" colSpan={2}>
+                {SLICE_LABEL[sl]}
+              </th>
+            ))}
+          </tr>
+          <tr>
+            <th>Predictor</th>
+            {slices.flatMap((sl) => [
+              <th key={`${sl}-e`} className="num">
+                Error
+              </th>,
+              <th key={`${sl}-b`} className="num">
+                Bias
+              </th>,
+            ])}
+          </tr>
+        </thead>
+        <tbody>
+          {models.map((mk) => (
+            <tr key={mk} className={mk === 'model' ? 'row-on' : ''}>
+              <th scope="row">{MODEL_LABEL[mk] ?? mk}</th>
+              {slices.flatMap((sl) => {
+                const c = byModel[mk]?.[sl]
+                return [
+                  <td key={`${sl}-e`} className="num nowrap">
+                    {c ? (
+                      <>
+                        {num(c.median_abs_log_error, 2)} <span className="muted">(×{num(Math.exp(c.median_abs_log_error), 1)})</span>
+                      </>
+                    ) : (
+                      '—'
+                    )}
+                  </td>,
+                  <td key={`${sl}-b`} className="num nowrap">
+                    {c ? signedLog(c.median_signed_log_bias) : '—'}
+                  </td>,
+                ]
+              })}
+            </tr>
+          ))}
+          <tr>
+            <td className="muted small">Test trials (n)</td>
+            {slices.flatMap((sl) => [
+              <td key={`${sl}-n`} className="num muted small">
+                {int(byModel.model?.[sl]?.n)}
+              </td>,
+              <td key={`${sl}-x`} />,
+            ])}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+const SPEC_LABEL: Record<string, string> = {
+  within: 'Within site (primary)',
+  site_fe: 'Site fixed effects',
+  pooled: 'Pooled (across sites)',
+}
+const EXPOSURE_LABEL: Record<string, string> = {
+  overlap: 'log(1 + Σ overlap)',
+  start: 'competitors at start',
+  avg: 'average competitors',
+}
+
+function CongestionCard({ data, error }: { data: CongestionTest | null; error: string | null }) {
+  if (error)
+    return (
+      <div className="card">
+        <h2>Does congestion exist?</h2>
+        <ErrorBox error={error} />
+      </div>
+    )
+  if (!data) return <Loading label="Loading congestion test…" />
+  const prim = data.results[data.primary]
+  const implied = data.model_implied_coef_overlap
+  const lo = Math.min(implied, prim?.ci95[0] ?? 0, -0.2) - 0.1
+  const hi = Math.max(prim?.ci95[1] ?? 0, 0.2) + 0.1
+  const x = (v: number) => ((v - lo) / (hi - lo)) * 100
+  const outside = prim ? implied < prim.ci95[0] || implied > prim.ci95[1] : false
+  const pooled = data.results.pooled_overlap
+  return (
+    <div className="card">
+      <div className="section-head">
+        <h2>Does congestion exist?</h2>
+        {data.verdict && <Badge tone="neutral">{data.verdict}</Badge>}
+      </div>
+      <p className="small">
+        Within-site regression of enrollment rates on competing trials with overlapping eligibility at the same site,{' '}
+        {int(data.n_trials)} completed trials ({int(data.n_trial_sites)} trial–site rows). The clearing model had assumed a
+        coefficient of <strong>{num(implied, 0)}</strong> on log(1 + Σ overlap).
+      </p>
+      {prim && (
+        <>
+          <div
+            className="coefplot"
+            role="img"
+            aria-label={`Within-site estimate ${num(prim.coef, 3)}, 95% CI ${num(prim.ci95[0], 3)} to ${num(prim.ci95[1], 3)}; model assumed ${implied}`}
+          >
+            <div className="coef-axis" />
+            <div className="coef-zero" style={{ left: `${x(0)}%` }} />
+            <div className="coef-ci" style={{ left: `${x(prim.ci95[0])}%`, width: `${x(prim.ci95[1]) - x(prim.ci95[0])}%` }} />
+            <div className="coef-dot" style={{ left: `${x(prim.coef)}%` }} />
+            <div className="coef-assumed" style={{ left: `${x(implied)}%` }} />
+            <span className="coef-lab coef-lab-top coef-lab-assumed" style={{ left: `${x(implied)}%` }}>
+              model assumed {num(implied, 0)}
+            </span>
+            <span className="coef-lab coef-lab-top" style={{ left: `${x(prim.coef)}%` }}>
+              estimate {num(prim.coef, 3)}
+            </span>
+          </div>
+          <div className="stats stats-3">
+            <div className="stat">
+              <div className="stat-label">Within-site estimate</div>
+              <div className="stat-value tnum">{num(prim.coef, 3)}</div>
+              <div className="stat-sub tnum">
+                95% CI {num(prim.ci95[0], 3)} to {num(prim.ci95[1], 3)} · p = {num(prim.p, 2)}
+              </div>
+            </div>
+            <div className="stat">
+              <div className="stat-label">Model had assumed</div>
+              <div className="stat-value tnum">{num(implied, 0)}</div>
+              <div className="stat-sub">{outside ? 'Outside the 95% CI' : 'Inside the 95% CI'}</div>
+            </div>
+            <div className="stat">
+              <div className="stat-label">Observations</div>
+              <div className="stat-value tnum">{int(prim.n_rows)}</div>
+              <div className="stat-sub">{prim.clusters ? `${int(prim.clusters)} clusters` : 'rows'}</div>
+            </div>
+          </div>
+          <p className="note small">
+            Plain reading: within the same site, busy periods with overlapping competitors don’t measurably slow enrollment.
+            Across sites, busier sites are slower per trial
+            {pooled && (
+              <>
+                {' '}
+                (pooled coefficient {num(pooled.coef, 3)}, 95% CI {num(pooled.ci95[0], 3)} to {num(pooled.ci95[1], 3)})
+              </>
+            )}
+            , but that comparison is confounded with site type.
+          </p>
+        </>
+      )}
+      <details>
+        <summary className="small">All specifications</summary>
+        <div className="table-scroll">
+          <table className="tbl tbl-compact">
+            <thead>
+              <tr>
+                <th>Design</th>
+                <th>Exposure</th>
+                <th className="num">Coef</th>
+                <th className="num">95% CI</th>
+                <th className="num">p</th>
+                <th className="num">n</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.keys(SPEC_LABEL).flatMap((sp) =>
+                Object.keys(EXPOSURE_LABEL).map((ex) => {
+                  const k = `${sp}_${ex}`
+                  const rr = data.results[k]
+                  if (!rr) return null
+                  return (
+                    <tr key={k} className={k === data.primary ? 'row-on' : ''}>
+                      <td>{SPEC_LABEL[sp]}</td>
+                      <td>{EXPOSURE_LABEL[ex]}</td>
+                      <td className="num">{num(rr.coef, 4)}</td>
+                      <td className="num nowrap">
+                        {num(rr.ci95[0], 4)} to {num(rr.ci95[1], 4)}
+                      </td>
+                      <td className="num">{num(rr.p, 3)}</td>
+                      <td className="num">{int(rr.n_rows)}</td>
+                    </tr>
+                  )
+                }),
+              )}
+            </tbody>
+          </table>
+        </div>
+        <p className="muted small">
+          Only the overlap exposure is on the same scale as the model’s assumed −1; competitor counts are per trial.
+        </p>
+      </details>
+    </div>
   )
 }

@@ -1,20 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { api, DEFAULT_PARAMS, type ClearParams, type ClearResult } from './api'
+import { api, DEFAULT_SCENARIO, REGENERON_PRESET, type ClearResult, type Scenario } from './api'
 import { useElapsed } from './components'
 import MapView from './views/MapView'
 import ClearView from './views/ClearView'
 import PriceTagsView from './views/PriceTagsView'
 import TermsView from './views/TermsView'
 import ModelView from './views/ModelView'
+import RobustnessView from './views/RobustnessView'
+import PortfolioView from './views/PortfolioView'
 
 const TABS = [
   { id: 'map', label: 'Congestion map' },
   { id: 'clear', label: 'Clear it' },
+  { id: 'robustness', label: 'Robustness' },
+  { id: 'portfolio', label: 'Portfolio' },
   { id: 'prices', label: 'Price tags' },
   { id: 'terms', label: 'Pre-cleared terms' },
   { id: 'model', label: 'Model & data' },
 ] as const
 type TabId = (typeof TABS)[number]['id']
+
+// Deep link #portfolio/regeneron opens the Regeneron Sept 2024 portfolio demo instead of the default market.
+const INITIAL_SCENARIO: Scenario = /^#portfolio\/regeneron/i.test(window.location.hash) ? REGENERON_PRESET : DEFAULT_SCENARIO
 
 function tabFromHash(): TabId {
   const h = window.location.hash.replace('#', '').split('/')[0]
@@ -24,21 +31,21 @@ function tabFromHash(): TabId {
 export interface ClearState {
   result: ClearResult | null
   /** Params the cached result was solved with. */
-  solvedParams: ClearParams | null
+  solvedParams: Scenario | null
   loading: boolean
-  pendingParams: ClearParams | null
+  pendingParams: Scenario | null
   error: string | null
   elapsed: number
-  run: (p: ClearParams) => void
+  run: (p: Scenario) => void
 }
 
 export default function App() {
   const [tab, setTab] = useState<TabId>(tabFromHash)
   const [regions, setRegions] = useState<string[]>(['US-Northeast', 'US-Midwest', 'US-South', 'US-West', 'US'])
-  const [form, setForm] = useState<ClearParams>(DEFAULT_PARAMS)
+  const [form, setForm] = useState<Scenario>(INITIAL_SCENARIO)
   const [result, setResult] = useState<ClearResult | null>(null)
-  const [solvedParams, setSolvedParams] = useState<ClearParams | null>(null)
-  const [pendingParams, setPendingParams] = useState<ClearParams | null>(null)
+  const [solvedParams, setSolvedParams] = useState<Scenario | null>(null)
+  const [pendingParams, setPendingParams] = useState<Scenario | null>(null)
   const [error, setError] = useState<string | null>(null)
   // Deep link: #prices/NCT01234567 preselects a trial for the price-tag view.
   const [selectedTrial, setSelectedTrial] = useState<string | null>(
@@ -60,7 +67,7 @@ export default function App() {
     window.scrollTo({ top: 0 })
   }, [])
 
-  const run = useCallback((p: ClearParams) => {
+  const run = useCallback((p: Scenario) => {
     abortRef.current?.abort()
     const ctl = new AbortController()
     abortRef.current = ctl
@@ -94,7 +101,7 @@ export default function App() {
       .catch(() => {
         /* keep the built-in list */
       })
-    run(DEFAULT_PARAMS)
+    run(INITIAL_SCENARIO)
     return () => ctl.abort()
   }, [run])
 
@@ -125,6 +132,8 @@ export default function App() {
           ) : solvedParams ? (
             <span>
               <span className="dot dot-ok" /> Cleared {solvedParams.region}
+              {solvedParams.sponsor ? ` · ${solvedParams.sponsor}` : ''}
+              {solvedParams.as_of ? ` · ${solvedParams.as_of}` : ''}
             </span>
           ) : error ? (
             <span>
@@ -151,6 +160,10 @@ export default function App() {
         {tab === 'map' && <MapView clear={clear} />}
         {tab === 'clear' && (
           <ClearView clear={clear} regions={regions} form={form} setForm={setForm} onOpenTrial={openTrial} />
+        )}
+        {tab === 'robustness' && <RobustnessView clear={clear} />}
+        {tab === 'portfolio' && (
+          <PortfolioView clear={clear} regions={regions} form={form} setForm={setForm} onOpenTrial={openTrial} />
         )}
         {tab === 'prices' && <PriceTagsView clear={clear} selected={selectedTrial} setSelected={setSelectedTrial} />}
         {tab === 'terms' && <TermsView clear={clear} />}

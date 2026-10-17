@@ -1,4 +1,4 @@
-import type { Site, Trial } from './api'
+import type { AllocKey, Site, Trial } from './api'
 
 const DASH = '—'
 
@@ -54,11 +54,38 @@ export function ctgovUrl(nct: string): string {
   return `https://clinicaltrials.gov/study/${encodeURIComponent(nct)}`
 }
 
-export const ALLOC_LABEL = {
-  actual: 'Actual (CT.gov)',
-  indep: 'Independent',
-  coord: 'Coordinated',
-} as const
+export const ALLOC_LABEL: Record<AllocKey, string> = {
+  actual: 'Registered',
+  indep: 'Best response',
+  coord: 'Coordinated (no losers)',
+  coord_free: 'Joint optimum',
+  coord_nl_indep: 'Pure coordination',
+}
+
+export const ALLOC_HINT: Record<AllocKey, string> = {
+  actual: 'The site lists sponsors registered on ClinicalTrials.gov',
+  indep: 'Each trial picks its best sites, ignoring the others',
+  coord: 'Joint optimum with no trial slower than its registered sites (headline)',
+  coord_free: 'Joint optimum with no participation constraint: some trials may be slower',
+  coord_nl_indep: 'Joint optimum with no trial slower than its own best response',
+}
+
+export function tOf(t: Trial, k: AllocKey): number | null {
+  return t[`T_${k}`]
+}
+
+export function sitesOf(t: Trial, k: AllocKey): number {
+  return t[`sites_${k}`]
+}
+
+export function loadOf(s: Site, k: AllocKey): number {
+  return s[`load_${k}`]
+}
+
+export function signedMonths(x: number | null | undefined): string {
+  if (!isNum(x)) return DASH
+  return `${x > 0 ? '+' : x < 0 ? '−' : ''}${num(Math.abs(x))}`
+}
 
 export function phaseLabel(phases: string[] | null | undefined): string {
   if (!phases || phases.length === 0) return DASH
