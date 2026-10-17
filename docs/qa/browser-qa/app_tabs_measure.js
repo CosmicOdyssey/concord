@@ -210,8 +210,11 @@ async function newPage(browser, log) {
         process.stdout.write(`${a.id} -> ${b.id}: first ${first.heading_ms} ms, revisit ${again.heading_ms} ms\n`)
       }
     }
+  } catch (e) {
+    console.error('measure failed:', e)
+    log.pageerrors.push(`script: ${e}`)
   } finally {
-    await browser.close()
+    await browser.close().catch(() => undefined)
   }
   const out = { label: LABEL, base: BASE, reduced: REDUCED, when: new Date().toISOString(), rows, log }
   fs.writeFileSync(path.join(OUT, `${LABEL}.json`), JSON.stringify(out, null, 1))

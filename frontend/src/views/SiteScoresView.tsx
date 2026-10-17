@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Banner, Details, ErrorBox, Gloss, InfoTip, KeyFigure, Loading, PageHead, Qualifier, Section } from '../components'
 import { useDensity } from '../density'
-import { useTabActive } from '../tabActive'
+import { useTabSignal, whenShown } from '../tabActive'
 import { ctgovUrl, int, phaseLabel } from '../format'
 import {
   fixed,
@@ -184,31 +184,33 @@ export default function SiteScoresView() {
   const loadedId = detail.status === 'ok' ? detail.data.site.site_id : null
   const ready = summary.status === 'ok' // the breakdown window exists only once the summary has loaded
   // Kept mounted behind another tab, the view waits until it is shown to scroll.
-  const active = useTabActive()
+  const tab = useTabSignal()
   useEffect(() => {
-    if (!scrollOnLoad.current || !ready || !active || loadedId === null || loadedId !== selected) return
-    const el = breakdownRef.current
-    if (!el) return
-    scrollOnLoad.current = false
-    el.scrollIntoView({ block: 'start' })
-    // The charts above size themselves after the first paint and can push the window down: scroll once more,
-    // unless the reader has started scrolling.
-    const id = window.setTimeout(() => {
-      const top = el.getBoundingClientRect().top
-      if (top < -2 || top > 160) el.scrollIntoView({ block: 'start' })
-    }, 300)
-    const cancel = () => window.clearTimeout(id)
-    const opts = { once: true, passive: true } as const
-    window.addEventListener('wheel', cancel, opts)
-    window.addEventListener('touchstart', cancel, opts)
-    window.addEventListener('keydown', cancel, { once: true })
-    return () => {
-      cancel()
-      window.removeEventListener('wheel', cancel)
-      window.removeEventListener('touchstart', cancel)
-      window.removeEventListener('keydown', cancel)
-    }
-  }, [loadedId, selected, ready, active])
+    if (!scrollOnLoad.current || !ready || loadedId === null || loadedId !== selected) return
+    return whenShown(tab, () => {
+      const el = breakdownRef.current
+      if (!el) return
+      scrollOnLoad.current = false
+      el.scrollIntoView({ block: 'start' })
+      // The charts above size themselves after the first paint and can push the window down: scroll once more,
+      // unless the reader has started scrolling.
+      const id = window.setTimeout(() => {
+        const top = el.getBoundingClientRect().top
+        if (top < -2 || top > 160) el.scrollIntoView({ block: 'start' })
+      }, 300)
+      const cancel = () => window.clearTimeout(id)
+      const opts = { once: true, passive: true } as const
+      window.addEventListener('wheel', cancel, opts)
+      window.addEventListener('touchstart', cancel, opts)
+      window.addEventListener('keydown', cancel, { once: true })
+      return () => {
+        cancel()
+        window.removeEventListener('wheel', cancel)
+        window.removeEventListener('touchstart', cancel)
+        window.removeEventListener('keydown', cancel)
+      }
+    })
+  }, [loadedId, selected, ready, tab])
   useEffect(() => {
     const on = () => {
       const id = siteFromHash()

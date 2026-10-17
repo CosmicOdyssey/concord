@@ -5,7 +5,7 @@ import { DENSITY_TOGGLE_ENABLED, DensityControl } from './density'
 import { preloadable } from './lazyView'
 import { NEEDS_CLEAR, RESEARCH_TABS, researchTab, type ResearchTabId } from './routes'
 import { skipTo } from './skip'
-import { TabActiveContext } from './tabActive'
+import { createTabSignal, TabSignalContext, type TabSignalControl } from './tabActive'
 import { ThemeControl } from './theme'
 import { useActiveTabScroll } from './useActiveTabScroll'
 import FindingsView from './views/FindingsView'
@@ -241,40 +241,56 @@ export default function App() {
   const hashMem = useRef(new Map<ViewId, string>())
   const intent = useRef<SwitchIntent | null>(null)
   const panes = useRef(new Map<PaneId, HTMLDivElement>())
+  // Each view's on-show signal (tabActive.ts): a subscription, so a switch does not re-render the views.
+  const [signals] = useState<ReadonlyMap<PaneId, TabSignalControl>>(() => new Map(PANES.map((id) => [id, createTabSignal(id === INITIAL_ROUTE.tab)])))
+
+  // Route to an address: switch views (remembering where the old one was), or follow a new link inside the view on
+  // show. Only refs and state setters, so it never changes.
+  const routed = useRef<string | null>(null)
+  const route = useCallback((hash: string, oldHash: string) => {
+    const r = parseHash(hash)
+    if (r.tab !== tabRef.current) {
+      // Leaving the view on screen: remember where it was and the address it had.
+      const from = shownRef.current
+      if (from !== 'home') scrollMem.current.set(from, window.scrollY)
+      hashMem.current.set(tabRef.current, oldHash)
+      const back = seenRef.current.has(r.tab) && (plainLink(r.tab, hash) || hashMem.current.get(r.tab) === hash)
+      // The landing page scrolls itself (to the top, or to a named section).
+      const base = r.tab === 'home' ? (r.arg ? null : 0) : from === 'home' ? 0 : topUnderHeader()
+      intent.current = { to: r.tab, restore: back, base }
+    } else if (!(r.tab === 'home' && r.arg)) {
+      // A new link inside the view on show (another trial, another finding): its top, as before.
+      window.scrollTo({ top: 0 })
+    }
+    tabRef.current = r.tab
+    setTab(r.tab)
+    if (r.sub) setSub(r.sub)
+    const nct = trialArg(r)
+    if (nct) setSelectedTrial(nct)
+    if (regeneronLink(r)) {
+      presetRequest.current = REGENERON_PRESET
+      setForm(REGENERON_PRESET)
+      setPresetTick((x) => x + 1)
+    }
+    // A finding to bring into view; plain #findings keeps the same state, so the kept Findings view does not re-render.
+    if (r.tab === 'findings') setFindingFocus((f) => (r.arg === null && f.id === null ? f : { id: r.arg, n: f.n + 1 }))
+    if (r.tab === 'home') setLandingFocus((f) => ({ id: r.arg, n: f.n + 1 }))
+  }, [])
 
   useEffect(() => {
     const onHash = (e: HashChangeEvent) => {
       const hash = hashOf(e.newURL)
-      const r = parseHash(hash)
-      if (r.tab !== tabRef.current) {
-        // Leaving the view on screen: remember where it was and the address it had.
-        const from = shownRef.current
-        if (from !== 'home') scrollMem.current.set(from, window.scrollY)
-        hashMem.current.set(tabRef.current, hashOf(e.oldURL))
-        const back = seenRef.current.has(r.tab) && (plainLink(r.tab, hash) || hashMem.current.get(r.tab) === hash)
-        // The landing page scrolls itself (to the top, or to a named section).
-        const base = r.tab === 'home' ? (r.arg ? null : 0) : from === 'home' ? 0 : topUnderHeader()
-        intent.current = { to: r.tab, restore: back, base }
-      } else if (!(r.tab === 'home' && r.arg)) {
-        // A new link inside the view on show (another trial, another finding): its top, as before.
-        window.scrollTo({ top: 0 })
+      // The tab bar routes at once (the hashchange event can come tens of ms later); this is its echo.
+      if (routed.current === hash) {
+        routed.current = null
+        return
       }
-      tabRef.current = r.tab
-      setTab(r.tab)
-      if (r.sub) setSub(r.sub)
-      const nct = trialArg(r)
-      if (nct) setSelectedTrial(nct)
-      if (regeneronLink(r)) {
-        presetRequest.current = REGENERON_PRESET
-        setForm(REGENERON_PRESET)
-        setPresetTick((x) => x + 1)
-      }
-      if (r.tab === 'findings') setFindingFocus((f) => ({ id: r.arg, n: f.n + 1 }))
-      if (r.tab === 'home') setLandingFocus((f) => ({ id: r.arg, n: f.n + 1 }))
+      routed.current = null
+      route(hash, hashOf(e.oldURL))
     }
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
-  }, [])
+  }, [route])
 
   // The new view is in the page (same commit), before paint: put the scroll where it belongs, and keep the view's own
   // entrance fades (the Terms step panel) still while the whole view fades in.
@@ -298,6 +314,12 @@ export default function App() {
     }
   }, [shown])
 
+  // After the scroll is in place: tell each view whether it is on show (a view shown again runs its pending work:
+  // a deep-link scroll, a map resize).
+  useLayoutEffect(() => {
+    signals.forEach((sig, id) => sig.set(id === shown && !showSlow))
+  }, [signals, shown, showSlow])
+
   // Fetch the main tabs' code once the first page has painted and the browser is idle.
   useEffect(() => {
     const all = () => Object.values(PRELOAD).forEach((f) => void f?.())
@@ -314,15 +336,21 @@ export default function App() {
     document.title = tabLabel ? `${tabLabel} · Concord` : 'Concord'
   }, [tabLabel])
 
-  // The address bar is the router: a tab sets its link and the hashchange handler above switches. The tab already on
-  // show (same address) goes back to its top.
+  // A tab sets its link in the address bar and switches at once. The tab already on show (same address) goes back to
+  // its top.
   const go = useCallback(
     (t: TabId) => {
       const hash = t === 'research' ? `#research/${sub}` : `#${t}`
-      if (window.location.hash === hash) window.scrollTo({ top: 0 })
-      else window.location.hash = hash
+      const old = window.location.hash
+      if (old === hash) {
+        window.scrollTo({ top: 0 })
+        return
+      }
+      routed.current = hash
+      window.location.hash = hash
+      route(hash, old)
     },
-    [sub],
+    [sub, route],
   )
 
   const goSub = useCallback((s: ResearchTabId) => {
@@ -513,7 +541,7 @@ export default function App() {
                   data-view={id}
                   hidden={!on}
                 >
-                  <TabActiveContext value={on}>{view(id)}</TabActiveContext>
+                  <TabSignalContext value={signals.get(id)!}>{view(id)}</TabSignalContext>
                 </div>
               )
             })}
