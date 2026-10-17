@@ -8,6 +8,9 @@
 const fs = require('fs')
 const path = require('path')
 const { launch, sleep, layoutCheck, showStep } = require('./lib')
+// termsProposalApi.sample reads a 404 from /proposal-sample as 'this trial ships no synthetic sample' (only
+// NCT05800015 does), so that one 404, and Chrome's console line for it, are expected and not counted.
+const noSample404 = (url, status) => status === 404 && /\/api\/terms-flow\/[^/]+\/proposal-sample(\?|$)/.test(url)
 
 const BASE = process.argv[2] || 'http://localhost:5213'
 const OUT = process.argv[3] || 'C:/Users/micha/Projects/concord/data/work/R/terms'
@@ -40,9 +43,9 @@ async function ready(page) {
   const log = { console: [], pageerrors: [], failed: [], runs: {} }
   const open = async (name, width, { theme = 'light', density = 'simple', hash = `#terms-flow/${NCT}`, clear = true, touch = false } = {}) => {
     const page = await browser.newPage()
-    page.on('console', (m) => (m.type() === 'error' || m.type() === 'warning') && log.console.push(`${name}: ${m.text()}`))
+    page.on('console', (m) => (m.type() === 'error' || m.type() === 'warning') && !(/status of 404/.test(m.text()) && noSample404(m.location()?.url ?? '', 404)) && log.console.push(`${name}: ${m.text()}`))
     page.on('pageerror', (e) => log.pageerrors.push(`${name}: ${e}`))
-    page.on('response', (r) => r.url().includes('/api/') && r.status() >= 400 && log.failed.push(`${name}: ${r.status()} ${r.url()}`))
+    page.on('response', (r) => r.url().includes('/api/') && r.status() >= 400 && !noSample404(r.url(), r.status()) && log.failed.push(`${name}: ${r.status()} ${r.url()}`))
     await page.evaluateOnNewDocument(
       (theme, density, clear) => {
         try {
@@ -223,7 +226,8 @@ async function ready(page) {
         small: [...document.querySelectorAll('.tf button, .tf a.btn, .tf select, .tf input:not([type="checkbox"]), .tf .tf-check, .tf summary')]
           .filter((e) => e.getBoundingClientRect().height > 0)
           .map((e) => ({ e: `${e.tagName}.${e.className}`.slice(0, 40), h: Math.round(e.getBoundingClientRect().height) }))
-          .filter((x) => x.h < 44 && !/hc-trigger|hc-info/.test(x.e)),
+          // .sr-only: a visually hidden control a visible button drives (the proposal's file input, tabIndex -1).
+          .filter((x) => x.h < 44 && !/hc-trigger|hc-info|sr-only/.test(x.e)),
       }))
       targets.coarse = t.coarse
       targets.small.push(...t.small.map((x) => ({ ...x, step: n })))
