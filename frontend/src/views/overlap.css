@@ -294,14 +294,24 @@
 .ov-matrix-detailed .ov-hbtn-row {
   height: 3.625rem;
 }
+/* The label text truncates (.ov-rl-text); the unreviewed mark beside it never does. */
 .ov-rh-label {
+  display: flex;
+  align-items: baseline;
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
   font-size: var(--fs-sm);
   font-weight: 600;
   line-height: 1.25;
+}
+.ov-rl-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:is(.ov-rh-label, .hg-rowh-label) .ov-hmk {
+  flex: none;
 }
 .ov-rh-sub {
   max-width: 100%;
@@ -335,6 +345,11 @@
 }
 :is(.ov-cell, .ov-sw).ov-h1 {
   background: var(--heat-1);
+}
+/* The lightest fill all but vanishes on the page behind the legend (about 1.02:1 in light), so the Simple key outlines
+   it as it does the empty step. */
+.ov-legend-simple .ov-sw.ov-h1 {
+  box-shadow: inset 0 0 0 1px var(--rule);
 }
 :is(.ov-cell, .ov-sw).ov-h2 {
   background: var(--heat-2);
@@ -465,13 +480,17 @@
   text-decoration: none;
   cursor: pointer;
 }
-/* Above every cell layer (selected 2, focus 3), and covering the gaps around them, so scrolled cells never show
-   through. The scroller has no left padding (see .ov-mscroll); the headers carry it. */
+/* Above every cell layer (selected 2, focus 3). Once the box is scrolled (data-scrolled, set by HalfMatrix) they also
+   cover the gaps around them, so cells passing underneath never show through. Unscrolled nothing is underneath, and a
+   cover would paint over the left side of the first column's selection and focus rings, which sit in that gap.
+   The scroller has no left padding (see .ov-mscroll); the headers carry it. */
 .ov-hg .hg-corner,
 .ov-hg .hg-rowh {
   position: sticky;
   left: 0;
   background: var(--surface);
+}
+.ov-mscroll[data-scrolled] .ov-hg :is(.hg-corner, .hg-rowh) {
   box-shadow: 0 0 0 var(--hg-gap) var(--surface);
 }
 .ov-hg .hg-corner {
@@ -486,7 +505,13 @@
 .ov-hg .ov-hbtn-row {
   height: 100%;
 }
-.ov-hg :is(.hg-rowh-label, .hg-rowh-sub) {
+/* The label text truncates (.ov-rl-text); the unreviewed mark beside it never does. */
+.ov-hg .hg-rowh-label {
+  display: flex;
+  align-items: baseline;
+  max-width: 100%;
+}
+.ov-hg .hg-rowh-sub {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;

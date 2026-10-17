@@ -790,7 +790,15 @@ export default function OverlapView({ regions }: { regions?: string[] }) {
                   theme={theme}
                   uncountable={stats.noneKnown || stats.someUnknown}
                   uninformative={stats.uninformative}
-                  unreviewed={detailed ? null : { pairs: data.pairs.some((p) => p.unreviewed_criteria), trials: trials.some((t) => t.eligibility_source !== 'hand-encoded') }}
+                  simple={
+                    detailed
+                      ? null
+                      : {
+                          numbers: !stats.noneKnown,
+                          unrevPairs: data.pairs.some((p) => p.unreviewed_criteria),
+                          unrevTrials: trials.some((t) => t.eligibility_source !== 'hand-encoded'),
+                        }
+                  }
                 />
               )}
               {stats.noneKnown ? (
@@ -984,25 +992,28 @@ function AuditNotes({
   )
 }
 
-/** The compact legend above the matrix (both densities), as in the C mockup. `unreviewed` (Simple): which unreviewed
- *  marks the matrix shows, so the legend keeps only those; null (Detailed) keeps both keys. */
+/** The compact legend above the matrix (both densities), as in the C mockup. `simple` (Simple): what the half matrix
+ *  shows (any site count, unreviewed pair marks, unreviewed trial marks), so the legend keeps only those keys; null
+ *  (Detailed) keeps every key. */
 function LegendRow({
   theme,
   uncountable,
   uninformative,
-  unreviewed,
+  simple,
 }: {
   theme: 'light' | 'dark'
   uncountable: boolean
   uninformative: boolean
-  unreviewed: { pairs: boolean; trials: boolean } | null
+  simple: { numbers: boolean; unrevPairs: boolean; unrevTrials: boolean } | null
 }) {
   return (
-    <div className="ov-legend" role="group" aria-label="Matrix legend">
-      <span className="ov-lg">
-        <span className="strong">Number:</span>
-        <HoverCard content="Registered sites both trials list on ClinicalTrials.gov.">shared registered sites</HoverCard>
-      </span>
+    <div className={`ov-legend${simple ? ' ov-legend-simple' : ''}`} role="group" aria-label="Matrix legend">
+      {(simple?.numbers ?? true) && (
+        <span className="ov-lg">
+          <span className="strong">Number:</span>
+          <HoverCard content="Registered sites both trials list on ClinicalTrials.gov.">shared registered sites</HoverCard>
+        </span>
+      )}
       <span className="ov-lg">
         <HoverCard
           content={`The larger share of one trial's eligible patients who also qualify for the other, on a synthetic population. ${theme === 'dark' ? 'Brighter' : 'Darker'} means more.`}
@@ -1026,7 +1037,7 @@ function LegendRow({
         </span>
         <HoverCard content={MARK_UB}>Upper bound</HoverCard>
       </span>
-      {(unreviewed?.pairs ?? true) && (
+      {(simple?.unrevPairs ?? true) && (
         <span className="ov-lg">
           <span className="ov-lg-mk" aria-hidden="true">
             {UNREVIEWED}
@@ -1034,7 +1045,7 @@ function LegendRow({
           <HoverCard content={MARK_UNREV}>Unreviewed</HoverCard>
         </span>
       )}
-      {(unreviewed?.trials ?? true) && (
+      {(simple?.unrevTrials ?? true) && (
         <span className="ov-lg">
           <span className="ov-lg-mk" aria-hidden="true">
             {UNREVIEWED}
@@ -1303,8 +1314,9 @@ function Matrix({
             <tr key={r.nct_id}>
               <th scope="row" className="ov-rowh">
                 <HoverCard className="ov-hbtn ov-hbtn-row" label={headLabel(r)} content={<TrialTip t={r} detailed worldwide={worldwide} />}>
+                  {/* A long label truncates; the unreviewed mark beside it never does. */}
                   <span className="ov-rh-label">
-                    {trialLabel(r)}
+                    <span className="ov-rl-text">{trialLabel(r)}</span>
                     {r.eligibility_source !== 'hand-encoded' && <span className="ov-hmk">{UNREVIEWED}</span>}
                   </span>
                   <span className="ov-rh-sub">
@@ -1356,8 +1368,8 @@ function Matrix({
                         </span>
                       )}
                       <span className="ov-cp">
-                        {/* The slash stays with the first share, so a narrow cell breaks only after it. */}
-                        <span className="num">{o.pair.overlap_informative ? `${pct(o.o_ab)} / ${pct(o.o_ba)}` : '—'}</span>
+                        {/* The slash stays with the first share (a no-break space), so a narrow cell breaks only after it. */}
+                        <span className="num">{o.pair.overlap_informative ? `${pct(o.o_ab)} / ${pct(o.o_ba)}` : '—'}</span>
                         {!known && mk && <span className="ov-mk">{mk}</span>}
                       </span>
                       {hiOf(o) && <span className="ov-hi" />}
@@ -1397,7 +1409,8 @@ function HalfMatrix({
   const size = cols <= 7 ? 1 : cols <= 11 ? 2 : cols <= 15 ? 3 : 4
   const unrev = (t: OverlapTrial) => t.eligibility_source !== 'hand-encoded' && <span className="ov-hmk">{UNREVIEWED}</span>
   return (
-    <div className="ov-mscroll" ref={scroller}>
+    // data-scrolled: the sticky headers cover the gaps beside them only while cells can be underneath (overlap.css).
+    <div className="ov-mscroll" ref={scroller} onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       <HalfGrid
         items={trials}
         keyOf={(t) => t.nct_id}
@@ -1405,8 +1418,9 @@ function HalfMatrix({
         label={`Shared registered sites for each pair of ${trials.length} trials, each pair once; shade is the larger eligible-patient share`}
         rowHead={(t) => (
           <HoverCard className="ov-hbtn ov-hbtn-row" label={headLabel(t)} content={<TrialTip t={t} detailed={false} worldwide={worldwide} />}>
+            {/* A long label truncates; the unreviewed mark beside it never does. */}
             <span className="hg-rowh-label">
-              {trialLabel(t)}
+              <span className="ov-rl-text">{trialLabel(t)}</span>
               {unrev(t)}
             </span>
             <span className="hg-rowh-sub">{phaseText(t.phases)}</span>

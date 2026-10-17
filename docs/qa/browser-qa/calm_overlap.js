@@ -7,7 +7,10 @@
 //  - grid: the half grid and the full matrix for Merck (worldwide and U.S.), AstraZeneca (anonymized sites), Novartis
 //    (mixed) and the Regeneron preset, in both densities, both themes, 1440 and 390, with a card and a selection each.
 //  - Honesty: no false zeros (pairs whose sites can't be counted show no number), upper-bound and unreviewed marks on
-//    every affected cell, the synthetic-population and registered-site qualifiers in view, no forbidden claims.
+//    every affected cell and visible beside truncated row labels, the synthetic-population and registered-site
+//    qualifiers in view, no forbidden claims. Simple's legend has a "Number" key only when a cell shows a number.
+//  - Half grid: the sticky headers cover the gaps beside them only while the box is scrolled (so the first column's
+//    selection and focus rings stay whole).
 //  - Hover cards on mouse hover, keyboard focus and tap (a bottom sheet on phones); Escape closes.
 //  - Controls and deep links: pair list, Clear selection, the Regeneron preset and #overlap/regeneron, sponsor links
 //    (#overlap/merck, #overlap/merck/us, #overlap/astrazeneca/us, an unknown sponsor), a link followed while the tab
@@ -232,6 +235,30 @@ async function checkMatrix(page, d, density, tag) {
     if (!k && !/can't be counted/.test(c.aria)) bad.push({ key: c.key, aria: c.aria })
   }
   check(`${tag} every cell matches the API (text, shade, 80% dot)`, bad.length === 0, bad.length ? bad.slice(0, 5) : `${cells.length} cells`)
+  // A long row label truncates, but its ‡ must stay inside the label's visible box (not lost to the ellipsis).
+  const rowMarks = await page.$$eval(':is(.ov-matrix .ov-rh-label, .ov-hg .hg-rowh-label)', (els) =>
+    els
+      .filter((l) => l.querySelector('.ov-hmk'))
+      .map((l) => {
+        const a = l.getBoundingClientRect()
+        const m = l.querySelector('.ov-hmk').getBoundingClientRect()
+        const t = l.querySelector('.ov-rl-text')
+        return { label: l.innerText, cut: !!t && t.scrollWidth > t.clientWidth, lost: m.width === 0 || m.left < a.left - 0.5 || m.right > a.right + 0.5 }
+      }),
+  )
+  check(
+    `${tag} every ‡ on a row header is visible, truncated labels included`,
+    rowMarks.every((r) => !r.lost),
+    { marks: rowMarks.length, truncated: rowMarks.filter((r) => r.cut).map((r) => norm(r.label)), lost: rowMarks.filter((r) => r.lost).map((r) => norm(r.label)) },
+  )
+  if (!detailed) {
+    // Simple's legend keeps only the keys its half grid needs: no "Number" key when no cell shows a number.
+    const lg = await page.$eval('.ov-legend', (e) => e.innerText).catch(() => '')
+    const anyNum = cells.some((c) => /^\d/.test(norm(c.text)))
+    eq(`${tag} Simple legend: "Number" key exactly when a cell shows a number`, anyNum, lg.includes('Number:'))
+    const h1 = await page.$eval('.ov-legend .ov-sw.ov-h1', (e) => getComputedStyle(e).boxShadow).catch(() => null)
+    check(`${tag} Simple legend: the lightest shade swatch is outlined`, !!h1 && h1 !== 'none', h1)
+  }
   check(`${tag} no number on uncountable pairs`, falseZero === 0, falseZero)
   check(`${tag} upper-bound / unreviewed marks on every affected cell`, missingMark === 0, missingMark)
   const diag = await page.$$eval('.ov-matrix td.ov-diag .ov-cell', (els) => els.map((e) => e.innerText))
@@ -689,6 +716,32 @@ function checkPairCard(card, d, key, density, tag) {
               check(`${tag} no horizontal page scroll`, s.sw <= s.iw, `${s.sw} / ${s.iw}`)
               const box = await page.$eval('.ov-win .ov-mscroll', (e) => ({ sw: e.scrollWidth, cw: e.clientWidth, ox: getComputedStyle(e).overflowX }))
               check(`${tag} the matrix box scrolls sideways when it must (overflow-x auto)`, box.ox === 'auto', box)
+              if (density === 'simple') {
+                // The sticky headers cover the gaps beside them only while the box is scrolled; unscrolled, a cover
+                // would paint over the left side of the first column's selection and focus rings.
+                const cover = await page.evaluate(async () => {
+                  const b = document.querySelector('.ov-win .ov-mscroll')
+                  const hs = [...b.querySelectorAll('.ov-hg :is(.hg-rowh, .hg-corner)')]
+                  const st = () => ({ sl: b.scrollLeft, attr: b.hasAttribute('data-scrolled'), covered: hs.filter((h) => getComputedStyle(h).boxShadow !== 'none').length, of: hs.length })
+                  const wait = () => new Promise((r) => setTimeout(r, 150))
+                  const prev = b.scrollLeft
+                  b.scrollLeft = 0
+                  await wait()
+                  const at0 = st()
+                  let moved = null
+                  if (b.scrollWidth > b.clientWidth) {
+                    b.scrollLeft = 40
+                    await wait()
+                    moved = st()
+                  }
+                  b.scrollLeft = prev
+                  await wait()
+                  return { at0, moved, back: st() }
+                })
+                check(`${tag} half grid unscrolled: no gap cover on the sticky headers`, !cover.at0.attr && cover.at0.covered === 0, cover.at0)
+                if (cover.moved) check(`${tag} half grid scrolled: every sticky header covers its gaps`, cover.moved.attr && cover.moved.covered === cover.moved.of, cover.moved)
+                check(`${tag} half grid: cover state follows the scroll position`, cover.back.attr === cover.back.sl > 0, cover.back)
+              }
               await page.evaluate(() => window.scrollTo(0, 0))
               const name = `grid-${hash.slice(1).replace(/\//g, '_')}-${density}-${theme}-${width}`
               await (await page.$('.ov-win')).screenshot({ path: path.join(OUT, `${name}-matrix.png`) })
