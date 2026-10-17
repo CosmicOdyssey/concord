@@ -346,7 +346,7 @@
   background: var(--heat-4);
 }
 /* No criteria encoded for one trial: overlap not informative, so no shade at all; a hatch instead. */
-:is(.ov-cell, .ov-sw).ov-hx {
+:is(.ov-cell, .ov-sw, .hg-cell).ov-hx {
   background-color: var(--heat-0);
   background-image: repeating-linear-gradient(135deg, transparent 0 5px, var(--rule-strong) 5px 6px);
   box-shadow: inset 0 0 0 1px var(--rule);
@@ -436,6 +436,82 @@
       background-color 140ms ease-out,
       box-shadow 140ms ease-out;
   }
+  .ov-hg .hg-cell {
+    transition:
+      background-color 140ms ease-out,
+      box-shadow 140ms ease-out,
+      outline-color 120ms ease-out;
+  }
+}
+
+/* ---------- Simple: the half matrix (halfgrid.tsx, the landing hero's look) ---------- */
+/* Every trial of the sponsor. The cells narrow as the trial count grows (s1: up to 7 columns, the landing hero's
+   size; s4: 16 or more); past the box's width it scrolls sideways under sticky row headers, never the page. */
+.hg.ov-hg {
+  --hg-head: calc(8.75rem + var(--ov-inset));
+  margin: 0 auto;
+}
+.hg.ov-hg-s2 {
+  --hg-cell: 4rem;
+}
+.hg.ov-hg-s3 {
+  --hg-cell: 3.5rem;
+}
+.hg.ov-hg-s4 {
+  --hg-cell: 3.125rem;
+}
+.ov-hg .hc-trigger {
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+}
+/* Above every cell layer (selected 2, focus 3), and covering the gaps around them, so scrolled cells never show
+   through. The scroller has no left padding (see .ov-mscroll); the headers carry it. */
+.ov-hg .hg-corner,
+.ov-hg .hg-rowh {
+  position: sticky;
+  left: 0;
+  background: var(--surface);
+  box-shadow: 0 0 0 var(--hg-gap) var(--surface);
+}
+.ov-hg .hg-corner {
+  z-index: 5;
+  padding-left: calc(var(--ov-inset) + 0.25rem);
+}
+.ov-hg .hg-rowh {
+  z-index: 4;
+  padding: 0 0 0 var(--ov-inset);
+}
+/* Each header is its trial's hover-card trigger, filling the header box. */
+.ov-hg .ov-hbtn-row {
+  height: 100%;
+}
+.ov-hg :is(.hg-rowh-label, .hg-rowh-sub) {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ov-hg .hg-colh {
+  align-items: stretch;
+  padding-bottom: 0;
+}
+.ov-hg .ov-hbtn-col {
+  height: auto;
+  padding: 0 0 0.5rem;
+}
+.ov-hg .hg-vt .ov-hmk {
+  font-size: 0.75rem;
+}
+.ov-hg .ov-hbtn:focus-visible {
+  outline-offset: -2px;
+}
+.ov-hg .hg-cell:hover,
+.ov-hg .hg-cell[data-open] {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+.ov-hg .hg-cell:focus-visible {
+  border-radius: var(--radius-xs);
 }
 
 /* ---------- hover cards (pairs, trials, criteria) ---------- */
@@ -980,6 +1056,18 @@
     width: calc(7rem + var(--ov-inset));
     min-width: calc(7rem + var(--ov-inset));
     max-width: calc(7rem + var(--ov-inset));
+  }
+  /* Phone half matrix: 44 px cells (touch targets) whatever the trial count; the box scrolls sideways. */
+  .hg.ov-hg {
+    --hg-head: calc(6.25rem + var(--ov-inset));
+    --hg-cell: 2.75rem;
+    --hg-h: 2.75rem;
+  }
+  .ov-hg .hg-n {
+    font-size: var(--fs-sm);
+  }
+  .ov-hg .hg-mk {
+    font-size: 0.625rem;
   }
   .ov-dlrows > div {
     grid-template-columns: minmax(0, 1fr);

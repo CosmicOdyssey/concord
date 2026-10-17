@@ -1,7 +1,11 @@
 // Calm Portfolio overlap QA (puppeteer-core, installed Chrome). Prints PASS/FAIL lines and writes overlap.json and
 // screenshots to the output folder.
 //  - Every matrix cell, the diagonal, the summary line, the hover card, the pair detail, the summary counts, the trial
-//    rows and a per-site table against a fresh GET of the same request, in Simple and Detailed.
+//    rows and a per-site table against a fresh GET of the same request, in Simple and Detailed. Simple draws the
+//    landing hero's half grid (each pair once, above the diagonal: n(n-1)/2 cells, no diagonal); Detailed the full
+//    directional matrix (n(n-1) cells and the diagonal).
+//  - grid: the half grid and the full matrix for Merck (worldwide and U.S.), AstraZeneca (anonymized sites), Novartis
+//    (mixed) and the Regeneron preset, in both densities, both themes, 1440 and 390, with a card and a selection each.
 //  - Honesty: no false zeros (pairs whose sites can't be counted show no number), upper-bound and unreviewed marks on
 //    every affected cell, the synthetic-population and registered-site qualifiers in view, no forbidden claims.
 //  - Hover cards on mouse hover, keyboard focus and tap (a bottom sheet on phones); Escape closes.
@@ -12,7 +16,7 @@
 //    target sizes on the phone.
 // The API is only read (GET). usage:
 //   NODE_PATH=C:/Users/micha/Projects/concord/data/work/D/node_modules node calm_overlap.js [base] [outDir]
-//   env API (default http://localhost:8000), ONLY=matrix,hover,flows,links,phone (default all).
+//   env API (default http://localhost:8000), ONLY=matrix,hover,flows,links,phone,grid (default all).
 const fs = require('fs')
 const path = require('path')
 const { launch, sleep } = require('./lib')
@@ -142,17 +146,26 @@ const screen = (page) =>
     }
   })
 
+// A pair cell: the full matrix's <td data-cell> (Detailed) or the half grid's [data-cell] wrapper (Simple), and its
+// hover-card button (.ov-cell / .hg-cell).
+const CELL = '.ov-matrix td[data-cell], .ov-hg [data-cell]'
+const CELL_BTN = ':is(.ov-cell, .hg-cell)'
+const cellBtn = (key) => `[data-cell="${key}"] ${CELL_BTN}`
+
 const cellsOf = (page) =>
-  page.$$eval('.ov-matrix td[data-cell]', (tds) =>
+  page.$$eval(CELL, (tds) =>
     tds.map((td) => {
-      const b = td.querySelector('.ov-cell')
+      const b = td.querySelector('.ov-cell, .hg-cell')
+      const r = b.getBoundingClientRect()
       return {
         key: td.dataset.cell,
         text: b.innerText,
-        heat: (b.className.match(/ov-h(\w)/) || [])[1],
-        hi: !!b.querySelector('.ov-hi'),
+        heat: (b.className.match(/(?:ov|hg)-h(\w)/) || [])[1],
+        hi: !!b.querySelector('.ov-hi, .hg-hi'),
         sel: td.classList.contains('ov-sel'),
         aria: b.getAttribute('aria-label'),
+        x: r.left + r.width / 2,
+        y: r.top + r.height / 2,
       }
     }),
   )
@@ -161,8 +174,42 @@ const cellsOf = (page) =>
 async function checkMatrix(page, d, density, tag) {
   const detailed = density === 'detailed'
   const tIdx = new Map(d.trials.map((t) => [t.nct_id, t]))
+  const n = d.trials.length
   const cells = await cellsOf(page)
-  eq(`${tag} cell count`, d.trials.length * (d.trials.length - 1), cells.length)
+  eq(`${tag} cell count${detailed ? '' : ' (half grid: n(n-1)/2)'}`, detailed ? n * (n - 1) : (n * (n - 1)) / 2, cells.length)
+  if (!detailed) {
+    // Each pair once, above the diagonal: the row trial comes before the column trial, and every API pair has a cell
+    // in its own row (rows: trials 1..n-1) and column (columns: trials 2..n).
+    const at = new Map(d.trials.map((t, i) => [t.nct_id, i]))
+    const keys = new Set(cells.map((c) => c.key))
+    const below = cells.filter((c) => {
+      const [a, b] = c.key.split('|')
+      return !(at.get(a) < at.get(b))
+    })
+    const absent = d.pairs.filter((p) => !keys.has(`${p.p}|${p.q}`) && !keys.has(`${p.q}|${p.p}`))
+    check(`${tag} half grid: each pair once, above the diagonal`, below.length === 0 && absent.length === 0 && keys.size === cells.length, { below: below.length, absent: absent.length, dup: cells.length - keys.size })
+    const heads = await page.evaluate(() => ({
+      rows: [...document.querySelectorAll('.ov-hg .hg-rowh')].map((h) => {
+        const r = h.getBoundingClientRect()
+        return { t: h.querySelector('.hg-rowh-label').innerText, y: r.top + r.height / 2 }
+      }),
+      cols: [...document.querySelectorAll('.ov-hg .hg-colh')].map((h) => {
+        const r = h.getBoundingClientRect()
+        return { t: h.querySelector('.hg-vt').innerText, x: r.left + r.width / 2 }
+      }),
+    }))
+    const lab = (t) => label(t) + (t.eligibility_source !== 'hand-encoded' ? '‡' : '')
+    eq(`${tag} half grid row headers: trials 1..n-1 (label + ‡ for the rule-based parse)`, JSON.stringify(d.trials.slice(0, -1).map(lab)), JSON.stringify(heads.rows.map((h) => norm(h.t))))
+    eq(`${tag} half grid column headers: trials 2..n`, JSON.stringify(d.trials.slice(1).map(lab)), JSON.stringify(heads.cols.map((h) => norm(h.t))))
+    // Geometry: every cell sits in its row trial's row and its column trial's column (so the grid is the upper half).
+    const misplaced = cells.filter((c) => {
+      const [a, b] = c.key.split('|')
+      const row = heads.rows[at.get(a)]
+      const col = heads.cols[at.get(b) - 1]
+      return !row || !col || Math.abs(row.y - c.y) > 1.5 || Math.abs(col.x - c.x) > 1.5
+    })
+    check(`${tag} half grid: every cell under its column trial and beside its row trial`, misplaced.length === 0, misplaced.slice(0, 3).map((c) => c.key))
+  }
   const bad = []
   let falseZero = 0
   let missingMark = 0
@@ -188,11 +235,16 @@ async function checkMatrix(page, d, density, tag) {
   check(`${tag} no number on uncountable pairs`, falseZero === 0, falseZero)
   check(`${tag} upper-bound / unreviewed marks on every affected cell`, missingMark === 0, missingMark)
   const diag = await page.$$eval('.ov-matrix td.ov-diag .ov-cell', (els) => els.map((e) => e.innerText))
-  const diagExp = d.trials.map((t) => (detailed ? `${t.n_sites} ${t.n_sites === 1 ? 'site' : 'sites'}` : String(t.n_sites)))
-  eq(`${tag} diagonal = registered sites`, JSON.stringify(diagExp), JSON.stringify(diag.map(norm)))
-  const rowh = await page.$$eval('.ov-matrix .ov-rowh .ov-rh-label', (els) => els.map((e) => e.innerText))
-  const rowExp = d.trials.map((t) => label(t) + (t.eligibility_source !== 'hand-encoded' ? '‡' : ''))
-  eq(`${tag} row headers (label + ‡ for the rule-based parse)`, JSON.stringify(rowExp), JSON.stringify(rowh.map(norm)))
+  if (detailed) {
+    const diagExp = d.trials.map((t) => `${t.n_sites} ${t.n_sites === 1 ? 'site' : 'sites'}`)
+    eq(`${tag} diagonal = registered sites`, JSON.stringify(diagExp), JSON.stringify(diag.map(norm)))
+    const rowh = await page.$$eval('.ov-matrix .ov-rowh .ov-rh-label', (els) => els.map((e) => e.innerText))
+    const rowExp = d.trials.map((t) => label(t) + (t.eligibility_source !== 'hand-encoded' ? '‡' : ''))
+    eq(`${tag} row headers (label + ‡ for the rule-based parse)`, JSON.stringify(rowExp), JSON.stringify(rowh.map(norm)))
+  } else {
+    const full = await page.$$eval('.ov-matrix', (e) => e.length)
+    check(`${tag} half grid: no diagonal, no full matrix`, diag.length === 0 && full === 0, { diag: diag.length, full })
+  }
   return cells
 }
 
@@ -224,7 +276,10 @@ function checkPairCard(card, d, key, density, tag) {
     )
   if (o.p.upper_bound) want.push('† Upper bound')
   if (o.p.unreviewed_criteria) want.push('‡ Unreviewed')
+  // Both trials named (as on the landing hero's card).
+  want.push(`${A.nct_id} · `, ` — ${B.nct_id} · `)
   if (density === 'detailed') want.push('Both recruiting', 'Criteria in both', `Only in ${label(A)}`)
+  else if (o.p.upper_bound) want.push("Upper bound: a trial has restrictions the synthetic population can't represent, so these shares are ceilings.")
   const missing = want.filter((w) => !card?.text.includes(w))
   check(`${tag} pair card content = API (${key})`, !!card && missing.length === 0, missing.length ? { missing, text: card?.text } : undefined)
   check(`${tag} pair card inside the viewport`, !!card && card.l >= 0 && card.t >= 0 && card.r <= card.vw && card.b <= card.vh, card && [card.l, card.t, card.r, card.b])
@@ -313,7 +368,7 @@ function checkPairCard(card, d, key, density, tag) {
         const tIdx = new Map(dDefault.trials.map((t) => [t.nct_id, t]))
         const pick = dDefault.pairs.find((p) => p.upper_bound && p.unreviewed_criteria && known(tIdx.get(p.p), tIdx.get(p.q))) ?? dDefault.pairs[0]
         const key = `${pick.p}|${pick.q}`
-        const cell = await page.$(`td[data-cell="${key}"] .ov-cell`)
+        const cell = await page.$(cellBtn(key))
         await cell.evaluate((e) => e.scrollIntoView({ block: 'center', inline: 'center' }))
         await sleep(200)
         const box = await cell.boundingBox()
@@ -340,21 +395,25 @@ function checkPairCard(card, d, key, density, tag) {
         await page.keyboard.press('Escape')
         await sleep(150)
         check(`${tag} Escape closes the card`, !(await visibleCard(page)))
-        // Keyboard: Tab onto the next cell in the row opens its card; Enter selects it.
-        const next = await page.evaluate((key) => {
-          const td = document.querySelector(`td[data-cell="${key}"]`)
-          let n = td.nextElementSibling
-          while (n && !n.dataset.cell) n = n.nextElementSibling
-          if (!n) {
-            n = td.previousElementSibling
-            while (n && !n.dataset.cell) n = n.previousElementSibling
-            n?.previousElementSibling?.querySelector('button')?.focus()
-          } else td.querySelector('button').focus()
-          return n?.dataset.cell
-        }, key)
+        // Keyboard: Tab onto the next cell in the row opens its card; Enter selects it. (Cells are in row order in
+        // both the full matrix and the half grid; at a row's last cell, start one cell earlier.)
+        const next = await page.evaluate(
+          (key, sel) => {
+            const all = [...document.querySelectorAll(sel)]
+            const i = all.findIndex((c) => c.dataset.cell === key)
+            const row = (c) => c?.dataset.cell.split('|')[0]
+            const fwd = row(all[i + 1]) === row(all[i])
+            const from = fwd ? all[i] : all[i - 2]
+            const to = fwd ? all[i + 1] : all[i - 1]
+            from?.querySelector('button')?.focus()
+            return to?.dataset.cell
+          },
+          key,
+          CELL,
+        )
         await page.keyboard.press('Tab')
         await sleep(250)
-        const focused = await page.evaluate(() => document.activeElement?.closest('td')?.dataset.cell)
+        const focused = await page.evaluate(() => document.activeElement?.closest('[data-cell]')?.dataset.cell)
         eq(`${tag} Tab moves to the next cell`, next, focused)
         const kcard = await visibleCard(page)
         checkPairCard(kcard, dDefault, next, density, `${tag} keyboard focus`)
@@ -364,7 +423,7 @@ function checkPairCard(card, d, key, density, tag) {
         const [na, nb] = next.split('|')
         eq(`${tag} Enter selects the focused pair`, `${label(tIdx.get(na))} × ${label(tIdx.get(nb))}`, (await screen(page)).detail)
         // Trial header card and the legend's glosses.
-        const hb = await page.$('.ov-matrix .ov-rowh .hc-trigger')
+        const hb = await page.$(':is(.ov-matrix .ov-rowh, .ov-hg .hg-rowh) .hc-trigger')
         const hbb = await hb.boundingBox()
         await page.mouse.move(hbb.x + 10, hbb.y + 10)
         await sleep(450)
@@ -523,9 +582,9 @@ function checkPairCard(card, d, key, density, tag) {
             check(`${tag} legend explains "No number"`, legend.includes('No number'), legend)
           }
           if (hash.includes('novartis')) {
-            const hx = await page.$$eval('.ov-matrix .ov-cell.ov-hx', (e) => e.length)
-            const nonInf = d.pairs.filter((p) => !p.overlap_informative).length * 2
-            eq(`${tag} hatched cells = uninformative pairs (both halves)`, nonInf, hx)
+            const hx = await page.$$eval('.ov-matrix .ov-cell.ov-hx, .ov-hg .hg-cell.ov-hx', (e) => e.length)
+            const nonInf = d.pairs.filter((p) => !p.overlap_informative).length * (density === 'detailed' ? 2 : 1)
+            eq(`${tag} hatched cells = uninformative pairs (${density === 'detailed' ? 'both halves' : 'once each'})`, nonInf, hx)
           }
           await page.screenshot({ path: path.join(OUT, `link-${hash.slice(1).replace(/\//g, '_')}-${density}.png`), fullPage: false })
           errors.push(...page.__log.errors)
@@ -564,9 +623,9 @@ function checkPairCard(card, d, key, density, tag) {
         const pick = dDefault.pairs.find((p) => p.upper_bound && known(tIdx.get(p.p), tIdx.get(p.q)) && p.p !== dDefault.trials[0].nct_id) ?? dDefault.pairs[5]
         const key = `${pick.p}|${pick.q}`
         // Centre the cell in the matrix scroller first: the sticky row header would cover a cell scrolled to its edge.
-        await page.$eval(`td[data-cell="${key}"] .ov-cell`, (e) => e.scrollIntoView({ block: 'center', inline: 'center' }))
+        await page.$eval(cellBtn(key), (e) => e.scrollIntoView({ block: 'center', inline: 'center' }))
         await sleep(200)
-        await page.tap(`td[data-cell="${key}"] .ov-cell`)
+        await page.tap(cellBtn(key))
         await sleep(450)
         const card = await visibleCard(page)
         checkPairCard(card, dDefault, key, density, `${tag} tap`)
@@ -595,6 +654,109 @@ function checkPairCard(card, d, key, density, tag) {
         errors.push(...page.__log.errors)
         await ctx.close()
       }
+
+    // ------------------------------------------------------------------ 6. grid: sponsors x densities x themes x widths
+    // Simple's half grid and Detailed's full matrix against the API for Merck (worldwide and U.S.), AstraZeneca (every
+    // site anonymized: no numbers anywhere), Novartis (mixed: some pairs uncountable, some uninformative) and the
+    // Regeneron preset; a pair card (hover on desktop, tap on phones) and a selection each; keyboard focus and Escape.
+    if (run('grid')) {
+      const configs = [
+        ['#overlap/merck', { sponsor: 'Merck Sharp & Dohme LLC' }],
+        ['#overlap/merck/us', { sponsor: 'Merck Sharp & Dohme LLC', region: 'US' }],
+        ['#overlap/astrazeneca', { sponsor: 'AstraZeneca' }],
+        ['#overlap/novartis', { sponsor: 'Novartis Pharmaceuticals' }],
+        ['#overlap/regeneron', { sponsor: 'Regeneron Pharmaceuticals', as_of: '2024-09-01', region: 'US' }, ['NCT05785767', 'NCT05800015']],
+      ]
+      const bodies = new Map()
+      for (const [hash, q, preset] of configs)
+        for (const density of ['simple', 'detailed'])
+          for (const theme of ['light', 'dark'])
+            for (const width of [1440, 390]) {
+              const tag = `[grid ${hash} ${density} ${theme} ${width}]`
+              const { ctx, page } = await openPage(browser, { hash, density, theme, width })
+              await ready(page)
+              if (!bodies.has(hash)) bodies.set(hash, await apiGet(auditPath(q)))
+              const d = bodies.get(hash)
+              const tIdx = new Map(d.trials.map((t) => [t.nct_id, t]))
+              const s = await screen(page)
+              eq(`${tag} sponsor`, q.sponsor, s.sponsor)
+              eq(`${tag} summary`, `${d.trials.length} trials ${d.basis === 'registry' ? '' : 'estimated '}recruiting on ${longDate(d.as_of)} · ${d.pairs.length} pairs`, s.sum)
+              await checkMatrix(page, d, density, tag)
+              if (preset) {
+                const sel = await page.$$eval(`${CELL.split(', ').map((c) => `${c}.ov-sel`).join(', ')}`, (e) => e.map((x) => x.dataset.cell))
+                eq(`${tag} preset: the fianlimab pair's cell is selected`, JSON.stringify(density === 'detailed' ? [preset.join('|'), [...preset].reverse().join('|')] : [preset.join('|')]), JSON.stringify(sel))
+              }
+              check(`${tag} no horizontal page scroll`, s.sw <= s.iw, `${s.sw} / ${s.iw}`)
+              const box = await page.$eval('.ov-win .ov-mscroll', (e) => ({ sw: e.scrollWidth, cw: e.clientWidth, ox: getComputedStyle(e).overflowX }))
+              check(`${tag} the matrix box scrolls sideways when it must (overflow-x auto)`, box.ox === 'auto', box)
+              await page.evaluate(() => window.scrollTo(0, 0))
+              const name = `grid-${hash.slice(1).replace(/\//g, '_')}-${density}-${theme}-${width}`
+              await (await page.$('.ov-win')).screenshot({ path: path.join(OUT, `${name}-matrix.png`) })
+              // A pair card: an uncountable pair when there is one (the card must say so and still give both shares),
+              // else an upper-bound pair.
+              const pick =
+                d.pairs.find((p) => !known(tIdx.get(p.p), tIdx.get(p.q)) && p.overlap_informative) ??
+                d.pairs.find((p) => p.upper_bound && known(tIdx.get(p.p), tIdx.get(p.q))) ??
+                d.pairs[0]
+              const key = `${pick.p}|${pick.q}`
+              await page.$eval(cellBtn(key), (e) => e.scrollIntoView({ block: 'center', inline: 'center' }))
+              await sleep(250)
+              if (width < 600) {
+                await page.tap(cellBtn(key))
+                await sleep(450)
+                const card = await visibleCard(page)
+                checkPairCard(card, d, key, density, `${tag} tap`)
+                check(
+                  `${tag} tap: bottom sheet`,
+                  !!card && Math.abs(card.l - 12) <= 1 && Math.abs(card.vw - 12 - card.r) <= 1 && Math.abs(card.vh - 12 - card.b) <= 2,
+                  card && { l: card.l, r: card.r, b: card.b, vw: card.vw, vh: card.vh },
+                )
+                await page.screenshot({ path: path.join(OUT, `${name}-card.png`) })
+              } else {
+                const b = await (await page.$(cellBtn(key))).boundingBox()
+                await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2)
+                await sleep(450)
+                const card = await visibleCard(page)
+                checkPairCard(card, d, key, density, `${tag} hover`)
+                await page.screenshot({ path: path.join(OUT, `${name}-card.png`) })
+                await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2)
+              }
+              await page.waitForFunction((t) => (document.querySelector('.ov-detail h2')?.innerText ?? '').replace(/\s+/g, ' ').trim() === t, { timeout: 5000 }, `${label(tIdx.get(pick.p))} × ${label(tIdx.get(pick.q))}`).catch(() => {})
+              eq(`${tag} ${width < 600 ? 'tap' : 'click'} selects the pair (pair detail)`, `${label(tIdx.get(pick.p))} × ${label(tIdx.get(pick.q))}`, (await screen(page)).detail)
+              const selNow = await page.$$eval('.ov-sel[data-cell]', (e) => e.map((x) => x.dataset.cell))
+              check(`${tag} the selected cell is marked`, selNow.includes(key), selNow)
+              if (width >= 600) {
+                await page.keyboard.press('Escape')
+                await sleep(150)
+                check(`${tag} Escape closes the card`, !(await visibleCard(page)))
+                // Keyboard: Tab from a cell onto the next one in its row opens that cell's card.
+                const want = await page.evaluate(
+                  (key, sel) => {
+                    const all = [...document.querySelectorAll(sel)]
+                    const i = all.findIndex((c) => c.dataset.cell === key)
+                    const row = (c) => c?.dataset.cell.split('|')[0]
+                    const fwd = row(all[i + 1]) === row(all[i])
+                    ;(fwd ? all[i] : all[i - 2])?.querySelector('button')?.focus()
+                    return (fwd ? all[i + 1] : all[i - 1])?.dataset.cell
+                  },
+                  key,
+                  CELL,
+                )
+                await page.keyboard.press('Tab')
+                await sleep(300)
+                const fk = await page.evaluate(() => document.activeElement?.closest('[data-cell]')?.dataset.cell)
+                eq(`${tag} Tab moves to the next cell`, want, fk)
+                if (fk) checkPairCard(await visibleCard(page), d, fk, density, `${tag} keyboard focus`)
+                await page.keyboard.press('Escape')
+                await sleep(150)
+                check(`${tag} Escape closes the focused card`, !(await visibleCard(page)))
+              }
+              const s2 = await screen(page)
+              check(`${tag} no horizontal page scroll after the card`, s2.sw <= s2.iw, `${s2.sw} / ${s2.iw}`)
+              errors.push(...page.__log.errors)
+              await ctx.close()
+            }
+    }
   } catch (e) {
     check('script ran to the end', false, String(e && e.stack ? e.stack : e))
   } finally {
