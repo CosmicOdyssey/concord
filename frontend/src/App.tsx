@@ -20,12 +20,13 @@ const FinancialView = lazy(() => import('./views/FinancialView'))
 const DevComponentsView = lazy(() => import('./views/DevComponentsView'))
 const PortfolioCommandView = lazy(() => import('./views/PortfolioCommandView'))
 
-// Labels, sub-labels (always visible) and tooltips: copy deck B1. Sponsor budget is a worksheet on synthetic inputs
-// with no time model (decisions.md #24); its sub-label keeps that visible in the tab bar.
+// Labels, sub-labels (always visible) and tooltips: copy deck B1. Protocol to terms is the product, so it leads; Portfolio
+// overlap is the second tool. Sponsor budget is a worksheet on synthetic inputs with no time model (decisions.md #24); it
+// stays out of the main navigation (navHidden) and opens at #financial.
 const TABS = [
-  { id: 'findings', label: 'Findings', hint: 'What we tested, including results that weakened the original idea.' },
-  { id: 'overlap', label: 'Portfolio overlap', hint: "Where one sponsor's trials share registered sites and eligible patients." },
   { id: 'terms-flow', label: 'Protocol to terms', hint: 'A schedule of assessments, turned into a coverage grid, a budget and a term sheet.' },
+  { id: 'overlap', label: 'Portfolio overlap', hint: "Where one sponsor's trials share registered sites and eligible patients." },
+  { id: 'findings', label: 'Findings', hint: 'What we tested, including results that weakened the original idea.' },
   {
     id: 'site-scores',
     label: 'Site scores',

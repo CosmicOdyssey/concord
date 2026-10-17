@@ -10,11 +10,13 @@ const OUT = process.argv[3] || 'C:/Users/micha/Projects/concord/data/work/R/foun
 fs.mkdirSync(OUT, { recursive: true })
 
 // #research/model: the Research tab without starting the two-minute clear.
+// The tabs in their header order (Protocol to terms first), then the Sponsor budget screen: it is out of the main
+// navigation but still opens at #financial.
 const ROUTES = [
   ['landing', '#home'],
-  ['findings', '#findings'],
-  ['overlap', '#overlap'],
   ['terms-flow', '#terms-flow'],
+  ['overlap', '#overlap'],
+  ['findings', '#findings'],
   ['site-scores', '#site-scores'],
   ['financial', '#financial'],
   ['research', '#research/model'],

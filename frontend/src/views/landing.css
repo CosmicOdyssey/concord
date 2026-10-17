@@ -485,6 +485,17 @@ a.lp-open:hover {
   line-height: 1.6;
   color: var(--ink-2);
 }
+/* What each sponsor dollar is anchored to before anyone negotiates (the subhead's "settled before anyone negotiates"). */
+p.lp-public,
+.lp-public > .lp-terms-note {
+  color: var(--ink);
+}
+.lp-anchor-tbl {
+  margin-top: 0.5rem;
+}
+.lp-anchor-tbl td .num {
+  white-space: nowrap;
+}
 .lp-terms-scope {
   margin: 0.75rem 0 0;
   font-size: var(--fs-md);
@@ -715,8 +726,95 @@ a.lp-open:hover {
   margin: 0 0 0.375rem;
 }
 
+/* ---------- Protocol to terms first, Portfolio overlap second ---------- */
+.lp-section-first {
+  padding-top: clamp(4rem, 9vw, 7rem);
+}
+.lp-terms-simple .lp-terms-main {
+  flex-basis: 100%;
+}
+.lp-terms-lead .hc-info,
+.lp-public .hc-info,
+.lp-figcap .hc-info,
+.lp-tbl th .hc-info {
+  vertical-align: -0.125em;
+}
+.lp-src {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  max-width: 26rem;
+}
+.lp-ov-fig {
+  margin: clamp(3rem, 6vw, 4.5rem) 0 0;
+}
+.lp-gloss {
+  margin: 0.625rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.lp-gloss li + li {
+  margin-top: 0.25rem;
+}
+.lp-crit-pad {
+  margin: 0;
+  padding: 0 clamp(1.25rem, 3vw, 2.5rem) clamp(1.25rem, 3vw, 2.5rem);
+}
+.lp-crit-none {
+  margin: 0;
+  font-size: var(--fs-md);
+  color: var(--muted);
+}
+
 /* ---------- phone ---------- */
 @media (max-width: 640px) {
+  /* Phones: wordmark and controls on one row, the section links below; the hero's primary button, first on the
+     page, carries the action (the header copy would add a third row). */
+  .lp-head .lp-demo {
+    display: none;
+  }
+  .lp-mrow {
+    grid-template-columns: 5.75rem repeat(var(--lp-cols, 6), 2.5rem);
+    gap: 3px;
+  }
+  .lp-mrow + .lp-mrow {
+    margin-top: 3px;
+  }
+  .lp-rowh,
+  .lp-cell {
+    height: 2.25rem;
+  }
+  .lp-rowh {
+    padding-right: 0.375rem;
+  }
+  .lp-rowh-label {
+    font-size: 0.6875rem;
+  }
+  .lp-rowh-sub {
+    font-size: 0.625rem;
+  }
+  .lp-colh {
+    height: 6.25rem;
+  }
+  .lp-colh span {
+    font-size: var(--fs-xs);
+  }
+  .lp-cell-n {
+    font-size: var(--fs-xs);
+  }
+  .lp-cell-mk {
+    font-size: 0.5625rem;
+    margin-top: 0.3rem;
+  }
+  .lp-cell-hi {
+    top: 3px;
+    right: 3px;
+    width: 5px;
+    height: 5px;
+  }
   .lp-sheet-dl > div {
     grid-template-columns: 1fr;
     gap: 0.125rem;

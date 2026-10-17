@@ -1,17 +1,25 @@
 // Data for the landing page's product windows (views/LandingView.tsx). Both windows are real fragments: they render
-// at once from the values below (copied from the API responses saved in the redesign data pack, copy deck ledger
-// C-C, C-H and C-T), then from the live API (GET /api/overlap and /api/terms-flow/.../compare, both cheap) when it
+// at once from the values below (copied from the live API responses: GET /api/terms-flow/.../compare and GET
+// /api/overlap with the Portfolio overlap tab's Regeneron preset), then from the live API (both cheap) when it
 // answers. Nothing here is estimated or invented.
 import { usd } from './format'
-import type { OverlapAudit, OverlapTrial } from './overlapApi'
+import { FIANLIMAB_PAIR, REGENERON_OVERLAP_PRESET, type OverlapAudit, type OverlapQuery } from './overlapApi'
 import type { Compare } from './termsFlowApi'
 
-export const HERO_SPONSOR = 'Merck Sharp & Dohme LLC'
-/** The hero crop (copy deck A2 / ledger C-H): the Phase 3 trials with reviewed criteria among the sponsor's trials
- *  recruiting at the snapshot, less INTerpath-014 (stage I; the synthetic population cannot tell it from II-IIIB). */
-export const HERO_IDS = ['NCT06170788', 'NCT06312137', 'NCT06345729', 'NCT06422143', 'NCT06623422', 'NCT07190248', 'NCT07554339'] as const
-/** The pair the hero opens on, and the one the Portfolio overlap section details (TroFuse-019 x NCT06623422). */
-export const FEATURED: [string, string] = ['NCT06312137', 'NCT06623422']
+/** The overlap preview loads the same query as the Portfolio overlap tab's "Regeneron, Sep 1, 2024" preset. */
+export const OVERLAP_QUERY: OverlapQuery = REGENERON_OVERLAP_PRESET
+/** The pair the preview's card opens on: the two fianlimab trials (NCT05800015 is also the Protocol to terms demo). */
+export const FEATURED: [string, string] = FIANLIMAB_PAIR
+/** At most this many trials in the preview matrix; a larger live audit keeps the saved values. */
+const MAX_TRIALS = 8
+
+/** Short descriptions of the featured trials, paraphrased from their ClinicalTrials.gov official titles. */
+export const TRIAL_GLOSS: Record<string, string> = {
+  NCT05785767: 'Fianlimab + cemiplimab vs cemiplimab, first-line advanced NSCLC, PD-L1 ≥50%',
+  NCT05800015: 'Fianlimab + cemiplimab + chemotherapy vs cemiplimab + chemotherapy, first-line advanced NSCLC, any PD-L1',
+}
+/** The Terms window's one-line description of the demo protocol: the same paraphrase of its official title. */
+export const TERMS_GLOSS = 'Fianlimab + cemiplimab + chemotherapy vs cemiplimab + chemotherapy, first-line advanced NSCLC'
 
 export interface CropTrial {
   nct: string
@@ -35,7 +43,16 @@ export interface CropPair {
 }
 
 export interface Crop {
+  sponsor: string
+  /** The as-of date of the query. */
+  asOf: string
+  /** Registry snapshot date. */
   snapshot: string
+  /** 'estimated': recruiting on the as-of date is estimated from enrollment windows (a date before the snapshot). */
+  basis: 'registry' | 'estimated'
+  regionLabel: string
+  /** Synthetic population size. */
+  population: number
   trials: CropTrial[]
   pairs: CropPair[]
   /** Criteria of the featured pair: in both (labels of the first trial), only in the first, only in the second. */
@@ -43,8 +60,8 @@ export interface Crop {
   live: boolean
 }
 
-const T = (nct: string, label: string, nSites: number): CropTrial => ({ nct, label, phase: 'Phase 3', nSites })
-const P = (p: string, q: string, shared: number, o_pq: number, o_qp: number, months: number, from: string): CropPair => ({
+const T = (nct: string, phase: string, nSites: number): CropTrial => ({ nct, label: nct, phase, nSites })
+const P = (p: string, q: string, shared: number, o_pq: number, o_qp: number, months: number, from: string, to: string): CropPair => ({
   p,
   q,
   shared,
@@ -52,51 +69,52 @@ const P = (p: string, q: string, shared: number, o_pq: number, o_qp: number, mon
   o_qp,
   months,
   from,
-  to: '2026-10-16',
-  upperBound: true,
+  to,
+  upperBound: false,
   unreviewed: false,
 })
 
-/** GET /api/overlap?sponsor=Merck Sharp & Dohme LLC (all registered sites worldwide, as of the 2026-10-16 snapshot). */
+/** GET /api/overlap?sponsor=Regeneron Pharmaceuticals&as_of=2024-09-01&region=US (registry snapshot 2026-10-16). */
 export const FALLBACK_CROP: Crop = {
+  sponsor: 'Regeneron Pharmaceuticals',
+  asOf: '2024-09-01',
   snapshot: '2026-10-16',
+  basis: 'estimated',
+  regionLabel: 'All U.S. sites',
+  population: 20000,
   live: false,
   trials: [
-    T('NCT06170788', 'TroFuse-007', 220),
-    T('NCT06312137', 'TroFuse-019', 270),
-    T('NCT06345729', 'NCT06345729', 240),
-    T('NCT06422143', 'NCT06422143', 217),
-    T('NCT06623422', 'NCT06623422', 243),
-    T('NCT07190248', 'NCT07190248', 219),
-    T('NCT07554339', 'NCT07554339', 95),
+    T('NCT04077099', 'Phase 1/2', 8),
+    T('NCT05557591', 'Phase 2', 9),
+    T('NCT05785767', 'Phase 2/3', 23),
+    T('NCT05800015', 'Phase 2/3', 29),
+    T('NCT06161441', 'Phase 2', 8),
   ],
   pairs: [
-    P('NCT06170788', 'NCT06312137', 36, 0.0, 0.0, 30.4, '2024-04-03'),
-    P('NCT06170788', 'NCT06345729', 31, 0.1027, 0.5695, 28.7, '2024-05-24'),
-    P('NCT06170788', 'NCT06422143', 36, 0.2832, 0.2948, 28.2, '2024-06-10'),
-    P('NCT06170788', 'NCT06623422', 16, 0.0, 0.0, 23.8, '2024-10-21'),
-    P('NCT06170788', 'NCT07190248', 17, 0.1027, 0.1654, 12.3, '2025-10-08'),
-    P('NCT06170788', 'NCT07554339', 14, 0.0, 0.0, 3.9, '2026-06-18'),
-    P('NCT06312137', 'NCT06345729', 34, 0.0, 0.0, 28.7, '2024-05-24'),
-    P('NCT06312137', 'NCT06422143', 41, 0.0, 0.0, 28.2, '2024-06-10'),
-    P('NCT06312137', 'NCT06623422', 20, 0.7962, 0.9106, 23.8, '2024-10-21'),
-    P('NCT06312137', 'NCT07190248', 18, 0.0, 0.0, 12.3, '2025-10-08'),
-    P('NCT06312137', 'NCT07554339', 14, 0.0, 0.0, 3.9, '2026-06-18'),
-    P('NCT06345729', 'NCT06422143', 30, 0.0, 0.0, 28.2, '2024-06-10'),
-    P('NCT06345729', 'NCT06623422', 15, 0.0, 0.0, 23.8, '2024-10-21'),
-    P('NCT06345729', 'NCT07190248', 16, 1.0, 0.2904, 12.3, '2025-10-08'),
-    P('NCT06345729', 'NCT07554339', 15, 0.245, 0.2298, 3.9, '2026-06-18'),
-    P('NCT06422143', 'NCT06623422', 21, 0.0, 0.0, 23.8, '2024-10-21'),
-    P('NCT06422143', 'NCT07190248', 16, 0.0, 0.0, 12.3, '2025-10-08'),
-    P('NCT06422143', 'NCT07554339', 9, 0.0, 0.0, 3.9, '2026-06-18'),
-    P('NCT06623422', 'NCT07190248', 14, 0.0, 0.0, 12.3, '2025-10-08'),
-    P('NCT06623422', 'NCT07554339', 9, 0.0, 0.0, 3.9, '2026-06-18'),
-    P('NCT07190248', 'NCT07554339', 10, 0.2731, 0.882, 3.9, '2026-06-18'),
+    P('NCT04077099', 'NCT05557591', 0, 0.1013, 0.0246, 19.0, '2023-04-21', '2024-11-20'),
+    P('NCT04077099', 'NCT05785767', 1, 0.1013, 0.0232, 16.7, '2023-06-30', '2024-11-20'),
+    P('NCT04077099', 'NCT05800015', 1, 0.4557, 0.0276, 15.4, '2023-08-08', '2024-11-20'),
+    P('NCT04077099', 'NCT06161441', 0, 0.0, 0.0, 4.2, '2024-07-16', '2024-11-20'),
+    P('NCT05557591', 'NCT05785767', 0, 1.0, 0.9431, 33.1, '2023-06-30', '2026-04-03'),
+    P('NCT05557591', 'NCT05800015', 0, 1.0, 0.2494, 33.6, '2023-08-08', '2026-05-26'),
+    P('NCT05557591', 'NCT06161441', 0, 0.0, 0.0, 16.4, '2024-07-16', '2025-11-27'),
+    P('NCT05785767', 'NCT05800015', 16, 1.0, 0.2645, 31.8, '2023-08-08', '2026-04-03'),
+    P('NCT05785767', 'NCT06161441', 3, 0.0, 0.0, 16.4, '2024-07-16', '2025-11-27'),
+    P('NCT05800015', 'NCT06161441', 2, 0.0, 0.0, 16.4, '2024-07-16', '2025-11-27'),
   ],
   criteria: {
-    both: ['Resectable stage II-IIIB (N2)', 'No EGFR-directed therapy indicated', 'No ALK-directed therapy indicated', 'No prior therapy for current NSCLC'],
-    onlyA: ['No active autoimmune disease', 'No ILD / pneumonitis history'],
-    onlyB: ['ECOG 0-1', 'No prior PD-1/PD-L1 inhibitor'],
+    both: [
+      'Stage IIIB–IV, not for curative therapy',
+      'First line',
+      'ECOG 0–1',
+      'No active brain metastases',
+      'No EGFR mutation',
+      'No ALK translocation',
+      'No ROS1 fusion',
+      'No ILD / pneumonitis',
+    ],
+    onlyA: ['PD-L1 TPS ≥ 50%', 'Never-smokers excluded'],
+    onlyB: [],
   },
 }
 
@@ -105,34 +123,28 @@ function phaseText(phases: string[]): string {
   return n.length ? `Phase ${n.join('/')}` : 'Phase not listed'
 }
 
-/** The crop from a live audit, or null when the audit does not hold every crop trial and pair (then the fallback stays). */
+/** The crop from a live audit, or null when the audit lacks the featured pair or any pair of its trials, or has more
+ *  trials than the preview shows (then the saved values stay). */
 export function cropFromAudit(a: OverlapAudit): Crop | null {
   const byId = new Map(a.trials.map((t) => [t.nct_id, t]))
-  const trials: OverlapTrial[] = []
-  for (const id of HERO_IDS) {
-    const t = byId.get(id)
-    if (!t) return null
-    trials.push(t)
-  }
-  const inCrop = new Set<string>(HERO_IDS)
-  const pairs: CropPair[] = a.pairs
-    .filter((p) => inCrop.has(p.p) && inCrop.has(p.q))
-    .map((p) => {
-      const countable = (byId.get(p.p)?.n_sites_identified ?? 0) > 0 && (byId.get(p.q)?.n_sites_identified ?? 0) > 0
-      return {
-        p: p.p,
-        q: p.q,
-        shared: countable ? p.shared_sites : null,
-        o_pq: p.o_pq,
-        o_qp: p.o_qp,
-        months: p.months_both_recruiting_estimated,
-        from: p.both_recruiting_from,
-        to: p.both_recruiting_to,
-        upperBound: p.upper_bound,
-        unreviewed: p.unreviewed_criteria,
-      }
-    })
-  if (pairs.length !== (HERO_IDS.length * (HERO_IDS.length - 1)) / 2) return null
+  const trials = a.trials
+  if (trials.length < 2 || trials.length > MAX_TRIALS || !byId.has(FEATURED[0]) || !byId.has(FEATURED[1])) return null
+  const pairs: CropPair[] = a.pairs.map((p) => {
+    const countable = (byId.get(p.p)?.n_sites_identified ?? 0) > 0 && (byId.get(p.q)?.n_sites_identified ?? 0) > 0
+    return {
+      p: p.p,
+      q: p.q,
+      shared: countable ? p.shared_sites : null,
+      o_pq: p.o_pq,
+      o_qp: p.o_qp,
+      months: p.months_both_recruiting_estimated,
+      from: p.both_recruiting_from,
+      to: p.both_recruiting_to,
+      upperBound: p.upper_bound,
+      unreviewed: p.unreviewed_criteria,
+    }
+  })
+  if (pairs.length !== (trials.length * (trials.length - 1)) / 2) return null
 
   let criteria = FALLBACK_CROP.criteria
   const fp = a.pairs.find((p) => (p.p === FEATURED[0] && p.q === FEATURED[1]) || (p.p === FEATURED[1] && p.q === FEATURED[0]))
@@ -150,7 +162,12 @@ export function cropFromAudit(a: OverlapAudit): Crop | null {
   }
 
   return {
+    sponsor: a.sponsor,
+    asOf: a.as_of,
     snapshot: a.snapshot_date,
+    basis: a.basis,
+    regionLabel: a.region_label,
+    population: a.population.n,
     live: true,
     trials: trials.map((t) => ({ nct: t.nct_id, label: t.acronym || t.nct_id, phase: phaseText(t.phases), nSites: t.n_sites })),
     pairs,
@@ -166,6 +183,17 @@ export const TERMS_SITE_A = '334d690736c4'
 export const TERMS_SITE_B = '0bf11037dddd'
 const CT_CHEST = 'ct_chest'
 
+/** How a site's per-participant sponsor total splits: research procedures priced from the CMS 2026 fee schedules
+ *  (PFS at the site's locality, CLFS national) versus Concord's proposed standard schedule (an assumption). */
+export interface SponsorSplit {
+  /** Research procedures priced from CMS fee schedules (sum of unit price x fixed-schedule visits). */
+  cms: number
+  /** Per-visit research fees from the proposed standard schedule. */
+  fees: number
+  coordinator: number
+  overhead: number
+}
+
 export interface TermsSide {
   site: string
   localityCode: string
@@ -174,6 +202,8 @@ export interface TermsSide {
   sponsor: number
   /** Billable to insurance, per participant (Medicare rates). */
   insurance: number
+  /** null when the split can't be shown honestly (placeholder prices, or the parts don't add up to the total). */
+  split: SponsorSplit | null
 }
 
 export interface TermsFragment {
@@ -196,8 +226,22 @@ export interface TermsFragment {
 
 /** GET /api/terms-flow/NCT05800015/compare?site_a=334d690736c4&site_b=0bf11037dddd&multiplier=1. */
 export const FALLBACK_TERMS: TermsFragment = {
-  a: { site: 'NYU Langone Health Perlmutter Cancer Center, New York, NY', localityCode: '01', localityName: 'Manhattan', sponsor: 6568.67, insurance: 6820.11 },
-  b: { site: 'Hattiesburg Clinic, Hattiesburg, MS', localityCode: '00', localityName: 'Mississippi', sponsor: 6193.66, insurance: 5500.88 },
+  a: {
+    site: 'NYU Langone Health Perlmutter Cancer Center, New York, NY',
+    localityCode: '01',
+    localityName: 'Manhattan',
+    sponsor: 6568.67,
+    insurance: 6820.11,
+    split: { cms: 1339.95, fees: 1990.0, coordinator: 1925.0, overhead: 1313.72 },
+  },
+  b: {
+    site: 'Hattiesburg Clinic, Hattiesburg, MS',
+    localityCode: '00',
+    localityName: 'Mississippi',
+    sponsor: 6193.66,
+    insurance: 5500.88,
+    split: { cms: 1039.93, fees: 1990.0, coordinator: 1925.0, overhead: 1238.73 },
+  },
   delta: -375.01,
   deltaItems: -300.02,
   fromPe: -270.04,
@@ -218,6 +262,23 @@ const sentence = (s: string) => {
   return t ? `${t[0].toUpperCase()}${t.slice(1)}.` : ''
 }
 
+const cents = (x: number) => Math.round(x * 100) / 100
+
+/** A side's split from the comparison rows (every sponsor line with a price, grouped by procedure, with the number of
+ *  fixed-schedule visits it falls on) and that side's totals. null when any sponsor line is a placeholder price or the
+ *  parts don't add up to the API's totals to the cent. */
+function splitFrom(c: Compare, side: 'a' | 'b'): SponsorSplit | null {
+  const t = c[side].totals
+  if (t.per_participant_placeholder > 0 || c.rows.some((r) => r.placeholder)) return null
+  const unit = (r: Compare['rows'][number]) => (side === 'a' ? r.unit_a : r.unit_b) * r.n_fixed
+  const cms = cents(c.rows.filter((r) => r.schedule === 'PFS' || r.schedule === 'CLFS').reduce((s, r) => s + unit(r), 0))
+  const fees = cents(c.rows.filter((r) => r.schedule === 'Standard').reduce((s, r) => s + unit(r), 0))
+  const ok =
+    Math.abs(cms + fees - t.per_participant_research_items) < 0.015 &&
+    Math.abs(t.per_participant_research_items + t.per_participant_coordinator + t.per_participant_overhead - t.per_participant) < 0.015
+  return ok ? { cms, fees, coordinator: t.per_participant_coordinator, overhead: t.per_participant_overhead } : null
+}
+
 /** The fragment from a live comparison, or null when the response does not have the expected shape (Site B lower,
  *  the CT line present), in which case the fallback, which the copy describes, stays. */
 export function termsFromCompare(c: Compare): TermsFragment | null {
@@ -231,6 +292,7 @@ export function termsFromCompare(c: Compare): TermsFragment | null {
       localityName: titleCase(c.a.locality.name),
       sponsor: c.a.totals.per_participant,
       insurance: c.a.totals.per_participant_insurance_medicare,
+      split: splitFrom(c, 'a'),
     },
     b: {
       site: c.b.site.label,
@@ -238,6 +300,7 @@ export function termsFromCompare(c: Compare): TermsFragment | null {
       localityName: titleCase(c.b.locality.name),
       sponsor: c.b.totals.per_participant,
       insurance: c.b.totals.per_participant_insurance_medicare,
+      split: splitFrom(c, 'b'),
     },
     delta: s.delta_per_participant,
     deltaItems: s.delta_research_items,

@@ -48,7 +48,7 @@ function instrument(page, log) {
 const TAB_ALIASES = { 'Pre-cleared terms': 'Term sheet (old)', 'Term sheet': 'Term sheet (old)', Portfolio: 'Portfolio clearing' }
 const RESEARCH_SUBTABS = ['Clear it', 'Robustness', 'Map', 'Portfolio clearing', 'Price tags', 'Term sheet (old)', 'Model & data']
 
-/** Click a top-level tab (Findings, Portfolio overlap, Protocol to terms, Research) or a Research sub-tab by
+/** Click a top-level tab (Protocol to terms, Portfolio overlap, Findings, Site scores, Research) or a Research sub-tab by
  *  its label; a sub-tab opens Research first. Old labels from the 7-tab app map through TAB_ALIASES. */
 async function clickTab(page, label) {
   const want = TAB_ALIASES[label] ?? label

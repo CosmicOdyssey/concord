@@ -135,7 +135,8 @@ async function fresh(browser, { width = 1440, height = 900, touch = false } = {}
         ['#terms-flow', 'Protocol to terms'],
         ['#terms-flow/NCT05800015', 'Protocol to terms'],
         ['#site-scores', 'Site scores'],
-        ['#financial', 'Sponsor budget'],
+        // Sponsor budget is out of the main navigation (no tab is selected) but #financial still opens it.
+        ['#financial', 'hidden:Sponsor budget'],
         ['#research/model', 'Research'],
         ['#research/robustness', 'Research'],
         ['#model', 'Research'],
@@ -152,20 +153,42 @@ async function fresh(browser, { width = 1440, height = 900, touch = false } = {}
           tab: document.querySelector('nav.tabs [aria-selected="true"] .tab-label')?.innerText ?? null,
           sub: document.querySelector('.rs-tabs [aria-selected="true"]')?.innerText ?? null,
           h1: document.querySelector('h1')?.innerText ?? null,
+          navLabels: [...document.querySelectorAll('nav.tabs .tab-label')].map((e) => e.innerText),
         }))
-        const ok = want === 'landing' ? r.landing : want === 'dev' ? r.h1 === 'Component check' : r.tab === want
+        const ok =
+          want === 'landing'
+            ? r.landing
+            : want === 'dev'
+              ? r.h1 === 'Component check'
+              : want.startsWith('hidden:')
+                ? r.tab === null && r.h1 === want.slice(7) && !r.navLabels.includes(want.slice(7))
+                : r.tab === want
         got.push({ hash, want, ...r, ok })
       }
       check('every route and deep link opens the right page', got.every((g) => g.ok), got.filter((g) => !g.ok).length ? got.filter((g) => !g.ok) : `${got.length} routes`)
-      // In-app navigation: wordmark to the landing page, See demo to Findings.
+      // In-app navigation: wordmark to the landing page, the landing's primary action to Protocol to terms (the
+      // Terms view then names its trial in the hash: #terms-flow/NCT...).
       await page.goto(`${BASE}/#findings`, { waitUntil: 'networkidle0' })
       await page.click('.appbar .wordmark')
       await sleep(600)
       const toLanding = await page.evaluate(() => ({ hash: location.hash, landing: !!document.querySelector('.lp') }))
       await page.click('.lp-actions .btn-primary')
       await sleep(900)
-      const toDemo = await page.evaluate(() => ({ hash: location.hash, tab: document.querySelector('nav.tabs [aria-selected="true"] .tab-label')?.innerText }))
-      check('wordmark goes to the landing page; See demo goes to Findings', toLanding.landing && toLanding.hash === '#home' && toDemo.hash === '#findings' && toDemo.tab === 'Findings', { toLanding, toDemo })
+      const toDemo = await page.evaluate(() => ({
+        hash: location.hash,
+        tab: document.querySelector('nav.tabs [aria-selected="true"] .tab-label')?.innerText,
+        tabs: [...document.querySelectorAll('nav.tabs .tab-label')].map((x) => x.innerText),
+      }))
+      check(
+        'wordmark goes to the landing page; the primary action opens Protocol to terms',
+        toLanding.landing && toLanding.hash === '#home' && /^#terms-flow\b/.test(toDemo.hash) && toDemo.tab === 'Protocol to terms',
+        { toLanding, toDemo },
+      )
+      check(
+        'tab order: Protocol to terms, Portfolio overlap, Findings, Site scores, Research (no Financial Coordination)',
+        toDemo.tabs.join('|') === 'Protocol to terms|Portfolio overlap|Findings|Site scores|Research',
+        toDemo.tabs,
+      )
       check('no page errors while routing', page.__errors.length === 0, page.__errors.slice(0, 3))
       await ctx.close()
     }
@@ -185,18 +208,43 @@ async function fresh(browser, { width = 1440, height = 900, touch = false } = {}
       check('header section link scrolls to its section and stays on the landing page', nav.landing && nav.hash === '#home/terms' && nav.top >= 0 && nav.top < 120, nav)
       await page.evaluate(() => window.scrollTo(0, 0))
       await sleep(300)
-      // The hero matrix is the shared half grid (halfgrid.tsx): .hg-cell buttons, .hg-n numbers.
+      // The overlap preview (second section): the Portfolio overlap tab's Regeneron Sep 1, 2024 preset, opening on the
+      // fianlimab pair. Hover and keyboard focus show another pair in the card.
       const title0 = await page.evaluate(() => document.querySelector('.lp-paircard-title').innerText)
-      const cell = await page.$('.lp-hero-fig .hg-cell[aria-label^="TroFuse-007 and NCT06345729"]')
+      const cell = await page.$('.lp-matrix-scroll .hg-cell[aria-label^="NCT05557591 and NCT05785767"]')
       await cell.hover()
       await sleep(250)
       const title1 = await page.evaluate(() => document.querySelector('.lp-paircard-title').innerText)
-      await page.focus('.lp-hero-fig .hg-cell[aria-label^="NCT07190248 and NCT07554339"]')
+      await page.focus('.lp-matrix-scroll .hg-cell[aria-label^="NCT05785767 and NCT06161441"]')
       await sleep(250)
-      const title2 = await page.evaluate(() => ({ t: document.querySelector('.lp-paircard-title').innerText, marks: document.querySelector('.lp-paircard .lp-mark')?.innerText }))
-      check('hero matrix: hover and keyboard focus show that pair, with its marks', title0 === 'TroFuse-019 × NCT06623422' && title1 === 'TroFuse-007 × NCT06345729' && title2.t === 'NCT07190248 × NCT07554339' && /Upper bound/.test(title2.marks), { title0, title1, title2 })
-      const live = await page.evaluate(() => ({ cells: document.querySelectorAll('.lp-hero-fig .hg-cell').length, n: document.querySelector('.lp-hero-fig .hg-cell[aria-label^="TroFuse-019 and NCT06623422"] .hg-n')?.innerText, money: [...document.querySelectorAll('.lp-money')].map((x) => x.innerText) }))
-      check('hero crop has 21 cells and the ledger values', live.cells === 21 && live.n === '20' && live.money.join(' ') === '$6,568.67 $6,193.66 $6,820.11 $5,500.88', live)
+      const title2 = await page.evaluate(() => ({ t: document.querySelector('.lp-paircard-title').innerText, foot: document.querySelector('.lp-paircard-foot')?.innerText }))
+      check(
+        'overlap preview: opens on the fianlimab pair; hover and keyboard focus show that pair',
+        title0 === 'NCT05785767 × NCT05800015' && title1 === 'NCT05557591 × NCT05785767' && title2.t === 'NCT05785767 × NCT06161441',
+        { title0, title1, title2 },
+      )
+      // Honesty marks: every cell's † / ‡ matches its accessible description (upper bound, unreviewed), the legend
+      // names the upper-bound mark, and the card says synthetic population and registered (not confirmed) sites.
+      const marks = await page.evaluate(() => {
+        const cells = [...document.querySelectorAll('.lp-matrix-scroll .hg-cell')]
+        const mismatch = cells.filter((c) => {
+          const mk = c.querySelector('.hg-mk')?.textContent ?? ''
+          const al = c.getAttribute('aria-label') ?? ''
+          return mk.includes('†') !== /upper bound/.test(al) || mk.includes('‡') !== /unreviewed/.test(al)
+        })
+        return { mismatch: mismatch.map((c) => c.getAttribute('aria-label')), legend: document.querySelector('.lp-legend')?.innerText.replace(/\s+/g, ' ') }
+      })
+      check(
+        'overlap preview: marks match the data; upper bound, synthetic population and registered-sites notes visible',
+        marks.mismatch.length === 0 && /Upper bound/.test(marks.legend) && /synthetic population/.test(title2.foot) && /Registered sites, not confirmed enrolling/.test(title2.foot),
+        { marks, foot: title2.foot },
+      )
+      const live = await page.evaluate(() => ({
+        cells: document.querySelectorAll('.lp-matrix-scroll .hg-cell').length,
+        n: document.querySelector('.lp-matrix-scroll .hg-cell[aria-label^="NCT05785767 and NCT05800015"] .hg-n')?.innerText,
+        money: [...document.querySelectorAll('.lp-money')].map((x) => x.innerText),
+      }))
+      check('overlap preview has 10 cells (5 Regeneron trials), 16 shared sites for the fianlimab pair; terms ledger values', live.cells === 10 && live.n === '16' && live.money.join(' ') === '$6,568.67 $6,193.66 $6,820.11 $5,500.88', live)
       const credit = await page.evaluate(() => {
         const a = document.querySelector('.lp-foot a[href="https://github.com/CosmicOdyssey/concord"]')
         return { text: a?.parentElement.innerText, href: a?.href }
