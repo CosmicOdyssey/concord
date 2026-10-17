@@ -6,6 +6,8 @@ eligibility shares on the synthetic population; no enrollment forecasts.
     GET /api/overlap/self-overlap        (data/findings/self_overlap.json, built by python -m concord.overlap)
 
 `region` is a service.REGIONS key; omit it (or pass "" / "all") for every registered site worldwide.
+`as_of` defaults to the registry snapshot (the CT.gov download date, returned as snapshot_date); a later
+date is refused with 400, because the audit describes the registry and never projects forward.
 """
 
 from __future__ import annotations
@@ -29,9 +31,9 @@ def _call(fn, *args):
     try:
         return fn(*args)
     except FileNotFoundError as e:
-        raise HTTPException(503, str(e))
+        raise HTTPException(503, str(e)) from e
     except ValueError as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from e
 
 
 @router.get("/sponsors")
