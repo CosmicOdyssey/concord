@@ -2,14 +2,38 @@
 
 The rule-based parser is not reliable enough to put in front of a clinician, so trials
 the demo shows are encoded by hand from their CT.gov eligibility text. Each criterion
-keeps the sentence it came from. Reviewed by a person, not generated.
+keeps the sentence it came from.
 
-Currently: Regeneron's NSCLC portfolio recruiting in 2024 (the portfolio-clearing demo).
+Two sources, merged into OVERRIDES (NCT id -> list[Criterion]):
+
+* Regeneron's NSCLC portfolio recruiting in 2024 (the portfolio-clearing demo), written
+  out below. Reviewed by a person, not generated. These win on conflict.
+* The demo trial set in `overrides_demo.json` (146 trials), encoded from each trial's
+  CT.gov eligibility text and checked in a separate verification pass against the same
+  text. Besides criteria, each entry records the trial design, the criteria that cannot be
+  expressed over the synthetic population's features (`unmodeled`), whether enrolment
+  hinges on a biomarker the population does not model, and a confidence level.
+
+DESIGN (NCT id -> {design, design_reason, unmodeled, requires_unmodeled_biomarker,
+confidence}) covers every hand-encoded trial. `design` is "single_population", "basket"
+(several tumor types, NSCLC is one) or "multi_cohort" (NSCLC only, but cohorts with
+different populations); service.py holds basket and multi-cohort trials out of the
+headline numbers because one eligible fraction cannot describe them.
+
+The module imports cleanly when overrides_demo.json is absent (only the Regeneron
+entries are then available).
 """
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from concord.compiler.eligibility import Criterion
+
+DEMO_PATH = Path(__file__).with_name("overrides_demo.json")
+DESIGNS = ("single_population", "basket", "multi_cohort")
+_DESIGN_KEYS = ("design", "design_reason", "unmodeled", "requires_unmodeled_biomarker", "confidence")
 
 
 def _c(id, kind, feature, op, value, label, source):
@@ -46,7 +70,7 @@ def _first_line_io(pdl1_50: bool, never_smokers_excluded: bool) -> list[Criterio
     return out
 
 
-OVERRIDES: dict[str, list[Criterion]] = {
+_REGENERON: dict[str, list[Criterion]] = {
     # Fianlimab + cemiplimab vs cemiplimab, 1L advanced NSCLC, PD-L1 >= 50%
     "NCT05785767": _first_line_io(pdl1_50=True, never_smokers_excluded=True),
     # Fianlimab + cemiplimab + chemotherapy vs cemiplimab + chemotherapy, 1L, any PD-L1
@@ -74,4 +98,30 @@ OVERRIDES: dict[str, list[Criterion]] = {
         _c("no_active_cns", "exclusion", "brain_mets_active", "==", True, "No active brain metastases",
            "Untreated or active primary brain tumor, CNS metastases ... [excluded]"),
     ],
+}
+
+_REGENERON_DESIGN = {"design": "single_population", "design_reason": "hand-encoded; NSCLC only, one population",
+                     "unmodeled": [], "requires_unmodeled_biomarker": False, "confidence": "high"}
+
+
+def _load_demo(path: Path = DEMO_PATH) -> dict[str, dict]:
+    """Entries of overrides_demo.json, or {} if the file is not there."""
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {}
+
+
+def _criteria(entry: dict) -> list[Criterion]:
+    return [_c(c["id"], c["kind"], c["feature"], c["op"], c["value"], c["label"], c["source"])
+            for c in entry.get("criteria", [])]
+
+
+_DEMO = _load_demo()
+
+OVERRIDES: dict[str, list[Criterion]] = {**{nct: _criteria(e) for nct, e in _DEMO.items()}, **_REGENERON}
+
+DESIGN: dict[str, dict] = {
+    **{nct: {k: e[k] for k in _DESIGN_KEYS} for nct, e in _DEMO.items()},
+    **{nct: dict(_REGENERON_DESIGN, unmodeled=[]) for nct in _REGENERON},
 }
