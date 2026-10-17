@@ -3,8 +3,8 @@
 The API fixture is intentionally the labeled synthetic financial demonstration;
 these tests establish accounting and execution behavior, not realized savings or
 clinical validation. They also pin the product owner's ruling (decisions.md #24):
-payer amounts never move the sponsor commitment, and nothing here outputs a time,
-speed or recommendation.
+in this worksheet payer assumptions do not move the sponsor commitment (only a line's
+coverage status does), and nothing here outputs a time, speed or recommendation.
 """
 
 from copy import deepcopy
@@ -17,7 +17,8 @@ import sqlite3
 import pytest
 from fastapi.testclient import TestClient
 
-from concord.financial import NO_TIME_MODEL, PAYER_BILLING, PAYER_INDEPENDENCE
+from concord.financial import (ACCESS_SUPPORT, NO_TIME_MODEL, NOT_A_BILLING_REVIEW, PAYER_BILLING,
+                               PAYER_INDEPENDENCE)
 
 
 @pytest.fixture
@@ -115,11 +116,22 @@ def test_capacity_rule_extends_a_short_network_at_the_lowest_commitment(client, 
     assert c["plan"]["feasible"] and not c["plan"]["network_search"]["base_has_capacity"]
     # SYN-C (activation 35k, 1.6k/month, 2.4k/participant) is cheaper than SYN-D (50k, 2.2k, 2.8k).
     assert c["plan"]["selected_ids"] == ["SYN-A", "SYN-B", "SYN-C"]
-    assert c["budget_reallocation"]["additional_sites"] == ["SYN-C"]
-    assert c["budget_reallocation"]["additional_activations"] == 1
-    assert c["budget_reallocation"]["incremental_cost"] is None  # A has no commitment to compare against
+    # The already-active sites are filled to stated capacity; only the shortfall goes to the new site
+    # (a proportional split would have been 12 / 12 / 36 and cost 6,400 more in site per-participant cost).
+    assert {r["id"]: r["participants"] for r in c["plan"]["site_rows"]} == {"SYN-A": 20, "SYN-B": 20, "SYN-C": 20}
+    assert c["plan"]["participant_split"] == "existing_sites_at_stated_capacity_then_added_sites_by_capacity"
+    assert c["plan"]["breakdown"]["site_variable"] == 20 * 2000 + 20 * 2000 + 20 * 2400
+    realloc = c["budget_reallocation"]
+    assert realloc["additional_sites"] == ["SYN-C"]
+    assert realloc["additional_activations"] == 1
+    assert realloc["incremental_cost"] is None  # A has no commitment to compare against
+    # ... but what the added capacity costs is still stated.
+    assert realloc["added_sites_cost"] == {"activation": 35000, "operating": 1600 * request_body["budget_period_months"],
+                                           "site_variable": 20 * 2400, "site_total": 35000 + 1600 * 24 + 20 * 2400,
+                                           "participants": 20}
     assert c["delta"] is None
     assert s["E"]["plan"]["selected_ids"] == c["plan"]["selected_ids"]
+    assert s["E"]["budget_reallocation"]["added_sites_cost"] == realloc["added_sites_cost"]
 
 
 def test_payments_conserve_and_resource_costs_are_not_payment_totals(client, request_body):
@@ -135,10 +147,46 @@ def test_payments_conserve_and_resource_costs_are_not_payment_totals(client, req
         assert economics["hospital"]["revenue"] == pytest.approx(hospital_receipts, abs=0.02)
         assert economics["hospital"]["net_contribution"] == pytest.approx(
             economics["hospital"]["revenue"] - economics["hospital"]["resource_cost"], abs=0.02)
+        # The sponsor supplies the investigational product: its reserve is a sponsor-side supply proxy,
+        # not a hospital resource cost (the hospital is not paid for it either).
+        n, b = request_body["target"], scenario["plan"]["breakdown"]
+        drug = next(i for i in result["coverage"]["items"] if i["id"] == "drug-contingency")
+        assert economics["sponsor"]["supply_resource_proxy"] == pytest.approx(drug["resource_cost_per_participant"] * n, abs=0.01)
+        assert economics["hospital"]["resource_cost"] == pytest.approx(
+            0.8 * (b["activation"] + b["operating"] + b["site_variable"])
+            + (result["coverage"]["totals"]["resource"] - drug["resource_cost_per_participant"]) * n, abs=0.02)
         # Count actual modeled resources once, while excluding the matching payment receipts.
         assert economics["consolidated_resource_cost"] == pytest.approx(
-            economics["hospital"]["resource_cost"] + scenario["plan"]["breakdown"]["administration"]
-            + economics["insurer"]["administration"] + economics["patient"]["access_support"], abs=0.02)
+            economics["hospital"]["resource_cost"] + economics["sponsor"]["supply_resource_proxy"]
+            + b["administration"] + economics["insurer"]["administration"] + economics["patient"]["access_support"], abs=0.02)
+
+
+def test_investigational_supply_is_never_a_hospital_receipt_or_cost(client, request_body):
+    default = by_id(compare(client, request_body))["A"]["economics"]
+    # Default demo: 60 x (0.8 x 0 + 0.8 x 52,800 + 0.8 x 120,000 ...) with no 2,500 drug reserve per participant.
+    assert default["hospital"]["net_contribution"] == pytest.approx(200489.40, abs=0.01)
+    request_body["coverage_overrides"] = {"drug-contingency": "SPONSOR"}
+    paid = by_id(compare(client, request_body))["A"]["economics"]
+    assert paid["sponsor"]["contingency_reserve"] == default["sponsor"]["contingency_reserve"] - default["sponsor"]["supply_resource_proxy"]
+    assert paid["sponsor"]["budget_commitment"] == default["sponsor"]["budget_commitment"]
+    assert paid["transfers"] == default["transfers"]  # a sponsor-paid supply amount is not paid to the hospital
+    assert paid["hospital"] == default["hospital"]
+    assert paid["consolidated_resource_cost"] == default["consolidated_resource_cost"]
+
+
+def test_access_support_is_not_netted_against_participant_cost_sharing(client, request_body):
+    s = by_id(compare(client, request_body))
+    extra = request_body["extra_support"] * request_body["target"]
+    for ident in "ABCDE":
+        patient = s[ident]["economics"]["patient"]
+        assert set(patient) == {"cost_sharing", "access_support", "unresolved_exposure"}
+        assert patient["cost_sharing"] == s["A"]["economics"]["patient"]["cost_sharing"]
+        assert s[ident]["delta"]["patient_cost_sharing"] == 0
+        assert "patient_exposure" not in s[ident]["delta"]
+    assert s["D"]["delta"]["access_support"] == s["E"]["delta"]["access_support"] == extra
+    assert s["D"]["economics"]["patient"]["access_support"] == s["A"]["economics"]["patient"]["access_support"] + extra
+    result = compare(client, request_body)
+    assert ACCESS_SUPPORT in result["limitations"] and result["assumptions"]["access_support"] == ACCESS_SUPPORT
 
 
 def sponsor_side(result):
@@ -176,6 +224,35 @@ def test_payer_share_moves_only_insurer_and_participant_lines(client, request_bo
     assert a_high["plan"]["sponsor_total"] == a_low["plan"]["sponsor_total"]
     assert a_high["economics"]["sponsor"] == a_low["economics"]["sponsor"]
     assert a_high["economics"]["hospital"]["revenue"] == pytest.approx(a_low["economics"]["hospital"]["revenue"], abs=0.02)
+
+
+def test_medicaid_shows_no_enrollee_cost_sharing_whatever_the_payer_share(client, request_body):
+    request_body["payer_kind"] = "Medicaid"
+    seen = []
+    for fraction in (0.0, 0.5, 0.8, 1.0):
+        request_body["payer_fraction"] = fraction
+        result = compare(client, request_body)
+        routine = [i for i in result["coverage"]["items"] if i["status"] == "POTENTIALLY_PAYER_COVERED"]
+        assert routine and all(i["patient_per_participant"] == 0 and i["payer_per_participant"] == i["unit_rate"]
+                               for i in routine)
+        assert result["coverage"]["totals"]["patient"] == 0
+        assert by_id(result)["A"]["economics"]["patient"]["cost_sharing"] == 0
+        assert "42 CFR 447.50-447.57" in result["coverage"]["warnings"][1]
+        seen.append(sponsor_side(result))
+    assert all(side == seen[0] for side in seen)
+
+
+def test_coverage_status_not_insurer_payment_moves_a_line_onto_the_sponsor(client, request_body):
+    """A contract term can make the sponsor pay a routine item; it is then not billed to the insurer."""
+    base = compare(client, request_body)
+    routine = next(i for i in base["coverage"]["items"] if i["status"] == "POTENTIALLY_PAYER_COVERED")
+    request_body["coverage_overrides"] = {routine["id"]: "SPONSOR"}
+    paid = compare(client, request_body)
+    item = next(i for i in paid["coverage"]["items"] if i["id"] == routine["id"])
+    assert item["sponsor_per_participant"] == item["sponsor_unit_rate"] > 0
+    assert item["payer_per_participant"] == item["patient_per_participant"] == 0
+    assert paid["coverage"]["totals"]["sponsor"] == pytest.approx(base["coverage"]["totals"]["sponsor"] + item["sponsor_unit_rate"], abs=0.02)
+    assert by_id(paid)["A"]["plan"]["sponsor_total"] > by_id(base)["A"]["plan"]["sponsor_total"]
 
 
 def test_sponsor_rate_multiplier_prices_research_items_not_insurer_payments(client, request_body):
@@ -410,6 +487,11 @@ def test_report_recomputes_same_evidence_and_escapes_untrusted_names(client, req
     assert "clinicaltrials.gov" in report.text
     assert "synthetic" in report.text.lower()
     assert html.escape(PAYER_BILLING) in report.text and html.escape(PAYER_INDEPENDENCE) in report.text
+    # No compliance claim the worksheet cannot make; the per-participant cost definition is stated.
+    assert "no double billing" not in report.text.lower()
+    assert html.escape(NOT_A_BILLING_REVIEW) in report.text and html.escape(ACCESS_SUPPORT) in report.text
+    assert "not itemized" in result["assumptions"]["site_per_participant_cost"]
+    assert "pilot" not in json.dumps(result).lower() and "pilot" not in report.text.lower()
 
 
 def test_unknown_report_format_is_rejected(client, request_body):

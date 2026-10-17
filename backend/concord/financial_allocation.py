@@ -15,9 +15,14 @@ import math
 ASSUMPTIONS = [
     "Operator-supplied site costs, stated capacities and feasibility flags; no empirical validation.",
     "Participants are allocated across the selected sites in proportion to each site's stated capacity "
-    "(largest-remainder integer rounding, ties broken by site id). Stated capacity is an input, not a "
+    "(largest-remainder integer rounding, ties broken by site id). When an existing network that lacks "
+    "capacity is extended, the existing sites are filled to their stated capacity first and only the "
+    "shortfall is split across the added sites by capacity. Stated capacity is an input, not a "
     "measured or predicted enrollment.",
     "Operating cost = each selected site's monthly cost x the budgeted contract period (an input).",
+    "Site per-participant cost covers only site costs not itemized in the coverage worksheet (for example "
+    "coordinator time and data entry); it must exclude every worksheet procedure, or that procedure is "
+    "counted twice.",
     "Activation for baseline-active sites is sunk and excluded; activation for added sites is included.",
     "A plan is feasible when stated capacity covers the target, the sponsor commitment is within budget, "
     "every selected site is operator-flagged feasible and support meets the floor.",
@@ -80,9 +85,31 @@ def allocate_by_capacity(sites: list[dict], target: int) -> list[int]:
     return allocation
 
 
+PROPORTIONAL = "proportional_to_stated_capacity"
+EXISTING_FIRST = "existing_sites_at_stated_capacity_then_added_sites_by_capacity"
+
+
+def _split(chosen: list[dict], target: int, base_ids) -> tuple[list[int], str]:
+    """Participant counts for ``chosen`` (sorted by id) and the rule that produced them.
+
+    Proportional to stated capacity, except when ``base_ids`` (the existing network) cannot hold the
+    target on its own: then each existing site takes its full stated capacity and only the shortfall
+    is split across the added sites by capacity. Under-filling already-active sites to push
+    participants to new ones would not be a sponsor's plan and would inflate the cost of the shortfall.
+    """
+    if base_ids is not None:
+        base = [s for s in chosen if s["id"] in base_ids]
+        added = [s for s in chosen if s["id"] not in base_ids]
+        base_capacity = sum(s["capacity"] for s in base)
+        if added and base_capacity < target:
+            extra = iter(allocate_by_capacity(added, target - base_capacity))
+            return [s["capacity"] if s["id"] in base_ids else next(extra) for s in chosen], EXISTING_FIRST
+    return allocate_by_capacity(chosen, target), PROPORTIONAL
+
+
 def _uncosted(ids, violations, stated_capacity):
     return {"feasible": False, "costed": False, "violations": violations, "selected_ids": ids,
-            "site_rows": [], "sponsor_total": None, "breakdown": None,
+            "participant_split": None, "site_rows": [], "sponsor_total": None, "breakdown": None,
             "stated_capacity": stated_capacity, "cost_per_participant": None,
             "budget_utilization": None, "unspent_budget": None, "assumptions": list(ASSUMPTIONS)}
 
@@ -90,8 +117,12 @@ def _uncosted(ids, violations, stated_capacity):
 def evaluate_plan(sites: list[dict], selected_ids: list[str], target: int,
                   budget_period_months: float, budget: float, procedure_per_participant: float,
                   admin_cost: float, support_per_participant: float,
-                  minimum_support: float = 0) -> dict:
-    """Sponsor commitment for one operator-defined site network; all amounts are dollars."""
+                  minimum_support: float = 0, base_ids: list[str] | None = None) -> dict:
+    """Sponsor commitment for one operator-defined site network; all amounts are dollars.
+
+    ``base_ids`` names the existing sites within ``selected_ids`` when the network extends an
+    existing one; it only changes the participant split (see ``_split``).
+    """
     _validate(sites, target, budget_period_months, budget, procedure_per_participant,
               admin_cost, support_per_participant, minimum_support)
     if not isinstance(selected_ids, list) or any(not isinstance(x, str) for x in selected_ids):
@@ -101,6 +132,8 @@ def evaluate_plan(sites: list[dict], selected_ids: list[str], target: int,
     by_id = {s["id"]: s for s in sites}
     if any(site_id not in by_id for site_id in selected_ids):
         raise ValueError("Unknown selected site id")
+    if base_ids is not None and (not isinstance(base_ids, list) or not set(base_ids) <= set(selected_ids)):
+        raise ValueError("base_ids must be a list of selected site ids")
     ids = sorted(selected_ids)
     chosen = [by_id[site_id] for site_id in ids]
     if not chosen:
@@ -114,7 +147,7 @@ def evaluate_plan(sites: list[dict], selected_ids: list[str], target: int,
     if capacity < target:
         violations.append("Stated capacity of the selected sites is below the participant target")
         return _uncosted(ids, violations, capacity)
-    counts = allocate_by_capacity(chosen, target)
+    counts, split = _split(chosen, target, None if base_ids is None else set(base_ids))
     rows = []
     for site, count in zip(chosen, counts):
         row = {"id": site["id"], "name": site.get("name", site["id"]),
@@ -135,7 +168,7 @@ def evaluate_plan(sites: list[dict], selected_ids: list[str], target: int,
     if total > budget + 1e-7:
         violations.append("Sponsor commitment exceeds budget")
     return {"feasible": not violations, "costed": True, "violations": violations, "selected_ids": ids,
-            "site_rows": rows, "sponsor_total": total, "breakdown": breakdown,
+            "participant_split": split, "site_rows": rows, "sponsor_total": total, "breakdown": breakdown,
             "stated_capacity": capacity, "cost_per_participant": total / target,
             "budget_utilization": total / budget if budget else (0.0 if total == 0 else None),
             "unspent_budget": budget - total, "assumptions": list(ASSUMPTIONS)}
@@ -143,7 +176,9 @@ def evaluate_plan(sites: list[dict], selected_ids: list[str], target: int,
 
 CAPACITY_RULE = ("Keep the existing network if its stated capacity covers the target; otherwise add "
                  "operator-feasible sites, choosing the capacity-sufficient network with the lowest "
-                 "sponsor commitment (ties: fewer sites, then sorted ids). Budget does not change the choice.")
+                 "sponsor commitment (ties: fewer sites, then sorted ids), with the existing sites filled "
+                 "to their stated capacity and only the shortfall placed at added sites. Budget does not "
+                 "change the choice.")
 
 
 def capacity_network(sites: list[dict], *, base_ids: list[str], target: int,
@@ -174,7 +209,7 @@ def capacity_network(sites: list[dict], *, base_ids: list[str], target: int,
     for size in range(1, len(extras) + 1):
         for added in itertools.combinations(extras, size):
             search["candidate_networks_evaluated"] += 1
-            plan = evaluate_plan(sites, [*base_ids, *added], **kw)
+            plan = evaluate_plan(sites, [*base_ids, *added], base_ids=list(base_ids), **kw)
             if plan["costed"]:
                 candidates.append(plan)
     search["capacity_sufficient_networks"] = len(candidates)

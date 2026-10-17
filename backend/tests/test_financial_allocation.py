@@ -100,18 +100,39 @@ def test_capacity_rule_adds_the_lowest_commitment_capacity_sufficient_sites():
     values[3]["feasible"] = False  # the free, huge site is operator-flagged infeasible: never added
     result = capacity_network(values, base_ids=["a"], **args())
     assert result["costed"]
-    # {a,c} has capacity 90 < 100; {a,b} (10,020) and {a,b,c} (10,320) cover it; c adds activation
-    # and monthly cost at b's per-participant cost, so {a,b} is the lower commitment.
+    # {a,c} has capacity 90 < 100; {a,b} (9,580) and {a,b,c} (9,740) cover it. a takes its 60, the
+    # shortfall of 40 goes to the added sites; c adds activation and monthly cost at b's per-participant
+    # cost, so {a,b} is the lower commitment.
     assert result["selected_ids"] == ["a", "b"]
-    assert result["sponsor_total"] == 10020
+    assert [r["participants"] for r in result["site_rows"]] == [60, 40]
+    assert result["sponsor_total"] == 9580
     search = result["network_search"]
     assert not search["base_has_capacity"]
     assert search["candidate_networks_evaluated"] == 3  # {b}, {c}, {b,c} added to a
     assert search["capacity_sufficient_networks"] == 2
-    expected = min((evaluate_plan(values, ids, **args()) for ids in (["a", "b"], ["a", "b", "c"])),
+    expected = min((evaluate_plan(values, ids, base_ids=["a"], **args()) for ids in (["a", "b"], ["a", "b", "c"])),
                    key=lambda p: p["sponsor_total"])
     assert result["sponsor_total"] == expected["sponsor_total"]
     assert result == capacity_network(list(reversed(values)), base_ids=["a"], **args())
+
+
+def test_extending_a_short_network_fills_the_existing_sites_first():
+    values = sites() + [dict(id="c", name="C", baseline_active=False, feasible=True, activation_cost=100,
+                             monthly_cost=5, per_participant_cost=40, capacity=30)]
+    values[0]["capacity"] = 60
+    extended = evaluate_plan(values, ["a", "b", "c"], base_ids=["a"], **args())
+    assert extended["participant_split"] == "existing_sites_at_stated_capacity_then_added_sites_by_capacity"
+    # a takes its full 60; the shortfall 40 splits 100:30 across b and c (30.8 / 9.2, largest remainder to b).
+    assert [r["participants"] for r in extended["site_rows"]] == [60, 31, 9]
+    proportional = evaluate_plan(values, ["a", "b", "c"], **args())
+    assert proportional["participant_split"] == "proportional_to_stated_capacity"
+    assert [r["participants"] for r in proportional["site_rows"]] == [31, 53, 16]
+    # When the existing sites can hold the target alone, the base has nothing to fill first.
+    roomy = sites()
+    assert evaluate_plan(roomy, ["a", "b"], base_ids=["a"], **args())["site_rows"] == \
+        evaluate_plan(roomy, ["a", "b"], **args())["site_rows"]
+    with pytest.raises(ValueError):
+        evaluate_plan(values, ["a", "b"], base_ids=["c"], **args())
 
 
 def test_capacity_rule_choice_ignores_budget_and_reports_overrun():

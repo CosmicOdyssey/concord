@@ -2,6 +2,8 @@
 
 For the frontend pass that moves `frontend/src/financialApi.ts` and `FinancialView.tsx` onto the reworked backend. Why it changed: decisions.md #24 (the product owner's ruling that payer amounts are benchmarks for fair-value reasoning and site negotiation, not a lever that lowers sponsor cost or speeds a trial; the app-wide rule that no view shows a predicted speedup, time-to-fill or enrollment rate).
 
+**Revision 2 (same day, review fixes)** changed: `economics.patient` (no `net_cash_exposure`), `delta` (`patient_exposure` -> `patient_cost_sharing`, new `access_support`), `economics.sponsor.supply_resource_proxy` (new; the supply reserve left `hospital.resource_cost`), `plan.participant_split` (new), `budget_reallocation.added_sites_cost` (new), Medicaid participant share (0, `payer_fraction` not applied), and the payer, billing, administration and per-participant-cost wording. Items marked **(rev 2)** below.
+
 Endpoints are unchanged: `GET /api/financial/demo`, `POST /api/financial/compare`, `POST /api/financial/report?format=json|html`. The request model still forbids unknown fields, so **posting any removed field is a 422**.
 
 ## 1. Removed and renamed
@@ -28,19 +30,27 @@ Endpoints are unchanged: `GET /api/financial/demo`, `POST /api/financial/compare
 | `scenarios[].plan.site_rows[].rate`, `projected_capacity` | `site_rows[].capacity` | |
 | `scenarios[].reinvestment` (`incremental_ongoing_cost`, `modeled_time_change`) | `scenarios[].budget_reallocation` | Cost only. See section 3. |
 | `scenarios[].sensitivity.modeled_months_quantiles`, `probability_horizon_exceeded` | removed | |
-| `assumptions.sponsor_pilot` | `assumptions.sponsor_administration` | |
+| `assumptions.sponsor_pilot` | `assumptions.sponsor_administration` | Text no longer mentions a coordination pilot: administration is an operator input and B's cut has no modeled source. **(rev 2)** |
+| `scenarios[].economics.patient.net_cash_exposure` | removed **(rev 2)** | It subtracted travel/lodging support from routine cost sharing. Show `patient.cost_sharing` and `patient.access_support` side by side, never netted. |
+| `scenarios[].delta.patient_exposure` | `scenarios[].delta.patient_cost_sharing` **(rev 2)** | 0 in every scenario (no lever changes cost sharing). |
 | violation "Insufficient deliverable participant capacity within the horizon" | "Stated capacity of the selected sites is below the participant target" | |
 | violation "Sponsor total exceeds budget" | "Sponsor commitment exceeds budget" | |
 | violations "Nominal modeled duration exceeds the horizon", "Timing exceeds the existing core model's supported range", "Nominal no-loser timing bound exceeded", "Every selected site must receive at least one participant", "Every selected site must have positive rate and horizon capacity" | removed | |
 
 ### New fields
 
-`scenarios[].definition`, `scenarios[].inputs`, `scenarios[].plan.costed`, `scenarios[].plan.network_search`, `scenarios[].budget_reallocation`, `scenarios[].sensitivity.cost_spread`, `scenarios[].sensitivity.varied_inputs`, `comparison`, `coverage.insurer_amounts_unknown`, `coverage.items[].sponsor_unit_rate`, `coverage.items[].insurer_amount_known`, `assumptions.contract_period`, `assumptions.participant_split`, `assumptions.feasibility`, `assumptions.fee_benchmarks`, `assumptions.payer_benchmarks`, `assumptions.payer_billing`, `assumptions.payer_independence`.
+`scenarios[].definition`, `scenarios[].inputs`, `scenarios[].plan.costed`, `scenarios[].plan.network_search`, `scenarios[].plan.participant_split` (rev 2), `scenarios[].budget_reallocation`, `scenarios[].budget_reallocation.added_sites_cost` (rev 2), `scenarios[].delta.access_support` (rev 2), `scenarios[].economics.sponsor.supply_resource_proxy` (rev 2), `scenarios[].sensitivity.cost_spread`, `scenarios[].sensitivity.varied_inputs`, `comparison`, `coverage.insurer_amounts_unknown`, `coverage.items[].sponsor_unit_rate`, `coverage.items[].insurer_amount_known`, `assumptions.contract_period`, `assumptions.participant_split`, `assumptions.feasibility`, `assumptions.fee_benchmarks`, `assumptions.payer_benchmarks`, `assumptions.payer_billing`, `assumptions.payer_independence`, `assumptions.site_per_participant_cost` (rev 2), `assumptions.access_support` (rev 2).
+
+### Values that changed (rev 2)
+
+- `economics.hospital.resource_cost` no longer includes the investigational-supply reserve (target x `drug_contingency_per_participant`); it moved to `economics.sponsor.supply_resource_proxy`. Default A: resource cost 675,418.20 -> 525,418.20, hospital contribution 50,489.40 -> 200,489.40. `consolidated_resource_cost` is unchanged. A sponsor-paid supply line (`drug-contingency` overridden to SPONSOR) is not part of the sponsor-to-hospital transfer.
+- Medicaid: routine lines show insurer = benchmark, participant = 0, whatever `payer_fraction` is.
+- C/E in a capacity-short variant: participant counts and commitments differ (existing sites filled first). Sponsor commitments in the default fixture are unchanged (A 662,387.40; B 632,387.40; C 662,387.40; D 680,387.40; E 650,387.40).
 
 ### Values that can now be `null`
 
 - `coverage.totals.payer`, `coverage.totals.patient`, `coverage.items[].payer_per_participant`, `coverage.items[].patient_per_participant`: `null` = UNKNOWN (commercial plan without `commercial_rate_assumption`). Show "Unknown", never 0.
-- `economics.insurer.payments`, `economics.insurer.total`, `economics.patient.cost_sharing`, `economics.patient.net_cash_exposure`, `economics.hospital.revenue`, `economics.hospital.net_contribution`, `economics.transfers[].amount`, and the matching `delta.*`: `null` for the same reason.
+- `economics.insurer.payments`, `economics.insurer.total`, `economics.patient.cost_sharing`, `economics.hospital.revenue`, `economics.hospital.net_contribution`, `economics.transfers[].amount`, and the matching `delta.*`: `null` for the same reason.
 - `plan.sponsor_total`, `breakdown`, `cost_per_participant`, `budget_utilization`, `unspent_budget`: `null` when `plan.costed` is false (stated capacity below the target).
 - `budget_reallocation.line_changes`, `budget_reallocation.incremental_cost`: `null` when A is not costed.
 
@@ -65,15 +75,15 @@ Endpoints are unchanged: `GET /api/financial/demo`, `POST /api/financial/compare
 | `payer_kind` | `"Medicare" \| "commercial" \| "Medicaid"` | Medicare | | Changes only insurer/participant lines. |
 | `jurisdiction` | string | "MA" | 2 to 80 chars | Label carried on coverage lines. |
 | `payer_plan` | string | "UNVERIFIED DEMO" | 1 to 120 chars | Label carried on coverage lines. |
-| `payer_fraction` | number | 0.8 | 0 to 1 | Insurer share of the routine-care benchmark; remainder is participant cost sharing. Changes only insurer/participant lines. |
+| `payer_fraction` | number | 0.8 | 0 to 1 | Insurer share of the routine-care benchmark; remainder is participant cost sharing. Changes only insurer/participant lines. **Not applied for Medicaid** (participant share 0; rev 2): disable or annotate the input when `payer_kind` is Medicaid. |
 | `commercial_rate_assumption` | boolean | false | | Commercial only: assume the allowed amount equals the Medicare benchmark. Without it, commercial routine amounts are UNKNOWN. |
 | `sponsor_rate_multiplier` | number | 1 | 0.1 to 5 | Negotiated research-item rate as a multiple of the benchmark (FMV input). |
 | `payer_admin_per_participant` | number | 30 | 0 to 10,000 | Insurer administration resource cost per participant. |
 | `drug_contingency_per_participant` | number | 2,500 | 0 to 1e7 | Investigational-supply reserve per participant. |
-| `coverage_overrides` | `{[nodeId]: CoverageStatus}` | {} | <= 200 | Operator responsibility edits. Research items cannot be set to payer/patient (422). `drug-contingency` may be SPONSOR/UNKNOWN/REVIEW_REQUIRED/CONDITIONAL only. Unknown ids are 422. |
+| `coverage_overrides` | `{[nodeId]: CoverageStatus}` | {} | <= 200 | Operator responsibility edits. A routine item may be set to SPONSOR (a contract term; it is then not billed to the insurer). Research items cannot be set to payer/patient (422). `drug-contingency` may be SPONSOR/UNKNOWN/REVIEW_REQUIRED/CONDITIONAL only. Unknown ids are 422. |
 | `sites` | `Site[]` | 4 synthetic sites | 1 to 8, unique ids, >= 1 baseline-active | |
 
-`Site`: `id` (`^[A-Za-z0-9_-]{1,40}$`), `name` (1 to 120 chars), `baseline_active` (bool, default false), `feasible` (bool, default true; operator flag), `activation_cost` (0 to 1e7, default 30,000; sunk and excluded when baseline-active), `monthly_cost` (0 to 1e6, default 1,000), `per_participant_cost` (0 to 1e6, default 2,000), `capacity` (integer 1 to 10,000, default 60; stated capacity, an input). Nothing else.
+`Site`: `id` (`^[A-Za-z0-9_-]{1,40}$`), `name` (1 to 120 chars), `baseline_active` (bool, default false), `feasible` (bool, default true; operator flag), `activation_cost` (0 to 1e7, default 30,000; sunk and excluded when baseline-active), `monthly_cost` (0 to 1e6, default 1,000), `per_participant_cost` (0 to 1e6, default 2,000; site costs **not itemized** in the coverage worksheet, e.g. coordinator time and data entry; must exclude every worksheet procedure; suggested label "Site per-participant cost (not itemized)"), `capacity` (integer 1 to 10,000, default 60; stated capacity, an input). Nothing else.
 
 `CoverageStatus`: `SPONSOR`, `POTENTIALLY_PAYER_COVERED`, `POTENTIALLY_PATIENT_COST_SHARING`, `CONDITIONAL`, `UNKNOWN`, `REVIEW_REQUIRED` (unchanged).
 
@@ -98,7 +108,7 @@ interface FinancialResult {
 }
 ```
 
-`assumptions` keys: `active_site_activation`, `sponsor_administration`, `contract_period`, `participant_split`, `feasibility`, `hospital_payment`, `fee_benchmarks`, `payer_benchmarks`, `payer_billing`, `payer_independence`, `trial_target`, `resource_costs`.
+`assumptions` keys: `active_site_activation`, `sponsor_administration`, `contract_period`, `participant_split`, `site_per_participant_cost`, `access_support`, `feasibility`, `hospital_payment`, `fee_benchmarks`, `payer_benchmarks`, `payer_billing`, `payer_independence`, `trial_target`, `resource_costs`.
 
 ### Coverage
 
@@ -128,7 +138,7 @@ interface CoverageItem {
 }
 ```
 
-Line rules: `SPONSOR` -> sponsor = `sponsor_unit_rate`. `UNKNOWN`/`CONDITIONAL`/`REVIEW_REQUIRED` -> reserve = `sponsor_unit_rate`. `POTENTIALLY_PAYER_COVERED` -> payer + patient = `unit_rate` split by `payer_fraction`, or both `null` for commercial without the assumption; sponsor and reserve are 0. `POTENTIALLY_PATIENT_COST_SHARING` -> patient = `unit_rate`.
+Line rules: `SPONSOR` -> sponsor = `sponsor_unit_rate`. `UNKNOWN`/`CONDITIONAL`/`REVIEW_REQUIRED` -> reserve = `sponsor_unit_rate`. `POTENTIALLY_PAYER_COVERED` -> payer + patient = `unit_rate` split by `payer_fraction` (Medicare, assumed commercial), payer = `unit_rate` and patient = 0 for Medicaid, or both `null` for commercial without the assumption; sponsor and reserve are 0. `POTENTIALLY_PATIENT_COST_SHARING` -> patient = `unit_rate`.
 
 ### Scenario
 
@@ -150,6 +160,8 @@ interface Plan {
   costed: boolean        // false only when stated capacity < target (no price is invented)
   violations: string[]   // reasons feasible is false
   selected_ids: string[] // sorted
+  participant_split: null | 'proportional_to_stated_capacity'
+    | 'existing_sites_at_stated_capacity_then_added_sites_by_capacity'   // rev 2; null when not costed
   site_rows: { id: string; name: string; participants: number; capacity: number
                activation: number; activation_sunk: boolean; operating: number
                variable: number; procedure: number; support: number; total: number }[]
@@ -167,15 +179,21 @@ interface Plan {
 interface BudgetReallocation {
   additional_sites: string[]             // sites beyond the existing (baseline-active) network
   additional_activations: number
+  added_sites_cost: {                    // rev 2: the added sites' own site costs; defined even when A is
+    activation: number; operating: number //        not costed (all 0 when no site is added)
+    site_variable: number; site_total: number; participants: number }
   line_changes: { activation: number; operating: number; site_variable: number
                   procedures: number; support: number; administration: number } | null   // vs A
   incremental_cost: number | null        // commitment change vs A
 }
-interface Economics {   // unchanged shape; some values may be null (see section 1)
-  sponsor: { expenditure: number; contingency_reserve: number; budget_commitment: number }
-  hospital: { revenue: number | null; resource_cost: number; net_contribution: number | null }
+interface Economics {   // some values may be null (see section 1)
+  sponsor: { expenditure: number; contingency_reserve: number; budget_commitment: number
+             supply_resource_proxy: number }   // rev 2: investigational-supply reserve as a sponsor-side resource
+  hospital: { revenue: number | null; resource_cost: number; net_contribution: number | null }  // excludes supply (rev 2)
   insurer: { payments: number | null; administration: number; total: number | null; downstream_clinical_cost: null }
-  patient: { cost_sharing: number | null; access_support: number; net_cash_exposure: number | null; unresolved_exposure: null }
+  patient: { cost_sharing: number | null     // illustrative routine cost sharing (0 for Medicaid)
+             access_support: number           // sponsor travel/lodging support; NOT netted against cost_sharing
+             unresolved_exposure: null }      // rev 2: net_cash_exposure removed
   transfers: { from: string; to: string; amount: number | null }[]
   party_transfer_balances: Record<'Sponsor' | 'Hospital' | 'Insurer' | 'Participant', number>
   transfer_balance: number              // 0; UNKNOWN amounts are left out, not set to 0
@@ -183,7 +201,9 @@ interface Economics {   // unchanged shape; some values may be null (see section
   resource_assumptions: string[]
 }
 interface Delta { sponsor_expenditure: number | null; resources: number | null
-  hospital_contribution: number | null; insurer_expenditure: number | null; patient_exposure: number | null }
+  hospital_contribution: number | null; insurer_expenditure: number | null
+  patient_cost_sharing: number | null    // rev 2 (was patient_exposure)
+  access_support: number | null }        // rev 2
 interface Sensitivity {
   sponsor_total_quantiles: [number, number, number]   // q10, q50, q90
   probability_budget_exceeded: number                  // share of draws over budget
@@ -192,7 +212,7 @@ interface Sensitivity {
 }
 ```
 
-Scenario semantics: A = baseline-active sites, entered admin and support. B = A with `admin_cost x (1 - admin_reduction)`. C = A's network if its stated capacity covers the target, else the lowest-commitment network of A's sites plus operator-feasible extras that covers it. D = A with `support_per_participant + extra_support`. E = B's admin, C's rule, D's support. Participants are split in proportion to stated capacity. Operating = monthly cost x `budget_period_months`.
+Scenario semantics: A = baseline-active sites, entered admin and support. B = A with `admin_cost x (1 - admin_reduction)`. C = A's network if its stated capacity covers the target, else the lowest-commitment network of A's sites plus operator-feasible extras that covers it. D = A with `support_per_participant + extra_support`. E = B's admin, C's rule, D's support. Participants are split in proportion to stated capacity, except that when C/E extend a network that lacks capacity, existing sites take their full stated capacity and only the shortfall is split across added sites by capacity (rev 2; e.g. 20/20/20, not 12/12/36). Operating = monthly cost x `budget_period_months`.
 
 ## 4. Other endpoints
 
@@ -206,5 +226,11 @@ Scenario semantics: A = baseline-active sites, entered admin and support. B = A 
 - Rename "Reinvestment Lab" to something cost-only (e.g. "Budget reallocation"); show `budget_reallocation.line_changes` and `incremental_cost`.
 - Wherever payer type, payer share or the commercial assumption is edited, say that it changes only the insurer and participant lines; render `null` insurer/participant amounts as "Unknown".
 - When `plan.network_search.base_has_capacity` is true, say C adds no sites because the existing network's stated capacity covers the target.
-- Render `limitations` (it carries the payer-benchmark, billing, independence and no-time sentences).
+- Render `limitations` (it carries the payer-benchmark, billing, independence, access-support, billing-review and no-time sentences).
+- **(rev 2)** Drop the "SPONSOR-FUNDED PLANNING PILOT" eyebrow (`FinancialView.tsx` line 83) and the "reinvestment" and "validated acceleration" wording in the heading and warning (lines 83-84). The worksheet is a sponsor-budget comparison; nothing in it is a pilot that produces savings.
+- **(rev 2)** Participant columns: show "Participant routine cost sharing (illustrative)" and "Sponsor access support" as two values. Never show a net of the two or any "participant net exposure".
+- **(rev 2)** For C/E with added sites, show `budget_reallocation.added_sites_cost` (what the added sites cost and how many participants they take), especially when A is not costed and `incremental_cost` is null. Show `plan.participant_split` in plain words.
+- **(rev 2)** Ledger: show `economics.sponsor.supply_resource_proxy` as a sponsor-side line, not under the hospital.
+- **(rev 2)** Label site `per_participant_cost` as costs not itemized in the worksheet. Do not show "no double billing" or any compliance claim.
+- **(rev 2)** When `payer_kind` is Medicaid, disable or annotate the payer-share input (not applied; participant share 0).
 - Current view breakpoints: `FinancialView.tsx` line 16 (`plan.projected_capacity`, `plan.modeled_months` column), line 57 (`recommended_scenario_id`), line 92 (`horizon_months` input), line 94 (`rate_multiplier`), line 96 (`no_loser` checkbox; per-site rate and lag columns), lines 92/100 (`rate_spread`), and the Reinvestment Lab section; `financialApi.ts` types `FinancialSite`, `FinanceRequest`, `FinancialScenario`, `FinancialResult`.

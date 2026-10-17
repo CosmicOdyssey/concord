@@ -1,8 +1,9 @@
 """Sponsor-budget comparison on authored protocols; never a claim, coverage approval or timeline.
 
 Five scenarios are compared at a fixed participant target over a budgeted contract period.
-They are listed, not ranked. Payer assumptions change only the insurer and participant lines;
-they never change the sponsor commitment.
+They are listed, not ranked. In this worksheet payer assumptions (payer type, payer share, the
+commercial-rate assumption) change only the insurer and participant lines; a line moves onto or off
+the sponsor only through its coverage status.
 """
 from __future__ import annotations
 
@@ -30,16 +31,29 @@ SOURCES = [
     {"id":"commercial","url":"https://www.cancer.gov/research/participate/clinical-trials/paying","title":"NCI: insurance coverage for clinical trials","kind":"policy_reference","checked":"2026-10-17","scope":"Plan and network requirements apply. No commercial allowed amount is inferred without an explicit assumption."},
 ]
 
-# Payer framing (product owner ruling, 17 Oct): payer amounts are benchmarks and negotiation inputs,
-# billing follows coverage rules, and nothing an insurer pays moves the sponsor commitment.
+# Payer framing (product owner ruling, 17 Oct): payer amounts are benchmarks and negotiation inputs;
+# who is billed follows the protocol, coverage rules and the site contract; an insurer's payment amount
+# is not a lever over the sponsor commitment.
 PAYER_BENCHMARKS = ("Medicare and insurer amounts for routine care are benchmarks: they inform fair-market-value "
                     "reasoning and are inputs to the sponsor's budget negotiation with each site or hospital.")
-PAYER_BILLING = ("Who is billed for an item follows coverage rules (for Medicare, NCD 310.1 routine costs in "
-                 "qualifying trials), not negotiation: research-only items stay with the sponsor, and routine "
-                 "care is billed to the participant's insurer subject to plan and coverage review.")
-PAYER_INDEPENDENCE = ("The sponsor's commitment for research items does not fall because an insurer pays more, "
-                      "and does not rise because an insurer pays less or its amount is unknown: payer type, "
-                      "payer share and the commercial-rate assumption change only the insurer and participant lines.")
+PAYER_BILLING = ("Whether an item may be billed to an insurer follows the protocol and coverage rules (for "
+                 "Medicare, NCD 310.1 routine costs in qualifying trials): research-only items are the sponsor's "
+                 "and are never billed to an insurer or participant. The site contract can still have the sponsor "
+                 "pay for a routine item (mark it SPONSOR here), and an item the sponsor pays for or supplies free "
+                 "is then not billed to the insurer. Insurer payment amounts are not a lever over who is billed.")
+PAYER_INDEPENDENCE = ("In this worksheet, payer type, payer share and the commercial-rate assumption change only the "
+                      "insurer and participant lines; the sponsor commitment does not fall because an insurer pays "
+                      "more for routine care. A line moves onto or off the sponsor only through its coverage status "
+                      "(who is billed), set by coverage review or a contract term, never through the insurer's "
+                      "payment amount. Payer and Medicare amounts can still inform the rate negotiated for research "
+                      "items (benchmark x sponsor_rate_multiplier).")
+ACCESS_SUPPORT = ("Access support reimburses trial-related travel and lodging; it is not netted against, and does not "
+                  "pay, insurer cost sharing. Whether a sponsor may cover a beneficiary's cost sharing is a separate "
+                  "compliance question this worksheet does not model.")
+NOT_A_BILLING_REVIEW = ("Each worksheet line is assigned to one party (sponsor, insurer, participant or sponsor "
+                        "contingency). That is not a billing-compliance review and does not establish that no item "
+                        "is billed twice. Site per-participant costs must exclude every itemized worksheet procedure, "
+                        "or that procedure is counted twice.")
 # The one sentence allowed to name the time quantities this tab does not produce.
 NO_TIME_MODEL = ("Nothing here models negotiation length, enrollment speed, time to fill sites or trial duration, "
                  "and no scenario is ranked or recommended; the budgeted contract period is an input that "
@@ -54,7 +68,9 @@ LIMITATIONS = [
     "Routine coverage is potential, subject to qualifying-trial, beneficiary, jurisdiction, plan, network and service review. No insurer participates or commits funding.",
     "Unknown responsibility is held as sponsor contingency, not billed to insurers or participants. Unresolved patient exposure is unknown, not evidence of zero liability.",
     "Only the authored non-repeating visits (screening, cycles 1-8, end of treatment, safety follow-up) are priced. Actual drug acquisition/manufacturing, later treatment, complications and downstream outcomes are unknown; the drug contingency is an assumption, not a complete trial cost.",
-    "Participants are split across selected sites in proportion to stated capacity, an operator input; it is not a measured or predicted enrollment.",
+    ACCESS_SUPPORT,
+    NOT_A_BILLING_REVIEW,
+    "Participants are split across selected sites in proportion to stated capacity, an operator input; when an existing network that lacks capacity is extended, existing sites are filled to their stated capacity first and only the shortfall goes to added sites. It is not a measured or predicted enrollment.",
     "Sensitivity varies only site cost inputs (seeded lognormal spread); the ranges are not calibrated intervals.",
     "Sponsor-to-hospital payments are transfers. Consolidated resource costs use separate explicit cost assumptions; a lower sponsor payment is not automatically a system or payer saving.",
     "No claims, reimbursements, coverage authorizations, contracts or patient-identifiable records are transmitted. Operator corrections are interpretations, not clinical or payer attestations.",
@@ -81,7 +97,7 @@ class Site(Strict):
     feasible: bool = True
     activation_cost: float = Field(30000, ge=0, le=1e7)
     monthly_cost: float = Field(1000, ge=0, le=1e6)
-    per_participant_cost: float = Field(2000, ge=0, le=1e6)
+    per_participant_cost: float = Field(2000, ge=0, le=1e6, description="Site per-participant costs NOT itemized in the coverage worksheet (e.g. coordinator time, data entry); must exclude every worksheet procedure")
     capacity: int = Field(60, ge=1, le=10000, description="Stated participant capacity (operator input, not a forecast)")
 
 
@@ -108,7 +124,7 @@ class FinanceRequest(Strict):
     payer_kind: Literal["Medicare","commercial","Medicaid"] = "Medicare"
     jurisdiction: str = Field("MA",min_length=2,max_length=80)
     payer_plan: str = Field("UNVERIFIED DEMO",min_length=1,max_length=120)
-    payer_fraction: float = Field(.8,ge=0,le=1)
+    payer_fraction: float = Field(.8,ge=0,le=1,description="Insurer share of the routine-care benchmark (Medicare, assumed commercial); not applied to Medicaid, whose enrollee cost sharing is shown as 0")
     commercial_rate_assumption: bool = False
     sponsor_rate_multiplier: float = Field(1, ge=.1, le=5, description="Sponsor-site negotiated rate for research items as a multiple of the fee-schedule benchmark")
     payer_admin_per_participant: float = Field(30,ge=0,le=10000)
@@ -159,7 +175,7 @@ def coverage(req: FinanceRequest):
         default = Responsibility.SPONSOR if cov[node['id']]['coverage']=='research' else Responsibility.PAYER
         status=req.coverage_overrides.get(node['id'],default)
         if default==Responsibility.SPONSOR and status in (Responsibility.PAYER,Responsibility.PATIENT):
-            raise ValueError("Authored research services cannot be shifted to insurers or participants by this pilot")
+            raise ValueError("Authored research services cannot be shifted to insurers or participants by this worksheet")
         price=terms._price_code(proc['code'],None) if proc.get('code') else None
         if price and price.get('amount') is not None:
             benchmark=float(price['amount'])
@@ -178,6 +194,10 @@ def coverage(req: FinanceRequest):
         if status==Responsibility.SPONSOR:
             sponsor=sponsor_rate
             reason+='; research item paid by the sponsor at the negotiated rate (benchmark x sponsor rate multiplier)'
+        elif status==Responsibility.PAYER and insurer_amount_assumed and req.payer_kind=='Medicaid':
+            payer,patient=money(benchmark),0.
+            reason+=('; routine care billed per coverage rules; illustrative Medicaid payment at the benchmark; enrollee '
+                     'cost sharing shown as 0 (nominal or zero for many services, 42 CFR 447.50-447.57)')
         elif status==Responsibility.PAYER and insurer_amount_assumed:
             payer=money(benchmark*req.payer_fraction)
             patient=money(benchmark-payer)
@@ -188,6 +208,8 @@ def coverage(req: FinanceRequest):
         elif status==Responsibility.PATIENT:
             patient=benchmark
             reason+='; hypothetical exposure only, beneficiary agreement and plan review required'
+            if req.payer_kind=='Medicaid':
+                reason+='; Medicaid limits what an enrollee may be billed (42 CFR 447.50-447.57)'
         else:
             reserve=sponsor_rate
             reason+='; unresolved; held as sponsor contingency at the negotiated rate without assigning a bill'
@@ -214,7 +236,7 @@ def coverage(req: FinanceRequest):
         'frequency':'Per participant within the priced visits','schedule':'Fixed demo schedule','unit_rate':drug,'sponsor_unit_rate':drug,
         'rate_kind':'synthetic_contingency','source':'Operator contingency assumption, not a drug price','year':2026,
         'status':str(status),'coverage_determination_status':'UNKNOWN','review_status':'REVIEW_REQUIRED',
-        'explanation':'Actual manufacturing/acquisition cost unknown; resource proxy assumes this reserve is consumed. Not a complete supply budget.',
+        'explanation':'Actual manufacturing/acquisition cost unknown; the sponsor supplies the investigational product, so this is a sponsor-side supply proxy (site handling is priced as its own line), assumed consumed. Not a complete supply budget.',
         'sponsor_per_participant':drug if status==Responsibility.SPONSOR else 0.,'payer_per_participant':0.,
         'patient_per_participant':0.,'reserve_per_participant':0. if status==Responsibility.SPONSOR else drug,
         'insurer_amount_known':True,
@@ -229,7 +251,8 @@ def coverage(req: FinanceRequest):
         payer_note=('Commercial allowed amounts are assumed equal to the Medicare benchmark, for illustration only.' if req.commercial_rate_assumption
                     else 'Commercial allowed amounts are UNKNOWN (no assumption set): routine lines show no insurer or participant amount and are not moved to the sponsor.')
     elif req.payer_kind=='Medicaid':
-        payer_note='Medicaid amounts use the Medicare benchmark as a stand-in; state rates and qualifying-trial, service and beneficiary eligibility remain unverified.'
+        payer_note=('Medicaid amounts use the Medicare benchmark as a stand-in; state rates and qualifying-trial, service and beneficiary eligibility remain unverified. '
+                    'Medicaid enrollee cost sharing is nominal or zero for many services (42 CFR 447.50-447.57); the participant share is shown as 0 and payer_fraction is not applied.')
     else:
         payer_note='Medicare qualifying-trial, service and beneficiary eligibility remain unverified.'
     return {'items':items,'totals':totals,'insurer_amounts_unknown':sum(1 for i in items if not i['insurer_amount_known']),
@@ -242,13 +265,18 @@ def economics(req, plan, cov):
         return None
     n=req.target
     b=plan['breakdown']
+    drug=next(i for i in cov['items'] if i['id']=='drug-contingency')
     reserve=money(cov['totals']['reserve']*n)
     support=b['support']
-    research=money(plan['sponsor_total']-reserve-support-b['administration'])
+    # The sponsor supplies the investigational product: neither its reserve nor a sponsor-paid supply amount
+    # is a payment to the hospital or a hospital resource cost (site handling is its own worksheet line).
+    supply_paid=money(drug['sponsor_per_participant']*n)
+    supply=money(drug['resource_cost_per_participant']*n)
+    research=money(plan['sponsor_total']-reserve-support-b['administration']-supply_paid)
     payer=maybe_money(None if cov['totals']['payer'] is None else cov['totals']['payer']*n)
     patient=maybe_money(None if cov['totals']['patient'] is None else cov['totals']['patient']*n)
     hospital_revenue=None if payer is None or patient is None else money(research+payer+patient)
-    resources=money(.8*(b['activation']+b['operating']+b['site_variable'])+cov['totals']['resource']*n)
+    resources=money(.8*(b['activation']+b['operating']+b['site_variable'])+(cov['totals']['resource']-drug['resource_cost_per_participant'])*n)
     admin=money(req.payer_admin_per_participant*n)
     transfers=[{'from':'Sponsor','to':'Hospital','amount':research},
                {'from':'Sponsor','to':'Participant','amount':support},
@@ -258,15 +286,16 @@ def economics(req, plan, cov):
     for t in transfers:
         if t['amount'] is not None:  # an UNKNOWN amount is reported, never guessed
             balances[t['from']]-=t['amount'];balances[t['to']]+=t['amount']
-    return {'sponsor':{'expenditure':money(plan['sponsor_total']-reserve),'contingency_reserve':reserve,'budget_commitment':plan['sponsor_total']},
+    return {'sponsor':{'expenditure':money(plan['sponsor_total']-reserve),'contingency_reserve':reserve,'budget_commitment':plan['sponsor_total'],
+            'supply_resource_proxy':supply},
         'hospital':{'revenue':hospital_revenue,'resource_cost':resources,'net_contribution':None if hospital_revenue is None else money(hospital_revenue-resources)},
         'insurer':{'payments':payer,'administration':admin,'total':None if payer is None else money(payer+admin),'downstream_clinical_cost':None},
-        'patient':{'cost_sharing':patient,'access_support':support,'net_cash_exposure':None if patient is None else money(patient-support),'unresolved_exposure':None},
+        'patient':{'cost_sharing':patient,'access_support':support,'unresolved_exposure':None},
         'transfers':transfers,'party_transfer_balances':{k:money(v) for k,v in balances.items()},'transfer_balance':money(sum(balances.values())),
-        'consolidated_resource_cost':money(resources+b['administration']+admin+support),
+        'consolidated_resource_cost':money(resources+supply+b['administration']+admin+support),
         'resource_assumptions':['Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.',
-            'Procedure delivery resource costs = 70% of benchmark, regardless of payer or negotiated rate; drug reserve used as an unverified supply-resource proxy.',
-            'Sponsor and insurer administration treated as resource consumption. Access payments assumed fully consumed on transport/support resources.',
+            "Procedure delivery resource costs = 70% of benchmark, regardless of payer or negotiated rate. The investigational-supply reserve is a sponsor-side supply proxy (the sponsor supplies the product; site handling is its own line), so it is outside the hospital's revenue and resource cost.",
+            'Sponsor and insurer administration treated as resource consumption. Access support assumed fully consumed on trial-related travel and lodging; it is not netted against participant cost sharing.',
             'Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known. UNKNOWN insurer or participant amounts are left out of transfer balances, not set to zero.']}
 
 
@@ -279,15 +308,20 @@ def delta(econ, base_econ):
         'resources':d(econ['consolidated_resource_cost'],base_econ['consolidated_resource_cost']),
         'hospital_contribution':d(econ['hospital']['net_contribution'],base_econ['hospital']['net_contribution']),
         'insurer_expenditure':d(econ['insurer']['total'],base_econ['insurer']['total']),
-        'patient_exposure':d(econ['patient']['net_cash_exposure'],base_econ['patient']['net_cash_exposure'])}
+        'patient_cost_sharing':d(econ['patient']['cost_sharing'],base_econ['patient']['cost_sharing']),
+        'access_support':d(econ['patient']['access_support'],base_econ['patient']['access_support'])}
 
 
 def budget_reallocation(plan, base, baseline_ids):
     if not plan['costed']:
         return None
     added=sorted(set(plan['selected_ids'])-set(baseline_ids))
+    rows=[r for r in plan['site_rows'] if r['id'] in added]
     comparable=base['costed']
+    # Defined even when A cannot be costed, so a capacity extension always shows what the added sites cost.
+    site_cost={k:money(sum(r[f] for r in rows)) for k,f in (('activation','activation'),('operating','operating'),('site_variable','variable'))}
     return {'additional_sites':added,'additional_activations':len(added),
+        'added_sites_cost':{**site_cost,'site_total':money(sum(site_cost.values())),'participants':sum(r['participants'] for r in rows)},
         'line_changes':{k:money(v-base['breakdown'][k]) for k,v in plan['breakdown'].items()} if comparable else None,
         'incremental_cost':money(plan['sponsor_total']-base['sponsor_total']) if comparable else None}
 
@@ -385,9 +419,11 @@ def compare(req: FinanceRequest):
             'basis':'Same participant target, budget and budgeted contract period in every scenario; only the inputs listed per scenario differ.'},
         'evidence':evidence,'sources':SOURCES,
         'assumptions':{'active_site_activation':'Sunk activation for baseline-active sites is excluded equally from alternatives; activation for added sites is included.',
-            'sponsor_administration':'Administrative budget includes a hypothetical sponsor-funded coordination pilot; the scenario B reduction is an input, not measured savings.',
+            'sponsor_administration':'Sponsor administration is an operator input (for example study management, CRO and coordination costs). Scenario B applies the admin_reduction input to it as an assumption; no source of the reduction is modeled and no saving is claimed.',
             'contract_period':'The budgeted contract period is an operator input: each selected site\'s monthly cost is multiplied by it. It is not a forecast of how long the trial runs.',
-            'participant_split':'Participants are split across selected sites in proportion to stated capacity (largest-remainder rounding, ties by site id). Capacity is an operator input.',
+            'participant_split':'Participants are split across selected sites in proportion to stated capacity (largest-remainder rounding, ties by site id). When C or E extends an existing network that lacks capacity, existing sites are filled to their stated capacity first and only the shortfall is split across added sites by capacity (plan.participant_split names the rule used). Capacity is an operator input.',
+            'site_per_participant_cost':'Site per-participant cost covers only site costs not itemized in the coverage worksheet (for example coordinator time and data entry); it must exclude every worksheet procedure, or that procedure is counted twice.',
+            'access_support':ACCESS_SUPPORT,
             'feasibility':'Feasible = stated capacity covers the target, sponsor commitment within budget, every selected site operator-flagged feasible, support at or above the floor. Actual site capabilities UNKNOWN.',
             'hospital_payment':'Synthetic negotiated site costs for financial mechanics only; no claim of fair compensation or FMV.',
             'fee_benchmarks':'Fee-schedule amounts are benchmarks. Research items the sponsor pays, and held contingency, are priced at benchmark x sponsor_rate_multiplier, an explicit stand-in for the rate negotiated with the site. Insurer and participant routine amounts use the benchmark, or are UNKNOWN for a commercial plan without the commercial-rate assumption.',
@@ -434,21 +470,29 @@ def report_html(req: FinanceRequest, result: dict) -> str:
     def change(s):
         realloc=s['budget_reallocation']
         return signed_usd(realloc['incremental_cost'] if realloc else None)
-    rows=''.join(f"<tr><td><b>{e(s['id'])} · {e(s['label'])}</b><br><small>{e(s['definition'])}</small></td><td>{e(', '.join(s['plan']['selected_ids']))}</td><td>{e(s['plan']['stated_capacity'])}</td><td>{e(state(s['plan']))}</td><td>{e(usd(s['plan']['sponsor_total']))}</td><td>{e(change(s))}</td><td>{e(usd(s['plan']['unspent_budget']))}</td></tr>" for s in scenarios)
+    def added(s):
+        realloc=s['budget_reallocation']
+        if not realloc:
+            return 'n/a'
+        if not realloc['additional_sites']:
+            return 'None'
+        cost=realloc['added_sites_cost']
+        return f"{', '.join(realloc['additional_sites'])}: {cost['participants']} participants, site costs {usd(cost['site_total'])}"
+    rows=''.join(f"<tr><td><b>{e(s['id'])} · {e(s['label'])}</b><br><small>{e(s['definition'])}</small></td><td>{e(', '.join(s['plan']['selected_ids']))}</td><td>{e(s['plan']['stated_capacity'])}</td><td>{e(state(s['plan']))}</td><td>{e(usd(s['plan']['sponsor_total']))}</td><td>{e(change(s))}</td><td>{e(added(s))}</td><td>{e(usd(s['plan']['unspent_budget']))}</td></tr>" for s in scenarios)
     lines=('activation','operating','site_variable','procedures','support','administration')
     line_rows=''.join(f"<tr><td>{e(s['id'])}</td>{''.join('<td>'+e(usd(s['plan']['breakdown'][k]))+'</td>' for k in lines)}<td>{e(usd(s['plan']['sponsor_total']))}</td></tr>" for s in scenarios if s['plan']['costed'])
-    ledger_rows=''.join(f"<tr><td>{e(s['id'])}</td><td>{e(usd(s['economics']['sponsor']['expenditure']))}</td><td>{e(usd(s['economics']['sponsor']['contingency_reserve']))}</td><td>{e(usd(s['economics']['hospital']['net_contribution']))}</td><td>{e(usd(s['economics']['insurer']['total']))}</td><td>{e(usd(s['economics']['patient']['net_cash_exposure']))}</td></tr>" for s in scenarios if s['economics'])
+    ledger_rows=''.join(f"<tr><td>{e(s['id'])}</td><td>{e(usd(s['economics']['sponsor']['expenditure']))}</td><td>{e(usd(s['economics']['sponsor']['contingency_reserve']))}</td><td>{e(usd(s['economics']['hospital']['net_contribution']))}</td><td>{e(usd(s['economics']['insurer']['total']))}</td><td>{e(usd(s['economics']['patient']['cost_sharing']))}</td><td>{e(usd(s['economics']['patient']['access_support']))}</td></tr>" for s in scenarios if s['economics'])
     coverage_rows=''.join(f"<tr><td>{e(i['id'])}: {e(i['label'])}<br>{e(i['code'])}</td><td>{e(i['status'])}<br>{e(i['review_status'])}</td><td>{e(usd(i['unit_rate']))} / {e(usd(i['sponsor_unit_rate']))}</td><td>{e(usd(i['sponsor_per_participant']))} / {e(usd(i['payer_per_participant']))} / {e(usd(i['patient_per_participant']))} / {e(usd(i['reserve_per_participant']))}</td><td>{e(i['rate_kind'])}<br>{e(i['source'])}</td></tr>" for i in result['coverage']['items'])
     uncertainty_rows=''.join(f"<tr><td>{e(s['id'])}</td><td>{e(' / '.join(usd(q) for q in s['sensitivity']['sponsor_total_quantiles']))}</td><td>{e(s['sensitivity']['probability_budget_exceeded'])}</td></tr>" for s in scenarios if s['sensitivity'])
     return f"""<!doctype html><html lang='en'><meta charset='utf-8'><title>Concord financial evidence</title><style>body{{font:16px/1.6 system-ui;max-width:1100px;margin:30px auto;padding:20px;color:#183047}}table{{border-collapse:collapse;width:100%}}th,td{{padding:10px;text-align:left;border-bottom:1px solid #ccd7dc;vertical-align:top}}pre,code{{white-space:pre-wrap;overflow-wrap:anywhere}}.warn{{background:#fff1d6;padding:20px}}@media print{{body{{margin:0}}}}</style>
     <h1>Concord · Financial Coordination</h1><p>{e(req.trial_id)} · Run {e(result['run_id'])}</p>
     <div class='warn'><b>SYNTHETIC FINANCIAL DEMO · sponsor-budget arithmetic, no binding coverage determination.</b><ul>{''.join('<li>'+e(x)+'</li>' for x in LIMITATIONS)}</ul></div>
     <h2>Sponsor budget comparison</h2><p>Fixed sponsor budget {e(usd(req.budget))} · participant target {e(req.target)} · budgeted contract period of {e(f'{req.budget_period_months:g}')} months. {e(result['comparison']['ordering'])} Commitments include held contingency. Changes are against scenario A.</p>
-    <table><tr><th>Scenario</th><th>Sites</th><th>Stated capacity</th><th>Feasible</th><th>Sponsor commitment</th><th>Change vs A</th><th>Unspent budget</th></tr>{rows}</table>
-    <h3>Budget lines (USD)</h3><p>Operating = each site's monthly cost x the budgeted contract period. Procedures include held contingency. Baseline-site activation is sunk.</p><table><tr><th>Scenario</th><th>Activation</th><th>Operating</th><th>Site per-participant</th><th>Procedures and contingency</th><th>Participant support</th><th>Administration</th><th>Total</th></tr>{line_rows}</table>
-    <h2>Three-party economics and participant exposure</h2><p>Payments are transfers. Resource costs are separately modeled once. Unknown downstream clinical costs, unresolved participant exposure and any insurer amount not assumed remain UNKNOWN.</p><table><tr><th>Scenario</th><th>Sponsor cash spending</th><th>Held contingency</th><th>Hospital contribution</th><th>Conditional insurer costs</th><th>Specified participant net exposure</th></tr>{ledger_rows}</table>
+    <table><tr><th>Scenario</th><th>Sites</th><th>Stated capacity</th><th>Feasible</th><th>Sponsor commitment</th><th>Change vs A</th><th>Added sites</th><th>Unspent budget</th></tr>{rows}</table>
+    <h3>Budget lines (USD)</h3><p>Operating = each site's monthly cost x the budgeted contract period. Site per-participant costs are only those not itemized in the coverage worksheet. Procedures include held contingency. Baseline-site activation is sunk.</p><table><tr><th>Scenario</th><th>Activation</th><th>Operating</th><th>Site per-participant (not itemized)</th><th>Procedures and contingency</th><th>Participant support</th><th>Administration</th><th>Total</th></tr>{line_rows}</table>
+    <h2>Three-party economics</h2><p>Payments are transfers. Resource costs are separately modeled once. The investigational-supply reserve is a sponsor-side supply proxy, outside the hospital's revenue and costs. {e(ACCESS_SUPPORT)} Unknown downstream clinical costs, unresolved participant exposure and any insurer amount not assumed remain UNKNOWN.</p><table><tr><th>Scenario</th><th>Sponsor cash spending</th><th>Held contingency</th><th>Hospital contribution</th><th>Conditional insurer costs</th><th>Participant routine cost sharing (illustrative)</th><th>Sponsor access support</th></tr>{ledger_rows}</table>
     <h2>Cost-input sensitivity</h2><p>Seed {e(req.seed)}, {e(req.draws)} paired draws; log spread {e(req.cost_spread)} on site activation, monthly and per-participant costs. Fixed networks and participant split. Ranges are q10 / q50 / q90, not calibrated intervals.</p><table><tr><th>Scenario</th><th>Sponsor commitment q10 / q50 / q90</th><th>Share of draws over budget</th></tr>{uncertainty_rows}</table>
-    <h2>Preliminary coverage worksheet (per participant)</h2><p>{e(PAYER_BENCHMARKS)} {e(PAYER_BILLING)} {e(PAYER_INDEPENDENCE)}</p><p>Only the authored non-repeating visits are priced. No binding determination, no claims, no double billing.</p><table><tr><th>Procedure / code</th><th>Responsibility / review</th><th>Benchmark / sponsor negotiated rate</th><th>Sponsor / potential insurer / potential participant / reserve</th><th>Price provenance</th></tr>{coverage_rows}</table>
+    <h2>Preliminary coverage worksheet (per participant)</h2><p>{e(PAYER_BENCHMARKS)} {e(PAYER_BILLING)} {e(PAYER_INDEPENDENCE)}</p><p>Only the authored non-repeating visits are priced. No binding coverage determination and no claims. {e(NOT_A_BILLING_REVIEW)}</p><table><tr><th>Procedure / code</th><th>Responsibility / review</th><th>Benchmark / sponsor negotiated rate</th><th>Sponsor / potential insurer / potential participant / reserve</th><th>Price provenance</th></tr>{coverage_rows}</table>
     <h2>Sources</h2><ul>{''.join('<li><a href="'+e(s['url'])+'">'+e(s['title'])+'</a>: '+e(s['scope'])+'</li>' for s in SOURCES)}</ul>
     <h2>Reproducibility</h2><p>Input SHA-256: <code>{e(result['input_sha256'])}</code><br>Result SHA-256: <code>{e(result['result_sha256'])}</code><br>Code commit: {e(result['evidence']['commit'])} (dirty: {e(result['evidence']['dirty'])})</p><p>Recompute by posting the exact request in the evidence below to /api/financial/compare on this exact source revision and rate-card inputs. No database or model inference is required.</p>
     <details><summary>Full evidence: assumptions, per-site split, ledger and cost sensitivity</summary><pre>{e(json.dumps(result,indent=2,ensure_ascii=False))}</pre></details></html>"""
