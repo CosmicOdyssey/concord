@@ -1,0 +1,17 @@
+{
+  "verified_main_base": "724be3ec504c1f6fd62c539d4e7ee53f473766cd",
+  "classification": "Live computation on synthetic operational/financial assumptions; real registry context only; GET exports are saved artifact replay",
+  "seed": 7,
+  "draws": 128,
+  "files_sha256": {
+    "data/portfolio/context.json": "efd90160ec8048c5aa240db7678e79cd32bcfd8621cebd89117a11ebe84bfb9c",
+    "data/portfolio/demo-request.json": "78ab5b54be2a10f3df4745f2d4e2fb4d743fbd395e6ec457670eab85bea2b2b6",
+    "backend/requirements.txt": "e933cd45ff7f36d98718df6bb505cf5c9c0e9972f5eb2f222a996e8ff7c90605",
+    "frontend/package-lock.json": "d70c6ce9a29fa3cba21a04ca4a7571634aa56410640628ff19e01b2146b3d397"
+  },
+  "absent_data": [
+    "data/concord.db",
+    "data/ratecard.json",
+    "original frozen historical as-of snapshots"
+  ]
+}

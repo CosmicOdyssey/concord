@@ -1,0 +1,480 @@
+Browser tab: 1783081799, Title: "Portfolio Command · Concord", URL: "http://127.0.0.1:5178/#portfolio-command".
+0 AXWebArea Portfolio Command · Concord, URL: 127.0.0.1:5178/#portfolio-command
+	1 container root
+		2 link Description: Skip to content, Value: 127.0.0.1:5178/#main-content
+		3 container
+			4 link Description: Back to the Concord home page, Value: 127.0.0.1:5178/#home
+			5 container Display density
+				6 checkbox Simple, Help: One headline and one number per section. Hover or focus for details. Key caveats stay visible., Value: 1
+				7 checkbox Detailed, Help: Every table, note and source, at full density., Value: 0
+			8 container Color theme
+				9 checkbox Description: Light theme, Value: 0
+				10 checkbox Description: Dark theme, Value: 0
+				11 checkbox Description: Match system theme, Value: 1
+			12 tab group Views
+				13 tab (selectable, settable, boolean) Protocol to terms, Help: A schedule of assessments, turned into a coverage grid, a budget and a term sheet., Value: 0
+				14 tab (selectable, settable, boolean) Portfolio overlap, Help: Where one sponsor's trials share registered sites and eligible patients., Value: 0
+				15 tab (selectable, settable, boolean) Findings, Help: What we tested, including results that weakened the original idea., Value: 0
+				16 tab (selectable, settable, boolean) Site scores Historical, not a forecast, Help: Historical per-site enrollment evidence, and how well it held up on later trials., Value: 0
+				17 tab (selectable, settable, boolean) Research In-sample model outputs, Help: The earlier site-clearing views, kept for reference. Not product claims., Value: 0
+		18 container main-content
+			22 container
+				23 text CONCORD / SPONSOR PLANNING
+				24 heading Portfolio Command, Value: 1
+					25 text Portfolio Command
+				26 text Where should the next dollar go? LIVE COMPUTATION
+				27 text SYNTHETIC OPERATIONS
+			28 text Regeneron registry context · hypothetical hospitals, enrollment progress, financial inputs and recruitment effects. Planning tool; no live sponsor or payer relationship.
+			29 container
+				30 text Sponsor budget (USD)
+				31 stepper (settable, integer) Description: Sponsor budget (USD), Value: 3000000
+			32 container
+				33 text Portfolio objective
+				34 pop up button (collapsed, settable) Description: Portfolio objective, Value: Minimize maximum weighted completion, Secondary Actions: Expand
+					35 menu
+						36 (selected) Minimize maximum weighted completion
+						37 Minimize sum of weighted durations
+						38 Minimize cost within expected deadlines
+			39 container
+				40 text Planning horizon (months)
+				41 stepper (settable, integer) Description: Planning horizon (months), Value: 36
+			42 button Run portfolio comparison
+			43 text Comparison computed and saved. Report links export this exact result.
+			44 container Portfolio sections
+				45 button 01 Executive Overview
+					46 text 0
+					47 text 1
+					48 text Executive Overview
+				49 button 02 Trial Portfolio
+					50 text 0
+					51 text 2
+					52 text Trial Portfolio
+				53 button 03 Site Capacity
+					54 text 0
+					55 text 3
+					56 text Site Capacity
+				57 button 04 Financial Allocation
+					58 text 0
+					59 text 4
+					60 text Financial Allocation
+				61 button 05 Scenario Lab
+					62 text 0
+					63 text 5
+					64 text Scenario Lab
+				65 button 06 Evidence and Reports
+					66 text 0
+					67 text 6
+					68 text Evidence and Reports
+			81 container Site Capacity
+				82 heading Shared capacity, explicit feasibility, Value: 2
+					83 text Shared capacity, explicit feasibility
+				84 text A hospital's monthly capacity is shared proportionally between activated unfinished trials. Capacity is released at completion. Static trial slots limit the selected network; UNKNOWN edges cannot be used.
+				85 container
+					86 heading Synthetic hospital A, Value: 3
+						87 text Synthetic hospital A
+					88 text Capacity basis
+					89 pop up button (collapsed, settable) Description: SYN-A capacity basis, Value: ASSUMED, Secondary Actions: Expand
+						90 menu
+							91 UNKNOWN
+							92 (selected) ASSUMED
+					93 text SYN-A monthly capacity
+					94 stepper (settable, integer) Description: SYN-A monthly capacity, Value: 3
+					95 text SYN-A trial slots
+					96 stepper (settable, integer) Description: SYN-A trial slots, Value: 2
+				97 container
+					98 heading Synthetic hospital B, Value: 3
+						99 text Synthetic hospital B
+					100 text Capacity basis
+					101 pop up button (collapsed, settable) Description: SYN-B capacity basis, Value: ASSUMED, Secondary Actions: Expand
+						102 menu
+							103 UNKNOWN
+							104 (selected) ASSUMED
+					105 text SYN-B monthly capacity
+					106 stepper (settable, integer) Description: SYN-B monthly capacity, Value: 3
+					107 text SYN-B trial slots
+					108 stepper (settable, integer) Description: SYN-B trial slots, Value: 2
+				109 container
+					110 heading Synthetic hospital C, Value: 3
+						111 text Synthetic hospital C
+					112 text Capacity basis
+					113 pop up button (collapsed, settable) Description: SYN-C capacity basis, Value: ASSUMED, Secondary Actions: Expand
+						114 menu
+							115 UNKNOWN
+							116 (selected) ASSUMED
+					117 text SYN-C monthly capacity
+					118 stepper (settable, integer) Description: SYN-C monthly capacity, Value: 4
+					119 text SYN-C trial slots
+					120 stepper (settable, integer) Description: SYN-C trial slots, Value: 2
+				121 container
+					122 heading Synthetic hospital D, Value: 3
+						123 text Synthetic hospital D
+					124 text Capacity basis
+					125 pop up button (collapsed, settable) Description: SYN-D capacity basis, Value: ASSUMED, Secondary Actions: Expand
+						126 menu
+							127 UNKNOWN
+							128 (selected) ASSUMED
+					129 text SYN-D monthly capacity
+					130 stepper (settable, integer) Description: SYN-D monthly capacity, Value: 2
+					131 text SYN-D trial slots
+					132 stepper (settable, integer) Description: SYN-D trial slots, Value: 2
+				133 table
+					134 row
+						135 cell
+							136 text TRIAL / SITE
+						137 cell
+							138 text BASELINE
+						139 cell
+							140 text CLINICAL FEASIBILITY
+						141 cell
+							142 text RATE BASIS
+						143 cell
+							144 text RATE / MONTH
+						145 cell
+							146 text ACTIVATION DELAY (MO)
+					147 row
+						148 cell
+							149 text NCT05800015 / SYN-A
+						150 cell
+							151 checkbox (settable, integer) Description: NCT05800015 SYN-A baseline, Value: 1
+						152 cell
+							153 pop up button (collapsed, settable) Description: NCT05800015 SYN-A feasibility, Value: ASSUMED_FEASIBLE, Secondary Actions: Expand
+								154 menu
+									155 UNKNOWN
+									156 (selected) ASSUMED_FEASIBLE
+									157 INFEASIBLE
+						158 cell
+							159 pop up button (collapsed, settable) Description: NCT05800015 SYN-A rate basis, Value: ASSUMED, Secondary Actions: Expand
+								160 menu
+									161 UNKNOWN
+									162 (selected) ASSUMED
+						163 cell
+							164 container
+								165 text NCT05800015 SYN-A rate
+								166 stepper (settable, float) Description: NCT05800015 SYN-A rate, Value: 2.299999952316284, Details: 2.3
+						167 cell
+							168 container
+								169 text NCT05800015 SYN-A delay
+								170 stepper (settable, integer) Description: NCT05800015 SYN-A delay, Value: 0
+					171 row
+						172 cell
+							173 text NCT05800015 / SYN-B
+						174 cell
+							175 checkbox (settable, integer) Description: NCT05800015 SYN-B baseline, Value: 1
+						176 cell
+							177 pop up button (collapsed, settable) Description: NCT05800015 SYN-B feasibility, Value: ASSUMED_FEASIBLE, Secondary Actions: Expand
+								178 menu
+									179 UNKNOWN
+									180 (selected) ASSUMED_FEASIBLE
+									181 INFEASIBLE
+						182 cell
+							183 pop up button (collapsed, settable) Description: NCT05800015 SYN-B rate basis, Value: ASSUMED, Secondary Actions: Expand
+								184 menu
+									185 UNKNOWN
+									186 (selected) ASSUMED
+						187 cell
+							188 container
+								189 text NCT05800015 SYN-B rate
+								190 stepper (settable, float) Description: NCT05800015 SYN-B rate, Value: 1.7000000476837158, Details: 1.7
+						191 cell
+							192 container
+								193 text NCT05800015 SYN-B delay
+								194 stepper (settable, integer) Description: NCT05800015 SYN-B delay, Value: 0
+					195 row
+						196 cell
+							197 text NCT05800015 / SYN-C
+						198 cell
+							199 checkbox (settable, integer) Description: NCT05800015 SYN-C baseline, Value: 0
+						200 cell
+							201 pop up button (collapsed, settable) Description: NCT05800015 SYN-C feasibility, Value: ASSUMED_FEASIBLE, Secondary Actions: Expand
+								202 menu
+									203 UNKNOWN
+									204 (selected) ASSUMED_FEASIBLE
+									205 INFEASIBLE
+						206 cell
+							207 pop up button (collapsed, settable) Description: NCT05800015 SYN-C rate basis, Value: ASSUMED, Secondary Actions: Expand
+								208 menu
+									209 UNKNOWN
+									210 (selected) ASSUMED
+						211 cell
+							212 container
+								213 text NCT05800015 SYN-C rate
+								214 stepper (settable, float) Description: NCT05800015 SYN-C rate, Value: 2.5999999046325684, Details: 2.6
+						215 cell
+							216 container
+								217 text NCT05800015 SYN-C delay
+								218 stepper (settable, integer) Description: NCT05800015 SYN-C delay, Value: 3
+					219 row
+						220 cell
+							221 text NCT05800015 / SYN-D
+						222 cell
+							223 checkbox (settable, integer) Description: NCT05800015 SYN-D baseline, Value: 0
+						224 cell
+							225 pop up button (collapsed, settable) Description: NCT05800015 SYN-D feasibility, Value: ASSUMED_FEASIBLE, Secondary Actions: Expand
+								226 menu
+									227 UNKNOWN
+									228 (selected) ASSUMED_FEASIBLE
+									229 INFEASIBLE
+						230 cell
+							231 pop up button (collapsed, settable) Description: NCT05800015 SYN-D rate basis, Value: ASSUMED, Secondary Actions: Expand
+								232 menu
+									233 UNKNOWN
+									234 (selected) ASSUMED
+						235 cell
+							236 container
+								237 text NCT05800015 SYN-D rate
+								238 stepper (settable, float) Description: NCT05800015 SYN-D rate, Value: 0.800000011920929, Details: 0.8
+						239 cell
+							240 container
+								241 text NCT05800015 SYN-D delay
+								242 stepper (settable, integer) Description: NCT05800015 SYN-D delay, Value: 3
+					243 row
+						244 cell
+							245 text NCT05785767 / SYN-A
+						246 cell
+							247 checkbox (settable, integer) Description: NCT05785767 SYN-A baseline, Value: 1
+						248 cell
+							249 pop up button (collapsed, settable) Description: NCT05785767 SYN-A feasibility, Value: ASSUMED_FEASIBLE, Secondary Actions: Expand
+								250 menu
+									251 UNKNOWN
+									252 (selected) ASSUMED_FEASIBLE
+									253 INFEASIBLE
+						254 cell
+							255 pop up button (collapsed, settable) Description: NCT05785767 SYN-A rate basis, Value: ASSUMED, Secondary Actions: Expand
+								256 menu
+									257 UNKNOWN
+									258 (selected) ASSUMED
+						259 cell
+							260 container
+								261 text NCT05785767 SYN-A rate
+								262 stepper (settable, float) Description: NCT05785767 SYN-A rate, Value: 1.955000042915344, Details: 1.9549999999999998
+						263 cell
+							264 container
+								265 text NCT05785767 SYN-A delay
+								266 stepper (settable, integer) Description: NCT05785767 SYN-A delay, Value: 0
+					267 row
+						268 cell
+							269 text NCT05785767 / SYN-B
+						270 cell
+							271 checkbox (settable, integer) Description: NCT05785767 SYN-B baseline, Value: 1
+						272 cell
+							273 pop up button (collapsed, settable) Description: NCT05785767 SYN-B feasibility, Value: ASSUMED_FEASIBLE, Secondary Actions: Expand
+								274 menu
+									275 UNKNOWN
+									276 (selected) ASSUMED_FEASIBLE
+									277 INFEASIBLE
+						278 cell
+							279 pop up button (collapsed, settable) Description: NCT05785767 SYN-B rate basis, Value: ASSUMED, Secondary Actions: Expand
+								280 menu
+									281 UNKNOWN
+									282 (selected) ASSUMED
+						283 cell
+							284 container
+								285 text NCT05785767 SYN-B rate
+								286 stepper (settable, float) Description: NCT05785767 SYN-B rate, Value: 1.4450000524520874, Details: 1.4449999999999998
+						287 cell
+							288 container
+								289 text NCT05785767 SYN-B delay
+								290 stepper (settable, integer) Description: NCT05785767 SYN-B delay, Value: 0
+					291 row
+						292 cell
+							293 text NCT05785767 / SYN-C
+						294 cell
+							295 checkbox (settable, integer) Description: NCT05785767 SYN-C baseline, Value: 0
+						296 cell
+							297 pop up button (collapsed, settable) Description: NCT05785767 SYN-C feasibility, Value: ASSUMED_FEASIBLE, Secondary Actions: Expand
+								298 menu
+									299 UNKNOWN
+									300 (selected) ASSUMED_FEASIBLE
+									301 INFEASIBLE
+						302 cell
+							303 pop up button (collapsed, settable) Description: NCT05785767 SYN-C rate basis, Value: ASSUMED, Secondary Actions: Expand
+								304 menu
+									305 UNKNOWN
+									306 (selected) ASSUMED
+						307 cell
+							308 container
+								309 text NCT05785767 SYN-C rate
+								310 stepper (settable, float) Description: NCT05785767 SYN-C rate, Value: 2.2100000381469727, Details: 2.21
+						311 cell
+							312 container
+								313 text NCT05785767 SYN-C delay
+								314 stepper (settable, integer) Description: NCT05785767 SYN-C delay, Value: 3
+					315 row
+						316 cell
+							317 text NCT05785767 / SYN-D
+						318 cell
+							319 checkbox (settable, integer) Description: NCT05785767 SYN-D baseline, Value: 0
+						320 cell
+							321 pop up button (collapsed, settable) Description: NCT05785767 SYN-D feasibility, Value: ASSUMED_FEASIBLE, Secondary Actions: Expand
+								322 menu
+									323 UNKNOWN
+									324 (selected) ASSUMED_FEASIBLE
+									325 INFEASIBLE
+						326 cell
+							327 pop up button (collapsed, settable) Description: NCT05785767 SYN-D rate basis, Value: ASSUMED, Secondary Actions: Expand
+								328 menu
+									329 UNKNOWN
+									330 (selected) ASSUMED
+						331 cell
+							332 container
+								333 text NCT05785767 SYN-D rate
+								334 stepper (settable, float) Description: NCT05785767 SYN-D rate, Value: 0.6800000071525574, Details: 0.68
+						335 cell
+							336 container
+								337 text NCT05785767 SYN-D delay
+								338 stepper (settable, integer) Description: NCT05785767 SYN-D delay, Value: 3
+				339 heading Computed site limits · Joint portfolio optimization, Value: 3
+					340 text Computed site limits ·  Joint portfolio optimization
+				341 table
+					342 row
+						343 cell
+							344 text HOSPITAL
+						345 cell
+							346 text RESERVED TRIAL SLOTS
+						347 cell
+							348 text PEAK MODELED ENROLLMENT / MO
+						349 cell
+							350 text SHARED MONTHLY CAP
+					351 row
+						352 cell
+							353 text SYN-A
+						354 cell
+							355 text 2
+						356 cell
+							357 text 3.000
+						358 cell
+							359 text 3
+					360 row
+						361 cell
+							362 text SYN-B
+						363 cell
+							364 text 2
+						365 cell
+							366 text 3.000
+						367 cell
+							368 text 3
+					369 row
+						370 cell
+							371 text SYN-C
+						372 cell
+							373 text 2
+						374 cell
+							375 text 4.000
+						376 cell
+							377 text 4
+					378 row
+						379 cell
+							380 text SYN-D
+						381 cell
+							382 text 2
+						383 cell
+							384 text 2.000
+						385 cell
+							386 text 2
+				387 heading Selected allocation, Value: 3
+					388 text Selected allocation
+				389 table
+					390 row
+						391 cell
+							392 text TRIAL / SITE
+						393 cell
+							394 text EXPECTED ENROLLED
+						395 cell
+							396 text EXPECTED ACTIVE MONTHS
+						397 cell
+							398 text ACTIVATION USD
+						399 cell
+							400 text EXPECTED SITE PAYMENTS USD
+					401 row
+						402 cell
+							403 text NCT05800015 / SYN-A
+						404 cell
+							405 text 12.72
+						406 cell
+							407 text 7.85
+						408 cell
+							409 text $0
+						410 cell
+							411 text $35,647
+					412 row
+						413 cell
+							414 text NCT05800015 / SYN-B
+						415 cell
+							416 text 12.57
+						417 cell
+							418 text 7.85
+						419 cell
+							420 text $0
+						421 cell
+							422 text $35,335
+					423 row
+						424 cell
+							425 text NCT05800015 / SYN-C
+						426 cell
+							427 text 10.53
+						428 cell
+							429 text 4.85
+						430 cell
+							431 text $30,000
+						432 cell
+							433 text $57,363
+					434 row
+						435 cell
+							436 text NCT05800015 / SYN-D
+						437 cell
+							438 text 4.18
+						439 cell
+							440 text 4.85
+						441 cell
+							442 text $50,000
+						443 cell
+							444 text $64,661
+					445 row
+						446 cell
+							447 text NCT05785767 / SYN-A
+						448 cell
+							449 text 12.8
+						450 cell
+							451 text 8.77
+						452 cell
+							453 text $0
+						454 cell
+							455 text $37,016
+					456 row
+						457 cell
+							458 text NCT05785767 / SYN-B
+						459 cell
+							460 text 11.93
+						461 cell
+							462 text 8.77
+						463 cell
+							464 text $0
+						465 cell
+							466 text $35,263
+					467 row
+						468 cell
+							469 text NCT05785767 / SYN-C
+						470 cell
+							471 text 10.95
+						472 cell
+							473 text 5.77
+						474 cell
+							475 text $30,000
+						476 cell
+							477 text $59,408
+					478 row
+						479 cell
+							480 text NCT05785767 / SYN-D
+						481 cell
+							482 text 4.32
+						483 cell
+							484 text 5.77
+						485 cell
+							486 text $50,000
+						487 cell
+							488 text $66,143
+				489 text Site payments include activation, operations, monitoring, screening and variable recruitment costs; procedures, support and central administration appear in the trial ledger.
+			80 text Concord · Portfolio Command · reproducible planning, explicitly bounded evidence.
+		21 text Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates; Sponsor budget is a worksheet on synthetic inputs with no time model. Decision support only, not clinical, legal or coverage advice.
+
+The focused UI element is 53 button 03 Site Capacity

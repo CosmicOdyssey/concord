@@ -1,0 +1,20 @@
+[
+  {
+    "level": "error",
+    "message": "Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received",
+    "timestamp": "2026-10-17T22:38:49.362Z",
+    "url": "http://127.0.0.1:5178/#portfolio-command"
+  },
+  {
+    "level": "error",
+    "message": "Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received",
+    "timestamp": "2026-10-17T22:38:49.362Z",
+    "url": "http://127.0.0.1:5178/#portfolio-command"
+  },
+  {
+    "level": "error",
+    "message": "Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received",
+    "timestamp": "2026-10-17T22:38:49.362Z",
+    "url": "http://127.0.0.1:5178/#portfolio-command"
+  }
+]

@@ -8,6 +8,7 @@ coverage status does), and nothing here outputs a time, speed or recommendation.
 """
 
 from copy import deepcopy
+from decimal import Decimal, ROUND_HALF_EVEN
 import html
 import itertools
 import json
@@ -163,8 +164,7 @@ def test_payments_conserve_and_resource_costs_are_not_payment_totals(client, req
 
 def test_investigational_supply_is_never_a_hospital_receipt_or_cost(client, request_body):
     default = by_id(compare(client, request_body))["A"]["economics"]
-    # Default demo: 60 x (0.8 x 0 + 0.8 x 52,800 + 0.8 x 120,000 ...) with no 2,500 drug reserve per participant.
-    assert default["hospital"]["net_contribution"] == pytest.approx(200489.40, abs=0.01)
+    assert default["sponsor"]["supply_resource_proxy"] > 0
     request_body["coverage_overrides"] = {"drug-contingency": "SPONSOR"}
     paid = by_id(compare(client, request_body))["A"]["economics"]
     assert paid["sponsor"]["contingency_reserve"] == default["sponsor"]["contingency_reserve"] - default["sponsor"]["supply_resource_proxy"]
@@ -270,13 +270,24 @@ def test_medicare_pays_clinical_lab_tests_in_full_with_no_participant_share(clie
     fraction = request_body["payer_fraction"]
     for item in other:  # the stated payer share still splits the other routine lines
         assert item["payer_per_participant"] == pytest.approx(item["unit_rate"] * fraction, abs=0.01)
-    # Default demo, per participant: insurer 5,026.97 and participant 1,031.70; ledger A 301,618.20 / 61,902.
-    assert result["coverage"]["totals"]["payer"] == pytest.approx(5026.97, abs=0.01)
-    assert result["coverage"]["totals"]["patient"] == pytest.approx(1031.70, abs=0.01)
+    # Independently sum rounded line payments. A checkout may have a real CMS
+    # ratecard or explicitly labeled placeholders; neither may silently pin the
+    # other environment's totals. Do not use returned payer/patient totals here.
+    cent = Decimal("0.01")
+    expected_payer = sum(
+        (Decimal(str(i["unit_rate"])) * (Decimal(1) if i in clfs else Decimal(str(fraction))))
+        .quantize(cent, rounding=ROUND_HALF_EVEN) for i in routine)
+    expected_patient = sum(Decimal(str(i["unit_rate"])) for i in routine) - expected_payer
+    assert result["coverage"]["totals"]["payer"] == pytest.approx(float(expected_payer), abs=0.01)
+    assert result["coverage"]["totals"]["patient"] == pytest.approx(float(expected_patient), abs=0.01)
     a = by_id(result)["A"]["economics"]
-    assert a["insurer"]["payments"] == pytest.approx(301618.20, abs=0.01)
-    assert a["patient"]["cost_sharing"] == pytest.approx(61902.0, abs=0.01)
-    assert a["hospital"]["net_contribution"] == pytest.approx(200489.40, abs=0.01)  # payer + patient is unchanged
+    assert a["insurer"]["payments"] == pytest.approx(float(expected_payer * request_body["target"]), abs=0.01)
+    assert a["patient"]["cost_sharing"] == pytest.approx(float(expected_patient * request_body["target"]), abs=0.01)
+    all_payer = deepcopy(request_body)
+    all_payer["payer_fraction"] = 1
+    # Redistributing routine charges between payer and participant does not
+    # change their sum, hospital receipts or hospital net contribution.
+    assert by_id(compare(client, all_payer))["A"]["economics"]["hospital"] == a["hospital"]
     # Commercial (with the rate assumption) still splits lab tests by the stated share.
     request_body.update(payer_kind="commercial", commercial_rate_assumption=True)
     commercial = {i["id"]: i for i in compare(client, request_body)["coverage"]["items"]}
