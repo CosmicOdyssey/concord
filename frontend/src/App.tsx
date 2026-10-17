@@ -12,14 +12,14 @@ const ResearchView = lazy(() => import('./views/ResearchView'))
 const OverlapView = lazy(() => import('./views/OverlapView'))
 const ProtocolTermsView = lazy(() => import('./views/ProtocolTermsView'))
 const SiteScoresView = lazy(() => import('./views/SiteScoresView'))
-const FinancialView = lazy(() => import('./views/FinancialView'))
+// Financial Coordination (PR #1) is hidden while its time/speed model is removed: it projected faster trials from budget
+// and coverage levers, which the product does not claim. The view and API stay in the repo.
 
 const TABS = [
   { id: 'findings', label: 'Findings' },
   { id: 'overlap', label: 'Portfolio overlap' },
   { id: 'terms-flow', label: 'Protocol to terms' },
   { id: 'site-scores', label: 'Site scores' },
-  { id: 'financial', label: 'Financial Coordination' },
   { id: 'research', label: 'Research' },
 ] as const
 type TabId = (typeof TABS)[number]['id']
@@ -265,14 +265,9 @@ export default function App() {
             />
           </Suspense>
         )}
-        {tab === 'financial' && (
-          <Suspense fallback={<Loading label="Loading financial coordination…" />}>
-            <FinancialView />
-          </Suspense>
-        )}
       </main>
       <footer className="footer small muted">
-        Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates; Financial Coordination uses explicitly synthetic scenarios. Decision support only, not clinical, legal or coverage advice.
+        Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates. Decision support only, not clinical, legal or coverage advice.
       </footer>
     </div>
   )
