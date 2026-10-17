@@ -1,0 +1,47 @@
+Browser tab: 1783081691, Title: "Concord", URL: "http://127.0.0.1:5177/#research/clear".
+1 AXWebArea Concord, URL: 127.0.0.1:5177/#research/clear
+	2 container root
+		3 container
+			4 text Concord NSCLC trial portfolios on public ClinicalTrials.gov data  Clear failed
+		5 tab group Views
+			6 tab (selectable, settable, boolean) 1 Findings, Value: 0
+			7 tab (selectable, settable, boolean) 2 Portfolio overlap, Value: 0
+			8 tab (selectable, settable, boolean) 3 Protocol to terms, Value: 0
+			9 tab (selectable, settable, boolean) 4 Site scores, Value: 0
+			10 tab (selectable, settable, boolean) 5 Financial Coordination, Value: 0
+			11 tab (selectable, settable, boolean) 6 Portfolio Command, Value: 0
+			12 tab (selected, settable, boolean) 7 Research, Value: 1
+		615 container
+			616 text Research views. Allocation results here are in-sample model outputs and are not product claims; see
+			617 link Description: Findings, Value: 127.0.0.1:5177/#findings
+			618 text .
+			619 tab group Research views
+				620 tab (selected, settable, boolean) Clear it, Value: 1
+				621 tab (selectable, settable, boolean) Robustness, Value: 0
+				622 tab (selectable, settable, boolean) Map, Value: 0
+				623 tab (selectable, settable, boolean) Portfolio clearing, Value: 0
+				624 tab (selectable, settable, boolean) Price tags, Value: 0
+				625 tab (selectable, settable, boolean) Term sheet (old), Value: 0
+				626 tab (selectable, settable, boolean) Model & data, Value: 0
+			627 heading Clear the market, Value: 1
+				628 text Clear the market
+			629 text Allocate every concurrent trial’s sites jointly, then compare enrollment times with the sites sponsors actually registered. All allocations are evaluated under the same model.
+			630 container
+				631 text REGION
+				632 pop up button (collapsed, settable) REGION, Value: US-Northeast, Secondary Actions: Expand
+					633 menu
+						634 (selected) US-Northeast
+						635 US-Midwest
+						636 US-South
+						637 US-West
+						638 US
+			639 button Clear the market
+			640 text Clears take about 1–2 minutes .
+			641 button (collapsed) Assumptions, Secondary Actions: Expand
+				642 text Assumptions
+			643 container
+				644 text Request failed. 503 data/concord.db missing: run scripts/pipeline.sh first
+				645 button Retry
+		614 text Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates; Financial Coordination uses explicitly synthetic scenarios. Decision support only, not clinical, legal or coverage advice.
+
+The focused UI element is 12 tab (selected, settable, boolean) 7 Research, Value: 1

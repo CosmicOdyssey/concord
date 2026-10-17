@@ -1,0 +1,2628 @@
+Browser tab: 1783081691, Title: "Concord", URL: "http://127.0.0.1:5177/#financial".
+1 AXWebArea Concord, URL: 127.0.0.1:5177/#financial
+	2 container root
+		3 container
+			4 text Concord NSCLC trial portfolios on public ClinicalTrials.gov data
+		5 tab group Views
+			6 tab (selectable, settable, boolean) 1 Findings, Value: 0
+			7 tab (selectable, settable, boolean) 2 Portfolio overlap, Value: 0
+			8 tab (selectable, settable, boolean) 3 Protocol to terms, Value: 0
+			9 tab (selectable, settable, boolean) 4 Site scores, Value: 0
+			10 tab (selected, settable, boolean) 5 Financial Coordination, Value: 1
+			11 tab (selectable, settable, boolean) 6 Portfolio Command, Value: 0
+			12 tab (selectable, settable, boolean) 7 Research, Value: 0
+		615 container
+			616 text SPONSOR-FUNDED PLANNING PILOT
+			617 heading Financial Coordination, Value: 1
+				618 text Financial Coordination
+			619 text Compare trial budgets, site resources, coverage responsibilities, and reinvestment at a fixed enrollment target. SYNTHETIC FINANCIAL DEMO
+			620 text No verified financial inputs or insurer partnership.
+			621 text  Public trial identifiers provide context only. All site budgets, site identities, rates, recruitment, and payer assumptions in this financial exercise are synthetic. Coverage classifications require human review. No realized savings, clinical benefit, or validated acceleration is claimed. Public trial context
+			622 pop up button (collapsed, settable) Public trial context, Secondary Actions: Expand, Value: NCT05800015 · Fianlimab + cemiplimab + chemotherapy vs placebo + cemiplimab + chemotherapy, first-line advanced NSCLC
+				623 menu
+					624 (selected) NCT05800015 · Fianlimab + cemiplimab + chemotherapy vs placebo + cemiplimab + chemotherapy, first-line advanced NSCLC
+					625 NCT06627647 · Rilvegostomig vs pembrolizumab, each with platinum + pemetrexed, first-line non-squamous NSCLC (ARTEMIDE-Lung03)
+			626 link Description: View public registry record ↗, Value: clinicaltrials.gov/study/NCT05800015
+			627 button Compare funding scenarios
+			628 text The public record does not verify this illustrative procedure schedule, synthetic site network, or financial terms. Original Concord research and protocol-to-terms views remain available in the top navigation. Comparison computed from these inputs. Figures remain synthetic and conditional.
+			629 container Financial sections
+				630 button Overview
+				631 button Allocation Comparison
+				632 button Three-Party Economics
+				633 button Reinvestment Lab
+				634 button Coverage Review
+				635 button Evidence Report
+			636 container Coverage Review
+				637 heading Preliminary coverage worksheet, Value: 2
+					638 text Preliminary coverage worksheet
+				639 text Classifications are editable planning assumptions, never reimbursement authorization. Unknown or review-required expenses remain reserved rather than silently charged to a payer.
+				640 container
+					641 text Payer type
+					642 pop up button (collapsed, settable) Payer type, Value: Medicare, Secondary Actions: Expand
+						643 menu
+							644 (selected) Medicare
+							645 Commercial
+							646 Medicaid
+				647 container
+					648 text Jurisdiction
+					649 text field (settable) Jurisdiction, Value: MA
+				650 container
+					651 text Plan assumption
+					652 text field (settable) Plan assumption, Value: UNVERIFIED DEMO
+				653 container
+					654 text Payer fraction of allowed routine amount
+					655 stepper (settable, float) Payer fraction of allowed routine amount, Value: 0.800000011920929, Details: 0.8
+				656 container
+					657 text Hypothetical rate multiplier
+					658 stepper (settable, integer) Hypothetical rate multiplier, Value: 1
+				659 checkbox (settable, integer) Description: Explicitly assume Medicare-derived commercial allowed amounts (unverified, not a negotiated rate), Value: 0
+				660 table Illustrative procedures; amounts per modeled participant. Edit responsibility and recompute to update attribution.
+					661 text Illustrative procedures; amounts per modeled participant. Edit responsibility and recompute to update attribution.
+					662 row
+						663 cell
+							664 text Procedure / source
+						665 cell
+							666 text Quantity / hypothetical rate
+						667 cell
+							668 text Responsibility assumption
+						669 cell
+							670 text Review and explanation
+						671 cell
+							672 text Sponsor / payer / patient / reserve
+					673 row
+						674 cell
+							675 text New-patient oncology visit, high complexity
+							676 container
+								677 text 99205  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						678 cell
+							679 text 1  ×  $211
+							680 text hypothetical_rate
+						681 cell
+							682 pop up button (collapsed, settable) Description: Responsibility for New-patient oncology visit, high complexity, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								683 menu
+									684 SPONSOR
+									685 (selected) POTENTIALLY_PAYER_COVERED
+									686 POTENTIALLY_PATIENT_COST_SHARING
+									687 CONDITIONAL
+									688 UNKNOWN
+									689 REVIEW_REQUIRED
+						690 cell
+							691 text REVIEW_REQUIRED
+							692 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						693 cell
+							694 text $0 / $169 / $42 / $0
+					695 row
+						696 cell
+							697 text 12-lead ECG with interpretation
+							698 container
+								699 text 93000  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						700 cell
+							701 text 1  ×  $16
+							702 text hypothetical_rate
+						703 cell
+							704 pop up button (collapsed, settable) Description: Responsibility for 12-lead ECG with interpretation, Value: SPONSOR, Secondary Actions: Expand
+								705 menu
+									706 (selected) SPONSOR
+									707 POTENTIALLY_PAYER_COVERED
+									708 POTENTIALLY_PATIENT_COST_SHARING
+									709 CONDITIONAL
+									710 UNKNOWN
+									711 REVIEW_REQUIRED
+						712 cell
+							713 text REVIEW_REQUIRED
+							714 text Preliminary authored rule R2
+						715 cell
+							716 text $16 / $0 / $0 / $0
+					717 row
+						718 cell
+							719 text Blood count with differential
+							720 container
+								721 text 85025  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						722 cell
+							723 text 1  ×  $8
+							724 text hypothetical_rate
+						725 cell
+							726 pop up button (collapsed, settable) Description: Responsibility for Blood count with differential, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								727 menu
+									728 SPONSOR
+									729 (selected) POTENTIALLY_PAYER_COVERED
+									730 POTENTIALLY_PATIENT_COST_SHARING
+									731 CONDITIONAL
+									732 UNKNOWN
+									733 REVIEW_REQUIRED
+						734 cell
+							735 text REVIEW_REQUIRED
+							736 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						737 cell
+							738 text $0 / $6 / $2 / $0
+					739 row
+						740 cell
+							741 text Comprehensive chemistry panel
+							742 container
+								743 text 80053  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						744 cell
+							745 text 1  ×  $11
+							746 text hypothetical_rate
+						747 cell
+							748 pop up button (collapsed, settable) Description: Responsibility for Comprehensive chemistry panel, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								749 menu
+									750 SPONSOR
+									751 (selected) POTENTIALLY_PAYER_COVERED
+									752 POTENTIALLY_PATIENT_COST_SHARING
+									753 CONDITIONAL
+									754 UNKNOWN
+									755 REVIEW_REQUIRED
+						756 cell
+							757 text REVIEW_REQUIRED
+							758 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						759 cell
+							760 text $0 / $8 / $2 / $0
+					761 row
+						762 cell
+							763 text Thyroid-stimulating hormone
+							764 container
+								765 text 84443  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						766 cell
+							767 text 1  ×  $17
+							768 text hypothetical_rate
+						769 cell
+							770 pop up button (collapsed, settable) Description: Responsibility for Thyroid-stimulating hormone, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								771 menu
+									772 SPONSOR
+									773 (selected) POTENTIALLY_PAYER_COVERED
+									774 POTENTIALLY_PATIENT_COST_SHARING
+									775 CONDITIONAL
+									776 UNKNOWN
+									777 REVIEW_REQUIRED
+						778 cell
+							779 text REVIEW_REQUIRED
+							780 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						781 cell
+							782 text $0 / $13 / $3 / $0
+					783 row
+						784 cell
+							785 text Free T4
+							786 container
+								787 text 84439  ·  Concord approximate national amount (not from a CMS file); replace with the CMS CLFS amount
+						788 cell
+							789 text 1  ×  $10
+							790 text hypothetical_rate
+						791 cell
+							792 pop up button (collapsed, settable) Description: Responsibility for Free T4, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								793 menu
+									794 SPONSOR
+									795 (selected) POTENTIALLY_PAYER_COVERED
+									796 POTENTIALLY_PATIENT_COST_SHARING
+									797 CONDITIONAL
+									798 UNKNOWN
+									799 REVIEW_REQUIRED
+						800 cell
+							801 text REVIEW_REQUIRED
+							802 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						803 cell
+							804 text $0 / $8 / $2 / $0
+					805 row
+						806 cell
+							807 text Serum pregnancy test (if of childbearing potential)
+							808 container
+								809 text 84702  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						810 cell
+							811 text 1  ×  $15
+							812 text hypothetical_rate
+						813 cell
+							814 pop up button (collapsed, settable) Description: Responsibility for Serum pregnancy test (if of childbearing potential), Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								815 menu
+									816 SPONSOR
+									817 (selected) POTENTIALLY_PAYER_COVERED
+									818 POTENTIALLY_PATIENT_COST_SHARING
+									819 CONDITIONAL
+									820 UNKNOWN
+									821 REVIEW_REQUIRED
+						822 cell
+							823 text REVIEW_REQUIRED
+							824 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						825 cell
+							826 text $0 / $12 / $3 / $0
+					827 row
+						828 cell
+							829 text Hepatitis B surface antigen
+							830 container
+								831 text 87340  ·  Concord approximate national amount (not from a CMS file); replace with the CMS CLFS amount
+						832 cell
+							833 text 1  ×  $10
+							834 text hypothetical_rate
+						835 cell
+							836 pop up button (collapsed, settable) Description: Responsibility for Hepatitis B surface antigen, Value: SPONSOR, Secondary Actions: Expand
+								837 menu
+									838 (selected) SPONSOR
+									839 POTENTIALLY_PAYER_COVERED
+									840 POTENTIALLY_PATIENT_COST_SHARING
+									841 CONDITIONAL
+									842 UNKNOWN
+									843 REVIEW_REQUIRED
+						844 cell
+							845 text REVIEW_REQUIRED
+							846 text Preliminary authored rule R2
+						847 cell
+							848 text $10 / $0 / $0 / $0
+					849 row
+						850 cell
+							851 text Hepatitis C antibody
+							852 container
+								853 text 86803  ·  Concord approximate national amount (not from a CMS file); replace with the CMS CLFS amount
+						854 cell
+							855 text 1  ×  $14
+							856 text hypothetical_rate
+						857 cell
+							858 pop up button (collapsed, settable) Description: Responsibility for Hepatitis C antibody, Value: SPONSOR, Secondary Actions: Expand
+								859 menu
+									860 (selected) SPONSOR
+									861 POTENTIALLY_PAYER_COVERED
+									862 POTENTIALLY_PATIENT_COST_SHARING
+									863 CONDITIONAL
+									864 UNKNOWN
+									865 REVIEW_REQUIRED
+						866 cell
+							867 text REVIEW_REQUIRED
+							868 text Preliminary authored rule R2
+						869 cell
+							870 text $14 / $0 / $0 / $0
+					871 row
+						872 cell
+							873 text Urinalysis, automated
+							874 container
+								875 text 81003  ·  Concord approximate national amount (not from a CMS file); replace with the CMS CLFS amount
+						876 cell
+							877 text 1  ×  $2
+							878 text hypothetical_rate
+						879 cell
+							880 pop up button (collapsed, settable) Description: Responsibility for Urinalysis, automated, Value: SPONSOR, Secondary Actions: Expand
+								881 menu
+									882 (selected) SPONSOR
+									883 POTENTIALLY_PAYER_COVERED
+									884 POTENTIALLY_PATIENT_COST_SHARING
+									885 CONDITIONAL
+									886 UNKNOWN
+									887 REVIEW_REQUIRED
+						888 cell
+							889 text REVIEW_REQUIRED
+							890 text Preliminary authored rule R2
+						891 cell
+							892 text $2 / $0 / $0 / $0
+					893 row
+						894 cell
+							895 text PD-L1 stain, local lab (if not on file)
+							896 container
+								897 text 88360  ·  Synthetic $75 unpriced-line assumption
+						898 cell
+							899 text 1  ×  $75
+							900 text hypothetical_rate
+						901 cell
+							902 pop up button (collapsed, settable) Description: Responsibility for PD-L1 stain, local lab (if not on file), Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								903 menu
+									904 SPONSOR
+									905 (selected) POTENTIALLY_PAYER_COVERED
+									906 POTENTIALLY_PATIENT_COST_SHARING
+									907 CONDITIONAL
+									908 UNKNOWN
+									909 REVIEW_REQUIRED
+						910 cell
+							911 text REVIEW_REQUIRED
+							912 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						913 cell
+							914 text $0 / $60 / $15 / $0
+					915 row
+						916 cell
+							917 text Tumor gene panel for EGFR/ALK/ROS1 (if not on file)
+							918 container
+								919 text 81445  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						920 cell
+							921 text 1  ×  $597
+							922 text hypothetical_rate
+						923 cell
+							924 pop up button (collapsed, settable) Description: Responsibility for Tumor gene panel for EGFR/ALK/ROS1 (if not on file), Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								925 menu
+									926 SPONSOR
+									927 (selected) POTENTIALLY_PAYER_COVERED
+									928 POTENTIALLY_PATIENT_COST_SHARING
+									929 CONDITIONAL
+									930 UNKNOWN
+									931 REVIEW_REQUIRED
+						932 cell
+							933 text REVIEW_REQUIRED
+							934 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						935 cell
+							936 text $0 / $478 / $119 / $0
+					937 row
+						938 cell
+							939 text Archival tumor tissue: retrieve and ship
+							940 container
+								941 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						942 cell
+							943 text 1  ×  $150
+							944 text hypothetical_rate
+						945 cell
+							946 pop up button (collapsed, settable) Description: Responsibility for Archival tumor tissue: retrieve and ship, Value: SPONSOR, Secondary Actions: Expand
+								947 menu
+									948 (selected) SPONSOR
+									949 POTENTIALLY_PAYER_COVERED
+									950 POTENTIALLY_PATIENT_COST_SHARING
+									951 CONDITIONAL
+									952 UNKNOWN
+									953 REVIEW_REQUIRED
+						954 cell
+							955 text REVIEW_REQUIRED
+							956 text Preliminary authored rule R2
+						957 cell
+							958 text $150 / $0 / $0 / $0
+					959 row
+						960 cell
+							961 text CT chest with contrast
+							962 container
+								963 text 71260  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						964 cell
+							965 text 1  ×  $160
+							966 text hypothetical_rate
+						967 cell
+							968 pop up button (collapsed, settable) Description: Responsibility for CT chest with contrast, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								969 menu
+									970 SPONSOR
+									971 (selected) POTENTIALLY_PAYER_COVERED
+									972 POTENTIALLY_PATIENT_COST_SHARING
+									973 CONDITIONAL
+									974 UNKNOWN
+									975 REVIEW_REQUIRED
+						976 cell
+							977 text REVIEW_REQUIRED
+							978 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						979 cell
+							980 text $0 / $128 / $32 / $0
+					981 row
+						982 cell
+							983 text CT abdomen and pelvis with contrast
+							984 container
+								985 text 74177  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						986 cell
+							987 text 1  ×  $310
+							988 text hypothetical_rate
+						989 cell
+							990 pop up button (collapsed, settable) Description: Responsibility for CT abdomen and pelvis with contrast, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								991 menu
+									992 SPONSOR
+									993 (selected) POTENTIALLY_PAYER_COVERED
+									994 POTENTIALLY_PATIENT_COST_SHARING
+									995 CONDITIONAL
+									996 UNKNOWN
+									997 REVIEW_REQUIRED
+						998 cell
+							999 text REVIEW_REQUIRED
+							1000 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						1001 cell
+							1002 text $0 / $248 / $62 / $0
+					1003 row
+						1004 cell
+							1005 text MRI brain without and with contrast
+							1006 container
+								1007 text 70553  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1008 cell
+							1009 text 1  ×  $340
+							1010 text hypothetical_rate
+						1011 cell
+							1012 pop up button (collapsed, settable) Description: Responsibility for MRI brain without and with contrast, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1013 menu
+									1014 SPONSOR
+									1015 (selected) POTENTIALLY_PAYER_COVERED
+									1016 POTENTIALLY_PATIENT_COST_SHARING
+									1017 CONDITIONAL
+									1018 UNKNOWN
+									1019 REVIEW_REQUIRED
+						1020 cell
+							1021 text REVIEW_REQUIRED
+							1022 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						1023 cell
+							1024 text $0 / $272 / $68 / $0
+					1025 row
+						1026 cell
+							1027 text Scan upload for blinded central review
+							1028 container
+								1029 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						1030 cell
+							1031 text 1  ×  $100
+							1032 text hypothetical_rate
+						1033 cell
+							1034 pop up button (collapsed, settable) Description: Responsibility for Scan upload for blinded central review, Value: SPONSOR, Secondary Actions: Expand
+								1035 menu
+									1036 (selected) SPONSOR
+									1037 POTENTIALLY_PAYER_COVERED
+									1038 POTENTIALLY_PATIENT_COST_SHARING
+									1039 CONDITIONAL
+									1040 UNKNOWN
+									1041 REVIEW_REQUIRED
+						1042 cell
+							1043 text REVIEW_REQUIRED
+							1044 text Preliminary authored rule R2
+						1045 cell
+							1046 text $100 / $0 / $0 / $0
+					1047 row
+						1048 cell
+							1049 text Established-patient visit, moderate complexity
+							1050 container
+								1051 text 99214  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1052 cell
+							1053 text 1  ×  $129
+							1054 text hypothetical_rate
+						1055 cell
+							1056 pop up button (collapsed, settable) Description: Responsibility for Established-patient visit, moderate complexity, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1057 menu
+									1058 SPONSOR
+									1059 (selected) POTENTIALLY_PAYER_COVERED
+									1060 POTENTIALLY_PATIENT_COST_SHARING
+									1061 CONDITIONAL
+									1062 UNKNOWN
+									1063 REVIEW_REQUIRED
+						1064 cell
+							1065 text REVIEW_REQUIRED
+							1066 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						1067 cell
+							1068 text $0 / $103 / $26 / $0
+					1069 row
+						1070 cell
+							1071 text Blood count with differential
+							1072 container
+								1073 text 85025  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						1074 cell
+							1075 text 1  ×  $8
+							1076 text hypothetical_rate
+						1077 cell
+							1078 pop up button (collapsed, settable) Description: Responsibility for Blood count with differential, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1079 menu
+									1080 SPONSOR
+									1081 (selected) POTENTIALLY_PAYER_COVERED
+									1082 POTENTIALLY_PATIENT_COST_SHARING
+									1083 CONDITIONAL
+									1084 UNKNOWN
+									1085 REVIEW_REQUIRED
+						1086 cell
+							1087 text REVIEW_REQUIRED
+							1088 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						1089 cell
+							1090 text $0 / $6 / $2 / $0
+					1091 row
+						1092 cell
+							1093 text Comprehensive chemistry panel
+							1094 container
+								1095 text 80053  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						1096 cell
+							1097 text 1  ×  $11
+							1098 text hypothetical_rate
+						1099 cell
+							1100 pop up button (collapsed, settable) Description: Responsibility for Comprehensive chemistry panel, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1101 menu
+									1102 SPONSOR
+									1103 (selected) POTENTIALLY_PAYER_COVERED
+									1104 POTENTIALLY_PATIENT_COST_SHARING
+									1105 CONDITIONAL
+									1106 UNKNOWN
+									1107 REVIEW_REQUIRED
+						1108 cell
+							1109 text REVIEW_REQUIRED
+							1110 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						1111 cell
+							1112 text $0 / $8 / $2 / $0
+					1113 row
+						1114 cell
+							1115 text IV infusion, first hour: platinum (C1-4), pemetrexed (C5 on)
+							1116 container
+								1117 text 96413  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1118 cell
+							1119 text 1  ×  $125
+							1120 text hypothetical_rate
+						1121 cell
+							1122 pop up button (collapsed, settable) Description: Responsibility for IV infusion, first hour: platinum (C1-4), pemetrexed (C5 on), Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1123 menu
+									1124 SPONSOR
+									1125 (selected) POTENTIALLY_PAYER_COVERED
+									1126 POTENTIALLY_PATIENT_COST_SHARING
+									1127 CONDITIONAL
+									1128 UNKNOWN
+									1129 REVIEW_REQUIRED
+						1130 cell
+							1131 text REVIEW_REQUIRED
+							1132 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						1133 cell
+							1134 text $0 / $100 / $25 / $0
+					1135 row
+						1136 cell
+							1137 text Added sequential infusion: pemetrexed (C1-4)
+							1138 container
+								1139 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1140 cell
+							1141 text 1  ×  $57
+							1142 text hypothetical_rate
+						1143 cell
+							1144 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: pemetrexed (C1-4), Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1145 menu
+									1146 SPONSOR
+									1147 (selected) POTENTIALLY_PAYER_COVERED
+									1148 POTENTIALLY_PATIENT_COST_SHARING
+									1149 CONDITIONAL
+									1150 UNKNOWN
+									1151 REVIEW_REQUIRED
+						1152 cell
+							1153 text REVIEW_REQUIRED
+							1154 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						1155 cell
+							1156 text $0 / $46 / $11 / $0
+					1157 row
+						1158 cell
+							1159 text Added sequential infusion: cemiplimab
+							1160 container
+								1161 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1162 cell
+							1163 text 1  ×  $57
+							1164 text hypothetical_rate
+						1165 cell
+							1166 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: cemiplimab, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1167 menu
+									1168 SPONSOR
+									1169 (selected) POTENTIALLY_PAYER_COVERED
+									1170 POTENTIALLY_PATIENT_COST_SHARING
+									1171 CONDITIONAL
+									1172 UNKNOWN
+									1173 REVIEW_REQUIRED
+						1174 cell
+							1175 text REVIEW_REQUIRED
+							1176 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						1177 cell
+							1178 text $0 / $46 / $11 / $0
+					1179 row
+						1180 cell
+							1181 text Added sequential infusion: fianlimab or placebo (blinded)
+							1182 container
+								1183 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1184 cell
+							1185 text 1  ×  $57
+							1186 text hypothetical_rate
+						1187 cell
+							1188 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: fianlimab or placebo (blinded), Value: SPONSOR, Secondary Actions: Expand
+								1189 menu
+									1190 (selected) SPONSOR
+									1191 POTENTIALLY_PAYER_COVERED
+									1192 POTENTIALLY_PATIENT_COST_SHARING
+									1193 CONDITIONAL
+									1194 UNKNOWN
+									1195 REVIEW_REQUIRED
+						1196 cell
+							1197 text REVIEW_REQUIRED
+							1198 text Preliminary authored rule R1
+						1199 cell
+							1200 text $57 / $0 / $0 / $0
+					1201 row
+						1202 cell
+							1203 text Blinded study drug preparation and dispensing
+							1204 container
+								1205 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						1206 cell
+							1207 text 1  ×  $85
+							1208 text hypothetical_rate
+						1209 cell
+							1210 pop up button (collapsed, settable) Description: Responsibility for Blinded study drug preparation and dispensing, Value: SPONSOR, Secondary Actions: Expand
+								1211 menu
+									1212 (selected) SPONSOR
+									1213 POTENTIALLY_PAYER_COVERED
+									1214 POTENTIALLY_PATIENT_COST_SHARING
+									1215 CONDITIONAL
+									1216 UNKNOWN
+									1217 REVIEW_REQUIRED
+						1218 cell
+							1219 text REVIEW_REQUIRED
+							1220 text Preliminary authored rule R1
+						1221 cell
+							1222 text $85 / $0 / $0 / $0
+					1223 row
+						1224 cell
+							1225 text PK, ADA and NAb serum samples: process and ship
+							1226 container
+								1227 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						1228 cell
+							1229 text 1  ×  $60
+							1230 text hypothetical_rate
+						1231 cell
+							1232 pop up button (collapsed, settable) Description: Responsibility for PK, ADA and NAb serum samples: process and ship, Value: SPONSOR, Secondary Actions: Expand
+								1233 menu
+									1234 (selected) SPONSOR
+									1235 POTENTIALLY_PAYER_COVERED
+									1236 POTENTIALLY_PATIENT_COST_SHARING
+									1237 CONDITIONAL
+									1238 UNKNOWN
+									1239 REVIEW_REQUIRED
+						1240 cell
+							1241 text REVIEW_REQUIRED
+							1242 text Preliminary authored rule R2
+						1243 cell
+							1244 text $60 / $0 / $0 / $0
+					1245 row
+						1246 cell
+							1247 text Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE)
+							1248 container
+								1249 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						1250 cell
+							1251 text 1  ×  $40
+							1252 text hypothetical_rate
+						1253 cell
+							1254 pop up button (collapsed, settable) Description: Responsibility for Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE), Value: SPONSOR, Secondary Actions: Expand
+								1255 menu
+									1256 (selected) SPONSOR
+									1257 POTENTIALLY_PAYER_COVERED
+									1258 POTENTIALLY_PATIENT_COST_SHARING
+									1259 CONDITIONAL
+									1260 UNKNOWN
+									1261 REVIEW_REQUIRED
+						1262 cell
+							1263 text REVIEW_REQUIRED
+							1264 text Preliminary authored rule R2
+						1265 cell
+							1266 text $40 / $0 / $0 / $0
+					1267 row
+						1268 cell
+							1269 text Established-patient visit, moderate complexity
+							1270 container
+								1271 text 99214  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1272 cell
+							1273 text 1  ×  $129
+							1274 text hypothetical_rate
+						1275 cell
+							1276 pop up button (collapsed, settable) Description: Responsibility for Established-patient visit, moderate complexity, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1277 menu
+									1278 SPONSOR
+									1279 (selected) POTENTIALLY_PAYER_COVERED
+									1280 POTENTIALLY_PATIENT_COST_SHARING
+									1281 CONDITIONAL
+									1282 UNKNOWN
+									1283 REVIEW_REQUIRED
+						1284 cell
+							1285 text REVIEW_REQUIRED
+							1286 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						1287 cell
+							1288 text $0 / $103 / $26 / $0
+					1289 row
+						1290 cell
+							1291 text Blood count with differential
+							1292 container
+								1293 text 85025  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						1294 cell
+							1295 text 1  ×  $8
+							1296 text hypothetical_rate
+						1297 cell
+							1298 pop up button (collapsed, settable) Description: Responsibility for Blood count with differential, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1299 menu
+									1300 SPONSOR
+									1301 (selected) POTENTIALLY_PAYER_COVERED
+									1302 POTENTIALLY_PATIENT_COST_SHARING
+									1303 CONDITIONAL
+									1304 UNKNOWN
+									1305 REVIEW_REQUIRED
+						1306 cell
+							1307 text REVIEW_REQUIRED
+							1308 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						1309 cell
+							1310 text $0 / $6 / $2 / $0
+					1311 row
+						1312 cell
+							1313 text Comprehensive chemistry panel
+							1314 container
+								1315 text 80053  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						1316 cell
+							1317 text 1  ×  $11
+							1318 text hypothetical_rate
+						1319 cell
+							1320 pop up button (collapsed, settable) Description: Responsibility for Comprehensive chemistry panel, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1321 menu
+									1322 SPONSOR
+									1323 (selected) POTENTIALLY_PAYER_COVERED
+									1324 POTENTIALLY_PATIENT_COST_SHARING
+									1325 CONDITIONAL
+									1326 UNKNOWN
+									1327 REVIEW_REQUIRED
+						1328 cell
+							1329 text REVIEW_REQUIRED
+							1330 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						1331 cell
+							1332 text $0 / $8 / $2 / $0
+					1333 row
+						1334 cell
+							1335 text IV infusion, first hour: platinum (C1-4), pemetrexed (C5 on)
+							1336 container
+								1337 text 96413  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1338 cell
+							1339 text 1  ×  $125
+							1340 text hypothetical_rate
+						1341 cell
+							1342 pop up button (collapsed, settable) Description: Responsibility for IV infusion, first hour: platinum (C1-4), pemetrexed (C5 on), Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1343 menu
+									1344 SPONSOR
+									1345 (selected) POTENTIALLY_PAYER_COVERED
+									1346 POTENTIALLY_PATIENT_COST_SHARING
+									1347 CONDITIONAL
+									1348 UNKNOWN
+									1349 REVIEW_REQUIRED
+						1350 cell
+							1351 text REVIEW_REQUIRED
+							1352 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						1353 cell
+							1354 text $0 / $100 / $25 / $0
+					1355 row
+						1356 cell
+							1357 text Added sequential infusion: pemetrexed (C1-4)
+							1358 container
+								1359 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1360 cell
+							1361 text 1  ×  $57
+							1362 text hypothetical_rate
+						1363 cell
+							1364 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: pemetrexed (C1-4), Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1365 menu
+									1366 SPONSOR
+									1367 (selected) POTENTIALLY_PAYER_COVERED
+									1368 POTENTIALLY_PATIENT_COST_SHARING
+									1369 CONDITIONAL
+									1370 UNKNOWN
+									1371 REVIEW_REQUIRED
+						1372 cell
+							1373 text REVIEW_REQUIRED
+							1374 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						1375 cell
+							1376 text $0 / $46 / $11 / $0
+					1377 row
+						1378 cell
+							1379 text Added sequential infusion: cemiplimab
+							1380 container
+								1381 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1382 cell
+							1383 text 1  ×  $57
+							1384 text hypothetical_rate
+						1385 cell
+							1386 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: cemiplimab, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1387 menu
+									1388 SPONSOR
+									1389 (selected) POTENTIALLY_PAYER_COVERED
+									1390 POTENTIALLY_PATIENT_COST_SHARING
+									1391 CONDITIONAL
+									1392 UNKNOWN
+									1393 REVIEW_REQUIRED
+						1394 cell
+							1395 text REVIEW_REQUIRED
+							1396 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						1397 cell
+							1398 text $0 / $46 / $11 / $0
+					1399 row
+						1400 cell
+							1401 text Added sequential infusion: fianlimab or placebo (blinded)
+							1402 container
+								1403 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1404 cell
+							1405 text 1  ×  $57
+							1406 text hypothetical_rate
+						1407 cell
+							1408 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: fianlimab or placebo (blinded), Value: SPONSOR, Secondary Actions: Expand
+								1409 menu
+									1410 (selected) SPONSOR
+									1411 POTENTIALLY_PAYER_COVERED
+									1412 POTENTIALLY_PATIENT_COST_SHARING
+									1413 CONDITIONAL
+									1414 UNKNOWN
+									1415 REVIEW_REQUIRED
+						1416 cell
+							1417 text REVIEW_REQUIRED
+							1418 text Preliminary authored rule R1
+						1419 cell
+							1420 text $57 / $0 / $0 / $0
+					1421 row
+						1422 cell
+							1423 text Blinded study drug preparation and dispensing
+							1424 container
+								1425 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						1426 cell
+							1427 text 1  ×  $85
+							1428 text hypothetical_rate
+						1429 cell
+							1430 pop up button (collapsed, settable) Description: Responsibility for Blinded study drug preparation and dispensing, Value: SPONSOR, Secondary Actions: Expand
+								1431 menu
+									1432 (selected) SPONSOR
+									1433 POTENTIALLY_PAYER_COVERED
+									1434 POTENTIALLY_PATIENT_COST_SHARING
+									1435 CONDITIONAL
+									1436 UNKNOWN
+									1437 REVIEW_REQUIRED
+						1438 cell
+							1439 text REVIEW_REQUIRED
+							1440 text Preliminary authored rule R1
+						1441 cell
+							1442 text $85 / $0 / $0 / $0
+					1443 row
+						1444 cell
+							1445 text PK, ADA and NAb serum samples: process and ship
+							1446 container
+								1447 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						1448 cell
+							1449 text 1  ×  $60
+							1450 text hypothetical_rate
+						1451 cell
+							1452 pop up button (collapsed, settable) Description: Responsibility for PK, ADA and NAb serum samples: process and ship, Value: SPONSOR, Secondary Actions: Expand
+								1453 menu
+									1454 (selected) SPONSOR
+									1455 POTENTIALLY_PAYER_COVERED
+									1456 POTENTIALLY_PATIENT_COST_SHARING
+									1457 CONDITIONAL
+									1458 UNKNOWN
+									1459 REVIEW_REQUIRED
+						1460 cell
+							1461 text REVIEW_REQUIRED
+							1462 text Preliminary authored rule R2
+						1463 cell
+							1464 text $60 / $0 / $0 / $0
+					1465 row
+						1466 cell
+							1467 text Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE)
+							1468 container
+								1469 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						1470 cell
+							1471 text 1  ×  $40
+							1472 text hypothetical_rate
+						1473 cell
+							1474 pop up button (collapsed, settable) Description: Responsibility for Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE), Value: SPONSOR, Secondary Actions: Expand
+								1475 menu
+									1476 (selected) SPONSOR
+									1477 POTENTIALLY_PAYER_COVERED
+									1478 POTENTIALLY_PATIENT_COST_SHARING
+									1479 CONDITIONAL
+									1480 UNKNOWN
+									1481 REVIEW_REQUIRED
+						1482 cell
+							1483 text REVIEW_REQUIRED
+							1484 text Preliminary authored rule R2
+						1485 cell
+							1486 text $40 / $0 / $0 / $0
+					1487 row
+						1488 cell
+							1489 text Established-patient visit, moderate complexity
+							1490 container
+								1491 text 99214  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1492 cell
+							1493 text 1  ×  $129
+							1494 text hypothetical_rate
+						1495 cell
+							1496 pop up button (collapsed, settable) Description: Responsibility for Established-patient visit, moderate complexity, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1497 menu
+									1498 SPONSOR
+									1499 (selected) POTENTIALLY_PAYER_COVERED
+									1500 POTENTIALLY_PATIENT_COST_SHARING
+									1501 CONDITIONAL
+									1502 UNKNOWN
+									1503 REVIEW_REQUIRED
+						1504 cell
+							1505 text REVIEW_REQUIRED
+							1506 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						1507 cell
+							1508 text $0 / $103 / $26 / $0
+					1509 row
+						1510 cell
+							1511 text Blood count with differential
+							1512 container
+								1513 text 85025  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						1514 cell
+							1515 text 1  ×  $8
+							1516 text hypothetical_rate
+						1517 cell
+							1518 pop up button (collapsed, settable) Description: Responsibility for Blood count with differential, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1519 menu
+									1520 SPONSOR
+									1521 (selected) POTENTIALLY_PAYER_COVERED
+									1522 POTENTIALLY_PATIENT_COST_SHARING
+									1523 CONDITIONAL
+									1524 UNKNOWN
+									1525 REVIEW_REQUIRED
+						1526 cell
+							1527 text REVIEW_REQUIRED
+							1528 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						1529 cell
+							1530 text $0 / $6 / $2 / $0
+					1531 row
+						1532 cell
+							1533 text Comprehensive chemistry panel
+							1534 container
+								1535 text 80053  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						1536 cell
+							1537 text 1  ×  $11
+							1538 text hypothetical_rate
+						1539 cell
+							1540 pop up button (collapsed, settable) Description: Responsibility for Comprehensive chemistry panel, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1541 menu
+									1542 SPONSOR
+									1543 (selected) POTENTIALLY_PAYER_COVERED
+									1544 POTENTIALLY_PATIENT_COST_SHARING
+									1545 CONDITIONAL
+									1546 UNKNOWN
+									1547 REVIEW_REQUIRED
+						1548 cell
+							1549 text REVIEW_REQUIRED
+							1550 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						1551 cell
+							1552 text $0 / $8 / $2 / $0
+					1553 row
+						1554 cell
+							1555 text Thyroid-stimulating hormone
+							1556 container
+								1557 text 84443  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						1558 cell
+							1559 text 1  ×  $17
+							1560 text hypothetical_rate
+						1561 cell
+							1562 pop up button (collapsed, settable) Description: Responsibility for Thyroid-stimulating hormone, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1563 menu
+									1564 SPONSOR
+									1565 (selected) POTENTIALLY_PAYER_COVERED
+									1566 POTENTIALLY_PATIENT_COST_SHARING
+									1567 CONDITIONAL
+									1568 UNKNOWN
+									1569 REVIEW_REQUIRED
+						1570 cell
+							1571 text REVIEW_REQUIRED
+							1572 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						1573 cell
+							1574 text $0 / $13 / $3 / $0
+					1575 row
+						1576 cell
+							1577 text Free T4
+							1578 container
+								1579 text 84439  ·  Concord approximate national amount (not from a CMS file); replace with the CMS CLFS amount
+						1580 cell
+							1581 text 1  ×  $10
+							1582 text hypothetical_rate
+						1583 cell
+							1584 pop up button (collapsed, settable) Description: Responsibility for Free T4, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1585 menu
+									1586 SPONSOR
+									1587 (selected) POTENTIALLY_PAYER_COVERED
+									1588 POTENTIALLY_PATIENT_COST_SHARING
+									1589 CONDITIONAL
+									1590 UNKNOWN
+									1591 REVIEW_REQUIRED
+						1592 cell
+							1593 text REVIEW_REQUIRED
+							1594 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						1595 cell
+							1596 text $0 / $8 / $2 / $0
+					1597 row
+						1598 cell
+							1599 text CT chest with contrast
+							1600 container
+								1601 text 71260  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1602 cell
+							1603 text 1  ×  $160
+							1604 text hypothetical_rate
+						1605 cell
+							1606 pop up button (collapsed, settable) Description: Responsibility for CT chest with contrast, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1607 menu
+									1608 SPONSOR
+									1609 (selected) POTENTIALLY_PAYER_COVERED
+									1610 POTENTIALLY_PATIENT_COST_SHARING
+									1611 CONDITIONAL
+									1612 UNKNOWN
+									1613 REVIEW_REQUIRED
+						1614 cell
+							1615 text REVIEW_REQUIRED
+							1616 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						1617 cell
+							1618 text $0 / $128 / $32 / $0
+					1619 row
+						1620 cell
+							1621 text CT abdomen and pelvis with contrast
+							1622 container
+								1623 text 74177  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1624 cell
+							1625 text 1  ×  $310
+							1626 text hypothetical_rate
+						1627 cell
+							1628 pop up button (collapsed, settable) Description: Responsibility for CT abdomen and pelvis with contrast, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1629 menu
+									1630 SPONSOR
+									1631 (selected) POTENTIALLY_PAYER_COVERED
+									1632 POTENTIALLY_PATIENT_COST_SHARING
+									1633 CONDITIONAL
+									1634 UNKNOWN
+									1635 REVIEW_REQUIRED
+						1636 cell
+							1637 text REVIEW_REQUIRED
+							1638 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						1639 cell
+							1640 text $0 / $248 / $62 / $0
+					1641 row
+						1642 cell
+							1643 text Scan upload for blinded central review
+							1644 container
+								1645 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						1646 cell
+							1647 text 1  ×  $100
+							1648 text hypothetical_rate
+						1649 cell
+							1650 pop up button (collapsed, settable) Description: Responsibility for Scan upload for blinded central review, Value: SPONSOR, Secondary Actions: Expand
+								1651 menu
+									1652 (selected) SPONSOR
+									1653 POTENTIALLY_PAYER_COVERED
+									1654 POTENTIALLY_PATIENT_COST_SHARING
+									1655 CONDITIONAL
+									1656 UNKNOWN
+									1657 REVIEW_REQUIRED
+						1658 cell
+							1659 text REVIEW_REQUIRED
+							1660 text Preliminary authored rule R2
+						1661 cell
+							1662 text $100 / $0 / $0 / $0
+					1663 row
+						1664 cell
+							1665 text IV infusion, first hour: platinum (C1-4), pemetrexed (C5 on)
+							1666 container
+								1667 text 96413  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1668 cell
+							1669 text 1  ×  $125
+							1670 text hypothetical_rate
+						1671 cell
+							1672 pop up button (collapsed, settable) Description: Responsibility for IV infusion, first hour: platinum (C1-4), pemetrexed (C5 on), Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1673 menu
+									1674 SPONSOR
+									1675 (selected) POTENTIALLY_PAYER_COVERED
+									1676 POTENTIALLY_PATIENT_COST_SHARING
+									1677 CONDITIONAL
+									1678 UNKNOWN
+									1679 REVIEW_REQUIRED
+						1680 cell
+							1681 text REVIEW_REQUIRED
+							1682 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						1683 cell
+							1684 text $0 / $100 / $25 / $0
+					1685 row
+						1686 cell
+							1687 text Added sequential infusion: pemetrexed (C1-4)
+							1688 container
+								1689 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1690 cell
+							1691 text 1  ×  $57
+							1692 text hypothetical_rate
+						1693 cell
+							1694 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: pemetrexed (C1-4), Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1695 menu
+									1696 SPONSOR
+									1697 (selected) POTENTIALLY_PAYER_COVERED
+									1698 POTENTIALLY_PATIENT_COST_SHARING
+									1699 CONDITIONAL
+									1700 UNKNOWN
+									1701 REVIEW_REQUIRED
+						1702 cell
+							1703 text REVIEW_REQUIRED
+							1704 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						1705 cell
+							1706 text $0 / $46 / $11 / $0
+					1707 row
+						1708 cell
+							1709 text Added sequential infusion: cemiplimab
+							1710 container
+								1711 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1712 cell
+							1713 text 1  ×  $57
+							1714 text hypothetical_rate
+						1715 cell
+							1716 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: cemiplimab, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1717 menu
+									1718 SPONSOR
+									1719 (selected) POTENTIALLY_PAYER_COVERED
+									1720 POTENTIALLY_PATIENT_COST_SHARING
+									1721 CONDITIONAL
+									1722 UNKNOWN
+									1723 REVIEW_REQUIRED
+						1724 cell
+							1725 text REVIEW_REQUIRED
+							1726 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						1727 cell
+							1728 text $0 / $46 / $11 / $0
+					1729 row
+						1730 cell
+							1731 text Added sequential infusion: fianlimab or placebo (blinded)
+							1732 container
+								1733 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1734 cell
+							1735 text 1  ×  $57
+							1736 text hypothetical_rate
+						1737 cell
+							1738 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: fianlimab or placebo (blinded), Value: SPONSOR, Secondary Actions: Expand
+								1739 menu
+									1740 (selected) SPONSOR
+									1741 POTENTIALLY_PAYER_COVERED
+									1742 POTENTIALLY_PATIENT_COST_SHARING
+									1743 CONDITIONAL
+									1744 UNKNOWN
+									1745 REVIEW_REQUIRED
+						1746 cell
+							1747 text REVIEW_REQUIRED
+							1748 text Preliminary authored rule R1
+						1749 cell
+							1750 text $57 / $0 / $0 / $0
+					1751 row
+						1752 cell
+							1753 text Blinded study drug preparation and dispensing
+							1754 container
+								1755 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						1756 cell
+							1757 text 1  ×  $85
+							1758 text hypothetical_rate
+						1759 cell
+							1760 pop up button (collapsed, settable) Description: Responsibility for Blinded study drug preparation and dispensing, Value: SPONSOR, Secondary Actions: Expand
+								1761 menu
+									1762 (selected) SPONSOR
+									1763 POTENTIALLY_PAYER_COVERED
+									1764 POTENTIALLY_PATIENT_COST_SHARING
+									1765 CONDITIONAL
+									1766 UNKNOWN
+									1767 REVIEW_REQUIRED
+						1768 cell
+							1769 text REVIEW_REQUIRED
+							1770 text Preliminary authored rule R1
+						1771 cell
+							1772 text $85 / $0 / $0 / $0
+					1773 row
+						1774 cell
+							1775 text Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE)
+							1776 container
+								1777 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						1778 cell
+							1779 text 1  ×  $40
+							1780 text hypothetical_rate
+						1781 cell
+							1782 pop up button (collapsed, settable) Description: Responsibility for Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE), Value: SPONSOR, Secondary Actions: Expand
+								1783 menu
+									1784 (selected) SPONSOR
+									1785 POTENTIALLY_PAYER_COVERED
+									1786 POTENTIALLY_PATIENT_COST_SHARING
+									1787 CONDITIONAL
+									1788 UNKNOWN
+									1789 REVIEW_REQUIRED
+						1790 cell
+							1791 text REVIEW_REQUIRED
+							1792 text Preliminary authored rule R2
+						1793 cell
+							1794 text $40 / $0 / $0 / $0
+					1795 row
+						1796 cell
+							1797 text Established-patient visit, moderate complexity
+							1798 container
+								1799 text 99214  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1800 cell
+							1801 text 1  ×  $129
+							1802 text hypothetical_rate
+						1803 cell
+							1804 pop up button (collapsed, settable) Description: Responsibility for Established-patient visit, moderate complexity, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1805 menu
+									1806 SPONSOR
+									1807 (selected) POTENTIALLY_PAYER_COVERED
+									1808 POTENTIALLY_PATIENT_COST_SHARING
+									1809 CONDITIONAL
+									1810 UNKNOWN
+									1811 REVIEW_REQUIRED
+						1812 cell
+							1813 text REVIEW_REQUIRED
+							1814 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						1815 cell
+							1816 text $0 / $103 / $26 / $0
+					1817 row
+						1818 cell
+							1819 text Blood count with differential
+							1820 container
+								1821 text 85025  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						1822 cell
+							1823 text 1  ×  $8
+							1824 text hypothetical_rate
+						1825 cell
+							1826 pop up button (collapsed, settable) Description: Responsibility for Blood count with differential, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1827 menu
+									1828 SPONSOR
+									1829 (selected) POTENTIALLY_PAYER_COVERED
+									1830 POTENTIALLY_PATIENT_COST_SHARING
+									1831 CONDITIONAL
+									1832 UNKNOWN
+									1833 REVIEW_REQUIRED
+						1834 cell
+							1835 text REVIEW_REQUIRED
+							1836 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						1837 cell
+							1838 text $0 / $6 / $2 / $0
+					1839 row
+						1840 cell
+							1841 text Comprehensive chemistry panel
+							1842 container
+								1843 text 80053  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						1844 cell
+							1845 text 1  ×  $11
+							1846 text hypothetical_rate
+						1847 cell
+							1848 pop up button (collapsed, settable) Description: Responsibility for Comprehensive chemistry panel, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1849 menu
+									1850 SPONSOR
+									1851 (selected) POTENTIALLY_PAYER_COVERED
+									1852 POTENTIALLY_PATIENT_COST_SHARING
+									1853 CONDITIONAL
+									1854 UNKNOWN
+									1855 REVIEW_REQUIRED
+						1856 cell
+							1857 text REVIEW_REQUIRED
+							1858 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						1859 cell
+							1860 text $0 / $8 / $2 / $0
+					1861 row
+						1862 cell
+							1863 text IV infusion, first hour: platinum (C1-4), pemetrexed (C5 on)
+							1864 container
+								1865 text 96413  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1866 cell
+							1867 text 1  ×  $125
+							1868 text hypothetical_rate
+						1869 cell
+							1870 pop up button (collapsed, settable) Description: Responsibility for IV infusion, first hour: platinum (C1-4), pemetrexed (C5 on), Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1871 menu
+									1872 SPONSOR
+									1873 (selected) POTENTIALLY_PAYER_COVERED
+									1874 POTENTIALLY_PATIENT_COST_SHARING
+									1875 CONDITIONAL
+									1876 UNKNOWN
+									1877 REVIEW_REQUIRED
+						1878 cell
+							1879 text REVIEW_REQUIRED
+							1880 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						1881 cell
+							1882 text $0 / $100 / $25 / $0
+					1883 row
+						1884 cell
+							1885 text Added sequential infusion: pemetrexed (C1-4)
+							1886 container
+								1887 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1888 cell
+							1889 text 1  ×  $57
+							1890 text hypothetical_rate
+						1891 cell
+							1892 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: pemetrexed (C1-4), Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1893 menu
+									1894 SPONSOR
+									1895 (selected) POTENTIALLY_PAYER_COVERED
+									1896 POTENTIALLY_PATIENT_COST_SHARING
+									1897 CONDITIONAL
+									1898 UNKNOWN
+									1899 REVIEW_REQUIRED
+						1900 cell
+							1901 text REVIEW_REQUIRED
+							1902 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						1903 cell
+							1904 text $0 / $46 / $11 / $0
+					1905 row
+						1906 cell
+							1907 text Added sequential infusion: cemiplimab
+							1908 container
+								1909 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1910 cell
+							1911 text 1  ×  $57
+							1912 text hypothetical_rate
+						1913 cell
+							1914 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: cemiplimab, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								1915 menu
+									1916 SPONSOR
+									1917 (selected) POTENTIALLY_PAYER_COVERED
+									1918 POTENTIALLY_PATIENT_COST_SHARING
+									1919 CONDITIONAL
+									1920 UNKNOWN
+									1921 REVIEW_REQUIRED
+						1922 cell
+							1923 text REVIEW_REQUIRED
+							1924 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						1925 cell
+							1926 text $0 / $46 / $11 / $0
+					1927 row
+						1928 cell
+							1929 text Added sequential infusion: fianlimab or placebo (blinded)
+							1930 container
+								1931 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						1932 cell
+							1933 text 1  ×  $57
+							1934 text hypothetical_rate
+						1935 cell
+							1936 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: fianlimab or placebo (blinded), Value: SPONSOR, Secondary Actions: Expand
+								1937 menu
+									1938 (selected) SPONSOR
+									1939 POTENTIALLY_PAYER_COVERED
+									1940 POTENTIALLY_PATIENT_COST_SHARING
+									1941 CONDITIONAL
+									1942 UNKNOWN
+									1943 REVIEW_REQUIRED
+						1944 cell
+							1945 text REVIEW_REQUIRED
+							1946 text Preliminary authored rule R1
+						1947 cell
+							1948 text $57 / $0 / $0 / $0
+					1949 row
+						1950 cell
+							1951 text Blinded study drug preparation and dispensing
+							1952 container
+								1953 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						1954 cell
+							1955 text 1  ×  $85
+							1956 text hypothetical_rate
+						1957 cell
+							1958 pop up button (collapsed, settable) Description: Responsibility for Blinded study drug preparation and dispensing, Value: SPONSOR, Secondary Actions: Expand
+								1959 menu
+									1960 (selected) SPONSOR
+									1961 POTENTIALLY_PAYER_COVERED
+									1962 POTENTIALLY_PATIENT_COST_SHARING
+									1963 CONDITIONAL
+									1964 UNKNOWN
+									1965 REVIEW_REQUIRED
+						1966 cell
+							1967 text REVIEW_REQUIRED
+							1968 text Preliminary authored rule R1
+						1969 cell
+							1970 text $85 / $0 / $0 / $0
+					1971 row
+						1972 cell
+							1973 text PK, ADA and NAb serum samples: process and ship
+							1974 container
+								1975 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						1976 cell
+							1977 text 1  ×  $60
+							1978 text hypothetical_rate
+						1979 cell
+							1980 pop up button (collapsed, settable) Description: Responsibility for PK, ADA and NAb serum samples: process and ship, Value: SPONSOR, Secondary Actions: Expand
+								1981 menu
+									1982 (selected) SPONSOR
+									1983 POTENTIALLY_PAYER_COVERED
+									1984 POTENTIALLY_PATIENT_COST_SHARING
+									1985 CONDITIONAL
+									1986 UNKNOWN
+									1987 REVIEW_REQUIRED
+						1988 cell
+							1989 text REVIEW_REQUIRED
+							1990 text Preliminary authored rule R2
+						1991 cell
+							1992 text $60 / $0 / $0 / $0
+					1993 row
+						1994 cell
+							1995 text Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE)
+							1996 container
+								1997 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						1998 cell
+							1999 text 1  ×  $40
+							2000 text hypothetical_rate
+						2001 cell
+							2002 pop up button (collapsed, settable) Description: Responsibility for Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE), Value: SPONSOR, Secondary Actions: Expand
+								2003 menu
+									2004 (selected) SPONSOR
+									2005 POTENTIALLY_PAYER_COVERED
+									2006 POTENTIALLY_PATIENT_COST_SHARING
+									2007 CONDITIONAL
+									2008 UNKNOWN
+									2009 REVIEW_REQUIRED
+						2010 cell
+							2011 text REVIEW_REQUIRED
+							2012 text Preliminary authored rule R2
+						2013 cell
+							2014 text $40 / $0 / $0 / $0
+					2015 row
+						2016 cell
+							2017 text Established-patient visit, moderate complexity
+							2018 container
+								2019 text 99214  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2020 cell
+							2021 text 1  ×  $129
+							2022 text hypothetical_rate
+						2023 cell
+							2024 pop up button (collapsed, settable) Description: Responsibility for Established-patient visit, moderate complexity, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2025 menu
+									2026 SPONSOR
+									2027 (selected) POTENTIALLY_PAYER_COVERED
+									2028 POTENTIALLY_PATIENT_COST_SHARING
+									2029 CONDITIONAL
+									2030 UNKNOWN
+									2031 REVIEW_REQUIRED
+						2032 cell
+							2033 text REVIEW_REQUIRED
+							2034 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2035 cell
+							2036 text $0 / $103 / $26 / $0
+					2037 row
+						2038 cell
+							2039 text Blood count with differential
+							2040 container
+								2041 text 85025  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						2042 cell
+							2043 text 1  ×  $8
+							2044 text hypothetical_rate
+						2045 cell
+							2046 pop up button (collapsed, settable) Description: Responsibility for Blood count with differential, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2047 menu
+									2048 SPONSOR
+									2049 (selected) POTENTIALLY_PAYER_COVERED
+									2050 POTENTIALLY_PATIENT_COST_SHARING
+									2051 CONDITIONAL
+									2052 UNKNOWN
+									2053 REVIEW_REQUIRED
+						2054 cell
+							2055 text REVIEW_REQUIRED
+							2056 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2057 cell
+							2058 text $0 / $6 / $2 / $0
+					2059 row
+						2060 cell
+							2061 text Comprehensive chemistry panel
+							2062 container
+								2063 text 80053  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						2064 cell
+							2065 text 1  ×  $11
+							2066 text hypothetical_rate
+						2067 cell
+							2068 pop up button (collapsed, settable) Description: Responsibility for Comprehensive chemistry panel, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2069 menu
+									2070 SPONSOR
+									2071 (selected) POTENTIALLY_PAYER_COVERED
+									2072 POTENTIALLY_PATIENT_COST_SHARING
+									2073 CONDITIONAL
+									2074 UNKNOWN
+									2075 REVIEW_REQUIRED
+						2076 cell
+							2077 text REVIEW_REQUIRED
+							2078 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2079 cell
+							2080 text $0 / $8 / $2 / $0
+					2081 row
+						2082 cell
+							2083 text Thyroid-stimulating hormone
+							2084 container
+								2085 text 84443  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						2086 cell
+							2087 text 1  ×  $17
+							2088 text hypothetical_rate
+						2089 cell
+							2090 pop up button (collapsed, settable) Description: Responsibility for Thyroid-stimulating hormone, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2091 menu
+									2092 SPONSOR
+									2093 (selected) POTENTIALLY_PAYER_COVERED
+									2094 POTENTIALLY_PATIENT_COST_SHARING
+									2095 CONDITIONAL
+									2096 UNKNOWN
+									2097 REVIEW_REQUIRED
+						2098 cell
+							2099 text REVIEW_REQUIRED
+							2100 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2101 cell
+							2102 text $0 / $13 / $3 / $0
+					2103 row
+						2104 cell
+							2105 text Free T4
+							2106 container
+								2107 text 84439  ·  Concord approximate national amount (not from a CMS file); replace with the CMS CLFS amount
+						2108 cell
+							2109 text 1  ×  $10
+							2110 text hypothetical_rate
+						2111 cell
+							2112 pop up button (collapsed, settable) Description: Responsibility for Free T4, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2113 menu
+									2114 SPONSOR
+									2115 (selected) POTENTIALLY_PAYER_COVERED
+									2116 POTENTIALLY_PATIENT_COST_SHARING
+									2117 CONDITIONAL
+									2118 UNKNOWN
+									2119 REVIEW_REQUIRED
+						2120 cell
+							2121 text REVIEW_REQUIRED
+							2122 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2123 cell
+							2124 text $0 / $8 / $2 / $0
+					2125 row
+						2126 cell
+							2127 text CT chest with contrast
+							2128 container
+								2129 text 71260  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2130 cell
+							2131 text 1  ×  $160
+							2132 text hypothetical_rate
+						2133 cell
+							2134 pop up button (collapsed, settable) Description: Responsibility for CT chest with contrast, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2135 menu
+									2136 SPONSOR
+									2137 (selected) POTENTIALLY_PAYER_COVERED
+									2138 POTENTIALLY_PATIENT_COST_SHARING
+									2139 CONDITIONAL
+									2140 UNKNOWN
+									2141 REVIEW_REQUIRED
+						2142 cell
+							2143 text REVIEW_REQUIRED
+							2144 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2145 cell
+							2146 text $0 / $128 / $32 / $0
+					2147 row
+						2148 cell
+							2149 text CT abdomen and pelvis with contrast
+							2150 container
+								2151 text 74177  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2152 cell
+							2153 text 1  ×  $310
+							2154 text hypothetical_rate
+						2155 cell
+							2156 pop up button (collapsed, settable) Description: Responsibility for CT abdomen and pelvis with contrast, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2157 menu
+									2158 SPONSOR
+									2159 (selected) POTENTIALLY_PAYER_COVERED
+									2160 POTENTIALLY_PATIENT_COST_SHARING
+									2161 CONDITIONAL
+									2162 UNKNOWN
+									2163 REVIEW_REQUIRED
+						2164 cell
+							2165 text REVIEW_REQUIRED
+							2166 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2167 cell
+							2168 text $0 / $248 / $62 / $0
+					2169 row
+						2170 cell
+							2171 text Scan upload for blinded central review
+							2172 container
+								2173 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						2174 cell
+							2175 text 1  ×  $100
+							2176 text hypothetical_rate
+						2177 cell
+							2178 pop up button (collapsed, settable) Description: Responsibility for Scan upload for blinded central review, Value: SPONSOR, Secondary Actions: Expand
+								2179 menu
+									2180 (selected) SPONSOR
+									2181 POTENTIALLY_PAYER_COVERED
+									2182 POTENTIALLY_PATIENT_COST_SHARING
+									2183 CONDITIONAL
+									2184 UNKNOWN
+									2185 REVIEW_REQUIRED
+						2186 cell
+							2187 text REVIEW_REQUIRED
+							2188 text Preliminary authored rule R2
+						2189 cell
+							2190 text $100 / $0 / $0 / $0
+					2191 row
+						2192 cell
+							2193 text IV infusion, first hour: platinum (C1-4), pemetrexed (C5 on)
+							2194 container
+								2195 text 96413  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2196 cell
+							2197 text 1  ×  $125
+							2198 text hypothetical_rate
+						2199 cell
+							2200 pop up button (collapsed, settable) Description: Responsibility for IV infusion, first hour: platinum (C1-4), pemetrexed (C5 on), Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2201 menu
+									2202 SPONSOR
+									2203 (selected) POTENTIALLY_PAYER_COVERED
+									2204 POTENTIALLY_PATIENT_COST_SHARING
+									2205 CONDITIONAL
+									2206 UNKNOWN
+									2207 REVIEW_REQUIRED
+						2208 cell
+							2209 text REVIEW_REQUIRED
+							2210 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						2211 cell
+							2212 text $0 / $100 / $25 / $0
+					2213 row
+						2214 cell
+							2215 text Added sequential infusion: cemiplimab
+							2216 container
+								2217 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2218 cell
+							2219 text 1  ×  $57
+							2220 text hypothetical_rate
+						2221 cell
+							2222 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: cemiplimab, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2223 menu
+									2224 SPONSOR
+									2225 (selected) POTENTIALLY_PAYER_COVERED
+									2226 POTENTIALLY_PATIENT_COST_SHARING
+									2227 CONDITIONAL
+									2228 UNKNOWN
+									2229 REVIEW_REQUIRED
+						2230 cell
+							2231 text REVIEW_REQUIRED
+							2232 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						2233 cell
+							2234 text $0 / $46 / $11 / $0
+					2235 row
+						2236 cell
+							2237 text Added sequential infusion: fianlimab or placebo (blinded)
+							2238 container
+								2239 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2240 cell
+							2241 text 1  ×  $57
+							2242 text hypothetical_rate
+						2243 cell
+							2244 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: fianlimab or placebo (blinded), Value: SPONSOR, Secondary Actions: Expand
+								2245 menu
+									2246 (selected) SPONSOR
+									2247 POTENTIALLY_PAYER_COVERED
+									2248 POTENTIALLY_PATIENT_COST_SHARING
+									2249 CONDITIONAL
+									2250 UNKNOWN
+									2251 REVIEW_REQUIRED
+						2252 cell
+							2253 text REVIEW_REQUIRED
+							2254 text Preliminary authored rule R1
+						2255 cell
+							2256 text $57 / $0 / $0 / $0
+					2257 row
+						2258 cell
+							2259 text Blinded study drug preparation and dispensing
+							2260 container
+								2261 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						2262 cell
+							2263 text 1  ×  $85
+							2264 text hypothetical_rate
+						2265 cell
+							2266 pop up button (collapsed, settable) Description: Responsibility for Blinded study drug preparation and dispensing, Value: SPONSOR, Secondary Actions: Expand
+								2267 menu
+									2268 (selected) SPONSOR
+									2269 POTENTIALLY_PAYER_COVERED
+									2270 POTENTIALLY_PATIENT_COST_SHARING
+									2271 CONDITIONAL
+									2272 UNKNOWN
+									2273 REVIEW_REQUIRED
+						2274 cell
+							2275 text REVIEW_REQUIRED
+							2276 text Preliminary authored rule R1
+						2277 cell
+							2278 text $85 / $0 / $0 / $0
+					2279 row
+						2280 cell
+							2281 text Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE)
+							2282 container
+								2283 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						2284 cell
+							2285 text 1  ×  $40
+							2286 text hypothetical_rate
+						2287 cell
+							2288 pop up button (collapsed, settable) Description: Responsibility for Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE), Value: SPONSOR, Secondary Actions: Expand
+								2289 menu
+									2290 (selected) SPONSOR
+									2291 POTENTIALLY_PAYER_COVERED
+									2292 POTENTIALLY_PATIENT_COST_SHARING
+									2293 CONDITIONAL
+									2294 UNKNOWN
+									2295 REVIEW_REQUIRED
+						2296 cell
+							2297 text REVIEW_REQUIRED
+							2298 text Preliminary authored rule R2
+						2299 cell
+							2300 text $40 / $0 / $0 / $0
+					2301 row
+						2302 cell
+							2303 text Established-patient visit, moderate complexity
+							2304 container
+								2305 text 99214  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2306 cell
+							2307 text 1  ×  $129
+							2308 text hypothetical_rate
+						2309 cell
+							2310 pop up button (collapsed, settable) Description: Responsibility for Established-patient visit, moderate complexity, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2311 menu
+									2312 SPONSOR
+									2313 (selected) POTENTIALLY_PAYER_COVERED
+									2314 POTENTIALLY_PATIENT_COST_SHARING
+									2315 CONDITIONAL
+									2316 UNKNOWN
+									2317 REVIEW_REQUIRED
+						2318 cell
+							2319 text REVIEW_REQUIRED
+							2320 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2321 cell
+							2322 text $0 / $103 / $26 / $0
+					2323 row
+						2324 cell
+							2325 text Blood count with differential
+							2326 container
+								2327 text 85025  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						2328 cell
+							2329 text 1  ×  $8
+							2330 text hypothetical_rate
+						2331 cell
+							2332 pop up button (collapsed, settable) Description: Responsibility for Blood count with differential, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2333 menu
+									2334 SPONSOR
+									2335 (selected) POTENTIALLY_PAYER_COVERED
+									2336 POTENTIALLY_PATIENT_COST_SHARING
+									2337 CONDITIONAL
+									2338 UNKNOWN
+									2339 REVIEW_REQUIRED
+						2340 cell
+							2341 text REVIEW_REQUIRED
+							2342 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2343 cell
+							2344 text $0 / $6 / $2 / $0
+					2345 row
+						2346 cell
+							2347 text Comprehensive chemistry panel
+							2348 container
+								2349 text 80053  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						2350 cell
+							2351 text 1  ×  $11
+							2352 text hypothetical_rate
+						2353 cell
+							2354 pop up button (collapsed, settable) Description: Responsibility for Comprehensive chemistry panel, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2355 menu
+									2356 SPONSOR
+									2357 (selected) POTENTIALLY_PAYER_COVERED
+									2358 POTENTIALLY_PATIENT_COST_SHARING
+									2359 CONDITIONAL
+									2360 UNKNOWN
+									2361 REVIEW_REQUIRED
+						2362 cell
+							2363 text REVIEW_REQUIRED
+							2364 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2365 cell
+							2366 text $0 / $8 / $2 / $0
+					2367 row
+						2368 cell
+							2369 text IV infusion, first hour: platinum (C1-4), pemetrexed (C5 on)
+							2370 container
+								2371 text 96413  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2372 cell
+							2373 text 1  ×  $125
+							2374 text hypothetical_rate
+						2375 cell
+							2376 pop up button (collapsed, settable) Description: Responsibility for IV infusion, first hour: platinum (C1-4), pemetrexed (C5 on), Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2377 menu
+									2378 SPONSOR
+									2379 (selected) POTENTIALLY_PAYER_COVERED
+									2380 POTENTIALLY_PATIENT_COST_SHARING
+									2381 CONDITIONAL
+									2382 UNKNOWN
+									2383 REVIEW_REQUIRED
+						2384 cell
+							2385 text REVIEW_REQUIRED
+							2386 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						2387 cell
+							2388 text $0 / $100 / $25 / $0
+					2389 row
+						2390 cell
+							2391 text Added sequential infusion: cemiplimab
+							2392 container
+								2393 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2394 cell
+							2395 text 1  ×  $57
+							2396 text hypothetical_rate
+						2397 cell
+							2398 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: cemiplimab, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2399 menu
+									2400 SPONSOR
+									2401 (selected) POTENTIALLY_PAYER_COVERED
+									2402 POTENTIALLY_PATIENT_COST_SHARING
+									2403 CONDITIONAL
+									2404 UNKNOWN
+									2405 REVIEW_REQUIRED
+						2406 cell
+							2407 text REVIEW_REQUIRED
+							2408 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						2409 cell
+							2410 text $0 / $46 / $11 / $0
+					2411 row
+						2412 cell
+							2413 text Added sequential infusion: fianlimab or placebo (blinded)
+							2414 container
+								2415 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2416 cell
+							2417 text 1  ×  $57
+							2418 text hypothetical_rate
+						2419 cell
+							2420 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: fianlimab or placebo (blinded), Value: SPONSOR, Secondary Actions: Expand
+								2421 menu
+									2422 (selected) SPONSOR
+									2423 POTENTIALLY_PAYER_COVERED
+									2424 POTENTIALLY_PATIENT_COST_SHARING
+									2425 CONDITIONAL
+									2426 UNKNOWN
+									2427 REVIEW_REQUIRED
+						2428 cell
+							2429 text REVIEW_REQUIRED
+							2430 text Preliminary authored rule R1
+						2431 cell
+							2432 text $57 / $0 / $0 / $0
+					2433 row
+						2434 cell
+							2435 text Blinded study drug preparation and dispensing
+							2436 container
+								2437 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						2438 cell
+							2439 text 1  ×  $85
+							2440 text hypothetical_rate
+						2441 cell
+							2442 pop up button (collapsed, settable) Description: Responsibility for Blinded study drug preparation and dispensing, Value: SPONSOR, Secondary Actions: Expand
+								2443 menu
+									2444 (selected) SPONSOR
+									2445 POTENTIALLY_PAYER_COVERED
+									2446 POTENTIALLY_PATIENT_COST_SHARING
+									2447 CONDITIONAL
+									2448 UNKNOWN
+									2449 REVIEW_REQUIRED
+						2450 cell
+							2451 text REVIEW_REQUIRED
+							2452 text Preliminary authored rule R1
+						2453 cell
+							2454 text $85 / $0 / $0 / $0
+					2455 row
+						2456 cell
+							2457 text Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE)
+							2458 container
+								2459 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						2460 cell
+							2461 text 1  ×  $40
+							2462 text hypothetical_rate
+						2463 cell
+							2464 pop up button (collapsed, settable) Description: Responsibility for Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE), Value: SPONSOR, Secondary Actions: Expand
+								2465 menu
+									2466 (selected) SPONSOR
+									2467 POTENTIALLY_PAYER_COVERED
+									2468 POTENTIALLY_PATIENT_COST_SHARING
+									2469 CONDITIONAL
+									2470 UNKNOWN
+									2471 REVIEW_REQUIRED
+						2472 cell
+							2473 text REVIEW_REQUIRED
+							2474 text Preliminary authored rule R2
+						2475 cell
+							2476 text $40 / $0 / $0 / $0
+					2477 row
+						2478 cell
+							2479 text Established-patient visit, moderate complexity
+							2480 container
+								2481 text 99214  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2482 cell
+							2483 text 1  ×  $129
+							2484 text hypothetical_rate
+						2485 cell
+							2486 pop up button (collapsed, settable) Description: Responsibility for Established-patient visit, moderate complexity, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2487 menu
+									2488 SPONSOR
+									2489 (selected) POTENTIALLY_PAYER_COVERED
+									2490 POTENTIALLY_PATIENT_COST_SHARING
+									2491 CONDITIONAL
+									2492 UNKNOWN
+									2493 REVIEW_REQUIRED
+						2494 cell
+							2495 text REVIEW_REQUIRED
+							2496 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2497 cell
+							2498 text $0 / $103 / $26 / $0
+					2499 row
+						2500 cell
+							2501 text Blood count with differential
+							2502 container
+								2503 text 85025  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						2504 cell
+							2505 text 1  ×  $8
+							2506 text hypothetical_rate
+						2507 cell
+							2508 pop up button (collapsed, settable) Description: Responsibility for Blood count with differential, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2509 menu
+									2510 SPONSOR
+									2511 (selected) POTENTIALLY_PAYER_COVERED
+									2512 POTENTIALLY_PATIENT_COST_SHARING
+									2513 CONDITIONAL
+									2514 UNKNOWN
+									2515 REVIEW_REQUIRED
+						2516 cell
+							2517 text REVIEW_REQUIRED
+							2518 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2519 cell
+							2520 text $0 / $6 / $2 / $0
+					2521 row
+						2522 cell
+							2523 text Comprehensive chemistry panel
+							2524 container
+								2525 text 80053  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						2526 cell
+							2527 text 1  ×  $11
+							2528 text hypothetical_rate
+						2529 cell
+							2530 pop up button (collapsed, settable) Description: Responsibility for Comprehensive chemistry panel, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2531 menu
+									2532 SPONSOR
+									2533 (selected) POTENTIALLY_PAYER_COVERED
+									2534 POTENTIALLY_PATIENT_COST_SHARING
+									2535 CONDITIONAL
+									2536 UNKNOWN
+									2537 REVIEW_REQUIRED
+						2538 cell
+							2539 text REVIEW_REQUIRED
+							2540 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2541 cell
+							2542 text $0 / $8 / $2 / $0
+					2543 row
+						2544 cell
+							2545 text Thyroid-stimulating hormone
+							2546 container
+								2547 text 84443  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						2548 cell
+							2549 text 1  ×  $17
+							2550 text hypothetical_rate
+						2551 cell
+							2552 pop up button (collapsed, settable) Description: Responsibility for Thyroid-stimulating hormone, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2553 menu
+									2554 SPONSOR
+									2555 (selected) POTENTIALLY_PAYER_COVERED
+									2556 POTENTIALLY_PATIENT_COST_SHARING
+									2557 CONDITIONAL
+									2558 UNKNOWN
+									2559 REVIEW_REQUIRED
+						2560 cell
+							2561 text REVIEW_REQUIRED
+							2562 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2563 cell
+							2564 text $0 / $13 / $3 / $0
+					2565 row
+						2566 cell
+							2567 text Free T4
+							2568 container
+								2569 text 84439  ·  Concord approximate national amount (not from a CMS file); replace with the CMS CLFS amount
+						2570 cell
+							2571 text 1  ×  $10
+							2572 text hypothetical_rate
+						2573 cell
+							2574 pop up button (collapsed, settable) Description: Responsibility for Free T4, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2575 menu
+									2576 SPONSOR
+									2577 (selected) POTENTIALLY_PAYER_COVERED
+									2578 POTENTIALLY_PATIENT_COST_SHARING
+									2579 CONDITIONAL
+									2580 UNKNOWN
+									2581 REVIEW_REQUIRED
+						2582 cell
+							2583 text REVIEW_REQUIRED
+							2584 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2585 cell
+							2586 text $0 / $8 / $2 / $0
+					2587 row
+						2588 cell
+							2589 text CT chest with contrast
+							2590 container
+								2591 text 71260  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2592 cell
+							2593 text 1  ×  $160
+							2594 text hypothetical_rate
+						2595 cell
+							2596 pop up button (collapsed, settable) Description: Responsibility for CT chest with contrast, Value: SPONSOR, Secondary Actions: Expand
+								2597 menu
+									2598 (selected) SPONSOR
+									2599 POTENTIALLY_PAYER_COVERED
+									2600 POTENTIALLY_PATIENT_COST_SHARING
+									2601 CONDITIONAL
+									2602 UNKNOWN
+									2603 REVIEW_REQUIRED
+						2604 cell
+							2605 text REVIEW_REQUIRED
+							2606 text Preliminary authored rule R4
+						2607 cell
+							2608 text $160 / $0 / $0 / $0
+					2609 row
+						2610 cell
+							2611 text CT abdomen and pelvis with contrast
+							2612 container
+								2613 text 74177  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2614 cell
+							2615 text 1  ×  $310
+							2616 text hypothetical_rate
+						2617 cell
+							2618 pop up button (collapsed, settable) Description: Responsibility for CT abdomen and pelvis with contrast, Value: SPONSOR, Secondary Actions: Expand
+								2619 menu
+									2620 (selected) SPONSOR
+									2621 POTENTIALLY_PAYER_COVERED
+									2622 POTENTIALLY_PATIENT_COST_SHARING
+									2623 CONDITIONAL
+									2624 UNKNOWN
+									2625 REVIEW_REQUIRED
+						2626 cell
+							2627 text REVIEW_REQUIRED
+							2628 text Preliminary authored rule R4
+						2629 cell
+							2630 text $310 / $0 / $0 / $0
+					2631 row
+						2632 cell
+							2633 text Scan upload for blinded central review
+							2634 container
+								2635 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						2636 cell
+							2637 text 1  ×  $100
+							2638 text hypothetical_rate
+						2639 cell
+							2640 pop up button (collapsed, settable) Description: Responsibility for Scan upload for blinded central review, Value: SPONSOR, Secondary Actions: Expand
+								2641 menu
+									2642 (selected) SPONSOR
+									2643 POTENTIALLY_PAYER_COVERED
+									2644 POTENTIALLY_PATIENT_COST_SHARING
+									2645 CONDITIONAL
+									2646 UNKNOWN
+									2647 REVIEW_REQUIRED
+						2648 cell
+							2649 text REVIEW_REQUIRED
+							2650 text Preliminary authored rule R2
+						2651 cell
+							2652 text $100 / $0 / $0 / $0
+					2653 row
+						2654 cell
+							2655 text IV infusion, first hour: platinum (C1-4), pemetrexed (C5 on)
+							2656 container
+								2657 text 96413  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2658 cell
+							2659 text 1  ×  $125
+							2660 text hypothetical_rate
+						2661 cell
+							2662 pop up button (collapsed, settable) Description: Responsibility for IV infusion, first hour: platinum (C1-4), pemetrexed (C5 on), Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2663 menu
+									2664 SPONSOR
+									2665 (selected) POTENTIALLY_PAYER_COVERED
+									2666 POTENTIALLY_PATIENT_COST_SHARING
+									2667 CONDITIONAL
+									2668 UNKNOWN
+									2669 REVIEW_REQUIRED
+						2670 cell
+							2671 text REVIEW_REQUIRED
+							2672 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						2673 cell
+							2674 text $0 / $100 / $25 / $0
+					2675 row
+						2676 cell
+							2677 text Added sequential infusion: cemiplimab
+							2678 container
+								2679 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2680 cell
+							2681 text 1  ×  $57
+							2682 text hypothetical_rate
+						2683 cell
+							2684 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: cemiplimab, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2685 menu
+									2686 SPONSOR
+									2687 (selected) POTENTIALLY_PAYER_COVERED
+									2688 POTENTIALLY_PATIENT_COST_SHARING
+									2689 CONDITIONAL
+									2690 UNKNOWN
+									2691 REVIEW_REQUIRED
+						2692 cell
+							2693 text REVIEW_REQUIRED
+							2694 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						2695 cell
+							2696 text $0 / $46 / $11 / $0
+					2697 row
+						2698 cell
+							2699 text Added sequential infusion: fianlimab or placebo (blinded)
+							2700 container
+								2701 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2702 cell
+							2703 text 1  ×  $57
+							2704 text hypothetical_rate
+						2705 cell
+							2706 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: fianlimab or placebo (blinded), Value: SPONSOR, Secondary Actions: Expand
+								2707 menu
+									2708 (selected) SPONSOR
+									2709 POTENTIALLY_PAYER_COVERED
+									2710 POTENTIALLY_PATIENT_COST_SHARING
+									2711 CONDITIONAL
+									2712 UNKNOWN
+									2713 REVIEW_REQUIRED
+						2714 cell
+							2715 text REVIEW_REQUIRED
+							2716 text Preliminary authored rule R1
+						2717 cell
+							2718 text $57 / $0 / $0 / $0
+					2719 row
+						2720 cell
+							2721 text Blinded study drug preparation and dispensing
+							2722 container
+								2723 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						2724 cell
+							2725 text 1  ×  $85
+							2726 text hypothetical_rate
+						2727 cell
+							2728 pop up button (collapsed, settable) Description: Responsibility for Blinded study drug preparation and dispensing, Value: SPONSOR, Secondary Actions: Expand
+								2729 menu
+									2730 (selected) SPONSOR
+									2731 POTENTIALLY_PAYER_COVERED
+									2732 POTENTIALLY_PATIENT_COST_SHARING
+									2733 CONDITIONAL
+									2734 UNKNOWN
+									2735 REVIEW_REQUIRED
+						2736 cell
+							2737 text REVIEW_REQUIRED
+							2738 text Preliminary authored rule R1
+						2739 cell
+							2740 text $85 / $0 / $0 / $0
+					2741 row
+						2742 cell
+							2743 text Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE)
+							2744 container
+								2745 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						2746 cell
+							2747 text 1  ×  $40
+							2748 text hypothetical_rate
+						2749 cell
+							2750 pop up button (collapsed, settable) Description: Responsibility for Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE), Value: SPONSOR, Secondary Actions: Expand
+								2751 menu
+									2752 (selected) SPONSOR
+									2753 POTENTIALLY_PAYER_COVERED
+									2754 POTENTIALLY_PATIENT_COST_SHARING
+									2755 CONDITIONAL
+									2756 UNKNOWN
+									2757 REVIEW_REQUIRED
+						2758 cell
+							2759 text REVIEW_REQUIRED
+							2760 text Preliminary authored rule R2
+						2761 cell
+							2762 text $40 / $0 / $0 / $0
+					2763 row
+						2764 cell
+							2765 text Established-patient visit, moderate complexity
+							2766 container
+								2767 text 99214  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2768 cell
+							2769 text 1  ×  $129
+							2770 text hypothetical_rate
+						2771 cell
+							2772 pop up button (collapsed, settable) Description: Responsibility for Established-patient visit, moderate complexity, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2773 menu
+									2774 SPONSOR
+									2775 (selected) POTENTIALLY_PAYER_COVERED
+									2776 POTENTIALLY_PATIENT_COST_SHARING
+									2777 CONDITIONAL
+									2778 UNKNOWN
+									2779 REVIEW_REQUIRED
+						2780 cell
+							2781 text REVIEW_REQUIRED
+							2782 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2783 cell
+							2784 text $0 / $103 / $26 / $0
+					2785 row
+						2786 cell
+							2787 text Blood count with differential
+							2788 container
+								2789 text 85025  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						2790 cell
+							2791 text 1  ×  $8
+							2792 text hypothetical_rate
+						2793 cell
+							2794 pop up button (collapsed, settable) Description: Responsibility for Blood count with differential, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2795 menu
+									2796 SPONSOR
+									2797 (selected) POTENTIALLY_PAYER_COVERED
+									2798 POTENTIALLY_PATIENT_COST_SHARING
+									2799 CONDITIONAL
+									2800 UNKNOWN
+									2801 REVIEW_REQUIRED
+						2802 cell
+							2803 text REVIEW_REQUIRED
+							2804 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2805 cell
+							2806 text $0 / $6 / $2 / $0
+					2807 row
+						2808 cell
+							2809 text Comprehensive chemistry panel
+							2810 container
+								2811 text 80053  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						2812 cell
+							2813 text 1  ×  $11
+							2814 text hypothetical_rate
+						2815 cell
+							2816 pop up button (collapsed, settable) Description: Responsibility for Comprehensive chemistry panel, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2817 menu
+									2818 SPONSOR
+									2819 (selected) POTENTIALLY_PAYER_COVERED
+									2820 POTENTIALLY_PATIENT_COST_SHARING
+									2821 CONDITIONAL
+									2822 UNKNOWN
+									2823 REVIEW_REQUIRED
+						2824 cell
+							2825 text REVIEW_REQUIRED
+							2826 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2827 cell
+							2828 text $0 / $8 / $2 / $0
+					2829 row
+						2830 cell
+							2831 text IV infusion, first hour: platinum (C1-4), pemetrexed (C5 on)
+							2832 container
+								2833 text 96413  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2834 cell
+							2835 text 1  ×  $125
+							2836 text hypothetical_rate
+						2837 cell
+							2838 pop up button (collapsed, settable) Description: Responsibility for IV infusion, first hour: platinum (C1-4), pemetrexed (C5 on), Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2839 menu
+									2840 SPONSOR
+									2841 (selected) POTENTIALLY_PAYER_COVERED
+									2842 POTENTIALLY_PATIENT_COST_SHARING
+									2843 CONDITIONAL
+									2844 UNKNOWN
+									2845 REVIEW_REQUIRED
+						2846 cell
+							2847 text REVIEW_REQUIRED
+							2848 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						2849 cell
+							2850 text $0 / $100 / $25 / $0
+					2851 row
+						2852 cell
+							2853 text Added sequential infusion: cemiplimab
+							2854 container
+								2855 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2856 cell
+							2857 text 1  ×  $57
+							2858 text hypothetical_rate
+						2859 cell
+							2860 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: cemiplimab, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2861 menu
+									2862 SPONSOR
+									2863 (selected) POTENTIALLY_PAYER_COVERED
+									2864 POTENTIALLY_PATIENT_COST_SHARING
+									2865 CONDITIONAL
+									2866 UNKNOWN
+									2867 REVIEW_REQUIRED
+						2868 cell
+							2869 text REVIEW_REQUIRED
+							2870 text Preliminary authored rule R5; conditional payment split using an explicit hypothetical payer share
+						2871 cell
+							2872 text $0 / $46 / $11 / $0
+					2873 row
+						2874 cell
+							2875 text Added sequential infusion: fianlimab or placebo (blinded)
+							2876 container
+								2877 text 96417  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2878 cell
+							2879 text 1  ×  $57
+							2880 text hypothetical_rate
+						2881 cell
+							2882 pop up button (collapsed, settable) Description: Responsibility for Added sequential infusion: fianlimab or placebo (blinded), Value: SPONSOR, Secondary Actions: Expand
+								2883 menu
+									2884 (selected) SPONSOR
+									2885 POTENTIALLY_PAYER_COVERED
+									2886 POTENTIALLY_PATIENT_COST_SHARING
+									2887 CONDITIONAL
+									2888 UNKNOWN
+									2889 REVIEW_REQUIRED
+						2890 cell
+							2891 text REVIEW_REQUIRED
+							2892 text Preliminary authored rule R1
+						2893 cell
+							2894 text $57 / $0 / $0 / $0
+					2895 row
+						2896 cell
+							2897 text Blinded study drug preparation and dispensing
+							2898 container
+								2899 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						2900 cell
+							2901 text 1  ×  $85
+							2902 text hypothetical_rate
+						2903 cell
+							2904 pop up button (collapsed, settable) Description: Responsibility for Blinded study drug preparation and dispensing, Value: SPONSOR, Secondary Actions: Expand
+								2905 menu
+									2906 (selected) SPONSOR
+									2907 POTENTIALLY_PAYER_COVERED
+									2908 POTENTIALLY_PATIENT_COST_SHARING
+									2909 CONDITIONAL
+									2910 UNKNOWN
+									2911 REVIEW_REQUIRED
+						2912 cell
+							2913 text REVIEW_REQUIRED
+							2914 text Preliminary authored rule R1
+						2915 cell
+							2916 text $85 / $0 / $0 / $0
+					2917 row
+						2918 cell
+							2919 text PK, ADA and NAb serum samples: process and ship
+							2920 container
+								2921 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						2922 cell
+							2923 text 1  ×  $60
+							2924 text hypothetical_rate
+						2925 cell
+							2926 pop up button (collapsed, settable) Description: Responsibility for PK, ADA and NAb serum samples: process and ship, Value: SPONSOR, Secondary Actions: Expand
+								2927 menu
+									2928 (selected) SPONSOR
+									2929 POTENTIALLY_PAYER_COVERED
+									2930 POTENTIALLY_PATIENT_COST_SHARING
+									2931 CONDITIONAL
+									2932 UNKNOWN
+									2933 REVIEW_REQUIRED
+						2934 cell
+							2935 text REVIEW_REQUIRED
+							2936 text Preliminary authored rule R2
+						2937 cell
+							2938 text $60 / $0 / $0 / $0
+					2939 row
+						2940 cell
+							2941 text Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE)
+							2942 container
+								2943 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						2944 cell
+							2945 text 1  ×  $40
+							2946 text hypothetical_rate
+						2947 cell
+							2948 pop up button (collapsed, settable) Description: Responsibility for Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE), Value: SPONSOR, Secondary Actions: Expand
+								2949 menu
+									2950 (selected) SPONSOR
+									2951 POTENTIALLY_PAYER_COVERED
+									2952 POTENTIALLY_PATIENT_COST_SHARING
+									2953 CONDITIONAL
+									2954 UNKNOWN
+									2955 REVIEW_REQUIRED
+						2956 cell
+							2957 text REVIEW_REQUIRED
+							2958 text Preliminary authored rule R2
+						2959 cell
+							2960 text $40 / $0 / $0 / $0
+					2961 row
+						2962 cell
+							2963 text Established-patient visit, moderate complexity
+							2964 container
+								2965 text 99214  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2966 cell
+							2967 text 1  ×  $129
+							2968 text hypothetical_rate
+						2969 cell
+							2970 pop up button (collapsed, settable) Description: Responsibility for Established-patient visit, moderate complexity, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								2971 menu
+									2972 SPONSOR
+									2973 (selected) POTENTIALLY_PAYER_COVERED
+									2974 POTENTIALLY_PATIENT_COST_SHARING
+									2975 CONDITIONAL
+									2976 UNKNOWN
+									2977 REVIEW_REQUIRED
+						2978 cell
+							2979 text REVIEW_REQUIRED
+							2980 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						2981 cell
+							2982 text $0 / $103 / $26 / $0
+					2983 row
+						2984 cell
+							2985 text 12-lead ECG with interpretation
+							2986 container
+								2987 text 93000  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						2988 cell
+							2989 text 1  ×  $16
+							2990 text hypothetical_rate
+						2991 cell
+							2992 pop up button (collapsed, settable) Description: Responsibility for 12-lead ECG with interpretation, Value: SPONSOR, Secondary Actions: Expand
+								2993 menu
+									2994 (selected) SPONSOR
+									2995 POTENTIALLY_PAYER_COVERED
+									2996 POTENTIALLY_PATIENT_COST_SHARING
+									2997 CONDITIONAL
+									2998 UNKNOWN
+									2999 REVIEW_REQUIRED
+						3000 cell
+							3001 text REVIEW_REQUIRED
+							3002 text Preliminary authored rule R2
+						3003 cell
+							3004 text $16 / $0 / $0 / $0
+					3005 row
+						3006 cell
+							3007 text Blood count with differential
+							3008 container
+								3009 text 85025  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						3010 cell
+							3011 text 1  ×  $8
+							3012 text hypothetical_rate
+						3013 cell
+							3014 pop up button (collapsed, settable) Description: Responsibility for Blood count with differential, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								3015 menu
+									3016 SPONSOR
+									3017 (selected) POTENTIALLY_PAYER_COVERED
+									3018 POTENTIALLY_PATIENT_COST_SHARING
+									3019 CONDITIONAL
+									3020 UNKNOWN
+									3021 REVIEW_REQUIRED
+						3022 cell
+							3023 text REVIEW_REQUIRED
+							3024 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						3025 cell
+							3026 text $0 / $6 / $2 / $0
+					3027 row
+						3028 cell
+							3029 text Comprehensive chemistry panel
+							3030 container
+								3031 text 80053  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						3032 cell
+							3033 text 1  ×  $11
+							3034 text hypothetical_rate
+						3035 cell
+							3036 pop up button (collapsed, settable) Description: Responsibility for Comprehensive chemistry panel, Value: POTENTIALLY_PAYER_COVERED, Secondary Actions: Expand
+								3037 menu
+									3038 SPONSOR
+									3039 (selected) POTENTIALLY_PAYER_COVERED
+									3040 POTENTIALLY_PATIENT_COST_SHARING
+									3041 CONDITIONAL
+									3042 UNKNOWN
+									3043 REVIEW_REQUIRED
+						3044 cell
+							3045 text REVIEW_REQUIRED
+							3046 text Preliminary authored rule R3; conditional payment split using an explicit hypothetical payer share
+						3047 cell
+							3048 text $0 / $8 / $2 / $0
+					3049 row
+						3050 cell
+							3051 text PK, ADA and NAb serum samples: process and ship
+							3052 container
+								3053 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						3054 cell
+							3055 text 1  ×  $60
+							3056 text hypothetical_rate
+						3057 cell
+							3058 pop up button (collapsed, settable) Description: Responsibility for PK, ADA and NAb serum samples: process and ship, Value: SPONSOR, Secondary Actions: Expand
+								3059 menu
+									3060 (selected) SPONSOR
+									3061 POTENTIALLY_PAYER_COVERED
+									3062 POTENTIALLY_PATIENT_COST_SHARING
+									3063 CONDITIONAL
+									3064 UNKNOWN
+									3065 REVIEW_REQUIRED
+						3066 cell
+							3067 text REVIEW_REQUIRED
+							3068 text Preliminary authored rule R2
+						3069 cell
+							3070 text $60 / $0 / $0 / $0
+					3071 row
+						3072 cell
+							3073 text Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE)
+							3074 container
+								3075 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						3076 cell
+							3077 text 1  ×  $40
+							3078 text hypothetical_rate
+						3079 cell
+							3080 pop up button (collapsed, settable) Description: Responsibility for Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE), Value: SPONSOR, Secondary Actions: Expand
+								3081 menu
+									3082 (selected) SPONSOR
+									3083 POTENTIALLY_PAYER_COVERED
+									3084 POTENTIALLY_PATIENT_COST_SHARING
+									3085 CONDITIONAL
+									3086 UNKNOWN
+									3087 REVIEW_REQUIRED
+						3088 cell
+							3089 text REVIEW_REQUIRED
+							3090 text Preliminary authored rule R2
+						3091 cell
+							3092 text $40 / $0 / $0 / $0
+					3093 row
+						3094 cell
+							3095 text Established-patient visit, low complexity
+							3096 container
+								3097 text 99213  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file
+						3098 cell
+							3099 text 1  ×  $91
+							3100 text hypothetical_rate
+						3101 cell
+							3102 pop up button (collapsed, settable) Description: Responsibility for Established-patient visit, low complexity, Value: SPONSOR, Secondary Actions: Expand
+								3103 menu
+									3104 (selected) SPONSOR
+									3105 POTENTIALLY_PAYER_COVERED
+									3106 POTENTIALLY_PATIENT_COST_SHARING
+									3107 CONDITIONAL
+									3108 UNKNOWN
+									3109 REVIEW_REQUIRED
+						3110 cell
+							3111 text REVIEW_REQUIRED
+							3112 text Preliminary authored rule R2
+						3113 cell
+							3114 text $91 / $0 / $0 / $0
+					3115 row
+						3116 cell
+							3117 text Blood count with differential
+							3118 container
+								3119 text 85025  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						3120 cell
+							3121 text 1  ×  $8
+							3122 text hypothetical_rate
+						3123 cell
+							3124 pop up button (collapsed, settable) Description: Responsibility for Blood count with differential, Value: SPONSOR, Secondary Actions: Expand
+								3125 menu
+									3126 (selected) SPONSOR
+									3127 POTENTIALLY_PAYER_COVERED
+									3128 POTENTIALLY_PATIENT_COST_SHARING
+									3129 CONDITIONAL
+									3130 UNKNOWN
+									3131 REVIEW_REQUIRED
+						3132 cell
+							3133 text REVIEW_REQUIRED
+							3134 text Preliminary authored rule R2
+						3135 cell
+							3136 text $8 / $0 / $0 / $0
+					3137 row
+						3138 cell
+							3139 text Comprehensive chemistry panel
+							3140 container
+								3141 text 80053  ·  Approximate national amount (placeholder); replace with CMS PFS/CLFS file (CLFS file not loaded: CMS requires accepting the AMA CPT license to download it)
+						3142 cell
+							3143 text 1  ×  $11
+							3144 text hypothetical_rate
+						3145 cell
+							3146 pop up button (collapsed, settable) Description: Responsibility for Comprehensive chemistry panel, Value: SPONSOR, Secondary Actions: Expand
+								3147 menu
+									3148 (selected) SPONSOR
+									3149 POTENTIALLY_PAYER_COVERED
+									3150 POTENTIALLY_PATIENT_COST_SHARING
+									3151 CONDITIONAL
+									3152 UNKNOWN
+									3153 REVIEW_REQUIRED
+						3154 cell
+							3155 text REVIEW_REQUIRED
+							3156 text Preliminary authored rule R2
+						3157 cell
+							3158 text $11 / $0 / $0 / $0
+					3159 row
+						3160 cell
+							3161 text PK, ADA and NAb serum samples: process and ship
+							3162 container
+								3163 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						3164 cell
+							3165 text 1  ×  $60
+							3166 text hypothetical_rate
+						3167 cell
+							3168 pop up button (collapsed, settable) Description: Responsibility for PK, ADA and NAb serum samples: process and ship, Value: SPONSOR, Secondary Actions: Expand
+								3169 menu
+									3170 (selected) SPONSOR
+									3171 POTENTIALLY_PAYER_COVERED
+									3172 POTENTIALLY_PATIENT_COST_SHARING
+									3173 CONDITIONAL
+									3174 UNKNOWN
+									3175 REVIEW_REQUIRED
+						3176 cell
+							3177 text REVIEW_REQUIRED
+							3178 text Preliminary authored rule R2
+						3179 cell
+							3180 text $60 / $0 / $0 / $0
+					3181 row
+						3182 cell
+							3183 text Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE)
+							3184 container
+								3185 text Code unavailable  ·  Concord proposed standard schedule v1: a starting point to negotiate against, not market data
+						3186 cell
+							3187 text 1  ×  $40
+							3188 text hypothetical_rate
+						3189 cell
+							3190 pop up button (collapsed, settable) Description: Responsibility for Questionnaires (EORTC QLQ-C30, QLQ-LC13, EQ-5D-5L, PRO-CTCAE), Value: SPONSOR, Secondary Actions: Expand
+								3191 menu
+									3192 (selected) SPONSOR
+									3193 POTENTIALLY_PAYER_COVERED
+									3194 POTENTIALLY_PATIENT_COST_SHARING
+									3195 CONDITIONAL
+									3196 UNKNOWN
+									3197 REVIEW_REQUIRED
+						3198 cell
+							3199 text REVIEW_REQUIRED
+							3200 text Preliminary authored rule R2
+						3201 cell
+							3202 text $40 / $0 / $0 / $0
+					3203 row
+						3204 cell
+							3205 text Investigational supply: hypothetical reserve; acquisition cost UNKNOWN
+							3206 container
+								3207 text Code unavailable  ·  Operator contingency assumption, not a drug price
+						3208 cell
+							3209 text 1  ×  $2,500
+							3210 text synthetic_contingency
+						3211 cell
+							3212 pop up button (collapsed, settable) Description: Responsibility for Investigational supply: hypothetical reserve; acquisition cost UNKNOWN, Value: UNKNOWN, Secondary Actions: Expand
+								3213 menu
+									3214 SPONSOR
+									3215 POTENTIALLY_PAYER_COVERED
+									3216 POTENTIALLY_PATIENT_COST_SHARING
+									3217 CONDITIONAL
+									3218 (selected) UNKNOWN
+									3219 REVIEW_REQUIRED
+						3220 cell
+							3221 text REVIEW_REQUIRED
+							3222 text Actual manufacturing/acquisition cost unknown; resource proxy assumes this reserve is consumed. Not a complete supply budget.
+						3223 cell
+							3224 text $0 / $0 / $0 / $2,500
+				3225 text Every coverage determination and price requires review. Potential payer and patient figures are assumed scenarios, not approvals.
+				3226 text Medicare/Medicaid qualifying trial, service and beneficiary eligibility remain unverified.
+		614 text Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates; Financial Coordination uses explicitly synthetic scenarios. Decision support only, not clinical, legal or coverage advice.
+
+The focused UI element is 634 button Coverage Review

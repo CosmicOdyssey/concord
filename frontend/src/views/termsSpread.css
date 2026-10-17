@@ -1,0 +1,381 @@
+/* Locality distribution and spread comparison (TermsSpread.tsx), inside the Compare step. Calm tokens only. */
+
+.tsp {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+/* Long qualifiers ("Assumption: no public benchmark ...") wrap here rather than run out of a phone-width window. */
+.tsp .qual {
+  white-space: normal;
+}
+.tsp-block {
+  min-width: 0;
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--rule);
+}
+.tsp-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.tsp-head h3 {
+  margin: 0;
+  font-size: var(--fs-h3);
+}
+.tsp-lede {
+  margin: var(--sp-2) 0 0;
+  max-width: 62rem;
+  color: var(--ink);
+}
+.tsp-quals {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin-top: var(--sp-2);
+}
+
+/* site keys: identity is the letter, the color only repeats it */
+.tsp-key {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--surface);
+  background: var(--accent);
+}
+/* --series-2 alone is 4.05:1 under white 12px bold text in light mode; mixing in 20% ink clears AA (4.5:1) in both
+   themes (darker in light, lighter in dark). Dots and range bars keep --series-2. */
+.tsp-key-b {
+  background: color-mix(in srgb, var(--series-2) 80%, var(--ink));
+}
+
+/* key figures */
+.tsp-figs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+.tsp-fig {
+  min-width: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+.tsp-fig-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: var(--fs-ui);
+  color: var(--ink-2);
+}
+.tsp-fig-value {
+  margin: 0.15rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.tsp-fig-sub {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+}
+.tsp-mmm {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-3);
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  grid-column: span 2;
+}
+.tsp-mmm dt {
+  font-size: var(--fs-ui);
+  color: var(--ink-2);
+}
+.tsp-mmm dd {
+  margin: 0.15rem 0 0;
+  display: flex;
+  flex-direction: column;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  min-width: 0;
+}
+.tsp-mmm-where {
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+/* dot plot */
+.tsp-strip {
+  margin: var(--sp-5) 0 0;
+  padding: 0 0.75rem;
+}
+.tsp-strip-plot {
+  position: relative;
+  border-bottom: 1px solid var(--rule-strong);
+}
+.tsp-band {
+  position: absolute;
+  bottom: 0;
+  top: 0;
+  background: var(--surface-2);
+  border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+}
+.tsp-median {
+  position: absolute;
+  bottom: 0;
+  top: 0;
+  width: 0;
+  border-left: 1px dashed var(--ctl);
+}
+.tsp-dot {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  border-radius: 50%;
+  background: var(--bar-indep);
+  box-shadow: 0 0 0 1px var(--surface);
+}
+.tsp-dot-on {
+  background: var(--ink);
+}
+.tsp-dot-a {
+  background: var(--accent);
+  z-index: 2;
+}
+.tsp-dot-b {
+  background: var(--series-2);
+  z-index: 2;
+}
+.tsp-tag {
+  position: absolute;
+  bottom: 13px;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.tsp-tip {
+  position: absolute;
+  z-index: 5;
+  transform: translateX(-0.75rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  width: max-content;
+  max-width: 16rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--lift);
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  pointer-events: none;
+}
+.tsp-tip-left {
+  transform: translateX(calc(-100% + 0.75rem));
+}
+.tsp-axis,
+.tsp-range-axis-track {
+  position: relative;
+  display: block;
+  height: 1.5rem;
+}
+.tsp-tick.tsp-tick-first {
+  transform: none;
+}
+.tsp-tick.tsp-tick-last {
+  transform: translateX(-100%);
+}
+.tsp-tick {
+  position: absolute;
+  top: 0.25rem;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.tsp-strip figcaption,
+.tsp-ranges figcaption {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.tsp-table {
+  margin-top: var(--sp-4);
+}
+.tsp-table-scroll {
+  max-height: 30rem;
+  overflow-y: auto;
+  border-bottom: 1px solid var(--rule);
+}
+.tsp-table-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.tsp-table .tsp-key {
+  vertical-align: 0.1em;
+}
+.tsp-row-site th,
+.tsp-row-site td {
+  background: var(--accent-soft);
+}
+
+/* bands */
+.tsp-bands {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--sp-4) var(--sp-6);
+  margin-top: var(--sp-4);
+}
+.tsp-band-set {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.tsp-band-set legend {
+  padding: 0;
+  margin-bottom: var(--sp-2);
+  font-size: var(--fs-ui);
+  font-weight: 600;
+  color: var(--ink);
+}
+.tsp-bands .tf-num-input input {
+  width: 5.5rem;
+}
+
+/* range bars on one dollar axis */
+.tsp-ranges {
+  margin: var(--sp-5) 0 0;
+}
+.tsp-range-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tsp-range {
+  display: grid;
+  grid-template-columns: minmax(10rem, 17rem) minmax(6rem, 1fr) minmax(9rem, auto);
+  gap: 0.25rem var(--sp-4);
+  align-items: center;
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--rule);
+}
+.tsp-range-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.5rem;
+  min-width: 0;
+  font-size: var(--fs-ui);
+}
+.tsp-range-q {
+  flex-basis: 100%;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.tsp-range-track {
+  position: relative;
+  height: 0.875rem;
+  background: linear-gradient(var(--rule), var(--rule)) left center / 100% 1px no-repeat;
+}
+.tsp-range-bar,
+.tsp-range-inner {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 4px;
+}
+.tsp-range-geo .tsp-range-bar {
+  background: var(--bar-indep);
+}
+.tsp-range-geo .tsp-range-inner {
+  top: 2px;
+  bottom: 2px;
+  background: var(--ink-2);
+}
+.tsp-range-a .tsp-range-bar {
+  background: var(--accent);
+}
+.tsp-range-b .tsp-range-bar {
+  background: var(--series-2);
+}
+.tsp-range-fees .tsp-range-bar {
+  background: repeating-linear-gradient(135deg, var(--ctl) 0 3px, transparent 3px 6px), var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--ctl);
+}
+.tsp-range-v {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+.tsp-range-w {
+  color: var(--ink-2);
+}
+.tsp-range-axis {
+  display: grid;
+  grid-template-columns: minmax(10rem, 17rem) minmax(6rem, 1fr) minmax(9rem, auto);
+  gap: 0 var(--sp-4);
+}
+.tsp-range-axis::after {
+  content: '';
+}
+
+.tsp-details {
+  margin-top: var(--sp-5);
+}
+.tsp-details h4 {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-md);
+}
+.tsp-total-row th,
+.tsp-total-row td {
+  border-top: 1px solid var(--rule-strong);
+}
+.tsp-notes {
+  margin: var(--sp-3) 0 0;
+  padding-left: 1.1rem;
+}
+.tsp-disclaimer {
+  margin: var(--sp-4) 0 0;
+}
+
+@media (max-width: 640px) {
+  .tsp-mmm {
+    grid-column: auto;
+  }
+  .tsp-range,
+  .tsp-range-axis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tsp-range-v {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0 var(--sp-3);
+  }
+  .tsp-range-axis-pad,
+  .tsp-range-axis::after {
+    display: none;
+  }
+}

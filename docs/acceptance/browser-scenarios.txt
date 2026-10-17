@@ -1,0 +1,228 @@
+Browser tab: 1783081691, Title: "Concord", URL: "http://127.0.0.1:5177/#portfolio-command".
+1 AXWebArea Concord, URL: 127.0.0.1:5177/#portfolio-command
+	2 container root
+		3 container
+			4 text Concord NSCLC trial portfolios on public ClinicalTrials.gov data
+		5 tab group Views
+			6 tab (selectable, settable, boolean) 1 Findings, Value: 0
+			7 tab (selectable, settable, boolean) 2 Portfolio overlap, Value: 0
+			8 tab (selectable, settable, boolean) 3 Protocol to terms, Value: 0
+			9 tab (selectable, settable, boolean) 4 Site scores, Value: 0
+			10 tab (selectable, settable, boolean) 5 Financial Coordination, Value: 0
+			11 tab (selected, settable, boolean) 6 Portfolio Command, Value: 1
+			12 tab (selectable, settable, boolean) 7 Research, Value: 0
+		615 container
+			616 text CONCORD / SPONSOR PLANNING
+			617 heading Portfolio Command, Value: 1
+				618 text Portfolio Command
+			619 text Where should the next dollar go?
+			620 text SAVED EVIDENCE REPLAY
+			621 text SYNTHETIC OPERATIONS Regeneron registry context · hypothetical hospitals, enrollment progress, financial inputs and recruitment effects. Planning tool; no live sponsor or payer relationship. Sponsor budget (USD)
+			622 stepper (settable, integer) Description: Sponsor budget (USD), Value: 3000000
+			623 text Portfolio objective
+			624 pop up button (collapsed, settable) Description: Portfolio objective, Value: Minimize maximum weighted completion, Secondary Actions: Expand
+				625 menu
+					626 (selected) Minimize maximum weighted completion
+					627 Minimize sum of weighted durations
+					628 Minimize cost within expected deadlines
+			629 text Planning horizon (months)
+			630 stepper (settable, integer) Description: Planning horizon (months), Value: 36
+			631 button Run portfolio comparison
+			729 text Loaded immutable saved evidence; original inputs restored.
+			633 container Portfolio sections
+				634 button 01 Executive Overview
+					635 text 0
+					636 text 1
+					637 text Executive Overview
+				638 button 02 Trial Portfolio
+					639 text 0
+					640 text 2
+					641 text Trial Portfolio
+				642 button 03 Site Capacity
+					643 text 0
+					644 text 3
+					645 text Site Capacity
+				646 button 04 Financial Allocation
+					647 text 0
+					648 text 4
+					649 text Financial Allocation
+				650 button 05 Scenario Lab
+					651 text 0
+					652 text 5
+					653 text Scenario Lab
+				654 button 06 Evidence and Reports
+					655 text 0
+					656 text 6
+					657 text Evidence and Reports
+			730 container Scenario Lab
+				731 heading Six strategies, one paired draw bank, Value: 2
+					732 text Six strategies, one paired draw bank
+				733 container
+					734 text Reproducible seed
+					735 stepper (settable, integer) Description: Reproducible seed, Value: 7
+				736 container
+					737 text Simulation draws
+					738 stepper (settable, integer) Description: Simulation draws, Value: 128
+				739 container
+					740 text Lognormal rate spread
+					741 stepper (settable, float) Description: Lognormal rate spread, Value: 0.25
+				742 container
+					743 text Additional support per participant USD
+					744 stepper (settable, integer) Description: Additional support per participant USD, Value: 300
+				745 container
+					746 text Assumed support rate effect fraction
+					747 stepper (settable, integer) Description: Assumed support rate effect fraction, Value: 0
+				748 container
+					749 text Assumed operations rate effect fraction
+					750 stepper (settable, float) Description: Assumed operations rate effect fraction, Value: 0.15000000596046448, Details: 0.15
+				751 container
+					752 text Operations investment per trial USD
+					753 stepper (settable, integer) Description: Operations investment per trial USD, Value: 25000
+				754 checkbox (settable, integer) Description: Require no increase in each trial's expected duration, Value: 1
+				755 text Support rate effect defaults to zero. The operations effect is an explicit hypothetical assumption, not an observed effect. Optimization and evaluation use the same common draws; uncertainty describes assumptions in-sample.
+				756 table
+					757 row
+						758 cell
+							759 text STRATEGY
+						760 cell
+							761 text FEASIBLE
+						762 cell
+							763 text FINAL MONTHS
+						764 cell
+							765 text WEIGHTED MAXIMUM
+						766 cell
+							767 text WEIGHTED SUM
+						768 cell
+							769 text EXPECTED USD + RESERVE
+						770 cell
+							771 text MONTHS SAVED VS A
+						772 cell
+							773 text PARETO
+					774 row
+						775 cell
+							776 button A · Fixed baseline
+								777 text A
+								778 text  ·
+								779 text Fixed baseline
+						780 cell
+							781 text Yes
+						782 cell
+							783 text 15.13
+						784 cell
+							785 text 16.17
+						786 cell
+							787 text 30.11
+						788 cell
+							789 text $1,018,305
+						790 cell
+							791 text 0
+						792 cell
+							793 text —
+					794 row
+						795 cell
+							796 button B · Financial efficiency
+								797 text B
+								798 text  ·
+								799 text Financial efficiency
+						800 cell
+							801 text Yes
+						802 cell
+							803 text 15.13
+						804 cell
+							805 text 16.17
+						806 cell
+							807 text 30.11
+						808 cell
+							809 text $943,305
+						810 cell
+							811 text 0
+						812 cell
+							813 text Nondominated
+					814 row
+						815 cell
+							816 button C · More sites
+								817 text C
+								818 text  ·
+								819 text More sites
+						820 cell
+							821 text Yes
+						822 cell
+							823 text 9.94
+						824 cell
+							825 text 10.31
+						826 cell
+							827 text 19.59
+						828 cell
+							829 text $1,050,576
+						830 cell
+							831 text 5.19
+						832 cell
+							833 text Nondominated
+					834 row
+						835 cell
+							836 button D · Participant support
+								837 text D
+								838 text  ·
+								839 text Participant support
+						840 cell
+							841 text Yes
+						842 cell
+							843 text 15.13
+						844 cell
+							845 text 16.17
+						846 cell
+							847 text 30.11
+						848 cell
+							849 text $967,305
+						850 cell
+							851 text 0
+						852 cell
+							853 text —
+					854 row
+						855 cell
+							856 button E · Better allocation
+								857 text E
+								858 text  ·
+								859 text Better allocation
+						860 cell
+							861 text Yes
+						862 cell
+							863 text 9.94
+						864 cell
+							865 text 10.31
+						866 cell
+							867 text 19.59
+						868 cell
+							869 text $1,125,576
+						870 cell
+							871 text 5.19
+						872 cell
+							873 text —
+					874 row
+						875 cell
+							876 button F · Joint portfolio optimization
+								877 text F
+								878 text  ·
+								879 text Joint portfolio optimization
+						880 cell
+							881 text Yes
+						882 cell
+							883 text 9.53
+						884 cell
+							885 text 9.9
+						886 cell
+							887 text 18.92
+						888 cell
+							889 text $1,097,830
+						890 cell
+							891 text 5.6
+						892 cell
+							893 text Nondominated
+				894 container
+					895 text 4  individually feasible additional trial/site assignments. Selected:  Joint portfolio optimization  · recommendation:  F  ·  282  unique evaluations.
+				896 container
+					897 text Baseline:  15.13  months. Financial efficiency and support at zero assumed rate effect preserve the baseline schedule. More spending can produce no time gain.
+			728 text Concord · Portfolio Command · reproducible planning, explicitly bounded evidence.
+		614 text Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates; Financial Coordination uses explicitly synthetic scenarios. Decision support only, not clinical, legal or coverage advice.
+
+The focused UI element is 650 button 05 Scenario Lab

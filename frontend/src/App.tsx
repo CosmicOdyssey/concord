@@ -18,6 +18,7 @@ const ProtocolTermsView = lazy(() => import('./views/ProtocolTermsView'))
 const SiteScoresView = lazy(() => import('./views/SiteScoresView'))
 const FinancialView = lazy(() => import('./views/FinancialView'))
 const DevComponentsView = lazy(() => import('./views/DevComponentsView'))
+const PortfolioCommandView = lazy(() => import('./views/PortfolioCommandView'))
 
 // Labels, sub-labels (always visible) and tooltips: copy deck B1. Protocol to terms is the product, so it leads; Portfolio
 // overlap is the second tool. Sponsor budget is a worksheet on synthetic inputs with no time model (decisions.md #24); it
@@ -38,6 +39,15 @@ const TABS = [
     sub: 'Synthetic worksheet',
     hint: "A sponsor-budget worksheet on synthetic site inputs: who pays for each protocol item, and what changes the sponsor's commitment.",
     // Kept out of the main navigation (mentor feedback: Protocol to terms is the product); reachable at #financial.
+    navHidden: true,
+  },
+  {
+    id: 'portfolio-command',
+    label: 'Portfolio Command',
+    sub: 'Assumption-based planning',
+    hint: 'Budget-constrained synthetic allocation; no validated recruitment forecast.',
+    // Teammate PR #2. Kept out of the main navigation pending review: it reports modeled "months saved", which the
+    // product does not claim (see decisions.md #24 and the app rule). Reachable at #portfolio-command.
     navHidden: true,
   },
   { id: 'research', label: 'Research', sub: 'In-sample model outputs', hint: 'The earlier site-clearing views, kept for reference. Not product claims.' },
@@ -282,6 +292,7 @@ export default function App() {
             </span>
           ) : null}
         </div>
+        {tab === 'portfolio-command' && <Suspense fallback={<Loading label="Loading Portfolio Command…" />}><PortfolioCommandView /></Suspense>}
         {tab === 'findings' && <FindingsView focus={findingFocus} />}
         {tab === 'overlap' && (
           <Suspense fallback={<Loading label="Loading portfolio overlap…" />}>

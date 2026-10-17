@@ -1,0 +1,68 @@
+{
+  "browser_run": "c6184699e99d58a5d3cf71d09fefc09e",
+  "saved_response_sha256": "c6184699e99d58a5d3cf71d09fefc09ea408f2a00a644eac54b8afe9468f67a5",
+  "ui_values_match": true,
+  "json_equals_api": true,
+  "html_embedded_json_equals_api": true,
+  "repeat_scenarios_identical": true,
+  "browser_download": "BLOCKED: Chrome displayed Blocked by your organization; no downloaded audit file observed",
+  "api_report_headers": {
+    "json": {
+      "date": "Sat, 17 Oct 2026 19:13:19 GMT",
+      "server": "uvicorn",
+      "content-disposition": "attachment; filename=\"concord-portfolio-c6184699e99d58a5d3cf71d09fefc09e.json\"",
+      "x-concord-delivery-mode": "artifact-replay",
+      "content-length": "252211",
+      "content-type": "application/json",
+      "vary": "Origin",
+      "connection": "close"
+    },
+    "html": {
+      "date": "Sat, 17 Oct 2026 19:13:19 GMT",
+      "server": "uvicorn",
+      "content-disposition": "attachment; filename=\"concord-portfolio-c6184699e99d58a5d3cf71d09fefc09e.html\"",
+      "x-concord-delivery-mode": "artifact-replay",
+      "content-length": "465746",
+      "content-type": "text/html; charset=utf-8",
+      "vary": "Origin",
+      "connection": "close"
+    }
+  },
+  "origin_evidence": {
+    "algorithm": "Event simulation; original allocator Instance feasibility contract; deterministic beam width 3 / depth 3 / at most 96 visited networks per search",
+    "cache_policy": "No scenario result lookup during computation; immutable saved evidence verified by complete result digest",
+    "commit": "63ffadfca23b24e0c649ec2e9fe64d0023e64313",
+    "consolidation_boundary": "Modeled study services, administration, access and assumed supply resource proxy only",
+    "currency": "USD",
+    "delivery_policy": "Computation metadata records origin. Saved-run and report GET endpoints replay an immutable snapshot without new simulation.",
+    "dirty": true,
+    "distribution": "Independent mean-one lognormal edge shocks; shared common draw bank across every candidate; optimization uses same bank, so results are in-sample assumption sensitivity",
+    "executed_source_sha256": {
+      "backend/concord/allocator/core.py": "8cc20a09feae8bafbeacc7badac260737b19af56dbf17b20b90f16ffb4c0ab62",
+      "backend/concord/financial.py": "3b9202bfa4e13373f46365918488b946357f1e4b8a240f50ff1f6e164832754f",
+      "backend/concord/financial_allocation.py": "213c0a2691b6e590227ff3ec10b8fbc9eea7e3edaf3a00cd872cb72d1263a286",
+      "backend/concord/portfolio.py": "83be6abdc1af6fb06cc95f96643dde026141395b9a37d571ab4dae9c57a19736",
+      "backend/concord/portfolio_simulation.py": "c3dcc3f1c4c26c20dbb5001729ff196a8e0e67d6678d3ae19931a4a28e0f9c7c",
+      "backend/concord/ratecard/medicare.py": "79873f5ef9b189475e3fae4754ceb1741a305404459f36c9d2a40daf8410610d",
+      "backend/concord/terms.py": "c346b2a17c6ac9e4863dbd4f6725dc61c345b94e6d0dfd7969fad528479a183e"
+    },
+    "financial_input_kind": "synthetic",
+    "historical_evaluation": "not_executed; later registry records not used as historical predictions",
+    "portfolio_sources": {
+      "backend/concord/compiler/protocols/NCT05800015.json": "a07fa14f08d20841caa881499c0fdbf12463449624bf5625ae1b9ae25f416a5b",
+      "backend/concord/portfolio.py": "83be6abdc1af6fb06cc95f96643dde026141395b9a37d571ab4dae9c57a19736",
+      "backend/concord/portfolio_simulation.py": "c3dcc3f1c4c26c20dbb5001729ff196a8e0e67d6678d3ae19931a4a28e0f9c7c",
+      "data/portfolio/context.json": "efd90160ec8048c5aa240db7678e79cd32bcfd8621cebd89117a11ebe84bfb9c"
+    },
+    "protocol_sha256": null,
+    "ratecard_sha256": null,
+    "runtime": {
+      "fastapi": "0.143.3",
+      "numpy": "2.5.4",
+      "pydantic": "2.14.1",
+      "python": "3.14.7"
+    },
+    "source_sha256": "b39c51971e22f5ba4ff38d7659ff581cfeb0ce15d20ecc1d545ba81e36eed391"
+  },
+  "repeated_run_id": "d72264111ac3aec272d0513ebeb4bb6f"
+}

@@ -1,0 +1,648 @@
+{
+  "responsibility_shift": {
+    "line": "SCR:em_new",
+    "classification": "ASSUMPTION-DEPENDENT cost shift; no resource savings",
+    "rows": {
+      "sponsor_pays": {
+        "coverage": {
+          "sponsor": 3294.33,
+          "payer": 4458.06,
+          "patient": 1114.44,
+          "reserve": 2500.0,
+          "resource": 8706.77
+        },
+        "baseline": {
+          "sponsor": {
+            "expenditure": 184543.3,
+            "contingency_reserve": 25000.0,
+            "budget_commitment": 209543.3
+          },
+          "hospital": {
+            "revenue": 115268.3,
+            "resource_cost": 108347.7,
+            "net_contribution": 6920.6
+          },
+          "insurer": {
+            "payments": 44580.6,
+            "administration": 300.0,
+            "total": 44880.6,
+            "downstream_clinical_cost": null
+          },
+          "patient": {
+            "cost_sharing": 11144.4,
+            "access_support": 5000,
+            "net_cash_exposure": 6144.4,
+            "unresolved_exposure": null
+          },
+          "transfers": [
+            {
+              "from": "Sponsor",
+              "to": "Hospital",
+              "amount": 59543.3
+            },
+            {
+              "from": "Sponsor",
+              "to": "Participant",
+              "amount": 5000
+            },
+            {
+              "from": "Insurer",
+              "to": "Hospital",
+              "amount": 44580.6
+            },
+            {
+              "from": "Participant",
+              "to": "Hospital",
+              "amount": 11144.4
+            }
+          ],
+          "party_transfer_balances": {
+            "Sponsor": -64543.3,
+            "Hospital": 115268.3,
+            "Insurer": -44580.6,
+            "Participant": -6144.4
+          },
+          "transfer_balance": 0.0,
+          "consolidated_resource_cost": 233647.7,
+          "resource_assumptions": [
+            "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.",
+            "Procedure delivery resource costs = 70% of benchmark, regardless of payer; drug reserve used as an unverified supply-resource proxy.",
+            "Sponsor and insurer administration treated as resource consumption. Access payments assumed fully consumed on transport/support resources.",
+            "Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known."
+          ]
+        }
+      },
+      "patient_pays": {
+        "coverage": {
+          "sponsor": 3083.33,
+          "payer": 4458.06,
+          "patient": 1325.44,
+          "reserve": 2500.0,
+          "resource": 8706.77
+        },
+        "baseline": {
+          "sponsor": {
+            "expenditure": 182433.3,
+            "contingency_reserve": 25000.0,
+            "budget_commitment": 207433.3
+          },
+          "hospital": {
+            "revenue": 115268.3,
+            "resource_cost": 108347.7,
+            "net_contribution": 6920.6
+          },
+          "insurer": {
+            "payments": 44580.6,
+            "administration": 300.0,
+            "total": 44880.6,
+            "downstream_clinical_cost": null
+          },
+          "patient": {
+            "cost_sharing": 13254.4,
+            "access_support": 5000,
+            "net_cash_exposure": 8254.4,
+            "unresolved_exposure": null
+          },
+          "transfers": [
+            {
+              "from": "Sponsor",
+              "to": "Hospital",
+              "amount": 57433.3
+            },
+            {
+              "from": "Sponsor",
+              "to": "Participant",
+              "amount": 5000
+            },
+            {
+              "from": "Insurer",
+              "to": "Hospital",
+              "amount": 44580.6
+            },
+            {
+              "from": "Participant",
+              "to": "Hospital",
+              "amount": 13254.4
+            }
+          ],
+          "party_transfer_balances": {
+            "Sponsor": -62433.3,
+            "Hospital": 115268.3,
+            "Insurer": -44580.6,
+            "Participant": -8254.4
+          },
+          "transfer_balance": 0.0,
+          "consolidated_resource_cost": 233647.7,
+          "resource_assumptions": [
+            "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.",
+            "Procedure delivery resource costs = 70% of benchmark, regardless of payer; drug reserve used as an unverified supply-resource proxy.",
+            "Sponsor and insurer administration treated as resource consumption. Access payments assumed fully consumed on transport/support resources.",
+            "Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known."
+          ]
+        }
+      },
+      "unknown_reserve": {
+        "coverage": {
+          "sponsor": 3083.33,
+          "payer": 4458.06,
+          "patient": 1114.44,
+          "reserve": 2711.0,
+          "resource": 8706.77
+        },
+        "baseline": {
+          "sponsor": {
+            "expenditure": 182433.3,
+            "contingency_reserve": 27110.0,
+            "budget_commitment": 209543.3
+          },
+          "hospital": {
+            "revenue": 113158.3,
+            "resource_cost": 108347.7,
+            "net_contribution": 4810.6
+          },
+          "insurer": {
+            "payments": 44580.6,
+            "administration": 300.0,
+            "total": 44880.6,
+            "downstream_clinical_cost": null
+          },
+          "patient": {
+            "cost_sharing": 11144.4,
+            "access_support": 5000,
+            "net_cash_exposure": 6144.4,
+            "unresolved_exposure": null
+          },
+          "transfers": [
+            {
+              "from": "Sponsor",
+              "to": "Hospital",
+              "amount": 57433.3
+            },
+            {
+              "from": "Sponsor",
+              "to": "Participant",
+              "amount": 5000
+            },
+            {
+              "from": "Insurer",
+              "to": "Hospital",
+              "amount": 44580.6
+            },
+            {
+              "from": "Participant",
+              "to": "Hospital",
+              "amount": 11144.4
+            }
+          ],
+          "party_transfer_balances": {
+            "Sponsor": -62433.3,
+            "Hospital": 113158.3,
+            "Insurer": -44580.6,
+            "Participant": -6144.4
+          },
+          "transfer_balance": 0.0,
+          "consolidated_resource_cost": 233647.7,
+          "resource_assumptions": [
+            "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.",
+            "Procedure delivery resource costs = 70% of benchmark, regardless of payer; drug reserve used as an unverified supply-resource proxy.",
+            "Sponsor and insurer administration treated as resource consumption. Access payments assumed fully consumed on transport/support resources.",
+            "Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known."
+          ]
+        }
+      }
+    }
+  },
+  "higher_insurer_without_sponsor_savings": {
+    "baseline": {
+      "sponsor": {
+        "expenditure": 182433.3,
+        "contingency_reserve": 25000.0,
+        "budget_commitment": 207433.3
+      },
+      "hospital": {
+        "revenue": 115268.3,
+        "resource_cost": 108347.7,
+        "net_contribution": 6920.6
+      },
+      "insurer": {
+        "payments": 46268.6,
+        "administration": 300.0,
+        "total": 46568.6,
+        "downstream_clinical_cost": null
+      },
+      "patient": {
+        "cost_sharing": 11566.4,
+        "access_support": 5000,
+        "net_cash_exposure": 6566.4,
+        "unresolved_exposure": null
+      },
+      "transfers": [
+        {
+          "from": "Sponsor",
+          "to": "Hospital",
+          "amount": 57433.3
+        },
+        {
+          "from": "Sponsor",
+          "to": "Participant",
+          "amount": 5000
+        },
+        {
+          "from": "Insurer",
+          "to": "Hospital",
+          "amount": 46268.6
+        },
+        {
+          "from": "Participant",
+          "to": "Hospital",
+          "amount": 11566.4
+        }
+      ],
+      "party_transfer_balances": {
+        "Sponsor": -62433.3,
+        "Hospital": 115268.3,
+        "Insurer": -46268.6,
+        "Participant": -6566.4
+      },
+      "transfer_balance": 0.0,
+      "consolidated_resource_cost": 233647.7,
+      "resource_assumptions": [
+        "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.",
+        "Procedure delivery resource costs = 70% of benchmark, regardless of payer; drug reserve used as an unverified supply-resource proxy.",
+        "Sponsor and insurer administration treated as resource consumption. Access payments assumed fully consumed on transport/support resources.",
+        "Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known."
+      ]
+    },
+    "higher_payer_share": {
+      "sponsor": {
+        "expenditure": 182433.3,
+        "contingency_reserve": 25000.0,
+        "budget_commitment": 207433.3
+      },
+      "hospital": {
+        "revenue": 115268.3,
+        "resource_cost": 108347.7,
+        "net_contribution": 6920.6
+      },
+      "insurer": {
+        "payments": 57835.0,
+        "administration": 300.0,
+        "total": 58135.0,
+        "downstream_clinical_cost": null
+      },
+      "patient": {
+        "cost_sharing": 0.0,
+        "access_support": 5000,
+        "net_cash_exposure": -5000.0,
+        "unresolved_exposure": null
+      },
+      "transfers": [
+        {
+          "from": "Sponsor",
+          "to": "Hospital",
+          "amount": 57433.3
+        },
+        {
+          "from": "Sponsor",
+          "to": "Participant",
+          "amount": 5000
+        },
+        {
+          "from": "Insurer",
+          "to": "Hospital",
+          "amount": 57835.0
+        },
+        {
+          "from": "Participant",
+          "to": "Hospital",
+          "amount": 0.0
+        }
+      ],
+      "party_transfer_balances": {
+        "Sponsor": -62433.3,
+        "Hospital": 115268.3,
+        "Insurer": -57835.0,
+        "Participant": 5000.0
+      },
+      "transfer_balance": 0.0,
+      "consolidated_resource_cost": 233647.7,
+      "resource_assumptions": [
+        "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.",
+        "Procedure delivery resource costs = 70% of benchmark, regardless of payer; drug reserve used as an unverified supply-resource proxy.",
+        "Sponsor and insurer administration treated as resource consumption. Access payments assumed fully consumed on transport/support resources.",
+        "Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known."
+      ]
+    }
+  },
+  "lower_sponsor_higher_hospital_cost": {
+    "classification": "ASSUMPTION-DEPENDENT; modeled administration offsets added hospital resources",
+    "baseline": {
+      "id": "A",
+      "label": "Existing allocation",
+      "plan": {
+        "feasible": true,
+        "violations": [],
+        "selected_ids": [
+          "A"
+        ],
+        "site_rows": [
+          {
+            "id": "A",
+            "name": "Synthetic A",
+            "participants": 10,
+            "rate": 1.0,
+            "projected_capacity": 24,
+            "activation": 0.0,
+            "operating": 1000.0,
+            "variable": 20000,
+            "procedure": 55833.3,
+            "support": 5000,
+            "activation_sunk": true,
+            "total": 81833.3
+          }
+        ],
+        "sponsor_total": 581833.3,
+        "breakdown": {
+          "activation": 0.0,
+          "operating": 1000.0,
+          "site_variable": 20000,
+          "procedures": 55833.3,
+          "support": 5000,
+          "administration": 500000.0
+        },
+        "projected_capacity": 24,
+        "modeled_months": 10.0,
+        "core_modeled_months": 10.0,
+        "site_completion_months": 10.0,
+        "cost_per_participant": 58183.33,
+        "budget_utilization": 0.3878888666666667,
+        "unspent_budget": 918166.7,
+        "assumptions": [
+          "Operator-supplied rates, costs, eligibility and capacities; no empirical validation.",
+          "Existing core timing is retained as a lower bound; financial duration also allows every assigned site to finish its integer participant allocation after activation. No competition modeled.",
+          "Participant counts are integer rate-weighted allocations bounded by horizon deliverability and site capacity.",
+          "Baseline-active activation costs are sunk and excluded; all selected sites incur monthly costs for the full modeled duration.",
+          "Minimum support is a per-participant floor; no-loser checks constrain nominal modeled timing only.",
+          "Constant hypothetical rates and deterministic assigned counts only; no actual clinical outcome simulation."
+        ]
+      },
+      "economics": {
+        "sponsor": {
+          "expenditure": 556833.3,
+          "contingency_reserve": 25000.0,
+          "budget_commitment": 581833.3
+        },
+        "hospital": {
+          "revenue": 109668.3,
+          "resource_cost": 103867.7,
+          "net_contribution": 5800.6
+        },
+        "insurer": {
+          "payments": 46268.6,
+          "administration": 300.0,
+          "total": 46568.6,
+          "downstream_clinical_cost": null
+        },
+        "patient": {
+          "cost_sharing": 11566.4,
+          "access_support": 5000,
+          "net_cash_exposure": 6566.4,
+          "unresolved_exposure": null
+        },
+        "transfers": [
+          {
+            "from": "Sponsor",
+            "to": "Hospital",
+            "amount": 51833.3
+          },
+          {
+            "from": "Sponsor",
+            "to": "Participant",
+            "amount": 5000
+          },
+          {
+            "from": "Insurer",
+            "to": "Hospital",
+            "amount": 46268.6
+          },
+          {
+            "from": "Participant",
+            "to": "Hospital",
+            "amount": 11566.4
+          }
+        ],
+        "party_transfer_balances": {
+          "Sponsor": -56833.3,
+          "Hospital": 109668.3,
+          "Insurer": -46268.6,
+          "Participant": -6566.4
+        },
+        "transfer_balance": 0.0,
+        "consolidated_resource_cost": 609167.7,
+        "resource_assumptions": [
+          "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.",
+          "Procedure delivery resource costs = 70% of benchmark, regardless of payer; drug reserve used as an unverified supply-resource proxy.",
+          "Sponsor and insurer administration treated as resource consumption. Access payments assumed fully consumed on transport/support resources.",
+          "Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known."
+        ]
+      },
+      "delta": {
+        "sponsor_expenditure": 0.0,
+        "resources": 0.0,
+        "hospital_contribution": 0.0,
+        "insurer_expenditure": 0.0,
+        "patient_exposure": 0.0
+      },
+      "sensitivity": {
+        "modeled_months_quantiles": [
+          7.83,
+          10.49,
+          14.45
+        ],
+        "sponsor_total_quantiles": [
+          581615.95,
+          581882.25,
+          582278.38
+        ],
+        "probability_budget_exceeded": 0.0,
+        "probability_horizon_exceeded": 0.0,
+        "seed": 7,
+        "draws": 100,
+        "method": "Paired independent lognormal site-rate shocks, mean 1; fixed site networks and participant-cost allocation; no reoptimization; not calibrated intervals",
+        "calibration_status": "not_established"
+      },
+      "reinvestment": {
+        "additional_sites": [],
+        "additional_activations": 0,
+        "incremental_ongoing_cost": 0.0,
+        "modeled_time_change": 0.0
+      }
+    },
+    "more_sites": {
+      "id": "C",
+      "label": "Additional feasible sites",
+      "plan": {
+        "feasible": true,
+        "violations": [],
+        "selected_ids": [
+          "A",
+          "B"
+        ],
+        "site_rows": [
+          {
+            "id": "A",
+            "name": "Synthetic A",
+            "participants": 2,
+            "rate": 1.0,
+            "projected_capacity": 24,
+            "activation": 0.0,
+            "operating": 260.0,
+            "variable": 4000,
+            "procedure": 11166.66,
+            "support": 1000,
+            "activation_sunk": true,
+            "total": 16426.66
+          },
+          {
+            "id": "B",
+            "name": "Synthetic B",
+            "participants": 8,
+            "rate": 5.0,
+            "projected_capacity": 30,
+            "activation": 100000.0,
+            "operating": 1300.0,
+            "variable": 16000,
+            "procedure": 44666.64,
+            "support": 4000,
+            "activation_sunk": false,
+            "total": 165966.64
+          }
+        ],
+        "sponsor_total": 282393.3,
+        "breakdown": {
+          "activation": 100000.0,
+          "operating": 1560.0,
+          "site_variable": 20000,
+          "procedures": 55833.3,
+          "support": 5000,
+          "administration": 100000.0
+        },
+        "projected_capacity": 54,
+        "modeled_months": 2.6,
+        "core_modeled_months": 2.166666666666667,
+        "site_completion_months": 2.6,
+        "cost_per_participant": 28239.329999999998,
+        "budget_utilization": 0.1882622,
+        "unspent_budget": 1217606.7,
+        "assumptions": [
+          "Operator-supplied rates, costs, eligibility and capacities; no empirical validation.",
+          "Existing core timing is retained as a lower bound; financial duration also allows every assigned site to finish its integer participant allocation after activation. No competition modeled.",
+          "Participant counts are integer rate-weighted allocations bounded by horizon deliverability and site capacity.",
+          "Baseline-active activation costs are sunk and excluded; all selected sites incur monthly costs for the full modeled duration.",
+          "Minimum support is a per-participant floor; no-loser checks constrain nominal modeled timing only.",
+          "Constant hypothetical rates and deterministic assigned counts only; no actual clinical outcome simulation."
+        ],
+        "evaluated_subsets": 2,
+        "feasible_subsets": 2,
+        "required_ids": [
+          "A"
+        ],
+        "nominal_max_months": 10.0,
+        "selection_rule": "Fastest feasible nominal time; then sponsor total; then sorted site ids"
+      },
+      "economics": {
+        "sponsor": {
+          "expenditure": 257393.3,
+          "contingency_reserve": 25000.0,
+          "budget_commitment": 282393.3
+        },
+        "hospital": {
+          "revenue": 210228.3,
+          "resource_cost": 184315.7,
+          "net_contribution": 25912.6
+        },
+        "insurer": {
+          "payments": 46268.6,
+          "administration": 300.0,
+          "total": 46568.6,
+          "downstream_clinical_cost": null
+        },
+        "patient": {
+          "cost_sharing": 11566.4,
+          "access_support": 5000,
+          "net_cash_exposure": 6566.4,
+          "unresolved_exposure": null
+        },
+        "transfers": [
+          {
+            "from": "Sponsor",
+            "to": "Hospital",
+            "amount": 152393.3
+          },
+          {
+            "from": "Sponsor",
+            "to": "Participant",
+            "amount": 5000
+          },
+          {
+            "from": "Insurer",
+            "to": "Hospital",
+            "amount": 46268.6
+          },
+          {
+            "from": "Participant",
+            "to": "Hospital",
+            "amount": 11566.4
+          }
+        ],
+        "party_transfer_balances": {
+          "Sponsor": -157393.3,
+          "Hospital": 210228.3,
+          "Insurer": -46268.6,
+          "Participant": -6566.4
+        },
+        "transfer_balance": 0.0,
+        "consolidated_resource_cost": 289615.7,
+        "resource_assumptions": [
+          "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.",
+          "Procedure delivery resource costs = 70% of benchmark, regardless of payer; drug reserve used as an unverified supply-resource proxy.",
+          "Sponsor and insurer administration treated as resource consumption. Access payments assumed fully consumed on transport/support resources.",
+          "Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known."
+        ]
+      },
+      "delta": {
+        "sponsor_expenditure": -299440.0,
+        "resources": -319552.0,
+        "hospital_contribution": 20112.0,
+        "insurer_expenditure": 0.0,
+        "patient_exposure": 0.0
+      },
+      "sensitivity": {
+        "modeled_months_quantiles": [
+          2.38,
+          2.78,
+          3.27
+        ],
+        "sponsor_total_quantiles": [
+          282263.96,
+          282501.66,
+          282795.5
+        ],
+        "probability_budget_exceeded": 0.0,
+        "probability_horizon_exceeded": 0.0,
+        "seed": 7,
+        "draws": 100,
+        "method": "Paired independent lognormal site-rate shocks, mean 1; fixed site networks and participant-cost allocation; no reoptimization; not calibrated intervals",
+        "calibration_status": "not_established"
+      },
+      "reinvestment": {
+        "additional_sites": [
+          "B"
+        ],
+        "additional_activations": 1,
+        "incremental_ongoing_cost": 560.0,
+        "modeled_time_change": -7.4
+      }
+    }
+  }
+}
