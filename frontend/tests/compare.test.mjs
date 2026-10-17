@@ -91,7 +91,7 @@ test('the Concord row matches the document, including no for site payments and C
     'yes [K5]',
     'yes [K6]',
     'yes [K7]',
-    'yes, lung only [K8]',
+    'yes [K8]',
     'partial [K9]',
     '**no**',
     '**no**',
@@ -100,7 +100,7 @@ test('the Concord row matches the document, including no for site payments and C
   ])
   assert.equal(CONCORD_ROW.cells[9].mark, 'no')
   assert.equal(CONCORD_ROW.cells[10].mark, 'no')
-  assert.equal(CONCORD_ROW.cells[7].qualifier, 'lung only')
+  assert.ok(!CONCORD_ROW.cells[7].qualifier) // scope (lung; breast sites only) is in K8's evidence
   // "no" is Concord's own mark only; competitors are "–" (not stated publicly), never "no".
   for (const r of COMPETITOR_ROWS) assert.ok(!r.cells.some((c) => c.mark === 'no'), r.name)
 })

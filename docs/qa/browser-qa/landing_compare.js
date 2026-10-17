@@ -32,7 +32,7 @@ const SIMPLE_COLS = [
   'Explains geographic price differences between sites',
 ]
 // The document's Concord row, columns 1-13; Simple shows 1, 2, 3, 4, 6, 7.
-const CONCORD = ['Partial', 'Partial', 'Yes, draft', 'Yes', 'Yes', 'Yes', 'Yes', 'Yes, lung only', 'Partial', 'No', 'No', 'Yes', 'Partial']
+const CONCORD = ['Yes', 'Partial', 'Yes, draft', 'Yes', 'Yes', 'Yes', 'Yes', 'Yes', 'Partial', 'No', 'No', 'Yes', 'Partial']
 
 const results = []
 const check = (name, ok, detail) => {
@@ -300,7 +300,7 @@ const openCard = (page) =>
       await sleep(400)
       const focused = await page.evaluate(() => document.activeElement?.getAttribute('aria-label'))
       const c1 = await openCard(page)
-      check(`keyboard ${theme}: Tab to a mark opens its card`, /^Partial: Concord/.test(focused ?? '') && !!c1 && /K1/.test(c1.text), { focused, card: c1?.text.slice(0, 100) })
+      check(`keyboard ${theme}: Tab to a mark opens its card`, /^Yes: Concord/.test(focused ?? '') && !!c1 && /K1/.test(c1.text), { focused, card: c1?.text.slice(0, 100) })
       await page.keyboard.press('Tab')
       await sleep(200)
       const inCard = await page.evaluate(() => {
@@ -312,7 +312,7 @@ const openCard = (page) =>
       await page.keyboard.press('Escape')
       await sleep(250)
       const after = await page.evaluate(() => ({ open: [...document.querySelectorAll('.hc-card')].some((x) => !x.hidden), focus: document.activeElement?.getAttribute('aria-label') }))
-      check(`keyboard ${theme}: Escape closes the card and returns focus to the mark`, !after.open && /^Partial: Concord/.test(after.focus ?? ''), after)
+      check(`keyboard ${theme}: Escape closes the card and returns focus to the mark`, !after.open && /^Yes: Concord/.test(after.focus ?? ''), after)
 
       // Simple -> Detailed with the header control.
       await page.evaluate(() => [...document.querySelectorAll('.density-seg button')].find((b) => b.innerText.trim() === 'Detailed').click())

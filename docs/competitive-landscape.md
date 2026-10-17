@@ -65,7 +65,7 @@ The benchmark data the vendors describe is proprietary: blinded client contracts
 | **Citeline Sitetrove** (site selection teams) | – | – | – | – | – | – | – | partial [C1] | yes [C2] | – | – | – | – |
 | **Dataiku Clinical Site Intelligence** (feasibility) | – | – | – | – | – | – | – | partial [D1] | yes [D2] | – | – | partial [D3] | – |
 | **TriNetX** (pharma and CROs; also providers and academic research) | – | – | – | – | – | – | – | – | yes [T1] | – | – | – | – |
-| **Concord** (sponsor and site; open source) | yes [K1] | partial [K2] | yes, draft [K3] | yes [K4] | yes [K5] | yes [K6] | yes [K7] | yes, lung only [K8] | partial [K9] | **no** | **no** | yes [K10] | partial [K11] |
+| **Concord** (sponsor and site; open source) | yes [K1] | partial [K2] | yes, draft [K3] | yes [K4] | yes [K5] | yes [K6] | yes [K7] | yes [K8] | partial [K9] | **no** | **no** | yes [K10] | partial [K11] |
 
 In the Concord row, "no" means we have not built it.
 
@@ -245,6 +245,7 @@ All three keys cite https://www.dataiku.com/solutions/catalog/clinical-site-inte
 - **K7.** Two-site comparisons are split into Medicare's geographic adjustment components, and each site is placed in the distribution across all 109 Medicare localities. U.S. only.
 - **K8.** This shows where a sponsor's own concurrently recruiting lung trials share registered sites and eligible patients. Example: Regeneron's two fianlimab Phase 2/3 trials (NCT05785767, NCT05800015) shared 16 registered U.S. sites (README).
   - The site overlap is an observed registry fact. The eligible-patient overlap uses hand-encoded eligibility on a synthetic population, so it is a model output, not observed patients.
+  - Since 17 Oct, breast cancer (387 industry trials from the ClinicalTrials.gov API v2, own database file) shows shared registered sites and months both recruiting only, labelled "site overlap only; eligibility overlap is available for lung cancer".
 - **K9.** These are historical lung site scores with an observed-outcome check: slope 0.33 for industry Phase II/III, so raw differences are overstated. They are evidence, not a forecast.
 - **K10.** Concord is free and open source. Every number is sourced or labelled an assumption. Its research findings are published in the README, including negative results: coordination gains largely disappear out of sample, and "mainly at experienced sites" was withdrawn.
 - **K11.** The budget engine is not tied to a therapeutic area. It prices any item whose code is in the loaded CMS files (17,190 PFS codes, 2,117 CLFS codes), and other items are listed as unpriced (K4). It has been shown on NSCLC and ophthalmology. The overlap audit and site scores cover lung trials only. Pricing is U.S. Medicare only.
@@ -293,7 +294,7 @@ All three keys cite https://www.dataiku.com/solutions/catalog/clinical-site-inte
   - Concord's check has been shown only on a synthetic sample proposal (K5).
 - **An overlap audit of a sponsor's own trials from public registry data (column 8).**
   - Medidata, Citeline and Dataiku state analysis of competing trials. None states that it finds where a sponsor's own trials compete for the same sites and patients.
-  - Lung only today. The patient overlap is modelled on a synthetic population (K8).
+  - Sites and eligible patients for lung trials; breast cancer trials show shared sites only (added 17 Oct). The patient overlap is modelled on a synthetic population (K8).
 
 **Not unique; do not claim these:**
 

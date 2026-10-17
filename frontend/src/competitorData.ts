@@ -1219,7 +1219,6 @@ export const ROWS: readonly Row[] = [
       },
       {
         "mark": "yes",
-        "qualifier": "lung only",
         "key": "K8"
       },
       {
@@ -2051,7 +2050,8 @@ export const EVIDENCE: readonly Evidence[] = [
     "product": "concord",
     "paras": [
       "This shows where a sponsor's own concurrently recruiting lung trials share registered sites and eligible patients. Example: Regeneron's two fianlimab Phase 2/3 trials (NCT05785767, NCT05800015) shared 16 registered U.S. sites (README).",
-      "The site overlap is an observed registry fact. The eligible-patient overlap uses hand-encoded eligibility on a synthetic population, so it is a model output, not observed patients."
+      "The site overlap is an observed registry fact. The eligible-patient overlap uses hand-encoded eligibility on a synthetic population, so it is a model output, not observed patients.",
+      "Since 17 Oct, breast cancer (387 industry trials from the ClinicalTrials.gov API v2, own database file) shows shared registered sites and months both recruiting only, labelled \"site overlap only; eligibility overlap is available for lung cancer\"."
     ],
     "links": [],
     "groupNote": "sources: this repository"
@@ -2177,7 +2177,7 @@ export const DIFFERENTIATORS: readonly ListItem[] = [
         "text": "Medidata, Citeline and Dataiku state analysis of competing trials. None states that it finds where a sponsor's own trials compete for the same sites and patients."
       },
       {
-        "text": "Lung only today. The patient overlap is modelled on a synthetic population (K8)."
+        "text": "Sites and eligible patients for lung trials; breast cancer trials show shared sites only (added 17 Oct). The patient overlap is modelled on a synthetic population (K8)."
       }
     ]
   }
@@ -2780,7 +2780,7 @@ export function evidenceLinks(e: Evidence): string[] {
 }
 
 /** Simple: the one sub-point of each "Concord does" item that stays visible, because it limits the claim. */
-export const SIMPLE_CAVEAT: readonly (RegExp | null)[] = [/not new/, /only 18%/, null, /synthetic sample/, /Lung only/]
+export const SIMPLE_CAVEAT: readonly (RegExp | null)[] = [/not new/, /only 18%/, null, /synthetic sample/, /sites only/]
 
 export function markWord(c: Cell): string {
   if (c.mark === 'yes') return c.qualifier ? `Yes, ${c.qualifier}` : 'Yes'
