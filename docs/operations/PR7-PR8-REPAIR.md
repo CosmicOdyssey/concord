@@ -22,6 +22,6 @@ Browser evidence: [local sponsor results](pr7-pr8-repair/sponsor-local.ax.txt), 
 
 ## Remaining limits
 
-Photon event catalog/OpenAPI access returned 403; no approved outbound space/agent/send receipt or carrier delivery is verified. Chalk OAuth succeeded but no environment/Function/evaluation execution receipt exists. Factory's installed SDK surface was checked, while the read-only CLI model catalog request timed out; no model turn was submitted. Sponsor billing eligibility remains unverified. Local synthetic computation is independently available; none of these states may be presented as completed provider execution.
+Photon event catalog/OpenAPI access returned 403; no approved outbound space/agent/send receipt or carrier delivery is verified. Chalk OAuth succeeded but no environment/Function/evaluation execution receipt exists. Factory's installed SDK surface was checked, while the read-only CLI model catalog request timed out; no model turn was submitted. The user confirmed on 2026-10-18 that all three sponsor accounts have included hackathon credits with paid overages disabled. This resolves the billing eligibility question, but does not establish provider access, a permitted model, an active Chalk environment or an approved Photon destination. Local synthetic computation is independently available; none of these states may be presented as completed provider execution.
 
 No GitHub merge or production deployment is included in this repair.
