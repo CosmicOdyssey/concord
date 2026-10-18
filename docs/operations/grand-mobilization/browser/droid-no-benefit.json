@@ -1,0 +1,117 @@
+{
+  "recommendation_id": "local-rec-e838d2ad0b4c4a5c817497e8373922b1",
+  "trial_id": "NCT05800015",
+  "trial_title": "A Trial to Learn How the Combination of Fianlimab With Cemiplimab and Chemotherapy Works Compared With Cemiplimab and Chemotherapy for Treating Adult Patients With Advanced Non-small Cell Lung Cancer",
+  "created_at": "2026-10-18T02:45:05.844593+00:00",
+  "runtime_agent": "Concord local deterministic proposal evaluator (Factory runtime not implemented)",
+  "total_iterations": 1,
+  "baseline_makespan_months": 15.133732202896905,
+  "recommended_makespan_months": 15.133732202896905,
+  "expected_makespan_delta_months": 0.0,
+  "budget_commitment_usd": 1133866.4,
+  "budget_ceiling_usd": 3000000.0,
+  "feasibility_status": "FEASIBLE",
+  "clinical_safety_status": "PASSED_NO_CLINICAL_MUTATION",
+  "chalk_evaluation_score": 0.0,
+  "executive_summary": "Local deterministic evaluation: NO_BENEFICIAL_CHANGE. Paired synthetic makespan 15.13 months; modeled commitment $1,133,866. No Factory or Chalk service called; no clinical criteria changed or clinical benefit established.",
+  "human_approval_status": "REJECTED",
+  "iterations": [
+    {
+      "iteration_index": 1,
+      "proposed_amendment": {
+        "proposal_id": "candidate-1",
+        "trial_id": "NCT05800015",
+        "category": "OPERATIONAL",
+        "description": "Illustrative operational proposal; evaluate rather than assume benefit.",
+        "activation_lag_months": 2.0,
+        "monthly_outreach_budget": 10000.0,
+        "site_slot_delta": null,
+        "modifies_clinical_inclusion_exclusion": false,
+        "clinical_safety_reviewed": false,
+        "validation_status": "VALIDATED_OPERATIONAL"
+      },
+      "simulation_metrics": {
+        "trial_id": "NCT05800015",
+        "baseline_makespan": 15.133732202896905,
+        "simulated_makespan": 15.133732202896905,
+        "makespan_delta": 0.0,
+        "baseline_commitment": 1133866.4,
+        "simulated_commitment": 1253866.4,
+        "budget_ceiling": 3000000.0,
+        "feasible": true,
+        "violations": [],
+        "is_simulated_assumption": true,
+        "seed": 7,
+        "draws": 32,
+        "assumptions": "Fixed baseline network; lag may only decrease an existing entered lag. Outreach is charged for 12 months with zero assumed recruitment effect; no clinical evidence supports an effect."
+      },
+      "chalk_score": 0.0,
+      "feedback": "No modeled completion improvement; additional outreach spending is not a benefit. Retained baseline.",
+      "decision": "REJECTED_NO_BENEFIT"
+    }
+  ],
+  "tool_trace": [
+    {
+      "tool_name": "inspect_protocol",
+      "arguments": {
+        "trial_id": "NCT05800015"
+      },
+      "output_summary": "Registry: CONTEXT_ONLY; clinical criteria and enrollment evidence: UNKNOWN.",
+      "timestamp": "2026-10-18T02:45:05.835283+00:00"
+    },
+    {
+      "tool_name": "identify_operational_bottlenecks",
+      "arguments": {
+        "trial_id": "NCT05800015"
+      },
+      "output_summary": "Inspected bundled operational assumptions; no verified real-world bottleneck is inferred.",
+      "timestamp": "2026-10-18T02:45:05.835497+00:00"
+    },
+    {
+      "tool_name": "simulate_operational_variant",
+      "arguments": {
+        "trial_id": "NCT05800015",
+        "activation_lag": 2.0,
+        "outreach_budget": 10000.0
+      },
+      "output_summary": "Original Concord engine, paired seed 7: delta 0.000000 mo; feasible True.",
+      "timestamp": "2026-10-18T02:45:05.844555+00:00"
+    },
+    {
+      "tool_name": "evaluate_with_chalk",
+      "arguments": {
+        "execution_mode": "LOCAL_DETERMINISTIC"
+      },
+      "output_summary": "Local feasibility and benefit checks; acceptable: False. No Chalk service called.",
+      "timestamp": "2026-10-18T02:45:05.844573+00:00"
+    }
+  ],
+  "request_id": "local-rec-e838d2ad0b4c4a5c817497e8373922b1",
+  "scenario_id": "hackharvard-bundled-portfolio",
+  "provider_status": "NOT_IMPLEMENTED",
+  "execution_mode": "LOCAL_DETERMINISTIC",
+  "disposition": "NO_BENEFICIAL_CHANGE",
+  "provenance": {
+    "fixture_sha256": "fa516dd1fe0eddbc8d7cdd6fc441c434c1d6a1ef32f41aad1ab5a7e8418aaef3",
+    "seed": 7,
+    "draws": 32,
+    "data_mode": "SYNTHETIC_OPERATIONAL_ASSUMPTIONS",
+    "clinical_evidence": "UNKNOWN",
+    "canonical_protocol_mutated": false,
+    "input_sha256": "c22ad7dab71b0887527b9264cad1f85a1a85e98fe4bf18ec1525de59c7ef961e",
+    "executed_source_sha256": {
+      "backend/concord/portfolio.py": "c52964016b45d1d4c0d5debaae124679a726239b410996019037185f8b72e577",
+      "backend/concord/portfolio_simulation.py": "800977cb90ed42bd2a62b84658d96af1902afe11e750a0cda3f35a3a8d37a1f5",
+      "backend/concord/portfolio_search.py": "ef0094b61d0f5ef463fd589f9390e5537dffa178a927f28b1e7b39b01caf2a4b",
+      "backend/concord/financial.py": "d834e7188fdba57d91e959a828349d194e87222bf4cfe66fa02686aa7a9b5d41",
+      "backend/concord/allocator/core.py": "8cc20a09feae8bafbeacc7badac260737b19af56dbf17b20b90f16ffb4c0ab62",
+      "backend/concord/terms.py": "500450e8e04aa886d3e58052f7648ae425af57d67db6fbabebed9778eea66d89",
+      "backend/concord/ratecard/medicare.py": "79873f5ef9b189475e3fae4754ceb1741a305404459f36c9d2a40daf8410610d",
+      "backend/concord/financial_allocation.py": "8f4e3de19aa4c19230be4cbe9b6c1c655267fd1cf3b24f471bce54048a730e74",
+      "backend/concord/agents/droid.py": "d3b002d41d7184f30dc6292c682d6c75b031c82b43be8bba90883a39d4641341",
+      "backend/concord/agents/boundary.py": "cb1e83c428b546f620e31ce7ff7b21794973587cec3cc43c550c670b3493cb2a"
+    }
+  },
+  "error": null,
+  "review_audit": []
+}

@@ -68,3 +68,27 @@ def test_agent_boundary_read_only_protection():
     is_safe, violations = validate_amendment_constraints(unsafe)
     assert is_safe is False
     assert any("CRITICAL SAFETY VIOLATION" in v for v in violations)
+
+
+def test_stale_evaluation_runtime_is_explicit_conflict(monkeypatch):
+    from fastapi.testclient import TestClient
+    from concord.api.main import app
+    from concord.api import chalk_eval
+    def stale():
+        raise ValueError("Source changed since runtime start; restart before evaluation")
+    monkeypatch.setattr(chalk_eval, "run_chalk_evaluations", stale)
+    response = TestClient(app).post("/api/evals/chalk/run")
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "STALE_RUNTIME"
+
+
+def test_latest_evaluation_rejects_changed_source(monkeypatch):
+    from fastapi.testclient import TestClient
+    from concord.api.main import app
+    from concord.api import chalk_eval
+    with TestClient(app) as client:
+        assert client.post("/api/evals/chalk/run").status_code == 200
+        monkeypatch.setattr(chalk_eval, "runtime_sources_current", lambda: False)
+        response = client.get("/api/evals/chalk/latest")
+        assert response.status_code == 409
+        assert response.json()["detail"]["code"] == "STALE_EVALUATION"

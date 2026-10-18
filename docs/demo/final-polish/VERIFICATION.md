@@ -1,5 +1,7 @@
 # HackHarvard Final Polish Acceptance & Verification
 
+> Historical recovery-worker record retained for attribution. Its counts and screenshot are not final acceptance of the merged sponsor code. See the [independent Grand Mobilization report](../../operations/GRAND-MOBILIZATION-REPORT.md) for current test counts, actual browser receipts and external blockers.
+
 **Baseline commit:** `b8d4f0890214f28c4c617e861d8cda2d6d593e85` (merged PR #4)  
 **Campaign:** `CONCORD-HACKHARVARD-FINAL-POLISH` / `concord-final-readme-demo`  
 **Worker:** `antigravity` (manual recovery after Codex usage limit)  

@@ -1,0 +1,59 @@
+{
+  "run_id": "d48a86779c0c3aeaf24bc125dfb8bf4a",
+  "result_sha256": "d48a86779c0c3aeaf24bc125dfb8bf4a750a194b0e2f6ec2c26697b2fc7cb75a",
+  "source_commit": "af8aa50b166dc7b456a45c2f664fc149af1fff56",
+  "source_dirty": true,
+  "saved_json_equals_export": true,
+  "html_embedded_json_equals_export": true,
+  "canonical_digest_valid": true,
+  "delivery": "artifact-replay of the actual saved computation; not a browser-download assertion",
+  "file_sha256": {
+    "evidence.json": "740acb54a88a8807c9addfc280bbbc668cace824f98e10d1f858f241f0007f1e",
+    "evidence.html": "a3592ffcba1af87569a7cc87b340a0cf39dd86bc9a0453ce0d2115a059ddfab9"
+  },
+  "request": {
+    "budget": 3000000.0,
+    "seed": 7,
+    "draws": 32,
+    "spread": 0.25,
+    "savings_realized": false
+  },
+  "scenarios": [
+    {
+      "id": "A",
+      "expected_makespan": 15.13,
+      "expected_commitment": 1018279.54,
+      "search_status": "FIXED_COMPARISON"
+    },
+    {
+      "id": "B",
+      "expected_makespan": 15.13,
+      "expected_commitment": 1018279.54,
+      "search_status": "FIXED_COMPARISON"
+    },
+    {
+      "id": "C",
+      "expected_makespan": 9.24,
+      "expected_commitment": 1180972.09,
+      "search_status": "OPTIMAL"
+    },
+    {
+      "id": "D",
+      "expected_makespan": 15.13,
+      "expected_commitment": 1042279.54,
+      "search_status": "FIXED_COMPARISON"
+    },
+    {
+      "id": "E",
+      "expected_makespan": 9.24,
+      "expected_commitment": 1180972.09,
+      "search_status": "OPTIMAL"
+    },
+    {
+      "id": "F",
+      "expected_makespan": 9.24,
+      "expected_commitment": 1180972.09,
+      "search_status": "OPTIMAL"
+    }
+  ]
+}

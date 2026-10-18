@@ -1,0 +1,47 @@
+{
+  "scope": "Only disposable campaign task stores; legacy repository cache unchanged",
+  "records": [
+    {
+      "root": "/var/folders/63/q6glc8w91w3d_3j6d7gzyyrc0000gn/T/fleet-grand-cursor-Q671u0",
+      "taskId": "grand-cursor-review",
+      "status": "blocked",
+      "revision": 2,
+      "note": "attempt stopped; original failed invocation and recovery retained"
+    },
+    {
+      "root": "/var/folders/63/q6glc8w91w3d_3j6d7gzyyrc0000gn/T/fleet-grand-antigravity-fmVPfR",
+      "taskId": "grand-antigravity-review",
+      "status": "blocked",
+      "revision": 2,
+      "note": "attempt stopped; original failed invocation and recovery retained"
+    },
+    {
+      "root": "/var/folders/63/q6glc8w91w3d_3j6d7gzyyrc0000gn/T/fleet-grand-antigravity-QkPdSu",
+      "taskId": "grand-antigravity-review",
+      "status": "blocked",
+      "revision": 2,
+      "note": "attempt stopped; original failed invocation and recovery retained"
+    },
+    {
+      "root": "/var/folders/63/q6glc8w91w3d_3j6d7gzyyrc0000gn/T/fleet-grand-antigravity-E1iqcu",
+      "taskId": "grand-antigravity-review",
+      "status": "blocked",
+      "revision": 2,
+      "note": "attempt stopped; original failed invocation and recovery retained"
+    },
+    {
+      "root": "/var/folders/63/q6glc8w91w3d_3j6d7gzyyrc0000gn/T/fleet-grand-antigravity-protocol-tvtrg4",
+      "taskId": "grand-antigravity-protocol-review",
+      "status": "blocked",
+      "revision": 2,
+      "note": "attempt stopped; original failed invocation and recovery retained"
+    },
+    {
+      "root": "/var/folders/63/q6glc8w91w3d_3j6d7gzyyrc0000gn/T/fleet-grand-antigravity-final-acceptance-6TDeWc",
+      "taskId": "grand-antigravity-final-acceptance-review",
+      "status": "submitted",
+      "revision": 3,
+      "note": "completed candidate submitted; no application or promotion"
+    }
+  ]
+}

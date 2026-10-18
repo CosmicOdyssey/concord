@@ -1,154 +1,62 @@
-# HackHarvard: 180-second Concord demonstration
+# HackHarvard — 180-second Regeneron planning demonstration
 
-Use the merged Portfolio Command workflow, not the unmerged `#demo` proposal in
-[draft PR #3](https://github.com/CosmicOdyssey/concord/pull/3). This campaign does
-not duplicate that feature or depend on its approval. This script is for an
-**NSCLC-focused exploratory planning demonstration**, not a clinical forecast.
+Start the root README commands and open `#demo`. Keep sponsor credentials absent: the original demo does not need them. Do not use the old Portfolio Command figures as this fixture's results. The six existing scenes are the presentation; no duplicate demo route was added.
 
-## Setup and timing
+## 0:00–0:25 — The problem
 
-Follow the [repository Quick Start](../../README.md#quick-start). Open
-[Portfolio Command](http://127.0.0.1:5178/#portfolio-command) before presenting.
-Use the bundled two-trial request: $3,000,000 ceiling, seed 7, 128 draws, spread
-0.25. Reset before every run. Set only **Assume administrative savings are
-realizable**; disclose that input aloud. Leave the zero support effect and 15%
-hypothetical operations effect unchanged. Do not tune inputs to improve a headline.
+“Concord helps a sponsor compare allocations across two Regeneron-context trials sharing hospitals. Trial identifiers come from the registry. The operating inputs are hypothetical: forty participants per trial, two activated hospitals, and a three-million-dollar ceiling. This is planning, not a recruitment forecast.”
 
-The scene plan ends at **2:45**, leaving 15 seconds. Clicks overlap narration.
-[Timing and three connected-browser runs](final-polish/VERIFICATION.md) distinguish
-actual automation latency, optional local synthetic-speech timing and unmeasured
-human delivery. Practice aloud on the venue machine before judging.
+Click **Next Scene**.
 
-## Exact narration and clicks
+## 0:25–0:55 — The baseline
 
-### 0:00–0:20 — Problem and truth boundary
+“The existing network is feasible under our entered limits. It models completion at 15.13 months. Hospital capacity is shared, and two more hospitals are available after an assumed activation delay. The question is whether the added capacity justifies its cost within the same budget.”
 
-**Click:** open the portfolio route; point at the synthetic-operations banner.
+Click **Optimize Portfolio** once.
 
-> Concord brings trial sites, sponsor budgets and shared capacity into one workspace. Today we are showing exploratory planning for lung cancer trials. The public trial identities are real; the hospitals, recruitment rates, costs and intervention effects are explicit assumptions. Nothing here proves that a real clinical trial finishes sooner.
+## 0:55–1:25 — Compute
 
-### 0:20–0:40 — Two competing trials
+“Concord now runs its actual optimizer and financial model locally. It uses the same targets, seed and thirty-two assumption draws. No external model or sponsor service is called. We show the real computation time rather than an invented progress bar.”
 
-**Click:** **02 Trial Portfolio**. Show both Regeneron-context titles and targets.
+If computation completes early, continue explaining the fixed assumptions. If the API fails, explicitly choose **Load saved rehearsal (not live)** and identify the replay banner.
 
-> These are two Regeneron trial records from ClinicalTrials.gov. We have entered forty remaining participants for each trial, not imported actual recruitment progress. Their budgets use one illustrative financial schedule, explicitly marked as a proxy for the second trial. We can inspect every input before computing.
+## 1:25–2:10 — Compare
 
-### 0:40–1:00 — Shared site capacity
+“The allocation activates all four hypothetical hospitals. Modeled completion becomes 9.24 months, while expected sponsor expenditure rises from about 818 thousand to 981 thousand dollars. This is a trade-off, not a saving. Conservative commitment remains within the ceiling. Optimality applies only to this bounded candidate set and finite draw bank; the uncertainty range is not clinically calibrated.”
 
-**Click:** **03 Site Capacity**. Show hospitals A and B and baseline assignments.
+Click **Next Scene**.
 
-> Both trials initially use the same synthetic hospitals. Their enrollment rates compete for each hospital's shared monthly capacity; completed trials release capacity. New sites also have activation delays and costs. Unknown feasibility or capacity cannot silently become a usable site. These constraints explain what the optimizer is allowed to change.
+## 2:10–2:45 — Money and evidence
 
-### 1:00–1:18 — Fixed budget and explicit savings
+“Hospital receipts, resource costs, participant sharing and sponsor support remain separate. Potential payer amounts are coverage classifications, not insurer commitments. Open the evidence report to inspect the actual inputs, seed, sources and result digest. Registry context is authentic; hospitals, costs and operating rates remain explicit assumptions.”
 
-**Click:** **04 Financial Allocation**, check **Assume administrative savings are realizable**.
+Open the report link if browser policy permits it. If blocked, use the exact exported report copied by `verify_report.py` and identify it as artifact replay. Do not claim a browser download succeeded.
 
-> The sponsor budget stays fixed at three million dollars. We explicitly assume an administrative reduction can release seventy-five thousand dollars. That assumption changes the budget available for comparison; it does not itself change recruitment. Participant support also has zero assumed recruitment effect in this example.
+## 2:45–3:00 — Conclusion
 
-### 1:18–1:40 — Actual computation
+“We demonstrated a reproducible planning comparison and inspectable financial evidence. We did not demonstrate faster real enrollment, clinical efficacy or guaranteed savings. Next validation requires sponsor-approved feasibility, negotiated costs and prospective operating evidence.”
 
-**Click:** **Run portfolio comparison**. Wait for **Comparison computed and saved**;
-then **01 Executive Overview**. Do not narrate a successful run while it is loading.
+The timestamps are a narration plan, not proof of a measured human delivery. Browser computation, screenshots and exact result values are in the [campaign report](../operations/GRAND-MOBILIZATION-REPORT.md). Presentation timing depends on the speaker and must be rehearsed by the presenter.
 
-> This button runs the existing optimizer now. It checks the entered financial and shared-capacity constraints using the same seeded draws for each alternative. This small example qualifies for exact enumeration. Optimal means best within these inputs and finite draws, not a globally best clinical decision or a validated forecast.
+## 120-second alternative
 
-### 1:40–2:05 — Comparison, not a promise
+Spend 20 seconds on the synthetic-input disclosure, 20 on the feasible baseline, 15 triggering computation, 35 comparing the 15.13/9.24-month assumption results and increased expenditure, 20 showing source/digest evidence, and 10 stating limitations. Keep the same inputs and computation; omit detailed hospital accounting narration.
 
-**Click:** **05 Scenario Lab**. Compare A, B, D and F.
+## Judge questions
 
-> The baseline finishes at fifteen point one three modeled months. Financial efficiency saves money but leaves that schedule unchanged. Extra support at zero rate effect also saves no time. The joint scenario shows eight point eight five months, with higher expected spending than the baseline. That difference depends on assumed allocation and operations effects, not observed acceleration.
+- **Are these real recruitment forecasts?** No. Real registry context is combined with hypothetical operating inputs; historical predictive performance remains unverified prospectively.
+- **Why can you claim optimality?** Exact enumeration is bounded to the admitted subset/policy search and fixed draw bank. Larger heuristic cases report an unknown gap.
+- **Does insurance pay for faster trials?** No. Coverage classification and transfers do not create capacity or a supported recruitment effect.
+- **What if outreach does nothing?** The local proposal evaluator rejects ineffective changes. Its default fixture has zero supported outreach effect.
+- **Are the sponsor services live?** No. Photon carrier dispatch, remote Chalk and Factory inference remain unimplemented; the lab runs explicit local fallbacks.
 
-### 2:05–2:25 — What insurance does
+## Reproduce the report fallback
 
-**Click:** **04 Financial Allocation**. Point to potential payer, cost sharing and reserve.
-
-> Financial responsibility is a separate worksheet. Routine care may be insurer-funded only after coverage review; research costs remain sponsor responsibilities. Unknown responsibility stays reserved. An insurer paying more does not automatically reduce sponsor commitment. Travel support is separate from participant cost sharing, and transfers are separate from resource costs.
-
-### 2:25–2:45 — Evidence and limitations
-
-**Click:** **06 Evidence and Reports**; show the run ID, seed and limitations.
-Open the exact saved report using the verified report path below.
-
-> The saved evidence contains this exact request, source hashes, seed, results and limitations. Opening it replays an immutable snapshot rather than running a new simulation. Our demonstrated result is live computation on synthetic operational assumptions, with real registry context only. The contribution is a transparent planning comparison, not a clinical outcome claim.
-
-## Verified numbers to point at
-
-These are outputs of the unmodified bundled model with savings explicitly
-realizable and **no CMS ratecard loaded**, not values hardcoded into the app.
-Different price inputs legitimately change financial totals; recheck before use.
-
-| Scenario | Final modeled months | Expected USD including reserve (rounded) |
-| --- | ---: | ---: |
-| A — fixed baseline | 15.13 | 1,018,305 |
-| B — financial efficiency | 15.13 | 943,305 |
-| C — more sites | 9.22 | 1,105,508 |
-| D — extra support | 15.13 | 967,305 |
-| E — better allocation | 9.22 | 1,180,508 |
-| F — joint search | 8.85 | 1,152,502 |
-
-Whole-dollar browser values; the exact cents are retained in the API evidence.
-The optimized objective is priority-weighted completion; the headline reports
-unweighted final completion separately. The $3M ceiling is checked against the
-conservative commitment, not just expected spending. Full drug costs and costs
-beyond the authored visit/horizon scope remain unknown.
-
-## Evidence report and fallback
-
-First try the existing **Download evidence HTML/JSON** links. If browser download
-policy blocks them, do not call that a successful browser download. Verify and
-materialize the **actual browser-observed run**, substituting its visible ID:
+For an actual saved run observed in the browser:
 
 ```sh
 backend/.venv/bin/python docs/demo/final-polish/verify_report.py http://127.0.0.1:8005 RUN_ID data/work/readme-report
 backend/.venv/bin/python -m http.server 8007 --bind 127.0.0.1 --directory data/work/readme-report
 ```
 
-Open [the local evidence snapshot](http://127.0.0.1:8007/evidence.html). It is the
-unchanged HTML response for that saved run, with matching embedded JSON/digest;
-this auxiliary static viewer does not replace or intercept computation. Its
-availability requires the command above. Label it **artifact replay** aloud.
-
-If computation fails during the presentation, stay in **06 Evidence and Reports**,
-enter the previously verified run ID and choose **Load saved scenario**. Confirm
-**SAVED EVIDENCE REPLAY** and restored inputs. If the backend is unavailable, use
-the already materialized local report. State: “This is a saved evidence snapshot
-from our prior verified computation; no new calculation is running.” If no
-verified artifact is available, show the input/limitation screen and disclose the
-failure. Never substitute an attractive screenshot for a live result.
-
-## 120-second abbreviated version
-
-0:00–0:20 banner and trial context; 0:20–0:40 capacity and fixed budget;
-0:40–1:00 computation; 1:00–1:25 comparison; 1:25–1:45 financial responsibility;
-1:45–2:00 saved report and limitations. Use the same inputs and click order,
-omitting extra ledger expansion.
-
-> Concord compares trial allocations and budgets in one reviewable workspace. These two public Regeneron trial identities are real. The hospitals, progress, rates and costs are synthetic assumptions, not operational evidence.
->
-> Both trials share hospitals with limited monthly capacity. New sites take time and cost money. Our sponsor ceiling stays at three million dollars, and unknown site feasibility is not treated as approval. We explicitly assume an administrative reduction is realizable.
->
-> We now run the existing optimizer with common seeded draws. Exactness applies to this bounded model, not to a real trial's future. The baseline is fifteen point one three modeled months. Financial efficiency and support at zero effect do not improve its schedule. Joint allocation and the assumed operations effect give eight point eight five months while increasing expected spending over baseline. Those are scenario comparisons, not measured benefits.
->
-> Potential routine-care coverage needs human review. More insurer payment does not automatically lower sponsor costs or speed recruitment. Unknown responsibility is reserved, and support is not netted against cost sharing.
->
-> Here is the immutable evidence report: inputs, source hashes, seed, results and limitations. Reopening it is saved artifact replay. We have demonstrated transparent live planning on synthetic operations with real registry context. Historical forecasting and clinical acceleration remain unvalidated.
-
-## Five difficult judge questions
-
-1. **Have you shown that Concord accelerates actual trials?** No. The live demo
-   computes conditional scenarios on synthetic operational/financial inputs.
-   Historical model scores are not observed treatment outcomes or prospective validation.
-2. **Is the optimizer genuinely exact?** Only when the 12-edge and 500,000
-   event-work admission bounds are met. It exhausts candidate subsets on the
-   entered finite draw bank. Larger workloads retain bounded heuristics and unknown gaps.
-3. **Does insurance finance faster recruitment?** No automatic link is modeled.
-   Coverage review determines responsibility; payer-share assumptions do not
-   reduce sponsor commitment. Portfolio timing changes only through explicit site/rate inputs.
-4. **What prevents a polished but irreproducible result?** Frozen request/context,
-   common seed/draws, runtime/source hashes, independent mathematical checks,
-   immutable saved JSON and a matching report. Three actual browser runs are
-   recorded; neither tests nor a digest prove assumptions true.
-5. **Why lung cancer, and can this generalize?** Recruitment/population research
-   is NSCLC-specific and limited by inferred site enrollment and historical
-   information availability. Budget/schedule interfaces are reusable software;
-   other-disease clinical validation, authentic site data and calibrated effects are future work.
+Open `http://127.0.0.1:8007/evidence.html`. This is the immutable export of that computation, not a new API calculation. The helper verifies that stored JSON, exported JSON and HTML-embedded JSON agree and retain a valid canonical digest.

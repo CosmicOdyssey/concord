@@ -33,10 +33,9 @@ const TABS = [
   { id: 'terms-flow', label: 'Protocol to terms', hint: 'A schedule of assessments, turned into a coverage grid, a budget and a term sheet.' },
   { id: 'overlap', label: 'Portfolio overlap', hint: "Where one sponsor's trials share registered sites and eligible patients." },
   { id: 'findings', label: 'Findings', hint: 'What we tested, including results that weakened the original idea.' },
-  // Teammate PRs #3/#5: kept out of the main navigation (the presentation leads with Protocol to terms; the demo page
-  // reports modeled completion times, which the product does not claim). Routes still open: #demo, #sponsor-agents.
+  // Preserve the presentation's primary navigation; these bounded labs remain direct routes.
   { id: 'demo', label: 'HackHarvard Demo', sub: 'Synthetic planning', hint: 'Three-minute deterministic planning demonstration; not a recruitment forecast.', navHidden: true },
-  { id: 'sponsor-agents', label: 'Sponsor Agents', sub: 'Photon · Chalk · Droid', hint: 'Sponsor integrations (Photon, Chalk, Factory Droid).', navHidden: true },
+  { id: 'sponsor-agents', label: 'Sponsor Agents', sub: 'Photon · Chalk · Droid', hint: 'Local messaging, acceptance checks and proposal evaluation; external execution unavailable.', navHidden: true },
   {
     id: 'site-scores',
     label: 'Site scores',

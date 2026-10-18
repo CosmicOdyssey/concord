@@ -1,63 +1,54 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DEFAULT_DROID_CONFIG } from '../src/droidClient.ts';
+import { readFile } from 'node:fs/promises';
+import { executeFactoryDroidSession } from '../src/droidClient.ts';
+import { sendSimulatedSMS, runChalkEvaluations } from '../src/sponsorAgentsApi.ts';
 
-test('Factory Droid SDK configuration enforces safe default tool sandbox', () => {
-  assert.equal(DEFAULT_DROID_CONFIG.trialId, 'NCT05800015');
-  assert.equal(DEFAULT_DROID_CONFIG.maxIterations, 3);
-  assert.equal(DEFAULT_DROID_CONFIG.autonomyLevel, 'medium');
-  assert.ok(DEFAULT_DROID_CONFIG.allowedTools.includes('inspect_protocol'));
-  assert.ok(DEFAULT_DROID_CONFIG.allowedTools.includes('identify_operational_bottlenecks'));
-  assert.ok(DEFAULT_DROID_CONFIG.allowedTools.includes('simulate_operational_variant'));
-  assert.ok(DEFAULT_DROID_CONFIG.allowedTools.includes('evaluate_with_chalk'));
-  // Unrestricted shell or filesystem tools must NOT be allowed
-  assert.equal(DEFAULT_DROID_CONFIG.allowedTools.includes('shell_execute'), false);
-  assert.equal(DEFAULT_DROID_CONFIG.allowedTools.includes('write_file'), false);
+async function withFetch(handler, body) {
+  const original = globalThis.fetch;
+  globalThis.fetch = handler;
+  try { await body(); } finally { globalThis.fetch = original; }
+}
+
+test('local proposal helper calls the backend; it does not invoke a Factory runtime', async () => {
+  await withFetch(async (url, init) => {
+    assert.equal(url, '/api/agents/droid/run');
+    assert.deepEqual(JSON.parse(init.body), { trial_id: 'NCT05800015', max_iterations: 2 });
+    return Response.json({ feasibility_status: 'NO_BENEFICIAL_CHANGE', expected_makespan_delta_months: 0 });
+  }, async () => {
+    const result = await executeFactoryDroidSession({ maxIterations: 2 });
+    assert.equal(result.feasibility_status, 'NO_BENEFICIAL_CHANGE');
+    assert.equal(result.expected_makespan_delta_months, 0);
+  });
 });
 
-test('Sponsor API contracts enforce strict state transitions and disclosures', async () => {
-  // Test mock recommendation object conforms to frontend DroidRecommendation schema
-  const mockRec = {
-    recommendation_id: 'droid-rec-test1234',
-    trial_id: 'NCT05800015',
-    trial_title: 'Study NCT05800015',
-    created_at: new Date().toISOString(),
-    runtime_agent: 'Factory Droid SDK TypeScript Runtime',
-    total_iterations: 2,
-    baseline_makespan_months: 15.13,
-    recommended_makespan_months: 13.33,
-    expected_makespan_delta_months: -1.8,
-    budget_commitment_usd: 1481066.4,
-    budget_ceiling_usd: 3000000.0,
-    feasibility_status: 'FEASIBLE',
-    clinical_safety_status: 'PASSED_NO_CLINICAL_MUTATION',
-    chalk_evaluation_score: 1.0,
-    executive_summary: 'Test summary',
-    human_approval_status: 'PENDING_HUMAN_REVIEW',
-    iterations: [],
-    tool_trace: [],
-  };
-
-  assert.equal(mockRec.human_approval_status, 'PENDING_HUMAN_REVIEW');
-  assert.equal(mockRec.clinical_safety_status, 'PASSED_NO_CLINICAL_MUTATION');
-  assert.ok(mockRec.recommended_makespan_months < mockRec.baseline_makespan_months);
-  assert.ok(mockRec.budget_commitment_usd <= mockRec.budget_ceiling_usd);
+test('phone preview calls simulation only and preserves its local delivery disclosure', async () => {
+  await withFetch(async (url, init) => {
+    assert.equal(url, '/api/agents/photon/simulate');
+    assert.equal(JSON.parse(init.body).body, 'STATUS');
+    return Response.json({ status: 'LOCAL_SIMULATION', provider_status: 'NOT_IMPLEMENTED' });
+  }, async () => {
+    const result = await sendSimulatedSMS('STATUS');
+    assert.equal(result.status, 'LOCAL_SIMULATION');
+    assert.equal(result.provider_status, 'NOT_IMPLEMENTED');
+  });
 });
 
-test('Chalk evaluation contract requires exactly 12 deterministic scenarios', () => {
-  const expectedScenarios = [
-    'scenario-01-adequate-budget',
-    'scenario-02-infeasible-budget',
-    'scenario-03-capacity-exhaustion',
-    'scenario-04-unknown-site-eligibility',
-    'scenario-05-incorrect-financial-inference',
-    'scenario-06-protocol-amendment-reduces-patients',
-    'scenario-07-amendment-violates-safety',
-    'scenario-08-cost-rise-no-benefit',
-    'scenario-09-bounded-optimal-agreement',
-    'scenario-10-large-heuristic-labeling',
-    'scenario-11-missing-registry-info',
-    'scenario-12-persuasion-prompt-injection',
-  ];
-  assert.equal(expectedScenarios.length, 12);
+test('evaluation client preserves actual dataset size and local status; failures remain visible', async () => {
+  await withFetch(async (url, init) => {
+    assert.equal(url, '/api/evals/chalk/run');
+    assert.equal(init.method, 'POST');
+    return Response.json({ total_scenarios: 15, engine_mode: 'LOCAL_DETERMINISTIC' });
+  }, async () => assert.equal((await runChalkEvaluations()).total_scenarios, 15));
+  await withFetch(async () => new Response('', {status: 503}), async () => {
+    await assert.rejects(runChalkEvaluations(), /HTTP 503/);
+  });
+});
+
+test('sponsor view does not restore false production, carrier or SDK execution labels', async () => {
+  const source = await readFile(new URL('../src/views/SponsorAgentsView.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(source, /Three production integrations|VERIFIED & ACTIVE|Online \(\+1|12 Scenarios/);
+  assert.match(source, /LOCAL SIMULATION/);
+  assert.match(source, /LOCAL DETERMINISTIC/);
+  assert.match(source, /not implemented/);
 });
