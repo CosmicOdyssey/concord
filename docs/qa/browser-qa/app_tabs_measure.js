@@ -63,7 +63,8 @@ async function measureSwitch(page, spec, clickFn, clickArg) {
       const frames = []
       const t0 = performance.now()
       const y0 = window.scrollY
-      const bar0 = bar() ? bar().getBoundingClientRect().top : null
+      // The tab bar's place before the click (none when it is not on screen: the landing page).
+      const bar0 = bar() && bar().getClientRects().length ? bar().getBoundingClientRect().top : null
       // eslint-disable-next-line no-new-func
       new Function('arg', clickSrc)(clickArg)
       await new Promise((resolve) => {
@@ -109,7 +110,8 @@ async function measureSwitch(page, spec, clickFn, clickArg) {
         scroll_end: frames.length ? frames[frames.length - 1].y : null,
         scroll_jump_after_paint: jump,
         tabbar_move: barMove,
-        frames: frames.filter((f) => f.h).slice(0, 16).map((f) => ({ t: f.t, op: f.op, ty: f.ty })),
+        frames: frames.filter((f) => f.h).slice(0, 16).map((f) => ({ t: f.t, op: f.op, ty: f.ty, y: f.y, bar: f.bar })),
+        bar_moves: bar0 === null ? [] : frames.filter((f) => f.bar !== null && Math.abs(f.bar - bar0) > 0.5).slice(0, 5).map((f) => ({ t: f.t, bar: f.bar, y: f.y })),
       }
     },
     spec,
