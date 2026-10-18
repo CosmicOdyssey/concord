@@ -360,7 +360,8 @@ async function ready(page) {
     }))
     check('step nav (Enter) focuses step 4 heading', nav.focus === 'tf-step-4' && nav.tag === 'H2', JSON.stringify(nav))
     check('step 4 top in view, below the sticky header and step nav', nav.top >= nav.navBottom && nav.top < nav.vh - 100, JSON.stringify(nav))
-    // leaving the tab and coming back keeps the trial; the address bar carries it
+    // leaving the tab and coming back keeps the trial and the step (the view stays mounted while hidden, App.tsx);
+    // the address bar carries both
     const tab = (label) =>
       page.evaluate((l) => {
         const b = [...document.querySelectorAll('nav.tabs [role="tab"]')].find((x) => x.querySelector('.tab-label')?.textContent.trim() === l)
@@ -379,8 +380,11 @@ async function ready(page) {
       hash: await page.evaluate(() => window.location.hash),
       selected: await page.evaluate(() => document.querySelector('.tf-trial-on a')?.textContent ?? ''),
     }
-    check('persist: hash', log.persist.hash === `#terms-flow/${NCT2}`, log.persist.hash)
+    check('persist: away, the address is the other tab', log.persist.hashAway === '#findings', log.persist.hashAway)
+    check('persist: hash (trial and step)', log.persist.hash === `#terms-flow/${NCT2}/compare`, log.persist.hash)
     check('persist: trial', log.persist.selected === NCT2, log.persist.selected)
+    const kept = await page.evaluate(() => [...document.querySelectorAll('.tf [role=tabpanel]')].filter((p) => !p.hidden).map((p) => p.id).join())
+    check('persist: step 4 still on show', kept === 'tf-step-4', kept)
     await page.close()
   }
 
