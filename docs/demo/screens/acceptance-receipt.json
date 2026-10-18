@@ -1,0 +1,69 @@
+{
+  "url": "https://concord-smoky.vercel.app",
+  "timestamp": "2026-10-18T04:59:32.272Z",
+  "themeCheck": {
+    "themeAttr": "light",
+    "rootBg": "rgb(255, 255, 255)",
+    "bodyBg": "rgb(255, 255, 255)"
+  },
+  "demoRuns": [
+    {
+      "run": 1,
+      "durationMs": 2173,
+      "historical_claim_passed": true,
+      "classification": "NAVIGATION_SMOKE_ONLY",
+      "live_computation_verified": false,
+      "narrated_rehearsal_verified": false
+    },
+    {
+      "run": 2,
+      "durationMs": 2065,
+      "historical_claim_passed": true,
+      "classification": "NAVIGATION_SMOKE_ONLY",
+      "live_computation_verified": false,
+      "narrated_rehearsal_verified": false
+    },
+    {
+      "run": 3,
+      "durationMs": 2063,
+      "historical_claim_passed": true,
+      "classification": "NAVIGATION_SMOKE_ONLY",
+      "live_computation_verified": false,
+      "narrated_rehearsal_verified": false
+    }
+  ],
+  "sponsorPanelCheck": {
+    "status": "UNVERIFIED",
+    "smsResponse": "CONCORD STATUS: 2 trials active, 4 hospital sites enrolled. Operational load: 84% capacity. Simulation mode.LOCAL_SIMULATION \u00b7 Local simulated response for demonstration purposes.",
+    "historical_claim_status": "passed"
+  },
+  "portfolioCommandCheck": {
+    "status": "UNVERIFIED",
+    "historical_claim_status": "passed"
+  },
+  "responsiveChecks": {
+    "tablet": "768x1024 passed",
+    "mobile": "375x812 passed"
+  },
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 405 ()",
+    "Failed to load resource: the server responded with a status of 405 ()",
+    "Failed to load resource: the server responded with a status of 405 ()",
+    "Failed to load resource: the server responded with a status of 405 ()",
+    "Failed to load resource: the server responded with a status of 405 ()",
+    "Failed to load resource: the server responded with a status of 405 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()"
+  ],
+  "acceptance_status": "WITHDRAWN_FOR_LIVE_AND_REHEARSAL_ACCEPTANCE",
+  "review_note": "Historical visual/navigation artifact only. Static API fallback was present, including a precomputed LIVE_COMPUTATION label. Approximately two-second navigation runs are not 180-second narrated rehearsals. Sponsor action failures were swallowed and SMS response was fabricated client-side. No current backend, sponsor provider or carrier execution is established."
+}

@@ -19,9 +19,9 @@ const DARK_QUERY = '(prefers-color-scheme: dark)'
 function readPref(): ThemePref {
   try {
     const v = window.localStorage.getItem(KEY)
-    return v === 'light' || v === 'dark' ? v : 'system'
+    return v === 'light' || v === 'dark' || v === 'system' ? v : 'light'
   } catch {
-    return 'system'
+    return 'light'
   }
 }
 

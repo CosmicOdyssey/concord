@@ -18,7 +18,7 @@
           density = localStorage.getItem('concord.density')
         } catch (e) {}
         if (theme !== 'light' && theme !== 'dark')
-          theme = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+          theme = 'light'
         root.setAttribute('data-theme', theme)
         root.style.colorScheme = theme
         root.setAttribute('data-density', density === 'detailed' ? 'detailed' : 'simple')

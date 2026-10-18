@@ -14,6 +14,7 @@ import './sponsor-agents.css';
 
 export default function SponsorAgentsView() {
   // --- Photon SMS State ---
+  const [photonError, setPhotonError] = useState<string | null>(null);
   const [photonStatus, setPhotonStatus] = useState<PhotonStatus | null>(null);
   const [smsInput, setSmsInput] = useState<string>('STATUS');
   const [smsSender] = useState<string>('+16175550199');
@@ -30,8 +31,10 @@ export default function SponsorAgentsView() {
   const [chalkLoading, setChalkLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    fetchPhotonStatus().then(setPhotonStatus).catch(() => {});
-    fetchLatestChalkReport().then(setChalkReport).catch(() => {});
+    let disposed = false;
+    fetchPhotonStatus().then(value => { if (!disposed) setPhotonStatus(value); }).catch(() => { if (!disposed) setPhotonError('Backend status unavailable. No phone/provider connection has been verified.'); });
+    fetchLatestChalkReport().then(value => { if (!disposed) setChalkReport(value); }).catch(() => {});
+    return () => { disposed = true; };
   }, []);
 
   const handleSendSMS = async (commandText?: string) => {
@@ -53,6 +56,7 @@ export default function SponsorAgentsView() {
   const handleRunDroid = async () => {
     setError(null);
     setDroidLoading(true);
+    setDroidRec(null);
     try {
       const rec = await runDroidAgent('NCT05800015', 3);
       setDroidRec(rec);
@@ -66,6 +70,7 @@ export default function SponsorAgentsView() {
   const handleRunChalk = async () => {
     setError(null);
     setChalkLoading(true);
+    setChalkReport(null);
     try {
       const report = await runChalkEvaluations();
       setChalkReport(report);
@@ -166,11 +171,12 @@ export default function SponsorAgentsView() {
 
             <div className="telemetry-box">
               <h4>Webhook & Security Telemetry</h4>
+              {photonError && <p role="status">{photonError}</p>}
               <ul>
-                <li><strong>Allowlist Active:</strong> {photonStatus?.allowlist_active ? 'Yes' : 'External webhook blocked'}</li>
+                <li><strong>Allowlist Active:</strong> {photonStatus ? (photonStatus.allowlist_active ? 'Yes' : 'External webhook blocked') : 'UNKNOWN — backend unavailable'}</li>
                 <li><strong>Signature Auth:</strong> HMAC-SHA256 (<code>X-Photon-Signature</code>)</li>
                 <li><strong>Idempotency:</strong> Sender-scoped <code>message_id</code> and payload digest</li>
-                <li><strong>Processed Messages:</strong> {photonStatus?.messages_processed_count ?? 0}</li>
+                <li><strong>Processed Messages:</strong> {photonStatus?.messages_processed_count ?? 'UNKNOWN'}</li>
                 <li><strong>Scope:</strong> Bundled registry context; synthetic operations</li>
               </ul>
             </div>

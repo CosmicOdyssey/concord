@@ -101,56 +101,40 @@ export interface ChalkEvaluationReport {
   scenarios: ChalkScenarioResult[];
 }
 
-const API_BASE = '';
-
-export async function fetchPhotonStatus(): Promise<PhotonStatus> {
-  const res = await fetch(`${API_BASE}/api/agents/photon/status`);
-  if (!res.ok) throw new Error(`Photon status HTTP ${res.status}`);
-  return res.json();
+/** Never turn a transport/auth/provider failure into a fixture success. */
+async function backend<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(path, { ...init, cache: 'no-store' })
+  if (!response.ok) throw new Error(`${path} HTTP ${response.status}; backend action failed. No saved or synthetic response has been substituted.`)
+  const body: unknown = await response.json()
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error(`${path} returned an invalid backend response`)
+  const envelope = body as Record<string, unknown>
+  if (envelope.artifact_disclosure || envelope.delivery_mode === 'ARTIFACT_REPLAY' || envelope.delivery_mode === 'SAVED_RESULT_REPLAY') {
+    throw new Error(`${path} returned archived evidence, not a new backend action. Explicit replay is not supported for sponsor actions.`)
+  }
+  return body as T
 }
-
-export async function sendSimulatedSMS(body: string, sender: string = '+16175550199'): Promise<SMSResponse> {
-  const res = await fetch(`${API_BASE}/api/agents/photon/simulate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ body, sender }),
-  });
-  if (!res.ok) throw new Error(`Photon SMS HTTP ${res.status}`);
-  return res.json();
+export function fetchPhotonStatus(): Promise<PhotonStatus> {
+  return backend('/api/agents/photon/status')
 }
-
-export async function runDroidAgent(trialId: string = 'NCT05800015', maxIterations: number = 3): Promise<DroidRecommendation> {
-  const res = await fetch(`${API_BASE}/api/agents/droid/run`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ trial_id: trialId, max_iterations: maxIterations }),
-  });
-  if (!res.ok) throw new Error(`Droid run HTTP ${res.status}`);
-  return res.json();
+export function sendSimulatedSMS(body: string, sender: string = '+16175550199'): Promise<SMSResponse> {
+  return backend('/api/agents/photon/simulate', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body, sender }),
+  })
 }
-
-export async function submitHumanReview(recommendationId: string, decision: 'APPROVED' | 'REJECTED', notes: string): Promise<any> {
-  const res = await fetch(`${API_BASE}/api/agents/droid/review`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      recommendation_id: recommendationId,
-      decision,
-      reviewer_notes: notes,
-    }),
-  });
-  if (!res.ok) throw new Error(`Droid review HTTP ${res.status}`);
-  return res.json();
+export function runDroidAgent(trialId: string = 'NCT05800015', maxIterations: number = 3): Promise<DroidRecommendation> {
+  return backend('/api/agents/droid/run', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trial_id: trialId, max_iterations: maxIterations }),
+  })
 }
-
-export async function runChalkEvaluations(): Promise<ChalkEvaluationReport> {
-  const res = await fetch(`${API_BASE}/api/evals/chalk/run`, { method: 'POST' });
-  if (!res.ok) throw new Error(`Chalk run HTTP ${res.status}`);
-  return res.json();
+export function submitHumanReview(recommendationId: string, decision: 'APPROVED' | 'REJECTED', notes: string): Promise<unknown> {
+  return backend('/api/agents/droid/review', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ recommendation_id: recommendationId, decision, reviewer_notes: notes }),
+  })
 }
-
-export async function fetchLatestChalkReport(): Promise<ChalkEvaluationReport> {
-  const res = await fetch(`${API_BASE}/api/evals/chalk/latest`);
-  if (!res.ok) throw new Error(`Chalk latest HTTP ${res.status}`);
-  return res.json();
+export function runChalkEvaluations(): Promise<ChalkEvaluationReport> {
+  return backend('/api/evals/chalk/run', { method: 'POST' })
+}
+export function fetchLatestChalkReport(): Promise<ChalkEvaluationReport> {
+  return backend('/api/evals/chalk/latest')
 }

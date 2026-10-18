@@ -52,3 +52,36 @@ test('sponsor view does not restore false production, carrier or SDK execution l
   assert.match(source, /LOCAL DETERMINISTIC/);
   assert.match(source, /not implemented/);
 });
+
+test('actual HTTP failures never fall through to static fixtures or fabricated sponsor success', async () => {
+  const {createServer}=await import('node:http');
+  const api=await import('../src/sponsorAgentsApi.ts');
+  const calls=[];
+  let status=404;
+  const server=createServer((req,res)=>{calls.push([req.method,req.url]);res.writeHead(status, {'Content-Type':'application/json'});res.end(JSON.stringify({detail:'backend unavailable'}));});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const original=globalThis.fetch;
+  const base=`http://127.0.0.1:${server.address().port}`;
+  const actions=[()=>api.fetchPhotonStatus(),()=>api.sendSimulatedSMS('STATUS'),()=>api.runDroidAgent(),()=>api.runChalkEvaluations(),()=>api.fetchLatestChalkReport(),()=>api.submitHumanReview('id','REJECTED','test')];
+  globalThis.fetch=(url,init)=>original(new URL(url,base),init);
+  try {
+    for (status of [401,403,404,405,503]) for (const action of actions) {
+      const before=calls.length;
+      await assert.rejects(action(),new RegExp(`HTTP ${status}`));
+      assert.equal(calls.length,before+1);
+      assert.ok(!calls.at(-1)[1].endsWith('.json'));
+    }
+    await new Promise(resolve=>server.close(resolve));
+    for (const action of actions) await assert.rejects(action(),/fetch failed/);
+  } finally {globalThis.fetch=original;if(server.listening)await new Promise(resolve=>server.close(resolve));}
+});
+
+test('even HTTP 200 archived envelopes cannot become sponsor action or status success', async () => {
+  const api=await import('../src/sponsorAgentsApi.ts');
+  const actions=[()=>api.fetchPhotonStatus(),()=>api.sendSimulatedSMS('STATUS'),()=>api.runDroidAgent(),()=>api.runChalkEvaluations(),()=>api.fetchLatestChalkReport(),()=>api.submitHumanReview('id','REJECTED','test')];
+  for(const delivery_mode of ['ARTIFACT_REPLAY','SAVED_RESULT_REPLAY']){
+    await withFetch(async()=>Response.json({delivery_mode}),async()=>{
+      for(const action of actions)await assert.rejects(action(),/archived evidence/);
+    });
+  }
+});
