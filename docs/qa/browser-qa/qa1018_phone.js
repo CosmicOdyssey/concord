@@ -11,7 +11,7 @@ const out = { base: BASE, tabs: [], errors: [] }
 const TABS = [
   ['#findings', 'findings', () => document.querySelectorAll('.fd-card').length >= 3 && document.querySelector('.ci-plot')],
   ['#overlap/regeneron', 'overlap', () => (document.querySelector('.ov-detail h2')?.innerText ?? '').includes('NCT05785767')],
-  ['#terms-flow/NCT05800015', 'terms-flow', () => document.querySelectorAll('.tf-stats .stat-value').length >= 4 && document.querySelector('.tf-decomp-total') && document.querySelector('.tf-sheet')],
+  ['#terms-flow/NCT05800015', 'terms-flow', () => document.querySelector('#tf-step-3 .tf-payer-value') && document.querySelector('.tf-decomp-total') && document.querySelector('.tf-sheet')],
   ['#research/clear', 'research', () => document.querySelector('.tbl-trials tbody tr')],
 ]
 
@@ -29,7 +29,7 @@ const TABS = [
     const layout = await Q.layoutCheck(page)
     // Tab bars: every tab reachable (inside a horizontal scroller that fits the screen, or fully visible).
     const bars = await page.evaluate(() =>
-      [...document.querySelectorAll('nav.tabs, .rs-tabs, .tf-steps, .ov-filters')].map((b) => {
+      [...document.querySelectorAll('nav.tabs, .rs-tabs, nav.tf-flow ol, .ov-filters')].map((b) => {
         const r = b.getBoundingClientRect()
         const cs = getComputedStyle(b)
         return { el: b.className, left: Math.round(r.left), right: Math.round(r.right), clientWidth: b.clientWidth, scrollWidth: b.scrollWidth, overflowX: cs.overflowX, flexWrap: cs.flexWrap }

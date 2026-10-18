@@ -8,6 +8,7 @@ coverage status does), and nothing here outputs a time, speed or recommendation.
 """
 
 from copy import deepcopy
+from decimal import Decimal, ROUND_HALF_EVEN
 import html
 import itertools
 import json
@@ -163,6 +164,7 @@ def test_payments_conserve_and_resource_costs_are_not_payment_totals(client, req
 
 def test_investigational_supply_is_never_a_hospital_receipt_or_cost(client, request_body):
     default = by_id(compare(client, request_body))["A"]["economics"]
+    assert default["sponsor"]["supply_resource_proxy"] > 0
     # Ratecard is optional: reconcile receipts/resources instead of a CMS-file-dependent golden.
     assert default["hospital"]["revenue"] == pytest.approx(sum(t["amount"] for t in default["transfers"] if t["to"] == "Hospital"), abs=.02)
     assert default["hospital"]["net_contribution"] == pytest.approx(default["hospital"]["revenue"] - default["hospital"]["resource_cost"], abs=.02)
@@ -280,6 +282,11 @@ def test_medicare_pays_clinical_lab_tests_in_full_with_no_participant_share(clie
     a = by_id(result)["A"]["economics"]
     assert a["insurer"]["payments"] == pytest.approx(expected_payer * request_body["target"], abs=.02)
     assert a["patient"]["cost_sharing"] == pytest.approx(expected_patient * request_body["target"], abs=.02)
+    all_payer = deepcopy(request_body)
+    all_payer["payer_fraction"] = 1
+    # Redistributing routine charges between payer and participant does not
+    # change their sum, hospital receipts or hospital net contribution.
+    assert by_id(compare(client, all_payer))["A"]["economics"]["hospital"] == a["hospital"]
     # Commercial (with the rate assumption) still splits lab tests by the stated share.
     request_body.update(payer_kind="commercial", commercial_rate_assumption=True)
     commercial = {i["id"]: i for i in compare(client, request_body)["coverage"]["items"]}

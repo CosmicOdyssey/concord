@@ -1,0 +1,21 @@
+{
+  "browser_run": "204036ccde6145586c7b5ec832fdfa31",
+  "result_sha256": "204036ccde6145586c7b5ec832fdfa3180ffa15e33ac356d3035d0e8d9f912c5",
+  "json_equals_saved_api": true,
+  "html_embedded_json_equals_saved_api": true,
+  "canonical_digest_valid": true,
+  "repeat_scenarios_identical": true,
+  "repeat_identical_except_git_identity": true,
+  "original_commit": "bea5e260c122c8cc250f225dbc5677ecd8f7bed4",
+  "repeated_commit": "724be3ec504c1f6fd62c539d4e7ee53f473766cd",
+  "repeated_run_id": "ae2e77941574396e24ba422661742958",
+  "browser_values_match": true,
+  "delivery_mode": "artifact-replay",
+  "origin_mode": "live_computation_synthetic_operations_registry_context",
+  "export_bytes_sha256": {
+    "browser-run-api.json": "5a06cb442fa66b38de61d47a2f1faeb30e281840e1a9400cac5bb59508bf9afb",
+    "report-endpoint.json": "5a06cb442fa66b38de61d47a2f1faeb30e281840e1a9400cac5bb59508bf9afb",
+    "report-endpoint.html": "d839a62f18701c0c847c18f336155048680d753398835d610cfcadb182d42e8f"
+  },
+  "browser_download": "NOT VERIFIED: both links clicked; no matching file appeared in Downloads; earlier acceptance recorded organizational blocking. No policy bypass attempted."
+}

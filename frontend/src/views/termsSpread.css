@@ -379,3 +379,10 @@
     display: none;
   }
 }
+
+/* Touch: the locality table's sort buttons at least 44 px tall (as .ss th.sortable button, siteScores.css). */
+@media (pointer: coarse) {
+  .tsp th.sortable button {
+    min-height: var(--tap);
+  }
+}

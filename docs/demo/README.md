@@ -1,30 +1,28 @@
-# Concord · HackHarvard 180-second demo
+# Concord Demonstration Guide
 
-Entry: **`http://127.0.0.1:18080/#demo`**. Desktop target: **1440 × 900**, browser zoom 100%.
-Use the existing Calm theme control; dark and light are supported. No deployment is necessary.
+This guide covers both the **interactive HackHarvard 180-second live demonstration** and the **automated scripted video recording pipeline**.
 
-## Reproduce (macOS/Linux, Node 22.18+; verified Node 26.11.1 / Python 3.14.7)
+---
+
+# Part 1: HackHarvard 180-Second Interactive Demo
+
+Run locally for the judges:
 
 ```sh
-uv venv backend/.venv
-uv pip install --python backend/.venv/bin/python -r backend/requirements.txt
-cd frontend && npm ci && npm run build && cd ..
-python3 scripts/run-demo.py
+# Terminal 1: backend
+backend/.venv/bin/uvicorn concord.api.main:app --port 8000
+
+# Terminal 2: frontend
+npm --prefix frontend run dev
 ```
 
-`uv` is optional: use `python3 -m venv backend/.venv` then
-`backend/.venv/bin/python -m pip install -r backend/requirements.txt` instead.
-Dependencies must be installed **before** going offline. Run from this checkout;
-no private credentials, external AI, registry fetch, SQLite bundle or live external
-API is needed. Fonts and saved evidence are bundled locally. The launcher clears
-inherited service credentials, binds only `127.0.0.1`, uses isolated ignored
-`.fleet/state/hackharvard-demo-data`, and stops only its own child on Ctrl-C.
-The normal `frontend` Vite + backend workflow is unchanged.
+Open `http://localhost:5173/#demo` (or use the **HackHarvard Demo** tab).
 
-## Four main clicks, six scenes
+## Four-click presentation flow
 
-Open `#demo` (setup, not a presentation interaction).
-1. **Next Scene**: the computed fixed baseline.
+Follow the [180-second script](HACKHARVARD-180-SECOND-SCRIPT.md):
+
+1. **Next Scene**: problem setup (two trials, four shared hospitals, tight budget).
 2. **Optimize Portfolio**: actual POST → existing engine → comparison; the
    transient computing scene advances on the real response, not on a timer.
 3. **Next Scene**: financial responsibility and the exact run's evidence.
@@ -121,7 +119,7 @@ node "$FLEET_CLI" verify --json
 ```
 
 `FLEET_CLI` is the installed existing Engineering Fleet `dist/cli.js`; on the
-acceptance machine it is `/Users/sadius/engineering-fleet-hackharvard/dist/cli.js`.
+acceptance machine it is `/Users/sadius/engineering-fleet-true-succession/dist/cli.js`.
 The tracked `.fleet/config.json` runs every deterministic check. Fleet campaign:
 **CONCORD-HACKHARVARD-DEMO**, local tasks `concord-demo-implementation` and continuation `concord-demo-integrated`. It never
 creates a remote execution authority, consumes a previous mission approval or
@@ -132,3 +130,56 @@ Backend unavailable but static browser still usable: serve only the built files:
 `http://127.0.0.1:18082/#demo`. The missing API is shown as an error; explicitly
 choose the saved rehearsal. This path was exercised with a real static-only
 server, not a mocked successful API response.
+
+---
+
+# Part 2: Automated Video Recording & Voiceover
+
+- `script.md`: the 2:57 voiceover script (12 scenes), with what is on screen, the spoken lines, recording notes and an
+  honesty checklist.
+- `scenes.json`: the same scenes for the recorder (start times, durations, narration, actions with selectors).
+- `../../scripts/demo/record.mjs`: one-command scripted screen recording of the running app.
+
+## Record
+
+Needs the app running (frontend on http://localhost:5173, backend venv in `backend/.venv`), installed Chrome, and the
+npm packages `puppeteer-core` and `ffmpeg-static` on `NODE_PATH` (they live in the gitignored `data/work/D`).
+
+```bash
+NODE_PATH=data/work/D/node_modules node scripts/demo/record.mjs
+```
+
+PowerShell: `$env:NODE_PATH = 'data/work/D/node_modules'; node scripts/demo/record.mjs`
+
+It rehearses every scene off camera first (warms every route so no spinner shows), then records at 1920x1080, 30 fps,
+H.264, with an eased cursor, click ripples and a brief highlight on what is being discussed. Output in `data/work/demo/`:
+`concord-demo.mp4`, `concord-demo.srt` (the narration as subtitles, to read along), `chapters.txt`, `record-log.json`
+(timing and any problems) and `frames/` (one frame every 3 s). A take takes about 5 minutes.
+
+## Watch
+
+PowerShell: `Invoke-Item data\work\demo\concord-demo.mp4` (or `start "" data\work\demo\concord-demo.mp4` in cmd).
+With subtitles: `vlc data\work\demo\concord-demo.mp4 --sub-file=data\work\demo\concord-demo.srt`.
+
+## Change pacing or content
+
+Edit `scenes.json` (each scene's `start_s`, `duration_s`, and each action's `at_s`, `type`, `target`) and re-record. Keep
+`script.md` in step with it.
+
+## Add the voiceover
+
+Record your voice while the video plays (read the `.srt`), save it as `voice.wav`, then either drop both into any video
+editor, or:
+
+```bash
+FF=$(node -e "console.log(require('ffmpeg-static'))")   # with NODE_PATH as above
+"$FF" -i data/work/demo/concord-demo.mp4 -i voice.wav -c:v copy -c:a aac -shortest data/work/demo/concord-demo-voice.mp4
+```
+
+## How product teams usually do it
+
+1. Scripted capture (this): a headless browser plays the product on a timeline, so every take is identical and a UI
+   change is one re-run away.
+2. Screen Studio, Loom or similar: a person records, and the tool adds smooth zooms, cursor smoothing and backgrounds.
+3. Interactive demos (Arcade, Supademo): clickable walkthroughs instead of video.
+Most teams record the voiceover separately and lay it over the finished capture, as here.

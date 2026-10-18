@@ -63,10 +63,12 @@ const wait = (page, fn, arg, timeout = 60000) => page.waitForFunction(fn, { time
   // Deep links to Protocol to terms: both trials.
   for (const nct of ['NCT05800015', 'NCT06627647']) {
     const page = await fresh(browser, `#terms-flow/${nct}`)
-    await wait(page, () => document.querySelector('.tf-trial-on') && document.querySelector('.tf-grid') && document.querySelectorAll('.tf-stats .stat-value').length >= 4, null, 90000)
+    await wait(page, () => document.querySelector('.tf-trial-on') && document.querySelector('#tf-step-3 .tf-payer-value'), null, 90000)
     const on = await page.$eval('.tf-trial-on', (e) => e.innerText)
     const s = await state(page)
-    const sheet = await page.$eval('#tf-step-7', (e) => e.innerText).catch(() => '')
+    // One step at a time (tabs): the term sheet is step 6, chosen in the step nav.
+    await Q.showStep(page, 6).catch(() => {})
+    const sheet = await page.$eval('#tf-step-6', (e) => e.innerText).catch(() => '')
     rec(`#terms-flow/${nct} selects that trial`, s.tab === 'Protocol to terms' && on.includes(nct) && s.hash === `#terms-flow/${nct}`, { ...s, on: on.slice(0, 60) })
     await page.close()
   }
@@ -74,11 +76,11 @@ const wait = (page, fn, arg, timeout = 60000) => page.waitForFunction(fn, { time
   // Hash change while on Protocol to terms switches trial.
   {
     const page = await fresh(browser, '#terms-flow/NCT05800015')
-    await wait(page, () => document.querySelector('.tf-trial-on')?.innerText.includes('NCT05800015') && document.querySelector('.tf-grid'), null, 90000)
+    await wait(page, () => document.querySelector('.tf-trial-on')?.innerText.includes('NCT05800015') && document.querySelector('#tf-step-3 .tf-payer-value'), null, 90000)
     await page.evaluate(() => {
       location.hash = '#terms-flow/NCT06627647'
     })
-    await wait(page, () => document.querySelector('.tf-trial-on')?.innerText.includes('NCT06627647') && document.querySelectorAll('.tf-stats .stat-value').length >= 4, null, 90000)
+    await wait(page, () => document.querySelector('.tf-trial-on')?.innerText.includes('NCT06627647') && document.querySelector('#tf-step-3 .tf-payer-value'), null, 90000)
     rec('hash change #terms-flow/NCT05800015 -> NCT06627647 while open switches trial', true, await state(page))
     await page.close()
   }
@@ -164,7 +166,7 @@ const wait = (page, fn, arg, timeout = 60000) => page.waitForFunction(fn, { time
     for (const [hash, name, ready] of [
       ['#findings', 'findings', () => document.querySelectorAll('.fd-card').length >= 3],
       ['#overlap/regeneron', 'overlap', () => (document.querySelector('.ov-detail h2')?.innerText ?? '').includes('NCT05785767')],
-      ['#terms-flow/NCT05800015', 'terms-flow', () => document.querySelectorAll('.tf-stats .stat-value').length >= 4 && document.querySelector('.tf-decomp-total')],
+      ['#terms-flow/NCT05800015', 'terms-flow', () => document.querySelector('#tf-step-3 .tf-payer-value') && document.querySelector('.tf-decomp-total')],
       ['#research/clear', 'research-clear', () => document.querySelector('.tbl-trials tbody tr')],
     ]) {
       const page = await fresh(browser, hash, scheme)

@@ -6,7 +6,7 @@
 // Usage (NODE_PATH must reach puppeteer-core): node terms_proposal.js [baseUrl] [outDir]
 const fs = require('fs')
 const path = require('path')
-const { launch, sleep, layoutCheck } = require('./lib')
+const { launch, sleep, layoutCheck, showStep } = require('./lib')
 
 const BASE = process.argv[2] || 'http://localhost:5284'
 const OUT = process.argv[3] || 'C:/Users/micha/Projects/concord/data/work/T/proposal'
@@ -67,6 +67,8 @@ const check = (name, ok, detail = '') => {
     await page.waitForFunction(() => [...document.querySelectorAll('#tf-step-5 button')].some((b) => b.textContent.includes('Load synthetic sample')), {
       timeout: 60000,
     })
+    // One step at a time (tabs): choose step 5, Site proposal, in the step nav.
+    await showStep(page, 5)
     return page
   }
 
@@ -133,10 +135,24 @@ const check = (name, ok, detail = '') => {
         if (density === 'simple') {
           const trig = await page.$('#tf-step-5 .tp-top .hc-trigger')
           if (check(`${name}: hover-card trigger present`, !!trig)) {
+            // Keyboard focus: the step nav was chosen with a pointer click (showStep), so a script focus() alone is not
+            // :focus-visible and would not open the card; Tab away and Shift+Tab back, as a keyboard user would.
             await trig.focus()
+            await page.keyboard.press('Tab')
+            await page.keyboard.down('Shift')
+            await page.keyboard.press('Tab')
+            await page.keyboard.up('Shift')
             await sleep(500)
-            const card = await page.evaluate(() => [...document.querySelectorAll('.hc-card, [role="tooltip"]')].map((e) => e.innerText).join(' | '))
-            check(`${name}: hover card shows the CMS source on focus`, /CMS (PFS|CLFS) 2026/.test(card), card.slice(0, 200))
+            const focused = await page.evaluate((t) => document.activeElement === t, trig)
+            check(`${name}: hover-card trigger has keyboard focus`, focused)
+            // A physician-fee-schedule line's card carries its step-by-step breakdown (LineBreakdown.tsx), whose notes
+            // name the CMS files ("CMS 2026 Physician Fee Schedule RVU file ..."); other lines name "CMS PFS/CLFS 2026".
+            const SRC = /CMS (PFS|CLFS) 2026|CMS 2026 Physician Fee Schedule RVU file/
+            await page
+              .waitForFunction((re) => [...document.querySelectorAll('.hc-card:not([hidden])')].some((e) => new RegExp(re).test(e.innerText)), { timeout: 15000, polling: 250 }, SRC.source)
+              .catch(() => {})
+            const card = await page.evaluate(() => [...document.querySelectorAll('.hc-card:not([hidden])')].map((e) => e.innerText).join(' | '))
+            check(`${name}: hover card shows the CMS source on focus`, SRC.test(card), card.slice(0, 600))
             await page.keyboard.press('Escape')
           }
         }

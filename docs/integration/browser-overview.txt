@@ -1,0 +1,132 @@
+Browser tab: 1783081799, Title: "Portfolio Command · Concord", URL: "http://127.0.0.1:5178/#portfolio-command".
+0 AXWebArea Portfolio Command · Concord, URL: 127.0.0.1:5178/#portfolio-command
+	1 container root
+		2 link Description: Skip to content, Value: 127.0.0.1:5178/#main-content
+		3 container
+			4 link Description: Back to the Concord home page, Value: 127.0.0.1:5178/#home
+			5 container Display density
+				6 checkbox Simple, Help: One headline and one number per section. Hover or focus for details. Key caveats stay visible., Value: 1
+				7 checkbox Detailed, Help: Every table, note and source, at full density., Value: 0
+			8 container Color theme
+				9 checkbox Description: Light theme, Value: 0
+				10 checkbox Description: Dark theme, Value: 0
+				11 checkbox Description: Match system theme, Value: 1
+			12 tab group Views
+				13 tab (selectable, settable, boolean) Protocol to terms, Help: A schedule of assessments, turned into a coverage grid, a budget and a term sheet., Value: 0
+				14 tab (selectable, settable, boolean) Portfolio overlap, Help: Where one sponsor's trials share registered sites and eligible patients., Value: 0
+				15 tab (selectable, settable, boolean) Findings, Help: What we tested, including results that weakened the original idea., Value: 0
+				16 tab (selectable, settable, boolean) Site scores Historical, not a forecast, Help: Historical per-site enrollment evidence, and how well it held up on later trials., Value: 0
+				17 tab (selectable, settable, boolean) Research In-sample model outputs, Help: The earlier site-clearing views, kept for reference. Not product claims., Value: 0
+		18 container main-content
+			22 container
+				23 text CONCORD / SPONSOR PLANNING
+				24 heading Portfolio Command, Value: 1
+					25 text Portfolio Command
+				26 text Where should the next dollar go? LIVE COMPUTATION
+				27 text SYNTHETIC OPERATIONS
+			28 text Regeneron registry context · hypothetical hospitals, enrollment progress, financial inputs and recruitment effects. Planning tool; no live sponsor or payer relationship.
+			29 container
+				30 text Sponsor budget (USD)
+				31 stepper (settable, integer) Description: Sponsor budget (USD), Value: 3000000
+			32 container
+				33 text Portfolio objective
+				34 pop up button (collapsed, settable) Description: Portfolio objective, Value: Minimize maximum weighted completion, Secondary Actions: Expand
+					35 menu
+						36 (selected) Minimize maximum weighted completion
+						37 Minimize sum of weighted durations
+						38 Minimize cost within expected deadlines
+			39 container
+				40 text Planning horizon (months)
+				41 stepper (settable, integer) Description: Planning horizon (months), Value: 36
+			42 button Run portfolio comparison
+			43 text Comparison computed and saved. Report links export this exact result.
+			44 container Portfolio sections
+				45 button 01 Executive Overview
+					46 text 0
+					47 text 1
+					48 text Executive Overview
+				49 button 02 Trial Portfolio
+					50 text 0
+					51 text 2
+					52 text Trial Portfolio
+				53 button 03 Site Capacity
+					54 text 0
+					55 text 3
+					56 text Site Capacity
+				57 button 04 Financial Allocation
+					58 text 0
+					59 text 4
+					60 text Financial Allocation
+				61 button 05 Scenario Lab
+					62 text 0
+					63 text 5
+					64 text Scenario Lab
+				65 button 06 Evidence and Reports
+					66 text 0
+					67 text 6
+					68 text Evidence and Reports
+			69 container Executive Overview
+				70 heading A fixed budget. A shared network., Value: 2
+					71 text A fixed budget. A shared network.
+				72 text Maximum weighted completion minimizes E[max(priority × completion months)]. Sum of weighted durations minimizes E[Σ priority × months]. Actual final completion is shown separately. These objectives can choose different networks.
+				73 container
+					74 text Concurrent trials 2 80  remaining participants · assumed
+				75 container
+					76 text Fixed sponsor budget $3,000,000 Modeled costs only; finite horizon
+				77 container
+					78 text Available administrative savings $0 Unrealized savings unavailable
+				81 heading Joint portfolio optimization, Value: 2
+					82 text Joint portfolio optimization
+				83 text Feasible under assumptions
+				84 container
+					85 text Expected final completion 8.85  mo P10–P90:  8.419 – 9.382  months · assumption-based
+				86 container
+					87 text Expected sponsor costs + reserve $1,227,502 Conservative commitment  $1,531,066
+				88 container
+					89 text Paired change vs baseline 6.28  mo Months saved under the assumed rate model
+				90 container
+					91 text Search:  OPTIMAL  · objective gap:  0  · termination:  exhausted_all_subsets . Exactness applies only to the entered model and finite draws.
+				92 container
+					93 text Additional support:  not selected  · operations investment:  included with explicit assumed rate effect
+				94 heading Enrollment completion schedule, Value: 3
+					95 text Enrollment completion schedule
+				96 text NCT05800015
+				97 container
+					98 text 7.85  mo
+				99 text NCT05785767
+				100 container
+					101 text 8.77  mo
+				102 table
+					103 row
+						104 cell
+							105 text TRIAL
+						106 cell
+							107 text P10 / MEDIAN / P90 MONTHS
+						108 cell
+							109 text CRITICAL PATH SHARE OF DRAWS
+						110 cell
+							111 text DRAW FRACTION WITHIN DEADLINE
+					112 row
+						113 cell
+							114 text NCT05800015
+						115 cell
+							116 text 7.279 / 7.774 / 8.485
+						117 cell
+							118 text 11%
+						119 cell
+							120 text 100%
+					121 row
+						122 cell
+							123 text NCT05785767
+						124 cell
+							125 text 8.284 / 8.755 / 9.37
+						126 cell
+							127 text 89%
+						128 cell
+							129 text 100%
+				130 container
+					131 text Draw fractions describe this uncalibrated simulation, not clinical success probabilities.  0  draws censored at the horizon. Model results do not establish trial acceleration.
+			80 text Concord · Portfolio Command · reproducible planning, explicitly bounded evidence.
+		21 text Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates; Sponsor budget is a worksheet on synthetic inputs with no time model. Decision support only, not clinical, legal or coverage advice.
+
+The focused UI element is 0 AXWebArea Portfolio Command · Concord, URL: 127.0.0.1:5178/#portfolio-command

@@ -1,6 +1,7 @@
 // Landing page that leads with Protocol to terms (track S1): copy, section order, header order, the live terms
 // fragment, the Regeneron overlap preview with the fianlimab pair, Simple and Detailed, light and dark, 1440 and 390;
-// no horizontal page scroll; no page or console errors. Also the app header: Protocol to terms is the first tab.
+// no horizontal page scroll; no page or console errors. Also the app header: Protocol to terms is the first tab. The
+// How Concord compares section (between Portfolio overlap and What we tested) has its own checks in landing_compare.js.
 // usage: NODE_PATH=C:/Users/micha/Projects/concord/data/work/D/node_modules node landing_terms.js [base] [outDir]
 const fs = require('fs')
 const path = require('path')
@@ -106,12 +107,16 @@ async function settle(page) {
           check(`${tag}: theme and density applied`, r.theme === theme && r.density === density, [r.theme, r.density])
           check(`${tag}: empty hash shows the landing`, r.hash === '' && !!r.h1)
           check(`${tag}: hero headline and subhead verbatim`, r.h1 === H1 && r.sub === SUB, { h1: r.h1, sub: r.sub })
-          check(`${tag}: sections: hero, Protocol to terms, Portfolio overlap, What we tested`, r.sections.slice(0, 4).join(',') === 'lp-hero,landing-terms,landing-overlap,landing-tested', r.sections)
+          check(
+            `${tag}: sections: hero, Protocol to terms, Portfolio overlap, How Concord compares, What we tested`,
+            r.sections.slice(0, 5).join(',') === 'lp-hero,landing-terms,landing-overlap,landing-compare,landing-tested',
+            r.sections,
+          )
           // Phones (640 px or less) hide the header's copy of the primary action: the hero's identical button is the first
           // thing on the page. Wider screens show it in the sticky header.
           check(
             `${tag}: header nav order and primary action (${width > 640 ? 'shown in the header' : 'hidden in the header; the hero button carries it'})`,
-            r.nav.join(',') === 'Protocol to terms|#home/terms,Portfolio overlap|#home/overlap,What we tested|#home/tested' &&
+            r.nav.join(',') === 'Protocol to terms|#home/terms,Portfolio overlap|#home/overlap,How we compare|#home/compare,What we tested|#home/tested' &&
               r.headCta[1] === '#terms-flow' &&
               r.headCtaShown === width > 640,
             { nav: r.nav, cta: r.headCta, shown: r.headCtaShown },
@@ -199,6 +204,13 @@ async function settle(page) {
         active: document.querySelector('nav.tabs [aria-selected="true"] .tab-label')?.innerText.trim(),
       }))
       check('primary action opens Protocol to terms', /^#terms-flow\b/.test(app.hash) && app.active === 'Protocol to terms', app)
+      // Protocol to terms shows one step at a time (tabs): the landing link opens step 1, Protocol.
+      await page.waitForSelector('#tf-tab-protocol', { timeout: 60000 })
+      const steps = await page.evaluate(() => ({
+        selected: document.querySelector('nav.tf-flow [aria-selected="true"]')?.id,
+        shown: [...document.querySelectorAll('.tf [role=tabpanel]')].filter((p) => !p.hidden).map((p) => p.id),
+      }))
+      check('landing link opens Terms at step 1 (Protocol tab)', steps.selected === 'tf-tab-protocol' && steps.shown.join() === 'tf-step-1', steps)
       check('app tab order', JSON.stringify(app.tabs) === JSON.stringify(TABS), app.tabs)
       check('Financial stays out of the main navigation', !app.tabs.some((t) => /Financial/i.test(t)), app.tabs)
       check('no page or console errors (interactions)', page.__errors.length === 0, page.__errors.slice(0, 3))

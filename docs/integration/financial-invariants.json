@@ -1,0 +1,464 @@
+{
+  "responsibility_shift": {
+    "line": "SCR:em_new",
+    "classification": "ASSUMPTION-DEPENDENT cost shift; no resource savings",
+    "rows": {
+      "sponsor_pays": {
+        "coverage": {
+          "sponsor": 3294.33,
+          "payer": 4638.5,
+          "patient": 934.0,
+          "reserve": 2500.0,
+          "resource": 8706.77
+        },
+        "baseline": {
+          "sponsor": {
+            "expenditure": 230743.3,
+            "contingency_reserve": 25000.0,
+            "budget_commitment": 255743.3,
+            "supply_resource_proxy": 25000.0
+          },
+          "hospital": {
+            "revenue": 161468.3,
+            "resource_cost": 120307.7,
+            "net_contribution": 41160.6
+          },
+          "insurer": {
+            "payments": 46385.0,
+            "administration": 300.0,
+            "total": 46685.0,
+            "downstream_clinical_cost": null
+          },
+          "patient": {
+            "cost_sharing": 9340.0,
+            "access_support": 5000,
+            "unresolved_exposure": null
+          },
+          "transfers": [
+            {
+              "from": "Sponsor",
+              "to": "Hospital",
+              "amount": 105743.3
+            },
+            {
+              "from": "Sponsor",
+              "to": "Participant",
+              "amount": 5000
+            },
+            {
+              "from": "Insurer",
+              "to": "Hospital",
+              "amount": 46385.0
+            },
+            {
+              "from": "Participant",
+              "to": "Hospital",
+              "amount": 9340.0
+            }
+          ],
+          "party_transfer_balances": {
+            "Sponsor": -110743.3,
+            "Hospital": 161468.3,
+            "Insurer": -46385.0,
+            "Participant": -4340.0
+          },
+          "transfer_balance": 0.0,
+          "consolidated_resource_cost": 270607.7,
+          "resource_assumptions": [
+            "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.",
+            "Procedure delivery resource costs = 70% of benchmark, regardless of payer or negotiated rate. The investigational-supply reserve is a sponsor-side supply proxy (the sponsor supplies the product; site handling is its own line), so it is outside the hospital's revenue and resource cost.",
+            "Sponsor and insurer administration treated as resource consumption. Access support assumed fully consumed on trial-related travel and lodging; it is not netted against participant cost sharing.",
+            "Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known. UNKNOWN insurer or participant amounts are left out of transfer balances, not set to zero."
+          ]
+        }
+      },
+      "patient_pays": {
+        "coverage": {
+          "sponsor": 3083.33,
+          "payer": 4638.5,
+          "patient": 1145.0,
+          "reserve": 2500.0,
+          "resource": 8706.77
+        },
+        "baseline": {
+          "sponsor": {
+            "expenditure": 228633.3,
+            "contingency_reserve": 25000.0,
+            "budget_commitment": 253633.3,
+            "supply_resource_proxy": 25000.0
+          },
+          "hospital": {
+            "revenue": 161468.3,
+            "resource_cost": 120307.7,
+            "net_contribution": 41160.6
+          },
+          "insurer": {
+            "payments": 46385.0,
+            "administration": 300.0,
+            "total": 46685.0,
+            "downstream_clinical_cost": null
+          },
+          "patient": {
+            "cost_sharing": 11450.0,
+            "access_support": 5000,
+            "unresolved_exposure": null
+          },
+          "transfers": [
+            {
+              "from": "Sponsor",
+              "to": "Hospital",
+              "amount": 103633.3
+            },
+            {
+              "from": "Sponsor",
+              "to": "Participant",
+              "amount": 5000
+            },
+            {
+              "from": "Insurer",
+              "to": "Hospital",
+              "amount": 46385.0
+            },
+            {
+              "from": "Participant",
+              "to": "Hospital",
+              "amount": 11450.0
+            }
+          ],
+          "party_transfer_balances": {
+            "Sponsor": -108633.3,
+            "Hospital": 161468.3,
+            "Insurer": -46385.0,
+            "Participant": -6450.0
+          },
+          "transfer_balance": 0.0,
+          "consolidated_resource_cost": 270607.7,
+          "resource_assumptions": [
+            "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.",
+            "Procedure delivery resource costs = 70% of benchmark, regardless of payer or negotiated rate. The investigational-supply reserve is a sponsor-side supply proxy (the sponsor supplies the product; site handling is its own line), so it is outside the hospital's revenue and resource cost.",
+            "Sponsor and insurer administration treated as resource consumption. Access support assumed fully consumed on trial-related travel and lodging; it is not netted against participant cost sharing.",
+            "Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known. UNKNOWN insurer or participant amounts are left out of transfer balances, not set to zero."
+          ]
+        }
+      },
+      "unknown_reserve": {
+        "coverage": {
+          "sponsor": 3083.33,
+          "payer": 4638.5,
+          "patient": 934.0,
+          "reserve": 2711.0,
+          "resource": 8706.77
+        },
+        "baseline": {
+          "sponsor": {
+            "expenditure": 228633.3,
+            "contingency_reserve": 27110.0,
+            "budget_commitment": 255743.3,
+            "supply_resource_proxy": 25000.0
+          },
+          "hospital": {
+            "revenue": 159358.3,
+            "resource_cost": 120307.7,
+            "net_contribution": 39050.6
+          },
+          "insurer": {
+            "payments": 46385.0,
+            "administration": 300.0,
+            "total": 46685.0,
+            "downstream_clinical_cost": null
+          },
+          "patient": {
+            "cost_sharing": 9340.0,
+            "access_support": 5000,
+            "unresolved_exposure": null
+          },
+          "transfers": [
+            {
+              "from": "Sponsor",
+              "to": "Hospital",
+              "amount": 103633.3
+            },
+            {
+              "from": "Sponsor",
+              "to": "Participant",
+              "amount": 5000
+            },
+            {
+              "from": "Insurer",
+              "to": "Hospital",
+              "amount": 46385.0
+            },
+            {
+              "from": "Participant",
+              "to": "Hospital",
+              "amount": 9340.0
+            }
+          ],
+          "party_transfer_balances": {
+            "Sponsor": -108633.3,
+            "Hospital": 159358.3,
+            "Insurer": -46385.0,
+            "Participant": -4340.0
+          },
+          "transfer_balance": 0.0,
+          "consolidated_resource_cost": 270607.7,
+          "resource_assumptions": [
+            "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.",
+            "Procedure delivery resource costs = 70% of benchmark, regardless of payer or negotiated rate. The investigational-supply reserve is a sponsor-side supply proxy (the sponsor supplies the product; site handling is its own line), so it is outside the hospital's revenue and resource cost.",
+            "Sponsor and insurer administration treated as resource consumption. Access support assumed fully consumed on trial-related travel and lodging; it is not netted against participant cost sharing.",
+            "Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known. UNKNOWN insurer or participant amounts are left out of transfer balances, not set to zero."
+          ]
+        }
+      }
+    }
+  },
+  "higher_insurer_without_sponsor_savings": {
+    "baseline": {
+      "sponsor": {
+        "expenditure": 228633.3,
+        "contingency_reserve": 25000.0,
+        "budget_commitment": 253633.3,
+        "supply_resource_proxy": 25000.0
+      },
+      "hospital": {
+        "revenue": 161468.3,
+        "resource_cost": 120307.7,
+        "net_contribution": 41160.6
+      },
+      "insurer": {
+        "payments": 48073.0,
+        "administration": 300.0,
+        "total": 48373.0,
+        "downstream_clinical_cost": null
+      },
+      "patient": {
+        "cost_sharing": 9762.0,
+        "access_support": 5000,
+        "unresolved_exposure": null
+      },
+      "transfers": [
+        {
+          "from": "Sponsor",
+          "to": "Hospital",
+          "amount": 103633.3
+        },
+        {
+          "from": "Sponsor",
+          "to": "Participant",
+          "amount": 5000
+        },
+        {
+          "from": "Insurer",
+          "to": "Hospital",
+          "amount": 48073.0
+        },
+        {
+          "from": "Participant",
+          "to": "Hospital",
+          "amount": 9762.0
+        }
+      ],
+      "party_transfer_balances": {
+        "Sponsor": -108633.3,
+        "Hospital": 161468.3,
+        "Insurer": -48073.0,
+        "Participant": -4762.0
+      },
+      "transfer_balance": 0.0,
+      "consolidated_resource_cost": 270607.7,
+      "resource_assumptions": [
+        "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.",
+        "Procedure delivery resource costs = 70% of benchmark, regardless of payer or negotiated rate. The investigational-supply reserve is a sponsor-side supply proxy (the sponsor supplies the product; site handling is its own line), so it is outside the hospital's revenue and resource cost.",
+        "Sponsor and insurer administration treated as resource consumption. Access support assumed fully consumed on trial-related travel and lodging; it is not netted against participant cost sharing.",
+        "Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known. UNKNOWN insurer or participant amounts are left out of transfer balances, not set to zero."
+      ]
+    },
+    "higher_payer_share": {
+      "sponsor": {
+        "expenditure": 228633.3,
+        "contingency_reserve": 25000.0,
+        "budget_commitment": 253633.3,
+        "supply_resource_proxy": 25000.0
+      },
+      "hospital": {
+        "revenue": 161468.3,
+        "resource_cost": 120307.7,
+        "net_contribution": 41160.6
+      },
+      "insurer": {
+        "payments": 57835.0,
+        "administration": 300.0,
+        "total": 58135.0,
+        "downstream_clinical_cost": null
+      },
+      "patient": {
+        "cost_sharing": 0.0,
+        "access_support": 5000,
+        "unresolved_exposure": null
+      },
+      "transfers": [
+        {
+          "from": "Sponsor",
+          "to": "Hospital",
+          "amount": 103633.3
+        },
+        {
+          "from": "Sponsor",
+          "to": "Participant",
+          "amount": 5000
+        },
+        {
+          "from": "Insurer",
+          "to": "Hospital",
+          "amount": 57835.0
+        },
+        {
+          "from": "Participant",
+          "to": "Hospital",
+          "amount": 0.0
+        }
+      ],
+      "party_transfer_balances": {
+        "Sponsor": -108633.3,
+        "Hospital": 161468.3,
+        "Insurer": -57835.0,
+        "Participant": 5000.0
+      },
+      "transfer_balance": 0.0,
+      "consolidated_resource_cost": 270607.7,
+      "resource_assumptions": [
+        "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.",
+        "Procedure delivery resource costs = 70% of benchmark, regardless of payer or negotiated rate. The investigational-supply reserve is a sponsor-side supply proxy (the sponsor supplies the product; site handling is its own line), so it is outside the hospital's revenue and resource cost.",
+        "Sponsor and insurer administration treated as resource consumption. Access support assumed fully consumed on trial-related travel and lodging; it is not netted against participant cost sharing.",
+        "Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known. UNKNOWN insurer or participant amounts are left out of transfer balances, not set to zero."
+      ]
+    }
+  },
+  "lower_sponsor_higher_hospital_cost": {
+    "classification": "ASSUMPTION-DEPENDENT; modeled administration offsets added hospital resources",
+    "baseline": {
+      "economics": {
+        "sponsor": {
+          "expenditure": 568833.3,
+          "contingency_reserve": 25000.0,
+          "budget_commitment": 593833.3,
+          "supply_resource_proxy": 25000.0
+        },
+        "hospital": {
+          "revenue": 121668.3,
+          "resource_cost": 88467.7,
+          "net_contribution": 33200.6
+        },
+        "insurer": {
+          "payments": 48073.0,
+          "administration": 300.0,
+          "total": 48373.0,
+          "downstream_clinical_cost": null
+        },
+        "patient": {
+          "cost_sharing": 9762.0,
+          "access_support": 5000,
+          "unresolved_exposure": null
+        },
+        "transfers": [
+          {
+            "from": "Sponsor",
+            "to": "Hospital",
+            "amount": 63833.3
+          },
+          {
+            "from": "Sponsor",
+            "to": "Participant",
+            "amount": 5000
+          },
+          {
+            "from": "Insurer",
+            "to": "Hospital",
+            "amount": 48073.0
+          },
+          {
+            "from": "Participant",
+            "to": "Hospital",
+            "amount": 9762.0
+          }
+        ],
+        "party_transfer_balances": {
+          "Sponsor": -68833.3,
+          "Hospital": 121668.3,
+          "Insurer": -48073.0,
+          "Participant": -4762.0
+        },
+        "transfer_balance": 0.0,
+        "consolidated_resource_cost": 618767.7,
+        "resource_assumptions": [
+          "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.",
+          "Procedure delivery resource costs = 70% of benchmark, regardless of payer or negotiated rate. The investigational-supply reserve is a sponsor-side supply proxy (the sponsor supplies the product; site handling is its own line), so it is outside the hospital's revenue and resource cost.",
+          "Sponsor and insurer administration treated as resource consumption. Access support assumed fully consumed on trial-related travel and lodging; it is not netted against participant cost sharing.",
+          "Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known. UNKNOWN insurer or participant amounts are left out of transfer balances, not set to zero."
+        ]
+      }
+    },
+    "more_sites": {
+      "economics": {
+        "sponsor": {
+          "expenditure": 261033.3,
+          "contingency_reserve": 25000.0,
+          "budget_commitment": 286033.3,
+          "supply_resource_proxy": 25000.0
+        },
+        "hospital": {
+          "revenue": 213868.3,
+          "resource_cost": 162227.7,
+          "net_contribution": 51640.6
+        },
+        "insurer": {
+          "payments": 48073.0,
+          "administration": 300.0,
+          "total": 48373.0,
+          "downstream_clinical_cost": null
+        },
+        "patient": {
+          "cost_sharing": 9762.0,
+          "access_support": 5000,
+          "unresolved_exposure": null
+        },
+        "transfers": [
+          {
+            "from": "Sponsor",
+            "to": "Hospital",
+            "amount": 156033.3
+          },
+          {
+            "from": "Sponsor",
+            "to": "Participant",
+            "amount": 5000
+          },
+          {
+            "from": "Insurer",
+            "to": "Hospital",
+            "amount": 48073.0
+          },
+          {
+            "from": "Participant",
+            "to": "Hospital",
+            "amount": 9762.0
+          }
+        ],
+        "party_transfer_balances": {
+          "Sponsor": -161033.3,
+          "Hospital": 213868.3,
+          "Insurer": -48073.0,
+          "Participant": -4762.0
+        },
+        "transfer_balance": 0.0,
+        "consolidated_resource_cost": 292527.7,
+        "resource_assumptions": [
+          "Hospital site operating/activation and non-procedure variable resource costs = 80% of corresponding negotiated-payment assumptions.",
+          "Procedure delivery resource costs = 70% of benchmark, regardless of payer or negotiated rate. The investigational-supply reserve is a sponsor-side supply proxy (the sponsor supplies the product; site handling is its own line), so it is outside the hospital's revenue and resource cost.",
+          "Sponsor and insurer administration treated as resource consumption. Access support assumed fully consumed on trial-related travel and lodging; it is not netted against participant cost sharing.",
+          "Money transfers are excluded from consolidated resource sum. No external-care/downstream resource cost known. UNKNOWN insurer or participant amounts are left out of transfer balances, not set to zero."
+        ]
+      }
+    }
+  }
+}

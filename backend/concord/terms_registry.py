@@ -14,24 +14,40 @@ and says so; its coded lines are priced at national amounts, labelled as such.
 from __future__ import annotations
 
 import json
+import os
+import re
 from functools import lru_cache
 from pathlib import Path
 
+from concord.paths import DATA_DIR
 from concord.ratecard.cms import STATE_ABBR
 
 REGISTRY_DIR = Path(__file__).parent / "compiler" / "protocols" / "registry"
+# Trials added by NCT ID (concord.trial_import): fetched once into a gitignored cache under the data dir, never the
+# repo or the database. Tests point this elsewhere.
+CACHE_DIR: Path | None = None
 
 
-@lru_cache(maxsize=8)
+def cache_dir() -> Path:
+    env = os.environ.get("CONCORD_REGISTRY_CACHE")
+    return CACHE_DIR or (Path(env) if env else DATA_DIR / "work" / "registry_cache")
+
+
+@lru_cache(maxsize=64)
 def snapshot(nct: str) -> dict | None:
+    if not re.fullmatch(r"NCT\d{8}", nct or ""):
+        return None
     path = REGISTRY_DIR / f"{nct}.json"
-    if not nct.startswith("NCT") or not path.exists():
+    if not path.exists():
+        path = cache_dir() / f"{nct}.json"
+    if not path.exists():
         return None
     return json.loads(path.read_text(encoding="utf-8"))
 
 
 def source_text(snap: dict) -> str:
-    return f"ClinicalTrials.gov record {snap['source_url']}, fetched {snap['fetched']} (static snapshot)"
+    kind = "cached when added by NCT ID" if "added by NCT ID" in snap.get("note", "") else "static snapshot"
+    return f"ClinicalTrials.gov record {snap['source_url']}, fetched {snap['fetched']} ({kind})"
 
 
 def trial_facts(nct: str) -> dict:

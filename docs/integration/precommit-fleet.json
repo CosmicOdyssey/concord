@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "id": "e27f528d-e8c6-46da-8040-ce01d53766d6",
+  "repository": "/Users/sadius/concord-final-integration",
+  "branch": "codex/concord-final-verification",
+  "commit": "724be3ec504c1f6fd62c539d4e7ee53f473766cd",
+  "repositoryDirty": true,
+  "commitBinding": "dirty-working-tree",
+  "startedAt": "2026-10-17T22:43:30.374Z",
+  "endedAt": "2026-10-17T22:43:49.598Z",
+  "durationMs": 19224,
+  "status": "passed",
+  "checks": [
+    {
+      "id": "backend",
+      "label": "Backend tests",
+      "required": true,
+      "command": {
+        "executable": ".venv/bin/python",
+        "args": [
+          "-m",
+          "pytest",
+          "-q"
+        ],
+        "cwd": "/Users/sadius/concord-final-integration/backend"
+      },
+      "status": "passed",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-17T22:43:30.374Z",
+      "endedAt": "2026-10-17T22:43:45.742Z",
+      "durationMs": 15367,
+      "stdout": "................................................ssssssssss.............. [ 10%]\n...............................................................s........ [ 21%]\n.sss....ssssssssssssssssssssssssss.s.................................... [ 32%]\n........................................................................ [ 43%]\n........................................................................ [ 54%]\n........................................................................ [ 65%]\n........................................................................ [ 76%]\n......................................................sssssssssss....... [ 87%]\n.ssssssssss.ss...sssss.......sssssssss....s.ssssss..sssssssss..s......s. [ 98%]\ns..s..ssss                                                               [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.14/site-packages/fastapi/testclient.py:1\n  /Users/sadius/concord-final-integration/backend/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n556 passed, 102 skipped, 1 warning in 15.15s\n",
+      "stderr": "",
+      "timedOut": false,
+      "truncated": false
+    },
+    {
+      "id": "frontend-tests",
+      "label": "Financial client contracts",
+      "required": true,
+      "command": {
+        "executable": "npm",
+        "args": [
+          "run",
+          "test:financial"
+        ],
+        "cwd": "/Users/sadius/concord-final-integration/frontend"
+      },
+      "status": "passed",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-17T22:43:45.742Z",
+      "endedAt": "2026-10-17T22:43:45.983Z",
+      "durationMs": 241,
+      "stdout": "\n> frontend@0.0.0 test:financial\n> node --experimental-strip-types --test tests/financial.test.mjs\n\n\u2714 comparison posts the complete financial request (8.7685ms)\n\u2714 nonfinite numeric edits cannot silently become null (0.24175ms)\n\u2714 export recomputes exact inputs through the report endpoint (0.476541ms)\n\u2714 API failures and cancellation propagate to the UI (0.204709ms)\n\u2714 the demo request the view starts from has exactly the contract fields (a removed field posted back is a 422) (0.11225ms)\n\u2714 comparisons carry no time, speed, ranking or netted-participant field (0.913208ms)\n\u2714 unknown amounts read Unknown and uncosted plans read Not costed, never 0 (7.346375ms)\n\u2714 default fixture: each change against A equals budget_reallocation and names its cause (0.188334ms)\n\u2714 capacity-short fixture: A is not costed, so C and E state the added sites\u2019 own cost instead of a change (0.102667ms)\n\u2714 the payer framing is the API\u2019s own sentences, from assumptions or limitations (0.145042ms)\n\u2714 the worksheet amounts count as current only for the demo\u2019s coverage inputs (0.071667ms)\n\u2714 Simple\u2019s payer guard is the first sentence of the API\u2019s PAYER_INDEPENDENCE, verbatim (0.083583ms)\n\u2714 Medicare pays CLFS lab tests in full: no participant share on them; default totals and ledger (0.116833ms)\n\u2714 research items and the supply reserve offer only sponsor-side statuses; Medicaid disables participant cost sharing (0.117916ms)\n\u2714 the view and its API module reference no removed field and use no speed, ranking or saving wording (10.913166ms)\n\u2139 tests 15\n\u2139 suites 0\n\u2139 pass 15\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 97.966708\n",
+      "stderr": "",
+      "timedOut": false,
+      "truncated": false
+    },
+    {
+      "id": "portfolio-client",
+      "label": "Portfolio client contracts",
+      "required": true,
+      "command": {
+        "executable": "npm",
+        "args": [
+          "run",
+          "test:portfolio"
+        ],
+        "cwd": "/Users/sadius/concord-final-integration/frontend"
+      },
+      "status": "passed",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-17T22:43:45.983Z",
+      "endedAt": "2026-10-17T22:43:46.176Z",
+      "durationMs": 194,
+      "stdout": "\n> frontend@0.0.0 test:portfolio\n> node --experimental-strip-types --test tests/portfolio.test.mjs\n\n\u2714 complete portfolio inputs and seed cross the API boundary unchanged (8.784208ms)\n\u2714 nonfinite nested edits fail before they become null (0.219083ms)\n\u2714 reports point to immutable saved results rather than recomputing inputs (0.121125ms)\n\u2714 saved evidence loads by validated identifier (0.413375ms)\n\u2714 JSON import must validate before entering the editor state (0.205834ms)\n\u2714 validation errors and cancellation propagate (0.236917ms)\n\u2139 tests 6\n\u2139 suites 0\n\u2139 pass 6\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 78.081834\n",
+      "stderr": "",
+      "timedOut": false,
+      "truncated": false
+    },
+    {
+      "id": "comparison-client",
+      "label": "Existing comparison client contracts",
+      "required": true,
+      "command": {
+        "executable": "npm",
+        "args": [
+          "run",
+          "test:compare"
+        ],
+        "cwd": "/Users/sadius/concord-final-integration/frontend"
+      },
+      "status": "passed",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-17T22:43:46.176Z",
+      "endedAt": "2026-10-17T22:43:46.369Z",
+      "durationMs": 192,
+      "stdout": "\n> frontend@0.0.0 test:compare\n> node --experimental-strip-types --test tests/compare.test.mjs\n\n\u2714 product and capability counts match the document (0.640291ms)\n\u2714 every row and cell matches the document matrix (0.118458ms)\n\u2714 the Concord row matches the document, including no for site payments and CTA redlining and lung only for overlap (0.085625ms)\n\u2714 every yes/partial cell has evidence with an https URL and a non-empty quote (0.215208ms)\n\u2714 evidence text, quotes and URLs are verbatim from the document (1.307708ms)\n\u2714 no competitor text says 'cannot' or 'does not have' (0.26875ms)\n\u2714 the column totals computed from the matrix match the document (0.088792ms)\n\u2714 Simple shows the 8 representative products and 6 columns; date and completeness note (0.049292ms)\n\u2139 tests 8\n\u2139 suites 0\n\u2139 pass 8\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 74.579583\n",
+      "stderr": "",
+      "timedOut": false,
+      "truncated": false
+    },
+    {
+      "id": "frontend-build",
+      "label": "Typecheck and build",
+      "required": true,
+      "command": {
+        "executable": "npm",
+        "args": [
+          "run",
+          "build"
+        ],
+        "cwd": "/Users/sadius/concord-final-integration/frontend"
+      },
+      "status": "passed",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-17T22:43:46.369Z",
+      "endedAt": "2026-10-17T22:43:49.356Z",
+      "durationMs": 2987,
+      "stdout": "\n> frontend@0.0.0 build\n> tsc -b && vite build\n\nvite v8.3.4 building client environment for production...\ntransforming...\n\u2713 140 modules transformed.\nrendering chunks...\ncomputing gzip size...\ndist/index.html                                                               1.76 kB \u2502 gzip:   0.84 kB\ndist/assets/atkinson-hyperlegible-mono-latin-ext-500-normal-DE1cvYE7.woff2    6.50 kB\ndist/assets/atkinson-hyperlegible-mono-latin-ext-400-normal-CpVFOiMk.woff2    6.52 kB\ndist/assets/atkinson-hyperlegible-mono-latin-ext-600-normal-DKhxRsTL.woff2    6.54 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-400-normal-BalHKn7d.woff2    7.37 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-600-normal-kZZEtAc7.woff2    7.54 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-500-normal-CUASR3PD.woff2    7.54 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-700-normal-CBw-mJf_.woff2    7.55 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-400-italic-ChwMQj-S.woff2    7.87 kB\ndist/assets/atkinson-hyperlegible-mono-latin-ext-400-normal-ITMuFrSK.woff     8.38 kB\ndist/assets/atkinson-hyperlegible-mono-latin-ext-500-normal-BiHEOgiK.woff     8.38 kB\ndist/assets/atkinson-hyperlegible-mono-latin-ext-600-normal-ZiH-ObRk.woff     8.40 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-400-normal-qxMiU51n.woff     9.37 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-500-normal-oZS3KxrF.woff     9.55 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-700-normal-292QVhS1.woff     9.59 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-600-normal-BBAQIogt.woff     9.60 kB\ndist/assets/atkinson-hyperlegible-mono-latin-600-normal-BiYyYOKJ.woff2       10.04 kB\ndist/assets/atkinson-hyperlegible-mono-latin-400-normal-CmMGer93.woff2       10.05 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-400-italic-B2AfEDP4.woff    10.08 kB\ndist/assets/atkinson-hyperlegible-mono-latin-500-normal-CfDLaOZW.woff2       10.08 kB\ndist/assets/atkinson-hyperlegible-next-latin-400-normal-FfmJh7DR.woff2       12.09 kB\ndist/assets/atkinson-hyperlegible-next-latin-500-normal-gHP6TDRs.woff2       12.62 kB\ndist/assets/atkinson-hyperlegible-next-latin-600-normal-BBuhw47K.woff2       12.67 kB\ndist/assets/atkinson-hyperlegible-next-latin-700-normal-Dpiyiu63.woff2       12.73 kB\ndist/assets/atkinson-hyperlegible-mono-latin-400-normal-Cmjm2dBj.woff        12.76 kB\ndist/assets/atkinson-hyperlegible-mono-latin-600-normal-CuPF9o0F.woff        12.76 kB\ndist/assets/atkinson-hyperlegible-mono-latin-500-normal-BV5ipwqM.woff        12.81 kB\ndist/assets/atkinson-hyperlegible-next-latin-400-italic-DZBmTazM.woff2       14.15 kB\ndist/assets/atkinson-hyperlegible-next-latin-400-normal-DPp7N0cD.woff        14.94 kB\ndist/assets/atkinson-hyperlegible-next-latin-500-normal-B0CYqHl3.woff        15.50 kB\ndist/assets/atkinson-hyperlegible-next-latin-600-normal-BhgCag5w.woff        15.61 kB\ndist/assets/atkinson-hyperlegible-next-latin-700-normal-C2qZD_Q9.woff        15.64 kB\ndist/assets/atkinson-hyperlegible-next-latin-400-italic-C-uEjDrs.woff        17.47 kB\ndist/assets/DevComponentsView-CwFMPik6.css                                    1.45 kB \u2502 gzip:   0.58 kB\ndist/assets/PortfolioCommandView-CpKyz7RR.css                                 4.90 kB \u2502 gzip:   1.70 kB\ndist/assets/ResearchView-60t-mobq.css                                         7.63 kB \u2502 gzip:   2.08 kB\ndist/assets/FinancialView-5bmZI5NB.css                                        8.63 kB \u2502 gzip:   2.21 kB\ndist/assets/SiteScoresView-gdSrooau.css                                      12.36 kB \u2502 gzip:   3.11 kB\ndist/assets/OverlapView-OBj_hFev.css                                         17.41 kB \u2502 gzip:   4.00 kB\ndist/assets/ProtocolTermsView-CvMsAP7W.css                                   34.88 kB \u2502 gzip:   6.81 kB\ndist/assets/index-YYu8e1IT.css                                               84.21 kB \u2502 gzip:  20.12 kB\ndist/assets/api-BsmbKVxj.js                                                   1.89 kB \u2502 gzip:   0.86 kB\ndist/assets/jsx-runtime-DyZJNswf.js                                           8.78 kB \u2502 gzip:   3.33 kB\ndist/assets/DevComponentsView-B06CWYge.js                                     9.04 kB \u2502 gzip:   2.86 kB\ndist/assets/PortfolioCommandView-Bvk-x9Rw.js                                 26.21 kB \u2502 gzip:   8.03 kB\ndist/assets/FinancialView-BhP8OrKo.js                                        51.24 kB \u2502 gzip:  13.09 kB\ndist/assets/SiteScoresView-DeYSiu9u.js                                       54.10 kB \u2502 gzip:  15.15 kB\ndist/assets/OverlapView-CmQ1FPJv.js                                          79.12 kB \u2502 gzip:  19.87 kB\ndist/assets/ProtocolTermsView-Cd5S4pFz.js                                   148.13 kB \u2502 gzip:  37.23 kB\ndist/assets/ResearchView-CoCI-TV7.js                                        262.24 kB \u2502 gzip:  73.22 kB\ndist/assets/index-D--xk5v1.js                                               406.60 kB \u2502 gzip: 123.09 kB\n\n\u2713 built in 123ms\n",
+      "stderr": "",
+      "timedOut": false,
+      "truncated": false
+    },
+    {
+      "id": "frontend-lint",
+      "label": "Lint",
+      "required": true,
+      "command": {
+        "executable": "npm",
+        "args": [
+          "run",
+          "lint"
+        ],
+        "cwd": "/Users/sadius/concord-final-integration/frontend"
+      },
+      "status": "passed",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-17T22:43:49.356Z",
+      "endedAt": "2026-10-17T22:43:49.597Z",
+      "durationMs": 241,
+      "stdout": "\n> frontend@0.0.0 lint\n> oxlint\n\nsrc/summary.tsx:12:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.\nsrc/summary.tsx:17:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.\nsrc/summary.tsx:36:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.\nsrc/summary.tsx:43:14: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.\nsrc/summary.tsx:72:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.\nsrc/summary.tsx:79:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.\nsrc/components.tsx:8:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.\nsrc/components.tsx:13:5: warning react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.\nsrc/views/ClearView.tsx:32:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.\nsrc/views/PriceTagsView.tsx:43:7: warning react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.\nsrc/views/RobustnessView.tsx:94:7: warning react-hooks(exhaustive-deps): React hook useMemo depends on `rows`, which changes every render help: Try memoizing this variable with `useRef` or `useCallback`.\nsrc/views/PortfolioView.tsx:28:5: warning react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.\nsrc/views/ModelView.tsx:51:5: warning react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.\nsrc/views/SiteScoresView.tsx:58:5: warning react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.\n",
+      "stderr": "",
+      "timedOut": false,
+      "truncated": false
+    }
+  ]
+}

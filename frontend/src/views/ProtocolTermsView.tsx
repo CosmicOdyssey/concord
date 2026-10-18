@@ -5,7 +5,7 @@
 // their qualifiers, and puts rules, provenance and line items in hover cards and the full tables in a "Details"
 // disclosure; Detailed shows everything inline. Every control works in both densities.
 // No forecasting anywhere: no enrollment, speed or time-to-fill numbers, and no savings claims.
-import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { createContext, Fragment, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Badge, Banner, Details, ErrorBox, Gloss, HoverCard, InfoTip, KeyFigure, Loading, PageHead, Qualifier } from '../components'
 import { useDensity } from '../density'
 import { ctgovUrl, phaseLabel, usd } from '../format'
@@ -35,7 +35,6 @@ import {
   type TrialCard,
   type VisitBudget,
   coverageLabel,
-  formulaText,
   localityLabel,
   localityTitle,
   nodeStates,
@@ -44,22 +43,19 @@ import {
 import { CoverageList, CoverageSplit, NodeDetail, RuleChip, RuleList, ScheduleGrid, VisitTimeline } from './ProtocolTermsSchedule'
 import { AnchorChip, BandInputs, BandOutsideNote, BudgetTransparency, CompareWhy, GpciLabel, LineRange, OverheadInput } from './TermsAnchoring'
 import { GPCI_PLAIN } from './termsAnchoringText'
+import { AddedTrialSchedule, AddTrialForm } from './TermsAddTrial'
 import TermsProposalCheck from './TermsProposalCheck'
+import { LineDetailContext, type LineDetailScope } from '../lineDetailApi'
+import { LineBreakdown } from './LineBreakdown'
 import './protocolTerms.css'
 import TermsSpread from './TermsSpread'
+import { STEPS, createStepStore, panelId, stepFromHash, stepSlug, tabId, useStepTabs } from './termsStepTabs'
+import { StepNav, StepPager, StepPlaceholder, StepTabsProvider } from './termsSteps'
 
 type Async<T> = { status: 'idle' } | { status: 'loading' } | { status: 'error'; error: string } | { status: 'ok'; data: T; pending: boolean }
 type Settled<T> = { key: string; tick: number; data: T } | { key: string; tick: number; error: string }
 
 const DEFAULT_NCT = 'NCT05800015'
-const STEPS = [
-  { name: 'Protocol', nav: 'Protocol' },
-  { name: 'Coverage', nav: 'Coverage' },
-  { name: 'Budget at a site', nav: 'Budget' },
-  { name: 'Compare two sites', nav: 'Compare' },
-  { name: 'Site proposal', nav: 'Site proposal' },
-  { name: 'Term sheet', nav: 'Term sheet' },
-] as const
 
 function nctFromHash(): string | null {
   return window.location.hash.match(/^#terms-flow\/(NCT\d{8})/i)?.[1]?.toUpperCase() ?? null
@@ -71,10 +67,12 @@ function initialNct(): string {
   return nctFromHash() ?? (typeof stored === 'string' && /^NCT\d{8}$/.test(stored) ? stored : DEFAULT_NCT)
 }
 
-/** Keep the address bar on #terms-flow/<nct> so a reload or a shared link reopens the same trial. */
-function writeHash(nct: string) {
+/** Keep the address bar on #terms-flow/<nct>[/<step>] so a reload or a shared link reopens the same trial and step
+ *  (step 1, Protocol, has no slug). Without `step`, the step the address already names is kept. */
+function writeHash(nct: string, step: number = stepFromHash()) {
   try {
-    if (/^#terms-flow(\/|$)/i.test(window.location.hash) && nctFromHash() !== nct) window.history.replaceState(null, '', `#terms-flow/${nct}`)
+    const want = `#terms-flow/${nct}${step > 0 ? `/${stepSlug(step)}` : ''}`
+    if (/^#terms-flow(\/|$)/i.test(window.location.hash) && window.location.hash !== want) window.history.replaceState(null, '', want)
   } catch {
     /* ignore */
   }
@@ -198,14 +196,6 @@ function occ(v: VisitBudget): number {
   return v.occurrences ?? 1
 }
 
-const reduceMotion = () => {
-  try {
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  } catch {
-    return false
-  }
-}
-
 export default function ProtocolTermsView() {
   const { density } = useDensity()
   const detailed = density === 'detailed'
@@ -221,6 +211,9 @@ export default function ProtocolTermsView() {
   const [pickB, setSiteB] = useState('')
   const [selected, setSelected] = useState<string | null>(null)
   const [withCompare, setWithCompare] = useState(true)
+  // The step on show (termsStepTabs.ts), kept outside this component's state so a switch does not re-render it:
+  // #terms-flow/<nct>/<step> opens that step; otherwise step 1.
+  const [steps] = useState(() => createStepStore(stepFromHash()))
   // Range on coded lines, percent of Medicare (an assumption; default 100%-150%).
   const [band, setBand] = useState<[number, number]>(() => {
     const v = readStore<unknown>('tf:band', null)
@@ -244,15 +237,19 @@ export default function ProtocolTermsView() {
     writeHash(nct)
   }, [nct])
 
-  // Deep link #terms-flow/<nct>; other tabs own the rest of the hash.
+  // Deep link #terms-flow/<nct>[/<step>]; other tabs own the rest of the hash.
   useEffect(() => {
     const on = () => {
+      if (!/^#terms-flow(\/|$)/i.test(window.location.hash)) return
       const h = nctFromHash()
+      const s = stepFromHash()
       if (h && h !== nct) selectTrial(h)
+      steps.setFromLink(s)
+      writeHash(h ?? nct, s)
     }
     window.addEventListener('hashchange', on)
     return () => window.removeEventListener('hashchange', on)
-  }, [nct, selectTrial])
+  }, [nct, selectTrial, steps])
 
   useEffect(() => writeStore(`tf:overrides:${nct}`, overrides), [nct, overrides])
   useEffect(() => writeStore('tf:standard:v1', standard), [standard])
@@ -277,9 +274,12 @@ export default function ProtocolTermsView() {
     return Object.fromEntries(Object.entries(overrides).filter(([k, v]) => ids.has(k) && (v === 'routine' || v === 'research'))) as Overrides
   }, [proto, overrides])
   const multiplier = Math.min(500, Math.max(10, Number.isFinite(multPct) ? multPct : 100)) / 100
-  const params: PriceParams = useMemo(
-    () => ({ multiplier, overrides: validOverrides, standard, band: [band[0] / 100, band[1] / 100] as [number, number] }),
-    [multiplier, validOverrides, standard, band],
+  // ver: an added trial's schedule version (import.updated). It changes with the new protocol and its filtered
+  // overrides, so every price fetch fires once, after the new schedule is in (never with the old override ids).
+  const schedVer = proto?.import?.updated ?? ''
+  const params: PriceParams & { ver: string } = useMemo(
+    () => ({ multiplier, overrides: validOverrides, standard, band: [band[0] / 100, band[1] / 100] as [number, number], ver: schedVer }),
+    [multiplier, validOverrides, standard, band, schedVer],
   )
   const dparams = useDebounced(params, 250)
   const pkey = JSON.stringify(dparams)
@@ -297,6 +297,35 @@ export default function ProtocolTermsView() {
   const cmpData = cmp.status === 'ok' && cmpOk && cmp.data.nct_id === nct ? cmp.data : null
   const cmpStale = !!cmpData && cmp.status === 'ok' && (cmp.pending || pkey !== JSON.stringify(params))
   const lineById = useMemo(() => new Map(bud?.visits.flatMap((v) => v.lines.map((l) => [l.node_id, l] as const)) ?? []), [bud])
+  const setOverhead = useCallback((v: number | null) => {
+    setStandard((s) => {
+      const next = { ...s }
+      if (v === null) delete next.overhead
+      else next.overhead = v
+      return next
+    })
+  }, [])
+  // Line breakdowns (LineBreakdown.tsx) price against the same trial, sites and parameters, and edit the same
+  // multiplier and overhead controls as step 3.
+  const overDef = overItem?.default ?? null
+  const overNow = standard.overhead ?? overDef
+  // Keyed on the schedule version, and only once the protocol (re)load has settled and the debounced parameters
+  // belong to it: an added trial's new schedule never gets a request for the old one's node ids or overrides.
+  const nodeIds = useMemo(() => new Set(proto?.nodes.map((n) => n.id) ?? []), [proto])
+  const protoSettled = protocol.status === 'ok' && !protocol.pending && dparams.ver === schedVer
+  const lineScope: LineDetailScope | null =
+    proto && siteA && protoSettled
+      ? {
+          nct,
+          siteA,
+          siteB: cmpOk ? siteB : null,
+          params: dparams,
+          ver: dparams.ver,
+          nodeIds,
+          mult: { pct: multPct, set: setMultPct },
+          overhead: overDef != null && overNow != null ? { value: overNow, def: overDef, set: setOverhead } : undefined,
+        }
+      : null
 
   const setNode = useCallback((id: string, c: Coverage | null) => {
     setOverrides((o) => {
@@ -319,19 +348,22 @@ export default function ProtocolTermsView() {
   const nResearch = proto ? proto.nodes.filter((n) => states.get(n.id)?.coverage === 'research').length : 0
   const nRoutine = proto ? proto.nodes.length - nResearch : 0
 
-  const go = (i: number) => {
-    const el = document.getElementById(`tf-step-${i + 1}`)
-    if (!el) return
-    el.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' })
-    el.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true })
+  // A trial added by NCT ID can get a new schedule (CSV upload, back to the draft): reload it; the prices follow
+  // through params.ver once it is in.
+  const onScheduleChanged = () => {
+    retryTrials()
+    retryProtocol()
   }
 
   const selNode = proto && selected ? (proto.nodes.find((n) => n.id === selected) ?? null) : null
   const trialList = trials.status === 'ok' ? trials.data : null
   const picked = trialList?.find((t) => t.nct_id === nct) ?? null
 
-  return (
+  // The steps read the active one from context (termsSteps.tsx).
+  const view = (
+    <LineDetailContext.Provider value={lineScope}>
     <section className="view tf" aria-label="Protocol to terms">
+      <StepLabel.Provider value={proto?.import ? proto.label : ILLUSTRATIVE}>
       <PageHead
         title="Protocol to terms"
         lede="A protocol's schedule of assessments, sorted into routine care and research, priced from CMS 2026 fee schedules and a proposed standard schedule for non-procedure fees, with a source on every line."
@@ -339,42 +371,30 @@ export default function ProtocolTermsView() {
         <Banner title={DISCLAIMER}>
           Prices come from CMS 2026 fee schedules and Concord’s proposed standard schedule, a starting point to negotiate against, not market data.
           Schedules are {ILLUSTRATIVE.toLowerCase()}, not the sponsors’ protocols.
+          {proto?.import && <> This added trial’s schedule: {proto.label}.</>}
         </Banner>
       </PageHead>
 
-      <nav className="tf-flow" aria-label="Steps">
-        <ol>
-          {STEPS.map((s, i) => (
-            <li key={s.name}>
-              <button type="button" className="tf-flow-btn" onClick={() => go(i)}>
-                <span className="tf-flow-n num" aria-hidden="true">
-                  {i + 1}
-                </span>
-                <span>
-                  <span className="sr-only">Step {i + 1}: </span>
-                  {s.nav}
-                </span>
-              </button>
-              {i < STEPS.length - 1 && (
-                <span className="tf-flow-arrow" aria-hidden="true">
-                  →
-                </span>
-              )}
-            </li>
-          ))}
-        </ol>
-      </nav>
+      <StepNav />
 
       {/* 1. Protocol */}
       <Step
         n={1}
         title="Protocol"
         info={
-          <>
-            <span className="hc-title">How a schedule is authored</span>
-            Concord authors each schedule from the trial’s ClinicalTrials.gov record. Where the registry is silent, it uses standard practice for the
-            condition and lists the assumption. The sponsors’ own protocols are not public.
-          </>
+          proto?.import ? (
+            <>
+              <span className="hc-title">Where this schedule comes from</span>
+              A trial added by NCT ID: its schedule is {proto.import.source === 'csv' ? 'the CSV you uploaded' : 'a draft from its ClinicalTrials.gov record'},
+              not the sponsor’s protocol. Where the registry is silent, the draft leaves the item out or unpriced.
+            </>
+          ) : (
+            <>
+              <span className="hc-title">How a schedule is authored</span>
+              Concord authors each schedule from the trial’s ClinicalTrials.gov record. Where the registry is silent, it uses standard practice for the
+              condition and lists the assumption. The sponsors’ own protocols are not public.
+            </>
+          )
         }
         lede={
           <>
@@ -385,7 +405,13 @@ export default function ProtocolTermsView() {
         quals={
           proto && (
             <Qualifier tone="muted">
-              Authored {dateText(proto.authored, true)} from the registry record: {proto.sources.length} registry facts, {proto.assumptions.length} assumptions
+              {proto.import ? (
+                `${proto.import.source === 'csv' ? 'Uploaded schedule (CSV), not checked against the protocol' : 'Drafted from the registry record'}: ${sourceCount(proto)}`
+              ) : (
+                <>
+                  Authored {dateText(proto.authored, true)} from the registry record: {proto.sources.length} registry facts, {proto.assumptions.length} assumptions
+                </>
+              )}
             </Qualifier>
           )
         }
@@ -399,7 +425,13 @@ export default function ProtocolTermsView() {
           )
         }
         details={proto && <AuthoredNotes proto={proto} />}
-        detailsLabel={proto ? `How this schedule was authored (${proto.sources.length} registry facts, ${proto.assumptions.length} assumptions)` : 'Details'}
+        detailsLabel={
+          !proto
+            ? 'Details'
+            : proto.import
+              ? `Where this schedule comes from (${sourceCount(proto)})`
+              : `How this schedule was authored (${proto.sources.length} registry facts, ${proto.assumptions.length} assumptions)`
+        }
       >
         {trials.status === 'loading' && <Loading label="Loading trials…" />}
         {trials.status === 'error' && <ErrorBox error={trials.error} onRetry={retryTrials} />}
@@ -410,9 +442,19 @@ export default function ProtocolTermsView() {
             ))}
           </div>
         )}
+        {trialList && (
+          <AddTrialForm
+            known={trialList.map((t) => t.nct_id)}
+            onAdded={(id) => {
+              retryTrials()
+              selectTrial(id)
+            }}
+          />
+        )}
         {protocol.status === 'error' && <ErrorBox error={protocol.error} onRetry={retryProtocol} />}
         {!proto && protocol.status !== 'error' && <Loading label="Loading the schedule of assessments…" />}
         {proto && <VisitTimeline protocol={proto} />}
+        {proto?.import && <AddedTrialSchedule key={nct} proto={proto} onChanged={onScheduleChanged} />}
       </Step>
 
       {proto && (
@@ -546,16 +588,7 @@ export default function ProtocolTermsView() {
                     </label>
                     <BandInputs lo={band[0]} hi={band[1]} onChange={(lo, hi) => setBand([lo, hi])} />
                     {overItem && overItem.default != null && (
-                      <OverheadInput
-                        value={standard.overhead ?? overItem.default}
-                        def={overItem.default}
-                        onChange={(v) => {
-                          const next = { ...standard }
-                          if (v === null) delete next.overhead
-                          else next.overhead = v
-                          setStandard(next)
-                        }}
-                      />
+                      <OverheadInput value={standard.overhead ?? overItem.default} def={overItem.default} onChange={setOverhead} />
                     )}
                   </div>
                 )}
@@ -656,7 +689,7 @@ export default function ProtocolTermsView() {
             details={cmpData && <CompareDetails c={cmpData} />}
             detailsLabel="Locality factors and every sponsor-paid item, site by site"
           >
-            {siteOk && <TermsSpread nct={nct} siteA={siteA} siteB={cmpOk ? siteB : null} overrides={dparams.overrides} standard={dparams.standard} />}
+            {siteOk && <TermsSpread key={`${nct}:${dparams.ver}`} nct={nct} siteA={siteA} siteB={cmpOk ? siteB : null} overrides={dparams.overrides} standard={dparams.standard} />}
           </Step>
 
           {/* 5. Site proposal (TermsProposalCheck.tsx) */}
@@ -673,7 +706,7 @@ export default function ProtocolTermsView() {
             }
             lede="Paste or upload a site’s price list. Each line is matched to this protocol at the site picked in step 3 and checked against the published fee schedules, or flagged for itemized justification."
           >
-            {siteOk ? <TermsProposalCheck key={nct} nct={nct} siteId={siteA} params={params} /> : <Loading label="Loading sites…" />}
+            {siteOk ? <TermsProposalCheck key={`${nct}:${params.ver}`} nct={nct} siteId={siteA} params={params} /> : <Loading label="Loading sites…" />}
           </Step>
 
           {/* 6. Term sheet */}
@@ -710,14 +743,29 @@ export default function ProtocolTermsView() {
             figure={bud && <FeaturedLine b={bud} rules={proto.rules} selected={selected} lineById={lineById} cmp={cmpData} siteA={siteA} siteB={siteB} />}
             details={bud && <SheetContents b={bud} picked={picked} />}
             detailsLabel="What the term sheet contains"
-          />
+          >
+            {bud && <FeaturedBreakdown b={bud} selected={selected} lineById={lineById} />}
+          </Step>
         </>
       )}
+      {/* Steps 2 to 6 need the protocol: until it loads, the same frames say so (a deep link may open one of them). */}
+      {!proto &&
+        STEPS.slice(1).map((s, k) => (
+          <StepPlaceholder key={s.slug} i={k + 1}>
+            {protocol.status === 'error' ? <ErrorBox error={protocol.error} onRetry={retryProtocol} /> : <Loading label="Loading the schedule of assessments…" />}
+          </StepPlaceholder>
+        ))}
+      </StepLabel.Provider>
     </section>
+    </LineDetailContext.Provider>
   )
+  return <StepTabsProvider store={steps}>{view}</StepTabsProvider>
 }
 
 // ====================================================================== step frame
+
+/** The schedule's label on every step strip: illustrative (authored) or, for a trial added by NCT ID, its own. */
+const StepLabel = createContext<string>(ILLUSTRATIVE)
 
 /** One step: a Calm window laid out like the shared Section (claim, sentence, qualifiers and controls on the left;
  *  the key figure on the right; secondary content inline in Detailed and in a "Details" disclosure in Simple). The
@@ -747,15 +795,18 @@ function Step({
 }) {
   const { density } = useDensity()
   const hid = useId()
+  const stepLabel = useContext(StepLabel)
+  const { active } = useStepTabs()
+  // A tab panel (termsSteps.tsx): hidden, not unmounted, while another step is on show.
   return (
-    <section id={`tf-step-${n}`} className="win section tf-step" aria-labelledby={hid}>
+    <section id={panelId(n - 1)} className="win section tf-step" role="tabpanel" aria-labelledby={tabId(n - 1)} hidden={active !== n - 1}>
       <div className="win-strip">
         <span>
           <span className="win-title">
             Step {n} of {STEPS.length}
           </span>
         </span>
-        <span className="win-aside tf-strip-label">{ILLUSTRATIVE}</span>
+        <span className="win-aside tf-strip-label">{stepLabel}</span>
       </div>
       <div className="win-body">
         <div className={`section-row${figure ? '' : ' section-row-single'}`}>
@@ -781,6 +832,7 @@ function Step({
               {details}
             </Details>
           ))}
+        <StepPager i={n - 1} />
       </div>
     </section>
   )
@@ -789,7 +841,9 @@ function Step({
 // ====================================================================== 1. protocol
 
 /** "two first-line NSCLC chemo-immunotherapy trials …, and one outside lung cancer, for geographic atrophy (eye)". */
-function trialPickerText(list: TrialCard[]): string {
+function trialPickerText(all: TrialCard[]): string {
+  const list = all.filter((t) => !t.import)
+  const added = all.length - list.length
   const lung = list.filter((t) => !t.area)
   const other = list.filter((t) => !!t.area)
   const parts: string[] = []
@@ -798,6 +852,7 @@ function trialPickerText(list: TrialCard[]): string {
     const conds = other.map((t) => (t.condition ?? '').toLowerCase()).filter(Boolean)
     parts.push(`${countWord(other.length)} outside lung cancer${conds.length ? `, for ${conds.join(', ')}` : ''}`)
   }
+  if (added) parts.push(`${countWord(added)} added by NCT ID`)
   return parts.join(', and ')
 }
 
@@ -873,17 +928,35 @@ function TrialCardView({ t, on, detailed, onPick }: { t: TrialCard; on: boolean;
   )
 }
 
+/** "3 sources, 1 assumption" (an added trial's schedule). */
+function sourceCount(proto: Protocol): string {
+  const s = proto.sources.length
+  const a = proto.assumptions.length
+  return `${s} source${s === 1 ? '' : 's'}, ${a} assumption${a === 1 ? '' : 's'}`
+}
+
 function AuthoredNotes({ proto }: { proto: Protocol }) {
   // In Simple the disclosure's summary names this block; in Detailed it needs a heading of its own.
   const detailed = useDensity().density === 'detailed'
+  // A trial added by NCT ID: its schedule is a registry draft or the user's CSV, not authored by Concord.
+  const added = !!proto.import
   return (
     <div className="tf-notes">
-      {detailed && <h3>How this schedule was authored</h3>}
+      {detailed && <h3>{added ? 'Where this schedule comes from' : 'How this schedule was authored'}</h3>}
       <p className="small">
-        Authored {dateText(proto.authored)} from the ClinicalTrials.gov record of {proto.nct_id}. Where the registry is silent we used {proto.practice_basis ?? 'standard NSCLC practice'}.{' '}
+        {added ? (
+          <>
+            {proto.why_chosen} {proto.import?.label}.
+          </>
+        ) : (
+          <>
+            Authored {dateText(proto.authored)} from the ClinicalTrials.gov record of {proto.nct_id}. Where the registry is silent we used{' '}
+            {proto.practice_basis ?? 'standard NSCLC practice'}.
+          </>
+        )}{' '}
         {proto.quote_note}
       </p>
-      <h3>Registry facts used</h3>
+      <h3>{added ? 'Sources used' : 'Registry facts used'}</h3>
       <ul className="tf-src-list small">
         {proto.sources.map((s, i) => (
           <li key={i}>
@@ -1523,8 +1596,11 @@ function Provenance({ l, mult }: { l: Line; mult: number }) {
   if (l.schedule === 'PFS' && l.formula)
     return (
       <span>
-        <span className="tf-src-tag">PFS</span> <span className="tf-mono">{formulaText(l.formula)}</span>
-        {m}
+        <span className="tf-src-tag">PFS</span>{' '}
+        <HoverCard content={<LineBreakdown nodeId={l.node_id} variant="compact" editable={false} inCard />}>
+          Medicare {usd(l.medicare_amount)}
+          {m}, step by step
+        </HoverCard>
       </span>
     )
   if (l.schedule === 'CLFS')
@@ -1552,14 +1628,18 @@ function LineFields({
   mult,
   visit,
   priceB,
+  breakdownBelow = false,
 }: {
   line: Line
   rules: Rule[]
   mult: number
   visit?: string
   priceB?: { a: number; b: number } | null
+  /** The step-by-step table is shown below (step 6) rather than inside these fields (hover cards). */
+  breakdownBelow?: boolean
 }) {
   const sponsor = line.payer === 'Sponsor'
+  const pfs = line.schedule === 'PFS' && !!line.formula
   const multText = sponsor && mult !== 1 && (line.schedule === 'PFS' || line.schedule === 'CLFS') ? ` × ${pctText(mult)} = ${usd(line.amount)}` : ''
   const price: ReactNode = sponsor ? (
     priceB ? (
@@ -1578,18 +1658,17 @@ function LineFields({
   ) : (
     (line.note ?? 'No site charge')
   )
-  const formula: ReactNode =
-    line.schedule === 'PFS' && line.formula ? (
-      <span className="num tf-formula-text">
-        {formulaText(line.formula)}
-        {multText}
-      </span>
-    ) : line.schedule === 'CLFS' ? (
+  const formula: ReactNode = pfs ? (
+    breakdownBelow ? (
+      'Step by step in the table below: units for this code × each site’s regional adjustment × Medicare dollars per unit, then the multiplier and overhead.'
+    ) : null
+  ) : line.schedule === 'CLFS' ? (
       `National lab fee ${usd(line.medicare_amount)}${multText}${line.placeholder ? ' (placeholder until the CLFS file is loaded)' : ''}`
     ) : line.schedule === 'Standard' && sponsor ? (
       `${line.standard_label ?? 'Itemized fee'}, ${line.standard_unit ?? 'each time performed'}${line.edited ? ' (edited)' : ''}`
     ) : null
   return (
+    <>
     <dl className="tf-line-dl">
       {visit && <Field k="Visit">{visit}</Field>}
       <Field k="Item">{line.label}</Field>
@@ -1601,9 +1680,11 @@ function LineFields({
       <Field k="Rule">{line.override ? `${ruleTitle(rules, line.rule)}; overridden by a reviewer` : ruleTitle(rules, line.rule)}</Field>
       <Field k="Why">{line.reason}</Field>
       <Field k="Price">{price}</Field>
-      {formula !== null && <Field k="Formula">{formula}</Field>}
+      {formula !== null && <Field k={pfs ? 'How it’s built' : 'Formula'}>{formula}</Field>}
       <Field k="Source">{line.source ?? '—'}</Field>
     </dl>
+    {pfs && !breakdownBelow && <LineBreakdown nodeId={line.node_id} variant="compact" editable={false} inCard />}
+    </>
   )
 }
 
@@ -1904,7 +1985,7 @@ function CompareDetails({ c }: { c: Compare }) {
       <h3>Every sponsor-paid item</h3>
       <p className="small muted tf-sub">
         Per line: amount = (work RVU × work GPCI + PE RVU × PE GPCI + MP RVU × MP GPCI) × conversion factor × {m}. RVUs and the conversion factor are
-        national, so the difference is CF × m × Σ RVU × ΔGPCI. Select a row for both formulas.
+        national, so the difference is CF × m × Σ RVU × ΔGPCI. Select a row for its price step by step at both sites.
       </p>
       <div className="table-scroll">
         <table className="tbl tbl-compact tf-cmp-tbl">
@@ -1970,12 +2051,11 @@ function CompareDetails({ c }: { c: Compare }) {
                       <td colSpan={9} className="small">
                         {r.formula_a ? (
                           <>
-                            <div>
-                              A: <span className="tf-mono">{formulaText(r.formula_a)}</span> × {m} = {usd(r.unit_a)}
-                            </div>
-                            <div>
-                              B: <span className="tf-mono">{formulaText(r.formula_b ?? '')}</span> × {m} = {usd(r.unit_b)}
-                            </div>
+                            <LineBreakdown
+                              nodeId={`${r.visits_fixed[0] ?? r.visits_counted?.[0]?.visit_id ?? r.visits_repeat[0]}:${r.procedure_id}`}
+                              variant="compact"
+                              editable={false}
+                            />
                             <div className="muted">
                               Δ = {c.conversion_factor.toFixed(4)} × {m} × ({r.rvu?.work.toFixed(2)} × {signedNum(c.gpci_delta.work)} +{' '}
                               {r.rvu?.pe.toFixed(2)} × {signedNum(c.gpci_delta.pe)} + {r.rvu?.mp.toFixed(2)} × {signedNum(c.gpci_delta.mp)}) ={' '}
@@ -2089,10 +2169,8 @@ function FeaturedLine({
   siteA: string
   siteB: string
 }) {
-  const fixed = fixedVisits(b).flatMap((v) => v.lines)
-  const sponsorPfs = fixed.filter((l) => l.payer === 'Sponsor' && l.schedule === 'PFS')
   const chosen = selected ? lineById.get(selected) : undefined
-  const line = chosen ?? sponsorPfs.find((l) => l.rule === 'R4') ?? sponsorPfs[0] ?? fixed.find((l) => l.payer === 'Sponsor') ?? fixed[0]
+  const line = featuredLine(b, selected, lineById)
   if (!line) return null
   const visit = b.visits.find((v) => v.visit_id === line.visit_id)
   const pair = cmp && cmp.a.site.site_id === siteA && cmp.b.site.site_id === siteB ? cmp : null
@@ -2103,8 +2181,31 @@ function FeaturedLine({
         Term sheet line · {visit?.label ?? line.visit_id}
         {chosen ? ' (selected in the grid)' : ''}
       </p>
-      <LineFields line={line} rules={rules} mult={b.multiplier} visit={visit?.label} priceB={row ? { a: row.unit_a, b: row.unit_b } : null} />
+      <LineFields line={line} rules={rules} mult={b.multiplier} visit={visit?.label} priceB={row ? { a: row.unit_a, b: row.unit_b } : null} breakdownBelow />
       {!chosen && <p className="tf-featured-hint">Select any cell in the step 2 schedule grid to show its line here.</p>}
+    </div>
+  )
+}
+
+/** The term-sheet line shown in step 6: the selected grid item's line, or else a research scan from the fixed schedule. */
+function featuredLine(b: Budget, selected: string | null, lineById: Map<string, Line>): Line | undefined {
+  const fixed = fixedVisits(b).flatMap((v) => v.lines)
+  const sponsorPfs = fixed.filter((l) => l.payer === 'Sponsor' && l.schedule === 'PFS')
+  const chosen = selected ? lineById.get(selected) : undefined
+  return chosen ?? sponsorPfs.find((l) => l.rule === 'R4') ?? sponsorPfs[0] ?? fixed.find((l) => l.payer === 'Sponsor') ?? fixed[0]
+}
+
+/** Step 6, full width: the featured line's price step by step (physician-fee-schedule lines only). */
+function FeaturedBreakdown({ b, selected, lineById }: { b: Budget; selected: string | null; lineById: Map<string, Line> }) {
+  const line = featuredLine(b, selected, lineById)
+  if (!line || line.schedule !== 'PFS' || !line.formula) return null
+  const visit = b.visits.find((v) => v.visit_id === line.visit_id)
+  return (
+    <div className="lb-wrap">
+      <h3>
+        How this line’s price is built: {line.label} (<span className="num">{line.code}</span>), {visit?.label ?? line.visit_id}
+      </h3>
+      <LineBreakdown nodeId={line.node_id} />
     </div>
   )
 }

@@ -42,6 +42,8 @@ export interface ProposalRow {
   placeholder?: boolean
   coverage?: { sponsor_visits: number; insurance_visits: number }
   source: CmsSource | null
+  /** The term-sheet line (protocol node) whose step-by-step price explains this code's Medicare amount. */
+  node_id?: string | null
   notes: string[]
 }
 
@@ -134,7 +136,8 @@ export const proposalApi = {
     const res = await fetch(`${BASE}/${enc(nct)}/proposal-sample`, { signal })
     if (res.status === 404) return null
     if (!res.ok) throw new Error(await errorText(res))
-    return (await res.json()) as ProposalSample
+    // null: a known trial without a sample
+    return ((await res.json()) as ProposalSample | null) ?? null
   },
   /** The printable counter-proposal page as text (the caller saves it as a file). */
   counterHtml: async (nct: string, q: ProposalQuery, detail: 'simple' | 'detailed') =>

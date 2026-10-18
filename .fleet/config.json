@@ -53,6 +53,17 @@
         "required": true
       },
       {
+        "id": "comparison-client",
+        "label": "Existing comparison client contracts",
+        "command": "npm",
+        "args": [
+          "run",
+          "test:compare"
+        ],
+        "cwd": "frontend",
+        "required": true
+      },
+      {
         "id": "demo-client",
         "label": "Demo scene and integrity contracts",
         "command": "npm",

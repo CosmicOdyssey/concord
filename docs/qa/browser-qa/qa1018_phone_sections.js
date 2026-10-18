@@ -60,13 +60,15 @@ function measure(page, sel) {
     await page.close()
   }
   {
-    const page = await open(browser, '#terms-flow/NCT05800015', () => document.querySelectorAll('.tf-stats .stat-value').length >= 4 && document.querySelector('.tf-decomp-total') && document.querySelector('.tf-sheet'))
-    for (const [sel, name] of [
-      ['#tf-step-2', 'terms-schedule'],
-      ['#tf-step-4', 'terms-budget'],
-      ['#tf-step-6', 'terms-compare'],
-      ['#tf-step-7', 'terms-termsheet'],
+    const page = await open(browser, '#terms-flow/NCT05800015', () => document.querySelector('#tf-step-3 .tf-payer-value') && document.querySelector('.tf-decomp-total') && document.querySelector('.tf-sheet'))
+    // One step at a time (tabs): choose each step in the step nav before measuring it.
+    for (const [step, name] of [
+      [2, 'terms-schedule'],
+      [3, 'terms-budget'],
+      [4, 'terms-compare'],
+      [6, 'terms-termsheet'],
     ]) {
+      const sel = await Q.showStep(page, step)
       out.sections.push({ name, m: await measure(page, sel) })
       await Q.snap(browser, await page.$(sel), `${PREFIX}-${name}-390`, { element: true, maxH: 2400 })
     }

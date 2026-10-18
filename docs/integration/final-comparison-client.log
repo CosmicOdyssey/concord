@@ -1,0 +1,20 @@
+
+> frontend@0.0.0 test:compare
+> node --experimental-strip-types --test tests/compare.test.mjs
+
+✔ product and capability counts match the document (0.640291ms)
+✔ every row and cell matches the document matrix (0.118458ms)
+✔ the Concord row matches the document, including no for site payments and CTA redlining and lung only for overlap (0.085625ms)
+✔ every yes/partial cell has evidence with an https URL and a non-empty quote (0.215208ms)
+✔ evidence text, quotes and URLs are verbatim from the document (1.307708ms)
+✔ no competitor text says 'cannot' or 'does not have' (0.26875ms)
+✔ the column totals computed from the matrix match the document (0.088792ms)
+✔ Simple shows the 8 representative products and 6 columns; date and completeness note (0.049292ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 74.579583
