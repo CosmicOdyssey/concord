@@ -396,6 +396,7 @@ function ScrollBox({ label, children }: { label: string; children: ReactNode }) 
     const el = ref.current
     if (!el) return
     const update = () => {
+      if (!el.getClientRects().length) return // hidden with its tab: keep the last reading (no hint flicker on return)
       const left = el.scrollLeft > 1
       const right = el.scrollLeft < el.scrollWidth - el.clientWidth - 1
       setEdge((e) => (e.left === left && e.right === right ? e : { left, right }))

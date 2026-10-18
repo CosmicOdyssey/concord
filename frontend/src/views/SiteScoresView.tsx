@@ -84,8 +84,12 @@ function useWidth(): [(el: HTMLElement | null) => void, number] {
   const [w, setW] = useState(0)
   useEffect(() => {
     if (!el) return
-    // observe() reports the initial size too.
-    const ro = new ResizeObserver((entries) => setW(Math.floor(entries[0].contentRect.width)))
+    // observe() reports the initial size too. 0 is this view hidden behind another tab (App.tsx keeps it mounted):
+    // keep the last width, so the chart is already the right size when the tab is shown again.
+    const ro = new ResizeObserver((entries) => {
+      const next = Math.floor(entries[0].contentRect.width)
+      if (next > 0) setW(next)
+    })
     ro.observe(el)
     return () => ro.disconnect()
   }, [el])
@@ -101,6 +105,7 @@ function ScrollX({ children, label }: { children: ReactNode; label: string }) {
     const el = ref.current
     if (!el) return
     const update = () => {
+      if (!el.getClientRects().length) return // hidden with its tab: keep the last reading (no hint flicker on return)
       const max = el.scrollWidth - el.clientWidth
       const next = { over: max > 1, l: el.scrollLeft > 1, r: el.scrollLeft < max - 1 }
       setSt((s) => (s.over === next.over && s.l === next.l && s.r === next.r ? s : next))
