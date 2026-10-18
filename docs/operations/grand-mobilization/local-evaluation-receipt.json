@@ -1,18 +1,19 @@
 {
-  "receipt_type": "ACTUAL_LOCAL_HTTP_TESTCLIENT_EXECUTION",
-  "recorded_at": "2026-10-18T02:34:23.373319+00:00",
-  "source_baseline_commit": "af8aa50b166dc7b456a45c2f664fc149af1fff56",
+  "receipt_type": "ACTUAL_BROWSER_POST_THEN_LOCAL_HTTP_GET",
+  "recorded_at": "2026-10-18T02:48:18.377787+00:00",
+  "source_commit": "8caff9e9205713583a10c8eff9e4e3bdff587ba8",
   "working_tree_changes_present": true,
-  "method": "POST",
-  "path": "/api/evals/chalk/run",
+  "method": "GET",
+  "path": "/api/evals/chalk/latest",
+  "originating_action": "Actual browser click Run Local Acceptance Suite POST /api/evals/chalk/run",
   "http_status": 200,
   "execution_classification": "VERIFIED LOCALLY",
   "remote_provider_calls": 0,
   "report": {
-    "run_id": "local-eval-439fad7937304285882248b18cec1343",
+    "run_id": "local-eval-be181e89a7cd43148e5b83b0e54f56e9",
     "dataset_version": "concord-acceptance-v2.0.0",
     "dataset_sha256": "cfe55f381b24cec15ba1acfc3257aeab4ea569aa5716812a52b82fce3724ce57",
-    "timestamp": "2026-10-18T02:34:23.371902+00:00",
+    "timestamp": "2026-10-18T02:45:09.971230+00:00",
     "engine_mode": "LOCAL_DETERMINISTIC; Chalk service NOT_IMPLEMENTED",
     "total_scenarios": 15,
     "passed_scenarios": 15,
@@ -26,7 +27,7 @@
         "category": "Budget",
         "passed": true,
         "hard_safety_violation": false,
-        "execution_time_ms": 19.311,
+        "execution_time_ms": 30.133,
         "scorer_results": [
           {
             "scorer_name": "feasible",
@@ -50,7 +51,7 @@
         "category": "Capacity",
         "passed": true,
         "hard_safety_violation": false,
-        "execution_time_ms": 0.21,
+        "execution_time_ms": 0.208,
         "scorer_results": [
           {
             "scorer_name": "rejected",
@@ -73,7 +74,7 @@
         "category": "Clinical safety",
         "passed": true,
         "hard_safety_violation": false,
-        "execution_time_ms": 0.037,
+        "execution_time_ms": 0.015,
         "scorer_results": [
           {
             "scorer_name": "rejected",
@@ -96,7 +97,7 @@
         "category": "Recommendation validity",
         "passed": true,
         "hard_safety_violation": false,
-        "execution_time_ms": 5.936,
+        "execution_time_ms": 6.985,
         "scorer_results": [
           {
             "scorer_name": "rejected",
@@ -153,7 +154,7 @@
         "category": "Financial conservation",
         "passed": true,
         "hard_safety_violation": false,
-        "execution_time_ms": 0.843,
+        "execution_time_ms": 0.929,
         "scorer_results": [
           {
             "scorer_name": "sponsor_unchanged",
@@ -197,7 +198,7 @@
         "category": "Solver",
         "passed": true,
         "hard_safety_violation": false,
-        "execution_time_ms": 15.669,
+        "execution_time_ms": 16.559,
         "scorer_results": [
           {
             "scorer_name": "status",
@@ -243,7 +244,7 @@
         "category": "Solver",
         "passed": true,
         "hard_safety_violation": false,
-        "execution_time_ms": 171.612,
+        "execution_time_ms": 186.173,
         "scorer_results": [
           {
             "scorer_name": "honest_heuristic",
@@ -280,7 +281,7 @@
         "category": "Command boundary",
         "passed": true,
         "hard_safety_violation": false,
-        "execution_time_ms": 1.39,
+        "execution_time_ms": 1.653,
         "scorer_results": [
           {
             "scorer_name": "rejected",
@@ -301,7 +302,7 @@
         "category": "Authorization",
         "passed": true,
         "hard_safety_violation": false,
-        "execution_time_ms": 0.13,
+        "execution_time_ms": 0.126,
         "scorer_results": [
           {
             "scorer_name": "rejected",
@@ -321,7 +322,7 @@
         "category": "Evidence integrity",
         "passed": true,
         "hard_safety_violation": false,
-        "execution_time_ms": 21.726,
+        "execution_time_ms": 24.714,
         "scorer_results": [
           {
             "scorer_name": "export_consistent",
@@ -349,7 +350,7 @@
         "category": "Cache integrity",
         "passed": true,
         "hard_safety_violation": false,
-        "execution_time_ms": 32.284,
+        "execution_time_ms": 32.786,
         "scorer_results": [
           {
             "scorer_name": "stale_rejected",
@@ -413,7 +414,7 @@
         "category": "Provider readiness",
         "passed": true,
         "hard_safety_violation": false,
-        "execution_time_ms": 1.108,
+        "execution_time_ms": 0.983,
         "scorer_results": [
           {
             "scorer_name": "signature_rejected",
@@ -441,7 +442,7 @@
         "category": "Failure handling",
         "passed": true,
         "hard_safety_violation": false,
-        "execution_time_ms": 2.314,
+        "execution_time_ms": 2.435,
         "scorer_results": [
           {
             "scorer_name": "failed_safely",
@@ -462,13 +463,13 @@
       }
     ],
     "failed_trajectories": [],
-    "request_id": "local-eval-439fad7937304285882248b18cec1343",
+    "request_id": "local-eval-be181e89a7cd43148e5b83b0e54f56e9",
     "provider_status": "NOT_IMPLEMENTED",
     "remote_receipt": null,
     "data_mode": "SYNTHETIC_ACCEPTANCE_INPUTS_REAL_LOCAL_EXECUTION",
     "provider_usage": null,
     "source_sha256": {
-      "backend/concord/evals/chalk_eval.py": "4cd8a96eb6ced3e00c8e0336a36b1de8331baa0d4b42567e55f8d98592b0f83e",
+      "backend/concord/evals/chalk_eval.py": "31ab59af4ef43705d851fd91e50d3ed2bab14638f3db828a90db214890920677",
       "backend/concord/agents/boundary.py": "cb1e83c428b546f620e31ce7ff7b21794973587cec3cc43c550c670b3493cb2a",
       "backend/concord/agents/droid.py": "d3b002d41d7184f30dc6292c682d6c75b031c82b43be8bba90883a39d4641341",
       "backend/concord/agents/photon.py": "4048e89f53907ba11436e78f2e5df15bee1dfb8569da3ed5a01fd9df79d8e054",
@@ -481,22 +482,5 @@
       "backend/concord/ratecard/medicare.py": "79873f5ef9b189475e3fae4754ceb1741a305404459f36c9d2a40daf8410610d",
       "backend/concord/financial_allocation.py": "8f4e3de19aa4c19230be4cbe9b6c1c655267fd1cf3b24f471bce54048a730e74"
     }
-  },
-  "verification": {
-    "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=backend backend/.venv/bin/python -m pytest backend/tests -q -rs",
-    "exit_code": 0,
-    "passed": 607,
-    "skipped": 102,
-    "warnings": 1,
-    "duration_seconds": 31.43,
-    "skip_scope": "Missing historical SQLite database, CMS ratecard/raw archive and demo_trials fixture; not covered by bundled synthetic demo",
-    "warning": "Existing Starlette TestClient/httpx deprecation",
-    "scope": "Full backend before final non-ASCII authentication hardening; final targeted regression passed afterward. Final Fleet verification should rerun complete suite."
-  },
-  "final_targeted_verification": {
-    "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=backend backend/.venv/bin/python -m pytest backend/tests/test_agent_photon.py backend/tests/test_agent_droid.py backend/tests/test_eval_chalk.py backend/tests/test_sponsor_integration.py -q",
-    "passed": 43,
-    "warnings": 1,
-    "exit_code": 0
   }
 }
