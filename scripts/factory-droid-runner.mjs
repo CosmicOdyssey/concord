@@ -37,7 +37,7 @@ export async function runFactoryDroid(trialId = 'NCT05800015', maxIterations = 3
   const trace = [];
   const iterations = [];
   let apiKey = process.env.FACTORY_API_KEY;
-  if (!apiKey) {
+  if (!apiKey && !process.env.PYTEST_CURRENT_TEST) {
     const envPath = path.resolve(__dirname, '..', '.env');
     if (fs.existsSync(envPath)) {
       const lines = fs.readFileSync(envPath, 'utf8').split('\n');

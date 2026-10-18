@@ -165,8 +165,20 @@ class PhotonSMSAgent:
         else:
             readiness = "LOCAL_SIMULATION_ONLY"
 
+        if readiness == "CONNECTED_AND_VERIFIED":
+            auth_status = "LIVE_CARRIER_VERIFIED"
+        elif readiness == "CONFIGURED_UNVERIFIED":
+            auth_status = "CONFIGURED_PENDING_CARRIER_ACK"
+        elif readiness == "FAILED":
+            auth_status = f"FAILED: {self._last_error}"
+        elif readiness == "MISSING_CREDENTIALS":
+            auth_status = "BLOCKED — AUTHENTICATION: Missing PHOTON_API_KEY or PHOTON_PHONE_NUMBER"
+        else:
+            auth_status = "LOCAL_SIMULATION_ONLY"
+
         return {
             "readiness": readiness,
+            "auth_status": auth_status,
             "live_carrier_enabled": bool(self._api_key and self._photon_number),
             "missing_prerequisites": missing,
             "allowed_senders_count": len(self._allowed_senders),
