@@ -1,0 +1,224 @@
+[
+  {
+    "id": "hook",
+    "start_s": 0,
+    "duration_s": 16,
+    "route": "/#home",
+    "density": "simple",
+    "theme": "light",
+    "narration": "Trial budgets get negotiated on numbers the other side can't reproduce. In WCG's twenty twenty-five survey, seventy-three percent of six hundred eleven sites named budgets and contracts as a top contributor to start-up delay.",
+    "actions": [
+      { "at_s": 0, "type": "goto", "target": "/#home", "duration_s": 0, "note": "Pre-roll: load the landing page and wait for fonts and network idle before t = 0, so the take opens on a still hero." },
+      { "at_s": 0, "type": "wait", "target": "section.lp-hero", "duration_s": 6, "note": "Hold on the hero headline 'Turn a trial protocol into a budget both sides can check.' while the first sentence plays." },
+      { "at_s": 6, "type": "scroll_to", "target": "#landing-terms .lp-win", "offset_px": 130, "duration_s": 7, "note": "Slow scroll down to the live two-site preview: NYU Langone vs Hattiesburg Clinic and 'Before anyone negotiates: $1,339.95 (20%) ...'." },
+      { "at_s": 13, "type": "wait", "duration_s": 3, "note": "Hold on the preview card." }
+    ]
+  },
+  {
+    "id": "open-terms",
+    "start_s": 16,
+    "duration_s": 12,
+    "route": "/#home -> /#terms-flow/NCT05800015",
+    "density": "simple",
+    "theme": "light",
+    "narration": "Concord turns a protocol into a budget both sides can check. Here's one of Regeneron's fianlimab trials in lung cancer, with an illustrative schedule from the public record.",
+    "actions": [
+      { "at_s": 0, "type": "hover", "target": {"text":"Open Protocol to terms","scope":"header"}, "duration_s": 1.5, "note": "Cursor travels to the primary button in the sticky landing header." },
+      { "at_s": 3.8, "type": "click", "target": {"text":"Open Protocol to terms","scope":"header"}, "duration_s": 0.3, "note": "Opens #terms-flow; with a fresh profile the trial is NCT05800015 (the default)." },
+      { "at_s": 4.2, "type": "wait", "target": "#tf-step-1 .tf-trial-pick", "duration_s": 2, "note": "Step 1 (Protocol) renders: three trial cards, Regeneron NCT05800015 selected." },
+      { "at_s": 6.3, "type": "scroll_to", "target": "#tf-step-1", "offset_px": 110, "duration_s": 1.5, "note": "Step 1 header (16 visits, 27 procedures, 139 scheduled items) and the trial cards." },
+      { "at_s": 8.5, "type": "hover", "target": {"text":"Fianlimab + cemiplimab","scope":"#tf-step-1"}, "duration_s": 1, "note": "Rest the cursor on the selected Regeneron card (NCT05800015, Ph 2/Ph 3, 29 registered U.S. sites). Do not click." },
+      { "at_s": 10, "type": "wait", "duration_s": 2, "note": "Hold." }
+    ]
+  },
+  {
+    "id": "coverage",
+    "start_s": 28,
+    "duration_s": 12,
+    "route": "/#terms-flow/NCT05800015/coverage",
+    "density": "simple",
+    "theme": "light",
+    "narration": "Each item gets a draft label: routine care, billable to insurance under Medicare's clinical-trial policy, or research, paid by the sponsor. A reviewer can override any label.",
+    "actions": [
+      { "at_s": 0, "type": "click", "target": {"text":"Coverage","scope":"nav[aria-label=\"Steps\"]"}, "duration_s": 1, "note": "Step nav button 2. Works as a tab (one step shown) or as a jump link (all steps on one page)." },
+      { "at_s": 1.2, "type": "scroll_to", "target": "#tf-step-2", "offset_px": 120, "duration_s": 1, "note": "'56 of 139 scheduled items are research-only ... The other 83 are routine care'; split bar and rules R1-R5." },
+      { "at_s": 5.5, "type": "click", "target": {"text":"Schedule grid and reviewer overrides","scope":"#tf-step-2"}, "duration_s": 1, "note": "Opens the coverage grid disclosure." },
+      { "at_s": 6.8, "type": "scroll_to", "target": "#tf-step-2 table.tf-grid", "offset_px": 150, "duration_s": 3.5, "note": "Slow scroll into the grid: grey cells routine care, blue cells research. Do not click a cell (a click flips its coverage)." },
+      { "at_s": 10.3, "type": "wait", "duration_s": 1.7, "note": "Hold on the grid." }
+    ]
+  },
+  {
+    "id": "budget-anchored",
+    "start_s": 40,
+    "duration_s": 18,
+    "route": "/#terms-flow/NCT05800015/budget",
+    "density": "simple",
+    "theme": "light",
+    "narration": "At NYU Langone in Manhattan, the key number is the anchored share. Twenty percent is priced from public CMS rates, so both sides can check it. Sixty percent is Concord's proposed standard, an assumption. The last twenty, overhead, is open to negotiation.",
+    "actions": [
+      { "at_s": 0, "type": "click", "target": {"text":"Budget","scope":"nav[aria-label=\"Steps\"]"}, "duration_s": 1, "note": "Step nav button 3." },
+      { "at_s": 1.2, "type": "scroll_to", "target": "#tf-step-3", "offset_px": 120, "duration_s": 1, "note": "'At NYU Langone Health Perlmutter Cancer Center, New York, NY, the sponsor pays $6,568.67 per participant ...'; payer cards." },
+      { "at_s": 2.4, "type": "hover", "target": "#tf-step-3 .tf-payer-sponsor .tf-payer-value", "duration_s": 1, "note": "Cursor on 'Paid by the sponsor, per participant $6,568.67'." },
+      { "at_s": 4.2, "type": "scroll_to", "target": "#tf-step-3 .tfa-card", "offset_px": 200, "duration_s": 1.6, "note": "Anchored-share card: public rates $1,339.95 20.4%, proposed standard $3,915.00 59.6%, open $1,313.72 20.0%, with the range card beside it." },
+      { "at_s": 5.8, "type": "hover", "target": {"text":"Anchored to public rates","scope":"#tf-step-3"}, "duration_s": 1, "note": "Hover card with the sources: physician fee schedule lines $1,294.77 + lab fee schedule lines $45.18 = $1,339.95, CMS file names." },
+      { "at_s": 9.2, "type": "hover", "target": "#tf-step-3 .tfa-legend li:nth-child(2) .tfa-legend-v", "duration_s": 1, "note": "Moving right closes the card. Cursor on '$3,915.00 59.6%' (anchored to a proposed standard)." },
+      { "at_s": 13, "type": "hover", "target": "#tf-step-3 .tfa-legend li:nth-child(3) .tfa-legend-v", "duration_s": 0.8, "note": "Cursor on '$1,313.72 20.0%' (open to negotiation: the 25% overhead assumption)." },
+      { "at_s": 15.6, "type": "wait", "duration_s": 2.4, "note": "Hold." }
+    ]
+  },
+  {
+    "id": "line-detail",
+    "start_s": 58,
+    "duration_s": 18,
+    "route": "/#terms-flow/NCT05800015/term-sheet",
+    "density": "detailed",
+    "theme": "light",
+    "narration": "Each line shows its math. A CT chest, code seventy-one two sixty: CMS's units, times Manhattan's regional adjustments, times thirty-three point four oh oh nine dollars per unit, equals a hundred ninety-one twenty-five. Check it on CMS.",
+    "actions": [
+      { "at_s": 0, "type": "click", "target": {"text":"Detailed","scope":"header"}, "duration_s": 0.8, "note": "Density switch in the app header, on camera: Detailed shows the full step-by-step table." },
+      { "at_s": 1.4, "type": "click", "target": {"text":"Term sheet","scope":"nav[aria-label=\"Steps\"]"}, "duration_s": 0.9, "note": "Step nav button 6. Its featured line is CT chest with contrast (71260), Cycle 7 Day 1." },
+      { "at_s": 2.8, "type": "scroll_to", "target": "#tf-step-6 table.lb-full", "offset_px": 150, "duration_s": 1.2, "note": "'How this line's price is built: CT chest with contrast (71260), Cycle 7 Day 1'." },
+      { "at_s": 4.4, "type": "hover", "target": "#tf-step-6 table.lb-full tbody tr:nth-child(4) td:nth-child(2)", "duration_s": 0.8, "note": "Units for this code: total 4.99 (1.13 + 3.77 + 0.09), CMS RVU26D row 71260." },
+      { "at_s": 5.8, "type": "hover", "target": "#tf-step-6 table.lb-full tbody tr:nth-child(2) td:nth-child(3)", "duration_s": 0.8, "note": "Manhattan (NY 01) regional adjustments: 1.064, 1.162, 1.586." },
+      { "at_s": 8.2, "type": "hover", "target": "#tf-step-6 table.lb-full tbody tr:nth-child(5) td:nth-child(3)", "duration_s": 0.8, "note": "x $33.4009, the CMS CY 2026 conversion factor." },
+      { "at_s": 11, "type": "hover", "target": "#tf-step-6 table.lb-full tbody tr:nth-child(6) td:nth-child(3)", "duration_s": 0.8, "note": "= Medicare rate $191.25 at Site A (Site B, Mississippi: $148.38)." },
+      { "at_s": 13.2, "type": "scroll_to", "target": "#tf-step-6 a.lb-cms", "offset_px": 680, "duration_s": 1, "note": "Bring the 'Check this on CMS' link into view; the Medicare rate row ($191.25) stays on screen." },
+      { "at_s": 14.6, "type": "hover", "target": "#tf-step-6 a.lb-cms", "duration_s": 1, "note": "Hover only: the link opens the CMS Physician Fee Schedule Look-Up Tool in a new tab." },
+      { "at_s": 16, "type": "wait", "duration_s": 2, "note": "Hold." }
+    ]
+  },
+  {
+    "id": "compare-sites",
+    "start_s": 76,
+    "duration_s": 15,
+    "route": "/#terms-flow/NCT05800015/compare",
+    "density": "simple",
+    "theme": "light",
+    "narration": "Why does another site differ? Hattiesburg, Mississippi is three hundred seventy-five dollars lower per participant: Medicare's geographic adjustments, not a saving. Here's the same protocol across all one hundred nine Medicare localities.",
+    "actions": [
+      { "at_s": 0, "type": "click", "target": {"text":"Simple","scope":"header"}, "duration_s": 0.8, "note": "Back to Simple." },
+      { "at_s": 1.4, "type": "click", "target": {"text":"Compare","scope":"nav[aria-label=\"Steps\"]"}, "duration_s": 0.9, "note": "Step nav button 4 (preset 'Manhattan vs Mississippi' is on by default)." },
+      { "at_s": 2.6, "type": "scroll_to", "target": "#tf-step-4", "offset_px": 120, "duration_s": 0.9, "note": "'The sponsor budgets differ by $375.01 per participant because Medicare adjusts physician fees for local costs ...'; Site A vs Site B table." },
+      { "at_s": 4.4, "type": "scroll_to", "target": "#tf-step-4 .tf-decomp", "offset_px": 260, "duration_s": 1.1, "note": "The gap split: doctor's time -$13.30, practice costs -$270.04, malpractice -$16.69, overhead on those -$74.99." },
+      { "at_s": 5.8, "type": "hover", "target": "#tf-step-4 .tf-decomp-head", "duration_s": 0.8, "note": "Cursor on 'Sponsor difference per participant, Site B - Site A -$375.01'." },
+      { "at_s": 8.6, "type": "scroll_to", "target": "#tf-step-4 .tsp-block", "offset_px": 130, "duration_s": 1.5, "note": "'The same procedures in every Medicare locality': 109 dots, Site A 87th percentile, Site B 1st." },
+      { "at_s": 10.4, "type": "hover", "target": "#tf-step-4 .tsp-fig-a", "duration_s": 0.8, "note": "Site A percentile 87th, $1,339.95 in Manhattan." },
+      { "at_s": 12.4, "type": "scroll_to", "target": "#tf-step-4 figure.tsp-ranges", "offset_px": 260, "duration_s": 1.4, "note": "What widens the range: geography $546.30, multiplier band $669.95 (A) and $519.97 (B), non-procedure fees $1,957.50 (assumptions labelled)." },
+      { "at_s": 13.8, "type": "wait", "duration_s": 1.2, "note": "Hold." }
+    ]
+  },
+  {
+    "id": "proposal-check",
+    "start_s": 91,
+    "duration_s": 18,
+    "route": "/#terms-flow/NCT05800015/proposal -> download:counter-proposal_NCT05800015_334d690736c4_SYNTHETIC.html",
+    "density": "simple",
+    "theme": "light",
+    "narration": "Now, a site's proposal: a synthetic sample with invented prices. Each line is checked against Medicare at the site's locality, times a band you set. Five sit above range, like this CT at eleven fifty. Export a sourced counter-proposal.",
+    "actions": [
+      { "at_s": 0, "type": "click", "target": {"text":"Site proposal","scope":"nav[aria-label=\"Steps\"]"}, "duration_s": 0.9, "note": "Step nav button 5." },
+      { "at_s": 1.1, "type": "scroll_to", "target": "#tf-step-5", "offset_px": 120, "duration_s": 0.8, "note": "Site proposal check, empty." },
+      { "at_s": 2.1, "type": "click", "target": {"text":"Load synthetic sample","scope":"#tf-step-5"}, "duration_s": 0.8, "note": "Loads the SYNTHETIC sample price list for NCT05800015 at NYU Langone." },
+      { "at_s": 3.1, "type": "wait", "target": "#tf-step-5 .tp-summary", "duration_s": 1, "note": "Result appears: 5 above range, 2 below, 9 needs itemized justification, 1 not in schedule, 4 in range." },
+      { "at_s": 4.1, "type": "scroll_to", "target": "#tf-step-5 .tp-synth", "offset_px": 200, "duration_s": 1.2, "note": "'Synthetic sample. Invented prices to demonstrate the check, not a real site's proposal and not market data.' and the counts." },
+      { "at_s": 5.6, "type": "hover", "target": {"text":"assumption","scope":"#tf-step-5"}, "duration_s": 0.8, "note": "Hover card 'The band is an assumption': justified range 100%-150% of Medicare at the site's locality." },
+      { "at_s": 8, "type": "hover", "target": "#tf-step-5 ul.tp-tally li:first-child", "duration_s": 0.9, "note": "Moving right closes the card. Cursor on '5 above range'." },
+      { "at_s": 9.6, "type": "hover", "target": "#tf-step-5 ol.tp-top li:first-child span.num", "duration_s": 0.9, "note": "Furthest outside the range: CT abdomen and pelvis with contrast $1,150.00 against $344.97-$517.46 (pointing at the amount, not the item name, so no hover card covers the list)." },
+      { "at_s": 11, "type": "scroll_by", "target": 140, "duration_s": 0.7, "note": "Bring the export button into the frame." },
+      { "at_s": 11.9, "type": "click", "target": {"text":"Download counter-proposal (HTML)","scope":"#tf-step-5"}, "duration_s": 0.9, "note": "Downloads counter-proposal_NCT05800015_334d690736c4_SYNTHETIC.html into the recorder's download folder." },
+      { "at_s": 13.6, "type": "goto", "target": "download:counter-proposal_NCT05800015_334d690736c4_SYNTHETIC.html", "duration_s": 0, "note": "Cut to the exported file opened from the download folder (wait until the file exists). Title starts 'SYNTHETIC: Counter-proposal'; every line states its source." },
+      { "at_s": 14, "type": "wait", "duration_s": 4, "note": "Hold on the export: SYNTHETIC banner, site and locality, CMS files, the band assumption, the summary." }
+    ]
+  },
+  {
+    "id": "any-trial",
+    "start_s": 109,
+    "duration_s": 11,
+    "route": "/#terms-flow/NCT05800015 -> /#terms-flow/NCT05785767",
+    "density": "simple",
+    "theme": "light",
+    "narration": "Any trial with U.S. sites can be added by NCT ID. Concord drafts a cited schedule from the registry, or takes the real one as a CSV.",
+    "actions": [
+      { "at_s": 0, "type": "goto", "target": "/#terms-flow/NCT05800015", "duration_s": 0, "note": "Back from the export (cut). Opens on step 1." },
+      { "at_s": 0, "type": "wait", "target": "#tf-step-1 form.ta-add input", "duration_s": 1.5, "note": "Wait for the add form." },
+      { "at_s": 1.5, "type": "scroll_to", "target": "#tf-step-1 form.ta-add", "offset_px": 330, "duration_s": 1, "note": "Trial cards above, 'Add any trial by NCT ID' in the middle of the frame." },
+      { "at_s": 2.6, "type": "click", "target": "#tf-step-1 form.ta-add input", "duration_s": 0.6, "note": "Focus the NCT ID box." },
+      { "at_s": 3.2, "type": "type", "target": "#tf-step-1 form.ta-add input", "text": "NCT05785767", "duration_s": 1.3, "note": "Regeneron's other fianlimab Phase 2/3 lung trial (the overlap pair in the next scene)." },
+      { "at_s": 4.6, "type": "click", "target": {"text":"Add trial","scope":"#tf-step-1"}, "duration_s": 0.5, "note": "Fetches the public ClinicalTrials.gov record once (cached), drafts a schedule and selects the trial." },
+      { "at_s": 5.2, "type": "wait", "target": "#tf-step-1 .ta-panel", "duration_s": 3, "note": "Schedule source panel: 'Draft from the public record', 4 visits inferred, 21 items inferred, 10 items unpriced (listed, never counted as zero)." },
+      { "at_s": 6.2, "type": "scroll_to", "target": "#tf-step-1 .ta-panel", "offset_px": 140, "duration_s": 1.2, "note": "Panel plus the CSV box ('Upload CSV...', 'CSV template')." },
+      { "at_s": 7.6, "type": "hover", "target": "#tf-step-1 .ta-panel textarea", "duration_s": 0.8, "note": "Cursor on the CSV box while 'or takes the real one as a CSV' plays." },
+      { "at_s": 9, "type": "wait", "duration_s": 2, "note": "Hold." }
+    ]
+  },
+  {
+    "id": "overlap",
+    "start_s": 120,
+    "duration_s": 16,
+    "route": "/#overlap -> /#overlap/regeneron",
+    "density": "simple",
+    "theme": "light",
+    "narration": "A second tool checks a sponsor's own trials against each other. Regeneron's two fianlimab trials shared sixteen registered U.S. sites. On a synthetic population, every simulated patient eligible for the stricter trial also qualified for the other.",
+    "actions": [
+      { "at_s": 0, "type": "click", "target": {"text":"Portfolio overlap","scope":"nav.tabs"}, "duration_s": 0.8, "note": "App tab 'Portfolio overlap'." },
+      { "at_s": 1, "type": "wait", "target": "button.ov-preset", "duration_s": 1, "note": "Controls render (Indication, Sponsor, As of, Region, preset)." },
+      { "at_s": 2, "type": "click", "target": {"text":"Regeneron, Sep 1, 2024","scope":"main"}, "duration_s": 0.8, "note": "Preset: Regeneron Pharmaceuticals, lung cancer, all U.S. sites, as of Sep 1, 2024; 5 trials, 10 pairs." },
+      { "at_s": 3, "type": "wait", "target": ".ov-win button.hg-cell.hg-on", "duration_s": 2.5, "note": "Matrix with the NCT05785767 x NCT05800015 cell (16) selected." },
+      { "at_s": 4.6, "type": "scroll_to", "target": ".ov-win", "offset_px": 110, "duration_s": 1.1, "note": "Matrix: 'Number: shared registered sites'." },
+      { "at_s": 6, "type": "hover", "target": ".ov-win button.hg-cell.hg-on", "duration_s": 1, "note": "Hover the 16 cell: the pair's hover card." },
+      { "at_s": 9, "type": "scroll_to", "target": ".ov-detail", "offset_px": 110, "duration_s": 1.5, "note": "Selected pair: shared registered sites 16; NCT05785767's eligible patients also eligible for NCT05800015 100%; reverse 26%; criteria in both and only in NCT05785767 (PD-L1 TPS >= 50%, never-smokers excluded)." },
+      { "at_s": 10.8, "type": "hover", "target": {"text":"PD-L1 TPS","scope":".ov-detail"}, "duration_s": 1, "note": "The criterion that makes NCT05785767 the stricter trial." },
+      { "at_s": 13, "type": "wait", "duration_s": 3, "note": "Hold." }
+    ]
+  },
+  {
+    "id": "compares",
+    "start_s": 136,
+    "duration_s": 14,
+    "route": "/#home/compare",
+    "density": "simple",
+    "theme": "light",
+    "narration": "Of twenty products we reviewed, none says publicly that it prices budget lines at the site's Medicare locality. CMS's free tool does it one code at a time. They have negotiated-price benchmarks; we don't.",
+    "actions": [
+      { "at_s": 0, "type": "goto", "target": "/#home/compare", "duration_s": 0, "note": "Cut to the landing page, How Concord compares." },
+      { "at_s": 0, "type": "wait", "target": "#landing-compare table.cmp-tbl", "duration_s": 1, "note": "Wait for the matrix." },
+      { "at_s": 1, "type": "scroll_to", "target": "#landing-compare .cmp-win", "offset_px": 120, "duration_s": 1.2, "note": "'What each product states publicly · 8 of 20 products · 6 of 13 capabilities'; Concord row first." },
+      { "at_s": 2.4, "type": "hover", "target": "#landing-compare table.cmp-tbl tbody tr:first-child td:nth-of-type(4) button", "duration_s": 1, "note": "Concord's 'Yes' under 'Medicare fee-schedule prices with locality adjustment' opens its evidence card; every other product's cell in that column reads '– not stated publicly'." },
+      { "at_s": 4.6, "type": "hover", "target": "#landing-compare .cmp-win .win-strip", "duration_s": 0.6, "note": "Move to the card's title strip so the evidence card closes before the scroll." },
+      { "at_s": 5.4, "type": "scroll_to", "target": "#landing-compare .cmp-grid", "offset_px": 150, "duration_s": 1.4, "note": "'Concord does; the 20 others do not state publicly' with its amber limits ('The per-code lookup itself is not new: CMS's free PFS Look-up Tool gives it one code at a time') and 'What they have that we don't'." },
+      { "at_s": 7.2, "type": "hover", "target": "#landing-compare .cmp-grid li:first-child", "duration_s": 1, "note": "Cursor on the first differentiator and its limit in amber." },
+      { "at_s": 9.6, "type": "hover", "target": "#landing-compare .cmp-grid > :nth-child(2)", "duration_s": 1, "note": "Cursor on 'What they have that we don't: Negotiated-price benchmarks, ...'." },
+      { "at_s": 12, "type": "wait", "duration_s": 2, "note": "Hold." }
+    ]
+  },
+  {
+    "id": "tested",
+    "start_s": 150,
+    "duration_s": 10,
+    "route": "/#home/compare, scrolled to What we tested",
+    "density": "simple",
+    "theme": "light",
+    "narration": "Our first idea, coordinating sites across trials, didn't hold up on held-out data. So the product sticks to counts, criteria and sourced prices.",
+    "actions": [
+      { "at_s": 0, "type": "scroll_to", "target": "#landing-tested", "offset_px": 110, "duration_s": 2, "note": "'What we tested'." },
+      { "at_s": 2.6, "type": "scroll_to", "target": "#landing-tested ol.lp-results > li:nth-child(2)", "offset_px": 170, "duration_s": 1.5, "note": "'Coordinating sites across trials did not hold up on held-out data.' 1.42x in-sample, 1.05x held-out." },
+      { "at_s": 4.4, "type": "hover", "target": "#landing-tested ol.lp-results > li:nth-child(2) h3", "duration_s": 0.8, "note": "Cursor on the result heading." },
+      { "at_s": 6, "type": "wait", "duration_s": 4, "note": "Hold." }
+    ]
+  },
+  {
+    "id": "close",
+    "start_s": 160,
+    "duration_s": 17,
+    "route": "/#home/compare, scrolled to Sources and the close",
+    "density": "simple",
+    "theme": "light",
+    "narration": "Concord is decision support, not a fair-market-value legal opinion. Free, open source, every number sourced or labelled an assumption. Built by the Bruno Bears at Brown. Our ask: site-level enrollment data. The registry never reports it.",
+    "actions": [
+      { "at_s": 0, "type": "scroll_to", "target": "section.lp-sources", "offset_px": 120, "duration_s": 2.5, "note": "Sources: CMS 2026 PFS (conversion factor $33.4009), CMS 2026 CLFS, NCD 310.1, Concord proposed standard (assumption), ClinicalTrials.gov, synthetic population." },
+      { "at_s": 7, "type": "scroll_to", "target": "section.lp-close", "offset_px": 120, "duration_s": 2, "note": "'Price a protocol line by line, and see where every number comes from.' and the footer link github.com/CosmicOdyssey/concord." },
+      { "at_s": 9.5, "type": "hover", "target": {"text":"Open Protocol to terms","scope":"section.lp-close"}, "duration_s": 1, "note": "Rest on the closing button. Do not click." },
+      { "at_s": 11, "type": "wait", "duration_s": 6, "note": "Hold to the end; fade to black over the last 1.5 s in the edit." }
+    ]
+  }
+]

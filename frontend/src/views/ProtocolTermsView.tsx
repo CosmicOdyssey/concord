@@ -314,13 +314,19 @@ export default function ProtocolTermsView() {
   // multiplier and overhead controls as step 3.
   const overDef = overItem?.default ?? null
   const overNow = standard.overhead ?? overDef
+  // Keyed on the schedule version, and only once the protocol (re)load has settled and the debounced parameters
+  // belong to it: an added trial's new schedule never gets a request for the old one's node ids or overrides.
+  const nodeIds = useMemo(() => new Set(proto?.nodes.map((n) => n.id) ?? []), [proto])
+  const protoSettled = protocol.status === 'ok' && !protocol.pending && dparams.ver === schedVer
   const lineScope: LineDetailScope | null =
-    proto && siteA
+    proto && siteA && protoSettled
       ? {
           nct,
           siteA,
           siteB: cmpOk ? siteB : null,
           params: dparams,
+          ver: dparams.ver,
+          nodeIds,
           mult: { pct: multPct, set: setMultPct },
           overhead: overDef != null && overNow != null ? { value: overNow, def: overDef, set: setOverhead } : undefined,
         }

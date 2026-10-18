@@ -5,10 +5,12 @@
 // (compare, spreads, proposal check, term sheet) present. Also: a trial with no U.S. sites is refused; reviewer
 // overrides, then the unmodified CSV template uploaded and back to the draft, with zero failed requests; authored
 // trials without a synthetic sample load with no 404. Writes report.json with the numbers per trial.
+// Steps are tabs (termsSteps.tsx): after each schedule change the term sheet step is chosen in the step nav (lib.js
+// showStep) and its line breakdown must show the new schedule's line (no request for a node of the old schedule).
 // Usage (NODE_PATH must reach puppeteer-core): node terms_anytrial.js [baseUrl] [outDir]
 const fs = require('fs')
 const path = require('path')
-const { launch, sleep, layoutCheck } = require('./lib')
+const { launch, sleep, layoutCheck, showStep } = require('./lib')
 
 const BASE = process.argv[2] || 'http://localhost:5286'
 const OUT = process.argv[3] || 'C:/Users/micha/Projects/concord/data/work/T/anytrial'
@@ -210,6 +212,30 @@ async function ready(page) {
     const A = sites.default_pair[0]
     const budAt = async (o) =>
       getJson(`/api/terms-flow/${nct}/budget?site_id=${A}&multiplier=1${o ? `&overrides=${encodeURIComponent(JSON.stringify(o))}` : ''}`)
+    // Step 6 after a schedule change: the featured line belongs to the schedule on screen, and its step-by-step table
+    // (when it is a physician-fee-schedule line) loads with no error; then back to step 1, where the panel is.
+    const termSheetOk = async (label) => {
+      await showStep(page, 'term-sheet')
+      const ok = await page
+        .waitForFunction(
+          () => {
+            const s = document.querySelector('#tf-step-6')
+            if (!s || s.querySelector('.error')) return false
+            const wrap = s.querySelector('.lb-wrap')
+            return !wrap || (!!wrap.querySelector('.lb-tbl') && !wrap.querySelector('.lb-stale'))
+          },
+          { timeout: 30000, polling: 250 },
+        )
+        .then(() => true, () => false)
+      const r = await page.evaluate(() => ({
+        h: document.querySelector('#tf-step-6 .lb-wrap h3')?.innerText ?? '(no physician-fee-schedule line)',
+        err: document.querySelector('#tf-step-6 .error')?.innerText ?? '',
+        noLine: !!document.querySelector('#tf-step-6 .lb-na'),
+      }))
+      check(`csv: ${label}: term sheet line breakdown loads`, ok && !r.err, r.err || r.h)
+      log.csvRoute = { ...log.csvRoute, [`step6_${label}`]: r.h }
+      await showStep(page, 'protocol')
+    }
     const payerIs = async (want) => {
       try {
         await page.waitForFunction((w) => (document.querySelector('.tf-payer-value')?.innerText ?? '').includes(w), { timeout: 30000, polling: 250 }, want)
@@ -229,6 +255,7 @@ async function ready(page) {
     const csvBud = await budAt(null)
     check('csv: on-screen total equals API', await payerIs(usd(csvBud.totals.per_participant)), usd(csvBud.totals.per_participant))
     await sleep(1500)
+    await termSheetOk('after upload')
     const panel = await page.evaluate(() => ({
       warnings: document.querySelector('.ta-panel .ta-warn')?.innerText ?? '',
       text: document.querySelector('.ta-panel')?.textContent ?? '',
@@ -242,6 +269,7 @@ async function ready(page) {
     check('csv: no "Authored ... from the registry record" for the CSV', !panel.step1.includes('from the registry record:'))
     const csvProto = await getJson(`/api/terms-flow/${nct}/protocol`)
     log.csvRoute = {
+      ...log.csvRoute,
       per_participant: csvBud.totals.per_participant,
       unpriced_text: csvBud.totals.unpriced_text,
       kfs: panel.kfs,
@@ -254,6 +282,7 @@ async function ready(page) {
     await page.waitForFunction(() => document.querySelector('.ta-panel .badge')?.innerText.includes('Draft'), { timeout: 60000, polling: 300 })
     check('csv: back on the draft, the overrides apply again', await payerIs(usd(draftOv.totals.per_participant)), usd(draftOv.totals.per_participant))
     await sleep(1500)
+    await termSheetOk('back on the draft')
     check('csv: zero failed requests through override, upload and back', failedHere.length === 0, failedHere.join('; '))
     log.csvRoute.draft_with_overrides = draftOv.totals.per_participant
     log.csvRoute.draft_plain = draftPlain.totals.per_participant
