@@ -18,15 +18,18 @@ const ProtocolTermsView = lazy(() => import('./views/ProtocolTermsView'))
 const SiteScoresView = lazy(() => import('./views/SiteScoresView'))
 const FinancialView = lazy(() => import('./views/FinancialView'))
 const DevComponentsView = lazy(() => import('./views/DevComponentsView'))
+const HackHarvardDemo = lazy(() => import('./views/HackHarvardDemo'))
 const PortfolioCommandView = lazy(() => import('./views/PortfolioCommandView'))
 
 // Labels, sub-labels (always visible) and tooltips: copy deck B1. Protocol to terms is the product, so it leads; Portfolio
 // overlap is the second tool. Sponsor budget is a worksheet on synthetic inputs with no time model (decisions.md #24); it
 // stays out of the main navigation (navHidden) and opens at #financial.
 const TABS = [
+
   { id: 'terms-flow', label: 'Protocol to terms', hint: 'A schedule of assessments, turned into a coverage grid, a budget and a term sheet.' },
   { id: 'overlap', label: 'Portfolio overlap', hint: "Where one sponsor's trials share registered sites and eligible patients." },
   { id: 'findings', label: 'Findings', hint: 'What we tested, including results that weakened the original idea.' },
+  { id: 'demo', label: 'HackHarvard Demo', sub: 'Synthetic planning', hint: 'Three-minute deterministic planning demonstration; not a recruitment forecast.' },
   {
     id: 'site-scores',
     label: 'Site scores',
@@ -46,8 +49,8 @@ const TABS = [
     label: 'Portfolio Command',
     sub: 'Assumption-based planning',
     hint: 'Budget-constrained synthetic allocation; no validated recruitment forecast.',
-    // Teammate PR #2. Kept out of the main navigation pending review: it reports modeled "months saved", which the
-    // product does not claim (see decisions.md #24 and the app rule). Reachable at #portfolio-command.
+    // Integrated exploratory planner. Its synthetic modeled durations are separate from the primary evidence tools
+    // and are not product performance claims. Preserve the Terms-first navigation; direct route: #portfolio-command.
     navHidden: true,
   },
   { id: 'research', label: 'Research', sub: 'In-sample model outputs', hint: 'The earlier site-clearing views, kept for reference. Not product claims.' },
@@ -237,6 +240,7 @@ export default function App() {
   }
 
   // The landing page is its own page, outside the app shell.
+  if (tab === 'demo') return <Suspense fallback={<Loading label="Loading HackHarvard Demo…" />}><HackHarvardDemo /></Suspense>
   if (tab === 'home') return <LandingView focus={landingFocus} />
 
   return (
@@ -337,8 +341,8 @@ export default function App() {
       </main>
       <footer className="footer">
         <div className="footer-in">
-          Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates; Sponsor
-          budget is a worksheet on synthetic inputs with no time model. Decision support only, not clinical, legal or coverage advice.
+          Concord · HackHarvard 2026 · Trial context from ClinicalTrials.gov. Research shows historical model estimates;
+          Portfolio Command simulates synthetic operations. Sponsor budget has no time model. Decision support only, not clinical, legal or coverage advice.
         </div>
       </footer>
     </div>

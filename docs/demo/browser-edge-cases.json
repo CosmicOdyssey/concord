@@ -1,0 +1,24 @@
+{
+  "observed_at": "2026-10-17T21:47:07.149Z",
+  "base_main": "e0bd6c7bd1484c3ba6646d7e6a23d95743671641",
+  "resetDuringActualCompute": {
+    "observedInFlight": true,
+    "lateResultNotRestored": true
+  },
+  "backendUnavailable": {
+    "actual_static_server_404": true,
+    "honestUnavailableStatus": true,
+    "noAutomaticReplay": true,
+    "explicitChecksumVerifiedReplay": true
+  },
+  "generalApplication": {
+    "findingsRendered": true,
+    "termsFirstPreserved": true,
+    "returnedToFreshDemo": true
+  },
+  "exports": {
+    "json": "concord-portfolio-516465c380548233a0419d0408018d76.json",
+    "html": "Corresponding HTML export clicked in browser and checked on disk"
+  },
+  "recording": "No screen-recording capability available; no recording fabricated"
+}

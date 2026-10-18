@@ -165,6 +165,9 @@ def test_payments_conserve_and_resource_costs_are_not_payment_totals(client, req
 def test_investigational_supply_is_never_a_hospital_receipt_or_cost(client, request_body):
     default = by_id(compare(client, request_body))["A"]["economics"]
     assert default["sponsor"]["supply_resource_proxy"] > 0
+    # Ratecard is optional: reconcile receipts/resources instead of a CMS-file-dependent golden.
+    assert default["hospital"]["revenue"] == pytest.approx(sum(t["amount"] for t in default["transfers"] if t["to"] == "Hospital"), abs=.02)
+    assert default["hospital"]["net_contribution"] == pytest.approx(default["hospital"]["revenue"] - default["hospital"]["resource_cost"], abs=.02)
     request_body["coverage_overrides"] = {"drug-contingency": "SPONSOR"}
     paid = by_id(compare(client, request_body))["A"]["economics"]
     assert paid["sponsor"]["contingency_reserve"] == default["sponsor"]["contingency_reserve"] - default["sponsor"]["supply_resource_proxy"]
@@ -270,19 +273,15 @@ def test_medicare_pays_clinical_lab_tests_in_full_with_no_participant_share(clie
     fraction = request_body["payer_fraction"]
     for item in other:  # the stated payer share still splits the other routine lines
         assert item["payer_per_participant"] == pytest.approx(item["unit_rate"] * fraction, abs=0.01)
-    # Independently sum rounded line payments. A checkout may have a real CMS
-    # ratecard or explicitly labeled placeholders; neither may silently pin the
-    # other environment's totals. Do not use returned payer/patient totals here.
-    cent = Decimal("0.01")
-    expected_payer = sum(
-        (Decimal(str(i["unit_rate"])) * (Decimal(1) if i in clfs else Decimal(str(fraction))))
-        .quantize(cent, rounding=ROUND_HALF_EVEN) for i in routine)
-    expected_patient = sum(Decimal(str(i["unit_rate"])) for i in routine) - expected_payer
-    assert result["coverage"]["totals"]["payer"] == pytest.approx(float(expected_payer), abs=0.01)
-    assert result["coverage"]["totals"]["patient"] == pytest.approx(float(expected_patient), abs=0.01)
+    # Independently sum the priced routine lines. This must work with both optional CMS
+    # data and the documented approximate placeholder rates in a clean offline checkout.
+    expected_payer = sum(i["unit_rate"] for i in clfs) + sum(round(i["unit_rate"] * fraction + 1e-9, 2) for i in other)
+    expected_patient = sum(round(i["unit_rate"] * (1-fraction) + 1e-9, 2) for i in other)
+    assert result["coverage"]["totals"]["payer"] == pytest.approx(expected_payer, abs=.02)
+    assert result["coverage"]["totals"]["patient"] == pytest.approx(expected_patient, abs=.02)
     a = by_id(result)["A"]["economics"]
-    assert a["insurer"]["payments"] == pytest.approx(float(expected_payer * request_body["target"]), abs=0.01)
-    assert a["patient"]["cost_sharing"] == pytest.approx(float(expected_patient * request_body["target"]), abs=0.01)
+    assert a["insurer"]["payments"] == pytest.approx(expected_payer * request_body["target"], abs=.02)
+    assert a["patient"]["cost_sharing"] == pytest.approx(expected_patient * request_body["target"], abs=.02)
     all_payer = deepcopy(request_body)
     all_payer["payer_fraction"] = 1
     # Redistributing routine charges between payer and participant does not

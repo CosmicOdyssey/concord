@@ -1,0 +1,37 @@
+{
+  "reviewer": "Existing local Ollama; untrusted advisory review, not acceptance",
+  "task": "CONCORD-HACKHARVARD-DEMO bounded independent QA",
+  "model": "gemma3:4b",
+  "model_digest": "a2af6cc3eb7fa8be8504abaf9b04e88f17a119ec3f04a3addf55f92841195f5a",
+  "started_at": "2026-10-17T21:19:32.672747+00:00",
+  "source_sha256": {
+    "backend/concord/hackharvard_demo.py": "db4b2cdf9df94d514021b6a9f62c1327998ebdd9a0d7aa351057cd2d937f89bd",
+    "frontend/src/demoApi.ts": "77dd30afaf30eec1fb04104adf03d3ccfdb5e2175816b772635e9ea636b66ce0",
+    "frontend/src/views/HackHarvardDemo.tsx": "bb9815338b255d9f92eb8d8e6b6d835423e1cc74d0119ed4b0a27cf791af2824"
+  },
+  "prompt_sha256": "c6393ba882edb8d48b7d9a698a8393ffedd755996d609d5deda3309a4eb3a5c4",
+  "budget": {
+    "calls": 1,
+    "timeout_seconds": 30,
+    "max_output_tokens": 512,
+    "premium_calls": 0
+  },
+  "dispatch": "Direct authorized loopback call by Codex; tracked in Fleet as worker-claim, NOT a Fleet provider invocation",
+  "cost_usd": "No paid API; local electricity unmeasured",
+  "latency_ms": 22418.192,
+  "response": {
+    "model": "gemma3:4b",
+    "created_at": "2026-10-17T21:19:55.055331Z",
+    "response": "{\"backend/concord/hackharvard_demo.py\": \"The code is a demonstration of a portfolio optimization tool named Concord. It's designed to illustrate the process of generating a feasible portfolio given a set of constraints and objectives. However, it's crucial to understand that this is a *demo* and not a production-ready system. Here's a breakdown of the key aspects and concerns:\\n\\n**Key Features:**\\n\\n*   **Fixed Inputs:** The demo relies entirely on fixed inputs. No external registry, AI, or database is consulted at runtime. This is a deliberate simplification for demonstration purposes.\\n*   **Synthetic Simulation:** The simulation is synthetic, meaning it uses placeholder data and assumptions. It doesn't interact with real-world clinical trial data.\\n*   **Optimization via POST:** Optimization happens only when a POST request is made to the `/api/hackharvard-demo/optimize` endpoint.\\n*   **Simplified Financial Model:** The financial model is highly simplified, focusing on makespan and budget constraints.\\n*   **Error Handling:** Basic error handling is included, but it's not robust.\\n\\n**Concerns:**\\n\\n1.  **Lack of Validation:** The code explicitly states that the 'historical predictive performance' is 'UNVERIFIED'. This is a significant limitation. The results are not validated against any real-world data.\\n2.  **Assumptions and Simplifications:** The demo relies on a large number of assumptions, including seeded draws, simplified rate models, and fixed hospital capacities. These assumptions may not accurately reflect the complexities of a real clinical trial portfolio.\\n3.  **Limited Scope:** The demo focuses solely on weighted makespan and budget constraints. It doesn't consider other important factors such as clinical endpoints, patient enrollment rates, or regulatory requirements.\\n\\n**Limitations:**\\n\\n*   **No External Data:** The lack of external data limits the realism and applicability of the demo.\\n*   **Synthetic Data:** The synthetic data may not accurately represent the characteristics of a real clinical trial portfolio.\\n*   **Simplified Model:** The simplified financial model doesn't capture the full range of costs and revenues associated with clinical trials.\\n*   **No Validation:** The lack of validation makes it impossible to assess the accuracy or reliability of the results.\\n\"}",
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 22381437500,
+    "load_duration": 3332861542,
+    "prompt_eval_count": 7283,
+    "prompt_eval_cached_count": 0,
+    "prompt_eval_duration": 6162833000,
+    "eval_count": 489,
+    "eval_duration": 12818822000
+  },
+  "digest_still_matches": true
+}

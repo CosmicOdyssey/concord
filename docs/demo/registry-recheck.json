@@ -1,0 +1,25 @@
+{
+  "scope": "Public registry metadata only; fetched during engineering, never required by presentation",
+  "records": [
+    {
+      "id": "NCT05800015",
+      "source": "https://clinicaltrials.gov/api/v2/studies/NCT05800015",
+      "checked_at": "2026-10-17T21:33:03.708838+00:00",
+      "brief_title": "A Trial to Learn How the Combination of Fianlimab With Cemiplimab and Chemotherapy Works Compared With Cemiplimab and Chemotherapy for Treating Adult Patients With Advanced Non-small Cell Lung Cancer",
+      "sponsor": "Regeneron Pharmaceuticals",
+      "response_sha256": "bdafe317ffd52250932a241169d27a63190b50d411754f778bfd517403b7bf29",
+      "bundled_title_matches": true,
+      "bundled_sponsor_matches": true
+    },
+    {
+      "id": "NCT05785767",
+      "source": "https://clinicaltrials.gov/api/v2/studies/NCT05785767",
+      "checked_at": "2026-10-17T21:33:03.858373+00:00",
+      "brief_title": "A Study to Learn if a Combination of Fianlimab and Cemiplimab Versus Cemiplimab Alone is More Effective for Adult Participants With Advanced Non-Small Cell Lung Cancer (NSCLC)",
+      "sponsor": "Regeneron Pharmaceuticals",
+      "response_sha256": "cff7137c475c429d6144fb4b73f4cfd6e1d0d03f9378e7828d294e12970ea3de",
+      "bundled_title_matches": true,
+      "bundled_sponsor_matches": true
+    }
+  ]
+}
