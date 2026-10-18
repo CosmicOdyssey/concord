@@ -33,8 +33,10 @@ const TABS = [
   { id: 'terms-flow', label: 'Protocol to terms', hint: 'A schedule of assessments, turned into a coverage grid, a budget and a term sheet.' },
   { id: 'overlap', label: 'Portfolio overlap', hint: "Where one sponsor's trials share registered sites and eligible patients." },
   { id: 'findings', label: 'Findings', hint: 'What we tested, including results that weakened the original idea.' },
-  { id: 'demo', label: 'HackHarvard Demo', sub: 'Synthetic planning', hint: 'Three-minute deterministic planning demonstration; not a recruitment forecast.' },
-  { id: 'sponsor-agents', label: 'Sponsor Agents', sub: 'Photon · Chalk · Droid', hint: 'Three working sponsor integrations on top of the verified Concord engine.' },
+  // Teammate PRs #3/#5: kept out of the main navigation (the presentation leads with Protocol to terms; the demo page
+  // reports modeled completion times, which the product does not claim). Routes still open: #demo, #sponsor-agents.
+  { id: 'demo', label: 'HackHarvard Demo', sub: 'Synthetic planning', hint: 'Three-minute deterministic planning demonstration; not a recruitment forecast.', navHidden: true },
+  { id: 'sponsor-agents', label: 'Sponsor Agents', sub: 'Photon · Chalk · Droid', hint: 'Sponsor integrations (Photon, Chalk, Factory Droid).', navHidden: true },
   {
     id: 'site-scores',
     label: 'Site scores',
@@ -565,8 +567,8 @@ export default function App() {
         </main>
         <footer className="footer">
           <div className="footer-in">
-            Concord · HackHarvard 2026 · Trial context from ClinicalTrials.gov. Research shows historical model estimates;
-            Portfolio Command simulates synthetic operations. Sponsor budget has no time model. Decision support only, not clinical, legal or coverage advice.
+            Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates; Sponsor
+            budget is a worksheet on synthetic inputs with no time model. Decision support only, not clinical, legal or coverage advice.
           </div>
         </footer>
       </div>
