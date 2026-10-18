@@ -20,6 +20,7 @@ const FinancialView = lazy(() => import('./views/FinancialView'))
 const DevComponentsView = lazy(() => import('./views/DevComponentsView'))
 const HackHarvardDemo = lazy(() => import('./views/HackHarvardDemo'))
 const PortfolioCommandView = lazy(() => import('./views/PortfolioCommandView'))
+const SponsorAgentsView = lazy(() => import('./views/SponsorAgentsView'))
 
 // Labels, sub-labels (always visible) and tooltips: copy deck B1. Protocol to terms is the product, so it leads; Portfolio
 // overlap is the second tool. Sponsor budget is a worksheet on synthetic inputs with no time model (decisions.md #24); it
@@ -30,6 +31,7 @@ const TABS = [
   { id: 'overlap', label: 'Portfolio overlap', hint: "Where one sponsor's trials share registered sites and eligible patients." },
   { id: 'findings', label: 'Findings', hint: 'What we tested, including results that weakened the original idea.' },
   { id: 'demo', label: 'HackHarvard Demo', sub: 'Synthetic planning', hint: 'Three-minute deterministic planning demonstration; not a recruitment forecast.' },
+  { id: 'sponsor-agents', label: 'Sponsor Agents', sub: 'Photon · Chalk · Droid', hint: 'Three working sponsor integrations on top of the verified Concord engine.' },
   {
     id: 'site-scores',
     label: 'Site scores',
@@ -297,6 +299,11 @@ export default function App() {
           ) : null}
         </div>
         {tab === 'portfolio-command' && <Suspense fallback={<Loading label="Loading Portfolio Command…" />}><PortfolioCommandView /></Suspense>}
+        {tab === 'sponsor-agents' && (
+          <Suspense fallback={<Loading label="Loading Sponsor Agents…" />}>
+            <SponsorAgentsView />
+          </Suspense>
+        )}
         {tab === 'findings' && <FindingsView focus={findingFocus} />}
         {tab === 'overlap' && (
           <Suspense fallback={<Loading label="Loading portfolio overlap…" />}>

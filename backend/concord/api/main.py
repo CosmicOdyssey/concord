@@ -84,6 +84,9 @@ def _meta() -> dict:
 app.include_router(__import__("concord.financial", fromlist=["router"]).router)
 app.include_router(__import__("concord.portfolio", fromlist=["router"]).router)
 app.include_router(__import__("concord.hackharvard_demo", fromlist=["router"]).router)
+app.include_router(__import__("concord.api.photon", fromlist=["router"]).router)
+app.include_router(__import__("concord.api.chalk_eval", fromlist=["router"]).router)
+app.include_router(__import__("concord.api.droid", fromlist=["router"]).router)
 app.include_router(findings_api.router)  # findings landing page (W3)
 
 
