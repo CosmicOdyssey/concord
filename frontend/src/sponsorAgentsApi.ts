@@ -3,8 +3,12 @@
  */
 
 export interface SMSResponse {
+  request_id: string;
+  scenario_id: string;
+  provider_status: string;
+  data_mode: string;
   message_id: string;
-  status: 'DELIVERED' | 'QUEUED_OFFLINE' | 'UNAUTHORIZED' | 'DUPLICATE' | 'ERROR';
+  status: 'LOCAL_SIMULATION' | 'UNAUTHORIZED' | 'DUPLICATE' | 'ERROR';
   reply_text: string;
   sender: string;
   action_taken: string;

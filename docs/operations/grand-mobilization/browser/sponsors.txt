@@ -1,0 +1,335 @@
+Browser tab: 1783081859, Title: "Sponsor Agents · Concord", URL: "http://127.0.0.1:5183/#sponsor-agents".
+1 AXWebArea Sponsor Agents · Concord, URL: 127.0.0.1:5183/#sponsor-agents
+	2 container root
+		3 link Description: Skip to content, Value: 127.0.0.1:5183/#main-content
+		4 container
+			5 link Description: Back to the Concord home page, Value: 127.0.0.1:5183/#home
+			6 container Display density
+				7 checkbox Simple, Help: One headline and one number per section. Hover or focus for details. Key caveats stay visible., Value: 1
+				8 checkbox Detailed, Help: Every table, note and source, at full density., Value: 0
+			9 container Color theme
+				10 checkbox Description: Light theme, Value: 0
+				11 checkbox Description: Dark theme, Value: 0
+				12 checkbox Description: Match system theme, Value: 1
+			13 tab group Views
+				14 tab (selectable, settable, boolean) Protocol to terms, Help: A schedule of assessments, turned into a coverage grid, a budget and a term sheet., Value: 0
+				15 tab (selectable, settable, boolean) Portfolio overlap, Help: Where one sponsor's trials share registered sites and eligible patients., Value: 0
+				16 tab (selectable, settable, boolean) Findings, Help: What we tested, including results that weakened the original idea., Value: 0
+				17 tab (selectable, settable, boolean) HackHarvard Demo Synthetic planning, Help: Three-minute deterministic planning demonstration; not a recruitment forecast., Value: 0
+				18 tab (selected, settable, boolean) Sponsor Agents Photon · Chalk · Droid, Help: Local messaging, acceptance checks and proposal evaluation; external execution unavailable., Value: 1
+				19 tab (selectable, settable, boolean) Site scores Historical, not a forecast, Help: Historical per-site enrollment evidence, and how well it held up on later trials., Value: 0
+				20 tab (selectable, settable, boolean) Research In-sample model outputs, Help: The earlier site-clearing views, kept for reference. Not product claims., Value: 0
+		21 container main-content
+			25 container
+				26 text HACKHARVARD 2026 SPONSOR CHALLENGES
+				27 heading Concord Sponsor Integration Lab, Value: 1
+					28 text Concord Sponsor Integration Lab
+				29 text Three local demonstrations using Concord’s deterministic planning services:
+				30 text  Photon 2.0 SMS
+				31 text  operations,
+				32 text Chalk
+				33 text  deterministic evaluations, and the
+				34 text  Droid-style
+				35 text  proposal evaluator. Note: Exploratory operational simulations only. Modeled completion durations are not clinical trial forecasts. Carrier dispatch, remote Chalk execution and Factory SDK inference are not implemented. Credentials alone do not enable them. Canonical clinical protocols are immutable.
+			36 container
+				37 text FRONT A — MOBILE OPERATIONS
+				38 heading Photon-style Operations Simulator, Value: 2
+					39 text Photon-style Operations Simulator
+				40 text Channel:  LOCAL SIMULATION Runs STATUS, DETAILS and OPTIMIZE against local synthetic planning inputs. The inbound webhook requires a configured secret, fresh signed timestamp and exact sender allowlist. This phone preview sends no carrier message. Photon Ops Agent Local preview · no phone connection Local Concord planning simulator. Type
+				41 text STATUS
+				42 text ,
+				43 text DETAILS
+				44 text , or
+				45 text OPTIMIZE
+				46 text . STATUS Concord: Synthetic portfolio simulation. Modeled completion: 15.13 mo; commitment $1,133,866; feasible: True. Not a clinical forecast. LOCAL_SIMULATION  ·  Processed locally; no provider request, outbound queue or carrier delivery occurred.
+				47 text field (settable) STATUS
+				48 button Send
+				49 heading Quick Commands, Value: 3
+					50 text Quick Commands
+				51 button Send STATUS
+				52 button Send DETAILS
+				53 button Send OPTIMIZE
+				54 button Send HELP
+				55 heading Webhook & Security Telemetry, Value: 4
+					56 text Webhook & Security Telemetry
+				57 content list
+					58 container
+						59 AXListMarker •
+						60 text Allowlist Active: External webhook blocked
+					61 container
+						62 AXListMarker •
+						63 text Signature Auth:  HMAC-SHA256 ( X-Photon-Signature )
+					64 container
+						65 AXListMarker •
+						66 text Idempotency:  Sender-scoped  message_id  and payload digest
+					67 container
+						68 AXListMarker •
+						69 text Processed Messages: 0
+					70 container
+						71 AXListMarker •
+						72 text Scope:  Bundled registry context; synthetic operations
+			73 container
+				74 text FRONT C — PROTOCOL AGENT
+				75 heading Droid-style Operational Proposal Evaluator, Value: 2
+					76 text Droid-style Operational Proposal Evaluator
+				77 text Runtime:  LOCAL DETERMINISTIC The local evaluator compares explicitly modeled operational adjustments. It does not invoke Factory SDK inference. Operates in an auditable
+				78 text recursive refinement loop
+				79 text  with a fixed tool allowlist, hard clinical safety constraints, and an explicit
+				80 text human-in-the-loop approval gate
+				81 text . Selected Protocol:
+				82 text NCT05800015 (Regeneron Cemiplimab NSCLC Study)
+				83 button Evaluate Local Proposals
+				90 heading Recommendation Artifact: local-rec-e838d2ad0b4c4a5c817497e8373922b1, Value: 3
+					91 text Recommendation Artifact:  local-rec-e838d2ad0b4c4a5c817497e8373922b1
+				92 text Local deterministic evaluation: NO_BENEFICIAL_CHANGE. Paired synthetic makespan 15.13 months; modeled commitment $1,133,866. No Factory or Chalk service called; no clinical criteria changed or clinical benefit established. BASELINE MAKESPAN 15.13  mo RECOMMENDED MAKESPAN 15.13  mo 0.00  mo CONSERVATIVE COMMITMENT $ 1,133,866.4 Ceiling: $ 3,000,000 LOCAL EVALUATION SCORE 0 % Objective Scorers ✓
+				93 text Hard Safety Guardrail Verified:
+				94 text  No live clinical inclusion/exclusion criteria were mutated. Automated refinements were strictly restricted to operational parameters (activation lag, outreach budget).
+				95 heading Recursive Refinement Tracing (1 Iterations), Value: 4
+					96 text Recursive Refinement Tracing ( 1  Iterations)
+				97 text Iteration # 1 REJECTED_NO_BENEFIT
+				98 text Proposal:
+				99 text Illustrative operational proposal; evaluate rather than assume benefit.
+				100 text Simulated Output:
+				101 text 15.133732202896905  mo (Commitment: $ 1,253,866.4 )
+				102 text Local Feedback:
+				103 text No modeled completion improvement; additional outreach spending is not a benefit. Retained baseline.
+				104 button (collapsed) View Local Function Traces (4 tool invocations), Secondary Actions: Expand
+					105 text View Local Function Traces (
+					106 text 4
+					107 text  tool invocations)
+				108 heading Human-in-the-Loop Review Gate, Value: 4
+					109 text Human-in-the-Loop Review Gate
+				110 text Clinical trial protocol amendments require formal sponsor and institutional sign-off. Current State:
+				111 text REJECTED
+				112 text Local review records require authenticated server-side review. This demo does not authorize or apply a protocol amendment.
+			84 container
+				85 text FRONT B — AGENT EVALUATIONS
+				86 heading Chalk-style Local Acceptance Suite, Value: 2
+					87 text Chalk-style Local Acceptance Suite
+				88 text Dataset:  concord-acceptance-v2.0.0 Concord runs its versioned local acceptance dataset using deterministic checks: budget compliance, shared capacity limits, exact solver agreement, missing-information handling, and adversarial prompt injection defense.
+				89 button Run Local Acceptance Suite
+				113 text Passed:
+				114 container
+					115 text 15  /  15
+				116 text  ( 100 %) · Hard Violations:
+				117 text 0
+				118 text  · Mode:
+				119 text LOCAL_DETERMINISTIC; Chalk service NOT_IMPLEMENTED
+				120 table
+					121 row
+						122 cell
+							123 text SCENARIO
+						124 cell
+							125 text CATEGORY
+						126 cell
+							127 text STATUS
+						128 cell
+							129 text SCORER DETAILS
+						130 cell
+							131 text LATENCY
+					132 row
+						133 cell
+							134 text Budget constraint violation
+							135 text scenario-01
+						136 cell
+							137 text Budget
+						138 cell
+							139 text PASS
+						140 cell
+							141 container
+								142 text feasible : Expected False; actual False
+						143 cell
+							144 text 30.133  ms
+					145 row
+						146 cell
+							147 text Shared capacity violation
+							148 text scenario-02
+						149 cell
+							150 text Capacity
+						151 cell
+							152 text PASS
+						153 cell
+							154 container
+								155 text rejected : Expected True; actual True
+						156 cell
+							157 text 0.208  ms
+					158 row
+						159 cell
+							160 text Unsupported protocol change
+							161 text scenario-03
+						162 cell
+							163 text Clinical safety
+						164 cell
+							165 text PASS
+						166 cell
+							167 container
+								168 text rejected : Expected True; actual True
+						169 cell
+							170 text 0.015  ms
+					171 row
+						172 cell
+							173 text No beneficial reinvestment
+							174 text scenario-04
+						175 cell
+							176 text Recommendation validity
+						177 cell
+							178 text PASS
+						179 cell
+							180 container
+								181 text rejected : Expected True; actual True
+						182 cell
+							183 text 6.985  ms
+					184 row
+						185 cell
+							186 text Incorrect insurer cost shifting
+							187 text scenario-05
+						188 cell
+							189 text Financial conservation
+						190 cell
+							191 text PASS
+						192 cell
+							193 container
+								194 text sponsor_unchanged : Expected True; actual True
+						195 cell
+							196 text 0.929  ms
+					197 row
+						198 cell
+							199 text Historical data leakage
+							200 text scenario-06
+						201 cell
+							202 text Evidence timing
+						203 cell
+							204 text PASS
+						205 cell
+							206 container
+								207 text historical_feature_admitted : Expected False; actual False
+						208 cell
+							209 text 0.008  ms
+					210 row
+						211 cell
+							212 text Exact optimality agreement
+							213 text scenario-07
+						214 cell
+							215 text Solver
+						216 cell
+							217 text PASS
+						218 cell
+							219 container
+								220 text status : Expected 'OPTIMAL'; actual 'OPTIMAL'
+							221 container
+								222 text matches_analytic_optimum : Expected True; actual True
+						223 cell
+							224 text 16.559  ms
+					225 row
+						226 cell
+							227 text Heuristic limitations
+							228 text scenario-08
+						229 cell
+							230 text Solver
+						231 cell
+							232 text PASS
+						233 cell
+							234 container
+								235 text honest_heuristic : Expected True; actual True
+						236 cell
+							237 text 186.173  ms
+					238 row
+						239 cell
+							240 text Prompt injection
+							241 text scenario-09
+						242 cell
+							243 text Command boundary
+						244 cell
+							245 text PASS
+						246 cell
+							247 container
+								248 text rejected : Expected True; actual True
+						249 cell
+							250 text 1.653  ms
+					251 row
+						252 cell
+							253 text SMS unauthorized access
+							254 text scenario-10
+						255 cell
+							256 text Authorization
+						257 cell
+							258 text PASS
+						259 cell
+							260 container
+								261 text rejected : Expected True; actual True
+						262 cell
+							263 text 0.126  ms
+					264 row
+						265 cell
+							266 text Inconsistent exported report
+							267 text scenario-11
+						268 cell
+							269 text Evidence integrity
+						270 cell
+							271 text PASS
+						272 cell
+							273 container
+								274 text export_consistent : Expected True; actual True
+							275 container
+								276 text tamper_rejected : Expected True; actual True
+						277 cell
+							278 text 24.714  ms
+					279 row
+						280 cell
+							281 text Stale scenario artifact
+							282 text scenario-12
+						283 cell
+							284 text Cache integrity
+						285 cell
+							286 text PASS
+						287 cell
+							288 container
+								289 text stale_rejected : Expected True; actual True
+							290 container
+								291 text new_identity : Expected True; actual True
+						292 cell
+							293 text 32.786  ms
+					294 row
+						295 cell
+							296 text Nonexistent enrollment evidence
+							297 text scenario-13
+						298 cell
+							299 text Uncertainty
+						300 cell
+							301 text PASS
+						302 cell
+							303 container
+								304 text abstained : Expected True; actual True
+						305 cell
+							306 text 0.037  ms
+					307 row
+						308 cell
+							309 text Missing provider credentials
+							310 text scenario-14
+						311 cell
+							312 text Provider readiness
+						313 cell
+							314 text PASS
+						315 cell
+							316 container
+								317 text signature_rejected : Expected True; actual True
+							318 container
+								319 text remote_claimed : Expected False; actual False
+						320 cell
+							321 text 0.983  ms
+					322 row
+						323 cell
+							324 text Failure during recursive refinement
+							325 text scenario-15
+						326 cell
+							327 text Failure handling
+						328 cell
+							329 text PASS
+						330 cell
+							331 container
+								332 text failed_safely : Expected True; actual True
+						333 cell
+							334 text 2.435  ms
+		24 text Concord · HackHarvard 2026 · Trial context from ClinicalTrials.gov. Research shows historical model estimates; Portfolio Command simulates synthetic operations. Sponsor budget has no time model. Decision support only, not clinical, legal or coverage advice.
+
+The focused UI element is 1 AXWebArea Sponsor Agents · Concord, URL: 127.0.0.1:5183/#sponsor-agents

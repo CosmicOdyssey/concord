@@ -1,0 +1,64 @@
+Browser tab: 1783081859, Title: "HackHarvard Demo · Concord", URL: "http://127.0.0.1:5183/#demo".
+0 AXWebArea HackHarvard Demo · Concord, URL: 127.0.0.1:5183/#demo
+	1 container root
+		2 link Description: Skip to demo, Value: 127.0.0.1:5183/#demo-main
+		3 container
+			4 link Description: Concord, Value: 127.0.0.1:5183/#home
+			5 text HACKHARVARD 2026 · REGENERON TRACK
+			6 container Color theme
+				7 checkbox Description: Light theme, Value: 0
+				8 checkbox Description: Dark theme, Value: 0
+				9 checkbox Description: Match system theme, Value: 1
+			10 button Reset Demo
+			11 link Description: General app ↗, Value: 127.0.0.1:5183/#findings
+		12 text ILLUSTRATIVE PLANNING · NOT A FORECAST
+		13 text Local computation · bundled registry context · synthetic operations
+		14 container demo-main
+			15 container
+				16 text SCENE  5  / 6 ·  Money & evidence
+			17 heading Who pays—and what is the evidence?, Value: 1
+				18 text Who pays—and what is the evidence?
+			19 text Live computation completed · 380.5 ms server compute · OPTIMAL · 678 candidate/policy evaluations
+			55 container
+				56 text Sponsor expenditure $980,972 Plus $200,000 contingency; not a saving
+			57 container
+				58 text Hospital contribution $291,666 $1,103,652 receipts − $811,986 assumed resources
+			59 container
+				60 text Potential routine-care payer amount $384,584 Coverage classification only. No payer commitment or partnership.
+			61 container
+				62 text Participant cost sharing:  $78,096 ; travel/lodging support:  $40,000 . Separate lines—not netted. Unknown exposure remains unknown. Transfer balance:  $0 ; transfers are not added again as resource costs.
+			63 heading Registry context ≠ operating evidence, Value: 2
+				64 text Registry context ≠ operating evidence
+			65 container
+				66 link Description: NCT05800015, Value: clinicaltrials.gov/api/v2/studies/NCT05800015
+				67 text  ·  Regeneron Pharmaceuticals
+				68 text Bundled metadata captured  2026-10-17 ; not an historical as-of record.
+			69 container
+				70 link Description: NCT05785767, Value: clinicaltrials.gov/api/v2/studies/NCT05785767
+				71 text  ·  Regeneron Pharmaceuticals
+				72 text Bundled metadata captured  2026-10-17 ; not an historical as-of record.
+			73 text Authored illustrative protocol; trial 2 uses trial 1’s proxy schedule. Approximate placeholder procedure rates—not verified CMS prices. Real trial budgets, sites, recruitment and insurer payments are unknown.
+			74 heading Trace this computation, Value: 2
+				75 text Trace this computation
+			76 container
+				77 text Live computation  ·  2026-10-18T02:34:37.091049+00:00
+			78 container
+				79 text Run  d48a86779c0c3aeaf24bc125dfb8bf4a
+			80 container
+				81 text Input  153ad03d6708ed5379c7501f9928ed0831e25dec65980e30bd6bcdc4924e3db0
+			82 container
+				83 text Result  d48a86779c0c3aeaf24bc125dfb8bf4a750a194b0e2f6ec2c26697b2fc7cb75a
+			84 container
+				85 text Seed  7  ·  32  draws · historical predictive performance UNVERIFIED.
+			86 link Description: Open Evidence Report, Value: 127.0.0.1:5183/api/portfolio-command/runs/d48a86779c0c3aeaf24bc125dfb8bf4a/report/html
+			87 link Description: Download JSON, Value: 127.0.0.1:5183/api/portfolio-command/runs/d48a86779c0c3aeaf24bc125dfb8bf4a/report/json
+			88 button (collapsed) All assumptions & financial responsibility classifications, Secondary Actions: Expand
+				89 text All assumptions & financial responsibility classifications
+		49 container
+			50 button Previous Scene
+			51 text Money & evidence  ·  2:10–2:45
+			52 button Next Scene
+		53 text No internet or private credentials needed. Saved results are never shown automatically.
+		54 button Load saved rehearsal (not live)
+
+The focused UI element is 17 heading Who pays—and what is the evidence?, Value: 1

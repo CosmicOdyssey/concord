@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "project": {
-    "name": "CONCORD-HACKHARVARD-DEMO",
+    "name": "CONCORD-GRAND-MOBILIZATION",
     "languages": [],
     "metadata": {
-      "campaign": "CONCORD-HACKHARVARD-DEMO"
+      "campaign": "CONCORD-GRAND-MOBILIZATION"
     }
   },
   "repository": {
@@ -37,18 +37,7 @@
         "command": "npm",
         "args": [
           "run",
-          "test:financial"
-        ],
-        "cwd": "frontend",
-        "required": true
-      },
-      {
-        "id": "portfolio-client",
-        "label": "Portfolio client contracts",
-        "command": "npm",
-        "args": [
-          "run",
-          "test:portfolio"
+          "test"
         ],
         "cwd": "frontend",
         "required": true
@@ -60,17 +49,6 @@
         "args": [
           "run",
           "test:compare"
-        ],
-        "cwd": "frontend",
-        "required": true
-      },
-      {
-        "id": "demo-client",
-        "label": "Demo scene and integrity contracts",
-        "command": "npm",
-        "args": [
-          "run",
-          "test:demo"
         ],
         "cwd": "frontend",
         "required": true

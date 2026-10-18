@@ -24,6 +24,82 @@ Rules for the whole app: every number has a public source or a visible "assumpti
 predicted speedup, time-to-fill or enrollment rate as a product claim. Decision support, not a fair-market-value legal
 opinion or coverage advice.
 
+## Isolated synthetic planning and sponsor acceptance
+
+The original `#demo` and `#sponsor-agents` routes remain available by direct link, outside the primary navigation. The presentation continues to lead with Protocol to terms and the research findings. The planning demo computes on synthetic operating inputs and registry context; modeled completion is not a product forecast or an observed clinical outcome. Follow the [planning narration and limitations](docs/demo/HACKHARVARD-180-SECOND-SCRIPT.md).
+
+## HackHarvard Sponsor Integrations
+
+The [Sponsor Agents lab](http://127.0.0.1:5178/#sponsor-agents) contains local demonstrations,
+not completed external sponsor connections:
+
+| Integration | Current execution | External blocker |
+| --- | --- | --- |
+| [Photon](docs/sponsors/PHOTON.md) | Local command simulator and fail-closed inbound webhook contract | No carrier adapter, official provider contract or round-trip receipt |
+| [Chalk](docs/sponsors/CHALK-EVALUATIONS.md) | Versioned 15-case deterministic acceptance suite using actual engine/boundary calls | No remote Chalk client or execution receipt |
+| [Factory Droid](docs/sponsors/FACTORY-DROID.md) | Bounded local proposal evaluator; can reject ineffective changes | No Factory runtime invocation or authenticated execution receipt |
+
+Credentials alone do not implement those missing connections. No live credential is exposed to the browser.
+The unused SDK enum dependency was removed; the primary demo remains independent of sponsor SDKs.
+See [walkthrough](docs/demo/SPONSOR-CHALLENGE-WALKTHROUGH.md),
+[independent evidence](docs/sponsors/INTEGRATION-EVIDENCE.md) and the
+[campaign report](docs/operations/GRAND-MOBILIZATION-REPORT.md).
+
+## Quick Start
+
+Tested with **Python 3.14, Node 26 and uv**. From the repository root:
+
+```sh
+uv venv --python 3.14 backend/.venv
+uv pip install --python backend/.venv/bin/python -r backend/requirements.txt
+npm --prefix frontend ci
+PYTHONPATH=backend backend/.venv/bin/python -m concord.portfolio --request data/portfolio/demo-request.json --output data/work/readme-demo
+PYTHONPATH=backend backend/.venv/bin/python -m uvicorn concord.api.main:app --host 127.0.0.1 --port 8005
+```
+
+In a second terminal:
+
+```sh
+cd frontend
+API_TARGET=http://127.0.0.1:8005 npm run dev -- --host 127.0.0.1 --port 5178 --strictPort
+```
+
+The CLI writes `request.json`, `evidence.json` and `evidence.html` under the ignored
+output directory. The two planning routes work **without historical SQLite,
+credentials, model inference or a fresh network fetch**, after installing
+dependencies. Use free ports, or stop your own earlier development server first.
+For Windows, use `Scripts/python` and your shell's environment-variable syntax;
+the commands above were verified on macOS.
+
+Historical overlap, site scores and Research need the optional registry/model
+database; detailed site pricing needs the CMS ratecard. Missing data is shown as
+unavailable, with approximate prices explicitly labeled where supported. Do not
+run `scripts/pipeline.sh` over an existing dataset without preserving it. See
+[data boundaries and recovery](docs/research/README.md).
+
+## Validation and Limitations
+
+- Real ClinicalTrials.gov records supply **context**, not measured site operations.
+- Portfolio operational and financial inputs are synthetic unless explicitly sourced.
+- Historical enrollment predictive performance remains **limited and unverified
+  as a prospective forecast**; an as-of-safe historical rerun is unavailable.
+- Exact optimization is restricted to bounded instances. Larger admitted workloads
+  use feasible heuristics with **unknown optimality gap**. See the
+  [precise search limits](docs/portfolio/README.md#search-and-optimality).
+- Modeled time differences and sensitivity ranges are not observed clinical
+  benefits, calibrated prediction intervals or guaranteed savings.
+- Coverage analysis is preliminary and requires human review. It is not insurance
+  approval, a billing-compliance determination or an insurer partnership.
+- Recruitment models and synthetic population assumptions are NSCLC-specific.
+  Reusable schedule/budget infrastructure does not imply disease-wide validation.
+
+The [integration audit](docs/integration/FINAL-INTEGRATION-REPORT.md) retains the earlier
+optimizer and accounting evidence. Current software verification, missing-data skips,
+provider blockers and browser receipts are recorded in the
+[campaign report](docs/operations/GRAND-MOBILIZATION-REPORT.md).
+These checks do not establish clinical performance.
+
+
 ## Layout
 
 ```
