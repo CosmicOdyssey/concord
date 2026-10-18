@@ -21,7 +21,7 @@
     "route": "/#home -> /#terms-flow/NCT05800015",
     "density": "simple",
     "theme": "light",
-    "narration": "Concord turns a protocol into a budget both sides can check. Here's one of Regeneron's fianlimab trials in lung cancer, with an illustrative schedule from the public record.",
+    "narration": "Concord turns a protocol into a budget both sides can check. Here's a Regeneron fianlimab trial in lung cancer, with an illustrative schedule from the public record.",
     "actions": [
       { "at_s": 0, "type": "hover", "target": {"text":"Open Protocol to terms","scope":"header"}, "duration_s": 1.5, "note": "Cursor travels to the primary button in the sticky landing header." },
       { "at_s": 3.8, "type": "click", "target": {"text":"Open Protocol to terms","scope":"header"}, "duration_s": 0.3, "note": "Opens #terms-flow; with a fresh profile the trial is NCT05800015 (the default)." },
@@ -38,7 +38,7 @@
     "route": "/#terms-flow/NCT05800015/coverage",
     "density": "simple",
     "theme": "light",
-    "narration": "Each item gets a draft label: routine care, billable to insurance under Medicare's clinical-trial policy, or research, paid by the sponsor. A reviewer can override any label.",
+    "narration": "Each item gets a draft label under Medicare's clinical-trial policy: routine care, billable to insurance, or research, paid by the sponsor. A reviewer can override any label.",
     "actions": [
       { "at_s": 0, "type": "click", "target": {"text":"Coverage","scope":"nav[aria-label=\"Steps\"]"}, "duration_s": 1, "note": "Step nav button 2. Works as a tab (one step shown) or as a jump link (all steps on one page)." },
       { "at_s": 1.2, "type": "scroll_to", "target": "#tf-step-2", "offset_px": 120, "duration_s": 1, "note": "'56 of 139 scheduled items are research-only ... The other 83 are routine care'; split bar and rules R1-R5." },
@@ -54,7 +54,7 @@
     "route": "/#terms-flow/NCT05800015/budget",
     "density": "simple",
     "theme": "light",
-    "narration": "At NYU Langone in Manhattan, the key number is the anchored share. Twenty percent is priced from public CMS rates, so both sides can check it. Sixty percent is Concord's proposed standard, an assumption. The last twenty, overhead, is open to negotiation.",
+    "narration": "At NYU Langone in Manhattan, here's what the per-participant budget rests on. Twenty percent: public CMS rates, so both sides can check it. Sixty percent: Concord's proposed standard, an assumption. The last twenty, overhead, is open to negotiation.",
     "actions": [
       { "at_s": 0, "type": "click", "target": {"text":"Budget","scope":"nav[aria-label=\"Steps\"]"}, "duration_s": 1, "note": "Step nav button 3." },
       { "at_s": 1.2, "type": "scroll_to", "target": "#tf-step-3", "offset_px": 120, "duration_s": 1, "note": "'At NYU Langone Health Perlmutter Cancer Center, New York, NY, the sponsor pays $6,568.67 per participant ...'; payer cards." },
@@ -73,7 +73,7 @@
     "route": "/#terms-flow/NCT05800015/term-sheet",
     "density": "detailed",
     "theme": "light",
-    "narration": "Each line shows its math. A CT chest, code seventy-one two sixty: CMS's units, times Manhattan's regional adjustments, times thirty-three point four oh oh nine dollars per unit, equals a hundred ninety-one twenty-five. Check it on CMS.",
+    "narration": "Each line shows its math. A CT chest, code seventy-one two sixty: CMS's units, times Manhattan's regional adjustments, times thirty-three point four oh oh nine dollars per unit, equals Medicare's office rate, a hundred ninety-one twenty-five. Check it on CMS.",
     "actions": [
       { "at_s": 0, "type": "click", "target": {"text":"Detailed","scope":"header"}, "duration_s": 0.8, "note": "Density switch in the app header, on camera: Detailed shows the full step-by-step table." },
       { "at_s": 1.4, "type": "click", "target": {"text":"Term sheet","scope":"nav[aria-label=\"Steps\"]"}, "duration_s": 0.9, "note": "Step nav button 6. Its featured line is CT chest with contrast (71260), Cycle 7 Day 1." },
@@ -94,7 +94,7 @@
     "route": "/#terms-flow/NCT05800015/compare",
     "density": "simple",
     "theme": "light",
-    "narration": "Why does another site differ? Hattiesburg, Mississippi is three hundred seventy-five dollars lower per participant: Medicare's geographic adjustments, not a saving. Here's the same protocol across all one hundred nine Medicare localities.",
+    "narration": "Why does another site differ? Hattiesburg, Mississippi is three hundred seventy-five dollars lower per participant: Medicare's geographic adjustments, not a saving. Here are the same procedures in all one hundred nine localities.",
     "actions": [
       { "at_s": 0, "type": "click", "target": {"text":"Simple","scope":"header"}, "duration_s": 0.8, "note": "Back to Simple." },
       { "at_s": 1.4, "type": "click", "target": {"text":"Compare","scope":"nav[aria-label=\"Steps\"]"}, "duration_s": 0.9, "note": "Step nav button 4 (preset 'Manhattan vs Mississippi' is on by default)." },
@@ -114,7 +114,7 @@
     "route": "/#terms-flow/NCT05800015/proposal -> download:counter-proposal_NCT05800015_334d690736c4_SYNTHETIC.html",
     "density": "simple",
     "theme": "light",
-    "narration": "Now, a site's proposal: a synthetic sample with invented prices. Each line is checked against Medicare at the site's locality, times a band you set. Five sit above range, like this CT at eleven fifty. Export a sourced counter-proposal.",
+    "narration": "Now, a site's proposal: a synthetic sample with invented prices. Each coded line is checked against Medicare at the site's locality, times a band you set. Five sit above range, like this CT at eleven fifty. Export a sourced counter-proposal.",
     "actions": [
       { "at_s": 0, "type": "click", "target": {"text":"Site proposal","scope":"nav[aria-label=\"Steps\"]"}, "duration_s": 0.9, "note": "Step nav button 5." },
       { "at_s": 1.1, "type": "scroll_to", "target": "#tf-step-5", "offset_px": 120, "duration_s": 0.8, "note": "Site proposal check, empty." },
@@ -137,7 +137,7 @@
     "route": "/#terms-flow/NCT05800015 -> /#terms-flow/NCT05785767",
     "density": "simple",
     "theme": "light",
-    "narration": "Any trial with U.S. sites can be added by NCT ID. Concord drafts a cited schedule from the registry, or takes the real one as a CSV.",
+    "narration": "Add any trial with U.S. sites by NCT ID. Concord drafts a cited schedule from the registry, or takes the real one as a CSV.",
     "actions": [
       { "at_s": 0, "type": "goto", "target": "/#terms-flow/NCT05800015", "duration_s": 0, "note": "Back from the export (cut). Opens on step 1." },
       { "at_s": 0, "type": "wait", "target": "#tf-step-1 form.ta-add input", "duration_s": 1.5, "note": "Wait for the add form." },
@@ -158,7 +158,7 @@
     "route": "/#overlap -> /#overlap/regeneron",
     "density": "simple",
     "theme": "light",
-    "narration": "A second tool checks a sponsor's own trials against each other. Regeneron's two fianlimab trials shared sixteen registered U.S. sites. On a synthetic population, every simulated patient eligible for the stricter trial also qualified for the other.",
+    "narration": "A second tool checks a sponsor's own trials for overlap. Two of Regeneron's fianlimab trials shared sixteen registered U.S. sites. On a synthetic population, every simulated patient who fit the stricter trial also fit the other.",
     "actions": [
       { "at_s": 0, "type": "click", "target": {"text":"Portfolio overlap","scope":"nav.tabs"}, "duration_s": 0.8, "note": "App tab 'Portfolio overlap'." },
       { "at_s": 1, "type": "wait", "target": "button.ov-preset", "duration_s": 1, "note": "Controls render (Indication, Sponsor, As of, Region, preset)." },
@@ -178,7 +178,7 @@
     "route": "/#home/compare",
     "density": "simple",
     "theme": "light",
-    "narration": "Of twenty products we reviewed, none says publicly that it prices budget lines at the site's Medicare locality. CMS's free tool does it one code at a time. They have negotiated-price benchmarks; we don't.",
+    "narration": "Of twenty products reviewed, none says publicly it prices budget lines at the site's Medicare locality. CMS's free tool does, one code at a time. Some vendors have negotiated-price benchmarks; we don't.",
     "actions": [
       { "at_s": 0, "type": "goto", "target": "/#home/compare", "duration_s": 0, "note": "Cut to the landing page, How Concord compares." },
       { "at_s": 0, "type": "wait", "target": "#landing-compare table.cmp-tbl", "duration_s": 1, "note": "Wait for the matrix." },
@@ -198,7 +198,7 @@
     "route": "/#home/compare, scrolled to What we tested",
     "density": "simple",
     "theme": "light",
-    "narration": "Our first idea, coordinating sites across trials, didn't hold up on held-out data. So the product sticks to counts, criteria and sourced prices.",
+    "narration": "Our first idea, coordinating sites across trials, didn't hold up on held-out data. So Concord sticks to counts, criteria and sourced prices.",
     "actions": [
       { "at_s": 0, "type": "scroll_to", "target": "#landing-tested", "offset_px": 110, "duration_s": 2, "note": "'What we tested'." },
       { "at_s": 2.6, "type": "scroll_to", "target": "#landing-tested ol.lp-results > li:nth-child(2)", "offset_px": 170, "duration_s": 1.5, "note": "'Coordinating sites across trials did not hold up on held-out data.' 1.42x in-sample, 1.05x held-out." },
@@ -213,7 +213,7 @@
     "route": "/#home/compare, scrolled to Sources and the close",
     "density": "simple",
     "theme": "light",
-    "narration": "Concord is decision support, not a fair-market-value legal opinion. Free, open source, every number sourced or labelled an assumption. Built by the Bruno Bears at Brown. Our ask: site-level enrollment data. The registry never reports it.",
+    "narration": "Concord is decision support, not a fair-market-value legal opinion. Free, with public code, every number sourced or labelled an assumption. Built by the Bruno Bears at Brown. Our ask: site-level enrollment data. The registry doesn't report it.",
     "actions": [
       { "at_s": 0, "type": "scroll_to", "target": "section.lp-sources", "offset_px": 120, "duration_s": 2.5, "note": "Sources: CMS 2026 PFS (conversion factor $33.4009), CMS 2026 CLFS, NCD 310.1, Concord proposed standard (assumption), ClinicalTrials.gov, synthetic population." },
       { "at_s": 7, "type": "scroll_to", "target": "section.lp-close", "offset_px": 120, "duration_s": 2, "note": "'Price a protocol line by line, and see where every number comes from.' and the footer link github.com/CosmicOdyssey/concord." },
