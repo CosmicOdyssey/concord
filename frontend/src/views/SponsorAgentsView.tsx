@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   fetchPhotonStatus,
+  fetchDroidStatus, fetchChalkStatus, sendLivePhoton, runLiveDroidAgent, runRemoteChalk, remoteChalkComplete,
+  type ProviderReadiness, type RemoteChalkReport,
   sendSimulatedSMS,
   runDroidAgent,
   runChalkEvaluations,
@@ -12,7 +14,32 @@ import {
 } from '../sponsorAgentsApi';
 import './sponsor-agents.css';
 
+export function Readiness({label, status, error, gate}: {label: string; status: ProviderReadiness | null; error: string | null; gate: boolean}) {
+  return <div className="provider-readiness" aria-label={`${label} provider readiness`}>
+    <h3>{label}: {status?.readiness ?? 'UNKNOWN'}</h3>
+    <p>Provider: {status?.provider_status ?? 'UNKNOWN'} · Authentication: {status?.auth_status ?? 'UNKNOWN'} · Server execution gate: {gate ? 'ENABLED' : 'DISABLED / UNKNOWN'}</p>
+    {error && <p role="status">{error}</p>}
+    {status && <p>Missing prerequisites: {status.missing_prerequisites.length ? status.missing_prerequisites.join(', ') : 'None reported; configuration alone does not verify connection or spending eligibility.'}</p>}
+    {status?.remote_requirements && <p>Remote requirements: {status.remote_requirements.join('; ')}</p>}
+  </div>
+}
+function eligible(status: ProviderReadiness | null, gate: boolean): boolean {
+  return !!status && status.missing_prerequisites.length === 0 && gate
+}
 export default function SponsorAgentsView() {
+  const [operatorToken, setOperatorToken] = useState('');
+  const [remoteBusy, setRemoteBusy] = useState<'photon' | 'factory' | 'chalk' | null>(null);
+  const [confirmPhoton, setConfirmPhoton] = useState(false);
+  const [confirmFactory, setConfirmFactory] = useState(false);
+  const [confirmChalk, setConfirmChalk] = useState(false);
+  const [sendId, setSendId] = useState(() => crypto.randomUUID());
+  const [sendReceipt, setSendReceipt] = useState<SMSResponse | null>(null);
+  const [remoteChalk, setRemoteChalk] = useState<RemoteChalkReport | null>(null);
+  const [droidStatus, setDroidStatus] = useState<ProviderReadiness | null>(null);
+  const [chalkStatus, setChalkStatus] = useState<ProviderReadiness | null>(null);
+  const [droidStatusError, setDroidStatusError] = useState<string | null>(null);
+  const [chalkStatusError, setChalkStatusError] = useState<string | null>(null);
+  const [statusRefresh, setStatusRefresh] = useState(0);
   // --- Photon SMS State ---
   const [photonError, setPhotonError] = useState<string | null>(null);
   const [photonStatus, setPhotonStatus] = useState<PhotonStatus | null>(null);
@@ -32,10 +59,12 @@ export default function SponsorAgentsView() {
 
   useEffect(() => {
     let disposed = false;
-    fetchPhotonStatus().then(value => { if (!disposed) setPhotonStatus(value); }).catch(() => { if (!disposed) setPhotonError('Backend status unavailable. No phone/provider connection has been verified.'); });
+    fetchPhotonStatus().then(value => { if (!disposed) { setPhotonStatus(value); setPhotonError(null); } }).catch(() => { if (!disposed) { setPhotonStatus(null); setPhotonError('Backend status unavailable. No phone/provider connection has been verified.'); } });
+    fetchDroidStatus().then(value => { if (!disposed) { setDroidStatus(value); setDroidStatusError(null); } }).catch(() => { if (!disposed) { setDroidStatus(null); setDroidStatusError('Factory backend readiness unavailable; connection UNKNOWN.'); } });
+    fetchChalkStatus().then(value => { if (!disposed) { setChalkStatus(value); setChalkStatusError(null); } }).catch(() => { if (!disposed) { setChalkStatus(null); setChalkStatusError('Chalk backend readiness unavailable; connection UNKNOWN.'); } });
     fetchLatestChalkReport().then(value => { if (!disposed) setChalkReport(value); }).catch(() => {});
     return () => { disposed = true; };
-  }, []);
+  }, [statusRefresh]);
 
   const handleSendSMS = async (commandText?: string) => {
     const text = commandText || smsInput;
@@ -81,23 +110,56 @@ export default function SponsorAgentsView() {
     }
   };
 
+  const performRemote = async (kind: 'photon' | 'factory' | 'chalk') => {
+    if (remoteBusy) return;
+    setRemoteBusy(kind); setError(null);
+    try {
+      if (kind === 'photon') {
+        setSendReceipt(null);
+        setSendReceipt(await sendLivePhoton({body: 'STATUS', messageId: sendId, operatorToken, confirmLive: confirmPhoton}));
+      } else if (kind === 'factory') {
+        setDroidRec(null); setDroidLoading(true);
+        setDroidRec(await runLiveDroidAgent(operatorToken, confirmFactory));
+      } else {
+        setRemoteChalk(null);
+        setRemoteChalk(await runRemoteChalk(operatorToken, confirmChalk));
+      }
+    } catch (e: unknown) {
+      setError(`${kind} action failed: ${e instanceof Error ? e.message : String(e)}${kind === 'photon' ? ' Outcome may be unknown. Reconcile the stable message ID before a further send; no automatic retry occurs.' : ' Local results have not been substituted.'}`);
+    } finally {
+      setOperatorToken(''); setConfirmPhoton(false); setConfirmFactory(false); setConfirmChalk(false);
+      setRemoteBusy(null); if (kind === 'factory') setDroidLoading(false);
+    }
+  };
+
   return (
     <div className="sponsor-agents-container">
       <header className="sponsor-header">
         <div className="sponsor-badge">HACKHARVARD 2026 SPONSOR CHALLENGES</div>
         <h1>Concord Sponsor Integration Lab</h1>
         <p className="sponsor-subtitle">
-          Three local demonstrations using Concord’s deterministic planning services:
+          Local planning tools and separately authorized provider connections:
           <strong> Photon 2.0 SMS</strong> operations, <strong>Chalk</strong> deterministic evaluations, and the
           <strong> Droid-style</strong> proposal evaluator.
         </p>
         <div className="sponsor-disclaimer">
           Note: Exploratory operational simulations only. Modeled completion durations are not clinical trial forecasts.
-          Carrier dispatch, remote Chalk execution and Factory SDK inference are not implemented. Credentials alone do not enable them. Canonical clinical protocols are immutable.
+          Remote adapters require server gates, provider prerequisites and explicit operator authorization. Credentials alone do not verify a connection. Carrier delivery is not established by API acceptance. Canonical clinical protocols remain immutable.
         </div>
       </header>
 
       {error && <p role="alert" className="sponsor-disclaimer">{error}</p>}
+      <section className="sponsor-card remote-authorization" aria-label="Provider authorization">
+        <h2>Provider readiness and operator authorization</h2>
+        <p>Readiness requests are read-only. Remote actions below can send a message or consume provider compute; none run automatically. The server owns every execution gate and configured destination.</p>
+        <button type="button" onClick={() => setStatusRefresh(value => value + 1)}>Refresh provider readiness</button>
+        <label htmlFor="sponsor-operator-token">Operator token (memory only; cleared after every remote action)</label>
+        <input id="sponsor-operator-token" type="password" autoComplete="off" value={operatorToken} onChange={event => setOperatorToken(event.target.value)} disabled={!!remoteBusy} />
+        <button type="button" onClick={() => setOperatorToken('')} disabled={!!remoteBusy}>Clear token</button>
+        <Readiness label="Photon" status={photonStatus} error={photonError} gate={photonStatus?.outbound_enabled === true} />
+        <Readiness label="Factory" status={droidStatus} error={droidStatusError} gate={droidStatus?.live_execution_enabled === true} />
+        <Readiness label="Chalk" status={chalkStatus} error={chalkStatusError} gate={chalkStatus?.remote_execution_enabled === true} />
+      </section>
       {/* --- FRONT A: PHOTON 2.0 SMS AGENT --- */}
       <section className="sponsor-card">
         <div className="card-header">
@@ -184,6 +246,16 @@ export default function SponsorAgentsView() {
         </div>
       </section>
 
+      <section className="sponsor-card remote-action" aria-label="Explicit Photon send">
+        <h2>Photon API: one configured-space STATUS reply</h2>
+        <p>Computes the synthetic STATUS reply and sends it to the server-configured Photon space/user. No destination can be entered here. This is separate from the phone preview. API acceptance never proves carrier delivery.</p>
+        <p>Stable message ID: <code>{sendId}</code>. Preserve this ID when reconciling an unknown outcome.</p>
+        <button type="button" disabled={!!remoteBusy} onClick={() => { setSendId(crypto.randomUUID()); setSendReceipt(null); setConfirmPhoton(false); }}>Prepare new send ID</button>
+        <label className="remote-confirm"><input type="checkbox" checked={confirmPhoton} disabled={!!remoteBusy} onChange={event => setConfirmPhoton(event.target.checked)} />I authorize one STATUS reply to the approved server-configured Photon space/user.</label>
+        <button type="button" onClick={() => void performRemote('photon')} disabled={!!remoteBusy || !confirmPhoton || !operatorToken.trim() || !eligible(photonStatus, photonStatus?.outbound_enabled === true)}>Send approved STATUS via Photon API</button>
+        {sendReceipt && <div className="receipt-card" role="status"><h3>Photon outcome: {sendReceipt.status}</h3><p>{sendReceipt.delivery_note}</p><p>Provider message: {sendReceipt.provider_message_id ?? 'UNKNOWN'} · Request: {sendReceipt.request_id}</p><p>Dispatched: {sendReceipt.dispatched_at ?? 'UNKNOWN'} · Carrier delivery: UNVERIFIED</p><p>No automatic retry. A repeated stable ID retrieves its server-side receipt.</p></div>}
+      </section>
+
       {/* --- FRONT C: FACTORY DROID SDK PROTOCOL AGENT --- */}
       <section className="sponsor-card">
         <div className="card-header">
@@ -210,11 +282,19 @@ export default function SponsorAgentsView() {
           </button>
         </div>
 
+        <div className="remote-action">
+          <h3>Factory SDK: explicitly run bounded proposals</h3>
+          <p>Uses the configured Factory model for at most three operational proposals. Concord independently validates them against its synthetic planning engine. No proposal is applied or clinically authorized.</p>
+          <label className="remote-confirm"><input type="checkbox" checked={confirmFactory} disabled={!!remoteBusy} onChange={event => setConfirmFactory(event.target.checked)} />I authorize one Factory SDK run and its provider usage under the configured budget.</label>
+          <button type="button" onClick={() => void performRemote('factory')} disabled={!!remoteBusy || droidLoading || !confirmFactory || !operatorToken.trim() || !eligible(droidStatus, droidStatus?.live_execution_enabled === true)}>Run approved Factory SDK proposals</button>
+        </div>
+
         {droidRec && (
           <div className="droid-result-container">
             <div className="summary-banner">
               <h3>Recommendation Artifact: {droidRec.recommendation_id}</h3>
-              <p>{droidRec.executive_summary}</p>
+              <p>{droidRec.executive_summary}</p><p>Execution mode: {droidRec.execution_mode ?? 'UNKNOWN'} · Runtime: {droidRec.runtime_agent} · Disposition: {droidRec.disposition ?? 'UNKNOWN'}</p>
+              {droidRec.runtime_receipt && <p>Actual Factory receipt: session {droidRec.runtime_receipt.session_id ?? 'UNKNOWN'} · {droidRec.runtime_receipt.status ?? 'UNKNOWN'} · {droidRec.runtime_receipt.duration_ms ?? 'UNKNOWN'} ms · {droidRec.runtime_receipt.turn_count ?? 'UNKNOWN'} turns</p>}
             </div>
 
             <div className="metrics-grid">
@@ -243,7 +323,7 @@ export default function SponsorAgentsView() {
             <div className="safety-guardrail-banner">
               <span className="check-icon">✓</span>
               <div>
-                <strong>Hard Safety Guardrail Verified:</strong> No live clinical inclusion/exclusion criteria were mutated.
+                <strong>{droidRec.clinical_safety_status === 'PASSED_NO_CLINICAL_MUTATION' ? 'Clinical criteria unchanged under local checks:' : 'Clinical safety checks rejected this proposal:'}</strong> {droidRec.clinical_safety_status}
                 Automated refinements were strictly restricted to operational parameters (activation lag, outreach budget).
               </div>
             </div>
@@ -273,7 +353,7 @@ export default function SponsorAgentsView() {
 
             {/* Tool Trace */}
             <details className="tool-trace-details">
-              <summary>View Local Function Traces ({droidRec.tool_trace.length} tool invocations)</summary>
+              <summary>View Concord Validation Function Traces ({droidRec.tool_trace.length} tool invocations)</summary>
               <ul className="tool-trace-list">
                 {droidRec.tool_trace.map((t, idx) => (
                   <li key={idx}>
@@ -325,6 +405,21 @@ export default function SponsorAgentsView() {
               Mode: <em>{chalkReport.engine_mode}</em>
             </div>
           )}
+        </div>
+
+        <div className="remote-action">
+          <h3>Chalk Compute: separately execute all 15 acceptance cases</h3>
+          <p>This action deploys two bounded Functions, uploads the versioned dataset and reads the remote evaluation result rows. It consumes authorized remote compute, not model inference. The local table remains independent.</p>
+          <label className="remote-confirm"><input type="checkbox" checked={confirmChalk} disabled={!!remoteBusy} onChange={event => setConfirmChalk(event.target.checked)} />I authorize one remote Chalk run and its compute budget.</label>
+          <button type="button" onClick={() => void performRemote('chalk')} disabled={!!remoteBusy || !confirmChalk || !operatorToken.trim() || !eligible(chalkStatus, chalkStatus?.remote_execution_enabled === true)}>Run approved remote Chalk evaluation</button>
+          {remoteChalk && <div className="receipt-card" role="status">
+            <h4>{remoteChalkComplete(remoteChalk) ? 'Remote 15-case acceptance complete and passing' : 'Remote result incomplete or failing — no acceptance claimed'}</h4>
+            <p>Mode: {remoteChalk.execution_mode} · Evaluation: {remoteChalk.evaluation_id} · Run: {remoteChalk.run_id}</p>
+            <p>Dataset: {remoteChalk.dataset_version} · Digest: <code>{remoteChalk.dataset_sha256}</code></p>
+            <p>Actual rows: {remoteChalk.row_count ?? 'UNKNOWN'} / 15 · Passed: {remoteChalk.passed_scenarios ?? 'UNKNOWN'} · Failed: {remoteChalk.failed_scenarios ?? 'UNKNOWN'} · Row errors: {remoteChalk.row_errors?.length ?? 'UNKNOWN'}</p>
+            <p>Recorded: {remoteChalk.recorded_at ?? 'UNKNOWN'} · Provider run status: {remoteChalk.run_status ?? 'UNKNOWN'}</p>
+            <ul>{remoteChalk.rows.map((row, index) => <li key={index}>{String(row.scenario_id ?? 'UNKNOWN')} · {Object.entries(row).some(([key,value]) => (key === 'output_error' || key.endsWith('_error')) && !!value) ? 'ROW ERROR' : 'No row error reported'} · Scorer values: {Object.entries(row).filter(([key]) => key.endsWith('_value') && key !== 'output_value').map(([key,value]) => `${key}: ${typeof value === 'number' || typeof value === 'boolean' ? String(value) : 'UNKNOWN'}`).join(', ') || 'UNKNOWN'}</li>)}</ul>
+          </div>}
         </div>
 
         {chalkReport && (

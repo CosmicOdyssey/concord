@@ -1,4 +1,4 @@
-"""Local SMS command adapter. Remote Photon dispatch is not implemented.
+"""Local SMS commands and explicitly gated Photon API dispatch.
 
 The external JSON webhook is a Concord HMAC contract, not a claim of provider
 compatibility. It requires a configured secret, sender allowlist and fresh signed

@@ -120,7 +120,7 @@ def test_factory_sdk_session_contract_offline():
     const require=createRequire(new URL('./frontend/package.json',import.meta.url));
     const ids=['inspect_protocol','identify_operational_bottlenecks','simulate_operational_variant'].map(x=>'mcp__concord_protocol_tools__'+x);
     let server,closed=false,serverClosed=false,disabled=[];
-    const sdk={AutonomyLevel:{Off:'off'},ToolConfirmationOutcome:{ProceedOnce:'once',Cancel:'cancel'},OutputFormatType:{JsonSchema:'json_schema'},
+    const sdk={listModels:async()=>[{id:'approved-test-model',modelProvider:'openai'}],AutonomyLevel:{Off:'off'},ToolConfirmationOutcome:{ProceedOnce:'once',Cancel:'cancel'},OutputFormatType:{JsonSchema:'json_schema'},
       tool:(name,description,schema,handler)=>({name,handler}),
       createSdkMcpServer:config=>(server={...config,close:async()=>{serverClosed=true;}}),
       createSession:async options=>{

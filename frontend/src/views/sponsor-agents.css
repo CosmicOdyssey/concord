@@ -712,3 +712,14 @@
   font-family: var(--font-mono, monospace);
 }
 
+
+/* Provider actions remain explicit within the contributor's white card layout. */
+.remote-authorization label, .remote-confirm { display: block; margin: 14px 0 8px; line-height: 1.5; }
+.remote-authorization input[type="password"] { display: block; width: min(100%, 440px); min-height: 40px; padding: 8px; border: 1px solid var(--rule, #e2e8f0); border-radius: 6px; background: var(--surface, #fff); color: var(--ink, #0f172a); }
+.provider-readiness { border-top: 1px solid var(--rule, #e2e8f0); padding-top: 12px; margin-top: 16px; overflow-wrap: anywhere; }
+.provider-readiness h3 { font-size: 16px; margin: 0 0 8px; }
+.remote-action { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--rule, #e2e8f0); }
+.remote-action button, .remote-authorization button { padding: 10px 14px; border: 1px solid var(--rule, #e2e8f0); border-radius: 6px; background: var(--surface, #fff); color: var(--ink, #0f172a); cursor: pointer; }
+.remote-action button:disabled { opacity: .55; cursor: not-allowed; }
+.remote-action code, .receipt-card { overflow-wrap: anywhere; }
+.remote-confirm input { margin-right: 8px; }

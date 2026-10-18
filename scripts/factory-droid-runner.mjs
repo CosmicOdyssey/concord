@@ -15,7 +15,7 @@ export function allowedToolId(id) {
 
 export async function runFactoryDroid(trialId = 'NCT05800015', maxIterations = 3, injected = {}) {
   const environment = injected.env ?? process.env;
-  if (environment.CONCORD_ALLOW_FACTORY_RUN !== '1' || !environment.FACTORY_API_KEY || !environment.FACTORY_MODEL_ID || /claude|astra|^auto$/i.test(environment.FACTORY_MODEL_ID)) throw new Error('Factory live execution/model authorization is missing');
+  if (environment.CONCORD_ALLOW_FACTORY_RUN !== '1' || !environment.FACTORY_API_KEY || !environment.FACTORY_MODEL_ID || /claude|sonnet|opus|haiku|astra|^auto$/i.test(environment.FACTORY_MODEL_ID)) throw new Error('Factory live execution/model authorization is missing');
   if (!/^[A-Za-z0-9_-]{1,40}$/.test(trialId) || !Number.isInteger(maxIterations) || maxIterations < 1 || maxIterations > 3) throw new Error('Unsupported bounded request');
   const sdk = injected.sdk ?? await import(require.resolve('@factory/droid-sdk/node'));
   const { z } = injected.zod ?? require('zod');
@@ -42,6 +42,10 @@ export async function runFactoryDroid(trialId = 'NCT05800015', maxIterations = 3
   let session;
   let allowed = new Set();
   try {
+    const catalog = await sdk.listModels({ apiKey: environment.FACTORY_API_KEY, execPath: environment.FACTORY_DROID_EXEC_PATH,
+      cwd: privateDir, env: { HOME: privateDir, XDG_CONFIG_HOME: privateDir } });
+    const selected = catalog.find(model => model.id === environment.FACTORY_MODEL_ID);
+    if (!selected || selected.disabled || /anthropic|claude|astra/i.test(String(selected.modelProvider))) throw new Error('Requested model is unavailable or reserved');
     session = await sdk.createSession({ execPath: environment.FACTORY_DROID_EXEC_PATH, apiKey: environment.FACTORY_API_KEY, modelId: environment.FACTORY_MODEL_ID,
       cwd: privateDir, env: { HOME: privateDir, XDG_CONFIG_HOME: privateDir }, disableBuiltinSkills: true,
       autonomyLevel: sdk.AutonomyLevel.Off, abortSignal: controller.signal, mcpServers: [server],

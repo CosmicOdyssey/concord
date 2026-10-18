@@ -8,16 +8,32 @@ export interface SMSResponse {
   provider_status: string;
   data_mode: string;
   message_id: string;
-  status: 'LOCAL_SIMULATION' | 'UNAUTHORIZED' | 'DUPLICATE' | 'ERROR';
+  status: 'LOCAL_SIMULATION' | 'UNAUTHORIZED' | 'DUPLICATE' | 'ERROR' | 'ACCEPTED' | 'DELIVERY_UNKNOWN';
   reply_text: string;
   sender: string;
   action_taken: string;
   is_simulated_data: boolean;
   real_engine_data?: Record<string, any>;
   delivery_note: string;
+  delivery_mode?: string;
+  provider_message_id?: string | null;
+  dispatched_at?: string | null;
+  runtime_receipt?: Record<string, unknown> | null;
 }
 
-export interface PhotonStatus {
+export interface ProviderReadiness {
+  readiness: string;
+  provider_status: string;
+  auth_status: string;
+  missing_prerequisites: string[];
+  outbound_enabled?: boolean;
+  live_execution_enabled?: boolean;
+  remote_execution_enabled?: boolean;
+  remote_requirements?: string[];
+  execution_disclosure?: string;
+  local_scenarios?: number;
+}
+export interface PhotonStatus extends ProviderReadiness {
   provider: string;
   live_api_configured: boolean;
   webhook_secret_configured: boolean;
@@ -70,6 +86,10 @@ export interface DroidRecommendation {
   human_approval_status: 'PENDING_HUMAN_REVIEW' | 'APPROVED' | 'REJECTED';
   iterations: RefinementIteration[];
   tool_trace: DroidToolAction[];
+  execution_mode?: string;
+  provider_status?: string;
+  disposition?: string;
+  runtime_receipt?: {session_id?: string; status?: string; duration_ms?: number; turn_count?: number; token_usage?: unknown} | null;
 }
 
 export interface ChalkScenarioResult {
@@ -113,8 +133,21 @@ async function backend<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return body as T
 }
+async function readiness<T extends ProviderReadiness>(path: string): Promise<T> {
+  const result = await backend<T>(path)
+  if (typeof result.readiness !== 'string' || typeof result.provider_status !== 'string' || typeof result.auth_status !== 'string' || !Array.isArray(result.missing_prerequisites) || !result.missing_prerequisites.every(value => typeof value === 'string')) {
+    throw new Error(`${path} returned incomplete readiness; provider connection is UNKNOWN`)
+  }
+  return result
+}
 export function fetchPhotonStatus(): Promise<PhotonStatus> {
-  return backend('/api/agents/photon/status')
+  return readiness('/api/agents/photon/status')
+}
+export function fetchDroidStatus(): Promise<ProviderReadiness> {
+  return readiness('/api/agents/droid/status')
+}
+export function fetchChalkStatus(): Promise<ProviderReadiness> {
+  return readiness('/api/evals/chalk/status')
 }
 export function sendSimulatedSMS(body: string, sender: string = '+16175550199'): Promise<SMSResponse> {
   return backend('/api/agents/photon/simulate', {
@@ -137,4 +170,42 @@ export function runChalkEvaluations(): Promise<ChalkEvaluationReport> {
 }
 export function fetchLatestChalkReport(): Promise<ChalkEvaluationReport> {
   return backend('/api/evals/chalk/latest')
+}
+
+
+export interface RemoteChalkReport {
+  provider_status: string; execution_mode: string; auth_status: string; readiness: string;
+  dataset_version: string; dataset_sha256: string; evaluation_id: string; run_id: string;
+  run_status: string; recorded_at: string; row_count: number; passed_scenarios: number;
+  failed_scenarios: number; complete_and_passing: boolean; row_errors: unknown[];
+  rows: Record<string, unknown>[];
+}
+function operatorHeaders(token: string, confirmed: boolean): Record<string, string> {
+  if (!confirmed) throw new Error('Explicit remote-action confirmation is required')
+  if (!token.trim()) throw new Error('Operator token is required; no provider request was made')
+  if (!/^[\x20-\x7e]+$/.test(token)) throw new Error('Operator token must contain printable ASCII only; no provider request was made')
+  return {'Content-Type': 'application/json', 'X-Concord-Operator-Token': token}
+}
+/** One explicit request; never retry a possibly accepted send automatically. */
+export async function sendLivePhoton(options: {body: string; messageId: string; operatorToken: string; confirmLive: boolean}): Promise<SMSResponse> {
+  const headers = operatorHeaders(options.operatorToken, options.confirmLive)
+  if (!options.messageId || options.messageId.length > 128) throw new Error('A stable message ID is required')
+  const result = await backend<SMSResponse>('/api/agents/photon/send', {method: 'POST', headers,
+    body: JSON.stringify({body: options.body, sender: '+16175550199', message_id: options.messageId, confirm_live: true})})
+  if (result.delivery_mode !== 'PHOTON_API' || !result.runtime_receipt || !['ACCEPTED', 'DELIVERY_UNKNOWN'].includes(result.status) || (result.status === 'ACCEPTED' && !result.provider_message_id)) throw new Error('Photon did not return a valid provider send receipt; delivery remains UNKNOWN')
+  return result
+}
+export async function runLiveDroidAgent(operatorToken: string, confirmLive: boolean): Promise<DroidRecommendation> {
+  const result = await backend<DroidRecommendation>('/api/agents/droid/run', {method: 'POST', headers: operatorHeaders(operatorToken, confirmLive),
+    body: JSON.stringify({trial_id: 'NCT05800015', max_iterations: 3, execution_mode: 'LIVE_FACTORY'})})
+  if (result.execution_mode !== 'LIVE_FACTORY_PROPOSAL_LOCAL_ENGINE_VALIDATION' || result.provider_status !== 'EXECUTED' || result.runtime_receipt?.status !== 'SUCCEEDED' || !result.runtime_receipt.session_id || result.human_approval_status !== 'PENDING_HUMAN_REVIEW') throw new Error('Factory runtime receipt is missing or invalid; no live proposal execution is claimed')
+  return result
+}
+export async function runRemoteChalk(operatorToken: string, confirmLive: boolean): Promise<RemoteChalkReport> {
+  const result = await backend<RemoteChalkReport>('/api/evals/chalk/remote-run', {method: 'POST', headers: operatorHeaders(operatorToken, confirmLive), body: JSON.stringify({confirm_live: true})})
+  if (result.execution_mode !== 'REMOTE_CHALK_COMPUTE' || result.provider_status !== 'EXECUTED' || !result.evaluation_id || !result.run_id || !Array.isArray(result.rows) || typeof result.complete_and_passing !== 'boolean') throw new Error('Chalk remote result dataset receipt is missing or invalid; local results have not been substituted')
+  return result
+}
+export function remoteChalkComplete(report: RemoteChalkReport): boolean {
+  return report.complete_and_passing === true && report.row_count === 15 && report.rows.length === 15 && report.passed_scenarios === 15 && report.failed_scenarios === 0 && Array.isArray(report.row_errors) && report.row_errors.length === 0
 }

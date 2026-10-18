@@ -37,6 +37,8 @@ def run_droid_agent(req: RunDroidRequest, x_concord_operator_token: str | None =
     try:
         rec = (execute_live_factory if req.execution_mode == "LIVE_FACTORY" else execute_droid_protocol_agent)(trial_id=req.trial_id, max_iterations=req.max_iterations)
     except ValueError:
+        if req.execution_mode == "LIVE_FACTORY":
+            raise HTTPException(503, {"code": "FACTORY_EXECUTION_BLOCKED_OR_FAILED", "missing_prerequisites": get_droid_status()["missing_prerequisites"], "message": "No live Factory result claimed; check SDK, CLI, account/model and authorized usage."}) from None
         raise HTTPException(422, "Trial or operational proposal is unsupported") from None
     with _REVIEW_LOCK:
         if len(_STORED_RECOMMENDATIONS) >= 100:

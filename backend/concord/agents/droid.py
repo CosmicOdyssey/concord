@@ -238,6 +238,7 @@ def execute_live_factory(trial_id: str, max_iterations: int):
         raise ValueError("Factory prerequisites are missing")
     if not 1 <= max_iterations <= 3 or trial_id not in {t.id for t in demo.request().trials}:
         raise ValueError("Unsupported Factory request")
+    _evaluate_fixed(demo.request())  # Fence stale sources/pricing before any SDK or model request.
     environment = {key: os.environ[key] for key in ("PATH", "FACTORY_API_KEY", "FACTORY_MODEL_ID", "CONCORD_ALLOW_FACTORY_RUN", "FACTORY_DROID_EXEC_PATH") if key in os.environ}
     environment.update(CONCORD_BACKEND_PYTHON=sys.executable, PYTHONPATH=str(p.ROOT / "backend"))
     process = subprocess.Popen(["node", str(p.ROOT / "scripts/factory-droid-runner.mjs"), "--trial-id", trial_id,
@@ -246,7 +247,10 @@ def execute_live_factory(trial_id: str, max_iterations: int):
     try:
         output, _ = process.communicate(timeout=150)
     except subprocess.TimeoutExpired:
-        os.killpg(process.pid, signal.SIGKILL)
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
         process.communicate()
         raise ValueError("Factory execution timed out; process tree stopped") from None
     if process.returncode or len(output) > 1_000_000:
