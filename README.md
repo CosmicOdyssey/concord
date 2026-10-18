@@ -3,6 +3,8 @@
 Turn a clinical trial protocol into a site budget both sides can check: every procedure priced from public Medicare
 rates, with a source on every line. Built for HackHarvard 2026 (Regeneron track) by the Bruno Bears, Brown University.
 
+Live demo: https://cosmicodyssey.github.io/concord/ (runs from the team's laptop during judging).
+
 Concord started as a "clearing house" that would allocate sites across a sponsor's concurrent trials. Tested on 7,221
 NSCLC trials from ClinicalTrials.gov, the idea did not hold up: coordination gains fell from 1.42x in sample to about
 1.05x on held-out trials, and competing trials barely slow each other within a site (elasticity 0.09, against an
