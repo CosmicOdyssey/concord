@@ -158,8 +158,8 @@ docs/research/        Archived experiments, corrections and scientific limits
 ## Team and HackHarvard
 
 Built for **HackHarvard 2026, Regeneron Healthcare Track**. Repository contributions
-are credited to [CosmicOdyssey](https://github.com/CosmicOdyssey) and
-[kevinsrun](https://github.com/kevinsrun); see the
+are credited to [CosmicOdyssey](https://github.com/CosmicOdyssey),
+[kevinsrun](https://github.com/kevinsrun), [akshatsinghania](https://github.com/akshatsinghania); see the
 [contributor history](https://github.com/CosmicOdyssey/concord/graphs/contributors).
 No sponsor endorsement, insurer relationship, award or institutional affiliation
 is implied.
