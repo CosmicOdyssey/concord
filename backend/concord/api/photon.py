@@ -1,112 +1,80 @@
-"""Photon 2.0 SMS Webhook and Management Endpoints."""
+"""Explicit local simulation and a fail-closed Concord JSON webhook contract."""
 from __future__ import annotations
 
 import json
-from fastapi import APIRouter, Header, HTTPException, Request, Response
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Header, HTTPException, Request
+from pydantic import Field, ValidationError
+from concord.agents.boundary import StrictModel
+from concord.agents.sponsor_runtime import require_operator
+from concord.agents.photon import InboundSMSMessage, photon_agent
 
-from concord.agents.photon import InboundSMSMessage, SMSProcessingResult, photon_agent
-
-router = APIRouter(prefix="/api/agents/photon", tags=["Photon SMS Agent"])
+router = APIRouter(prefix="/api/agents/photon", tags=["Photon local adapter"])
 
 
-class SimulateSMSRequest(BaseModel):
-    """Local simulation request for testing Photon SMS workflow."""
-    sender: str = Field("+16175550199", pattern=r"^\+?[0-9\-\s\(\)]{7,25}$")
+class SimulateSMSRequest(StrictModel):
+    sender: str = Field("+16175550199", pattern=r"^\+[1-9][0-9]{6,14}$")
     body: str = Field("STATUS", min_length=1, max_length=1600)
-    message_id: str | None = None
+    message_id: str | None = Field(None, min_length=1, max_length=128)
 
 
 @router.post("/webhook")
-async def handle_photon_webhook(
-    request: Request,
-    x_photon_signature: str | None = Header(None, alias="X-Photon-Signature"),
-    x_spectrum_signature: str | None = Header(None, alias="X-Spectrum-Signature"),
-    x_twilio_signature: str | None = Header(None, alias="X-Twilio-Signature"),
-    x_photon_timestamp: str | None = Header(None, alias="X-Photon-Timestamp"),
-    x_spectrum_timestamp: str | None = Header(None, alias="X-Spectrum-Timestamp"),
-) -> dict:
-    """Handle inbound webhook from Photon 2.0 / Spectrum SMS service."""
-    raw_body = await request.body()
-    signature = x_photon_signature or x_spectrum_signature or x_twilio_signature
-    timestamp = x_photon_timestamp or x_spectrum_timestamp
-    
-    if not photon_agent.verify_signature(raw_body, signature, timestamp_header=timestamp):
-        raise HTTPException(status_code=401, detail="Invalid webhook signature")
-
+async def handle_photon_webhook(request: Request, x_photon_signature: str | None = Header(None, alias="X-Photon-Signature")) -> dict:
+    if not photon_agent._webhook_secret or not photon_agent._allowed_senders:
+        raise HTTPException(503, "Webhook disabled: configure signing secret and exact sender allowlist")
+    chunks = bytearray()
+    async for chunk in request.stream():
+        chunks.extend(chunk)
+        if len(chunks) > 8192:
+            raise HTTPException(413, "Webhook payload too large")
+    raw = bytes(chunks)
+    if not photon_agent.verify_signature(raw, x_photon_signature):
+        raise HTTPException(401, "Invalid webhook signature")
     try:
-        data = json.loads(raw_body)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Malformed JSON payload: {e}")
-
-    # Extract space and sender if present from Spectrum / Photon 2.0 native schema
-    space_id = None
-    sender_id = None
-    if isinstance(data.get("space"), dict):
-        space_id = data["space"].get("id")
-    elif data.get("space_id"):
-        space_id = data["space_id"]
-
-    if isinstance(data.get("sender"), dict):
-        sender_id = data["sender"].get("id")
-    elif data.get("sender_id"):
-        sender_id = data["sender_id"]
-
-    # Extract text from content object if nested
-    body_text = data.get("body") or data.get("Body")
-    if not body_text and isinstance(data.get("content"), dict):
-        body_text = data["content"].get("text")
-    if not body_text and isinstance(data.get("message"), dict):
-        msg_obj = data["message"]
-        if isinstance(msg_obj.get("content"), dict):
-            body_text = msg_obj["content"].get("text")
-        elif msg_obj.get("body"):
-            body_text = msg_obj.get("body")
-
-    # Map standard or Twilio-style webhook fields
-    sender_val = data.get("sender") if isinstance(data.get("sender"), str) else (data.get("From") or data.get("from") or "+16175550100")
-    recipient_val = data.get("recipient") if isinstance(data.get("recipient"), str) else (data.get("To") or data.get("to") or "+16175550200")
-
-    message = InboundSMSMessage(
-        message_id=data.get("message_id") or data.get("MessageSid") or data.get("id", "msg-test"),
-        sender=sender_val,
-        recipient=recipient_val,
-        body=body_text or "STATUS",
-        timestamp=data.get("timestamp"),
-        space_id=space_id,
-        sender_id=sender_id,
-    )
-
-    result = photon_agent.process_message(message)
-    return result.model_dump()
+        message = InboundSMSMessage.model_validate(json.loads(raw))
+    except (ValueError, TypeError, ValidationError):
+        raise HTTPException(422, "Invalid normalized webhook payload") from None
+    if not photon_agent.is_sender_allowed(message.sender) or not photon_agent.is_fresh(message.timestamp):
+        raise HTTPException(403, "Unauthorized sender or stale signed timestamp")
+    return photon_agent.process_message(message, channel="WEBHOOK").model_dump()
 
 
 @router.post("/simulate")
 def simulate_sms(sim: SimulateSMSRequest) -> dict:
-    """Simulate an SMS interaction directly without external network webhook."""
     import uuid
-    msg_id = sim.message_id or f"sim-{uuid.uuid4().hex[:12]}"
-    message = InboundSMSMessage(
-        message_id=msg_id,
-        sender=sim.sender,
-        recipient="+16175550200",
-        body=sim.body,
-    )
-    result = photon_agent.process_message(message)
-    return result.model_dump()
+    message = InboundSMSMessage(message_id=sim.message_id or f"sim-{uuid.uuid4().hex}",
+        sender=sim.sender, recipient="+16175550200", body=sim.body)
+    return photon_agent.process_message(message).model_dump()
 
 
 @router.get("/status")
 def get_agent_status() -> dict:
-    """Get current Photon SMS agent operational status."""
-    status_info = photon_agent.get_readiness_status()
-    status_info.update({
-        "provider": "Photon 2.0 SMS Operations Agent",
-        "live_api_configured": bool(photon_agent._api_key),
-        "phone_number_configured": bool(photon_agent._photon_number),
+    return {
+        "provider": "Photon local SMS command adapter",
+        **photon_agent.get_readiness_status(),
+        "live_api_configured": False,
+        "credential_present": bool(photon_agent._api_key),
         "webhook_secret_configured": bool(photon_agent._webhook_secret),
         "allowlist_active": bool(photon_agent._allowed_senders),
-        "channel": "SMS / Webhook",
-        "engine_scope": "Concord Portfolio Simulation & Hybrid Search",
-    })
-    return status_info
+        "allowed_senders_count": len(photon_agent._allowed_senders),
+        "messages_processed_count": photon_agent._processed_count,
+        "channel": "LOCAL_SIMULATION; optional authenticated Concord JSON webhook, not verified Photon compatibility",
+        "engine_scope": "Concord synthetic portfolio computation",
+        "data_disclosure": "Synthetic operations; no carrier delivery or validated clinical forecast.",
+    }
+
+
+class SendSMSRequest(SimulateSMSRequest):
+    message_id: str = Field(min_length=1, max_length=128)
+    confirm_live: bool
+
+
+@router.post("/send")
+def send_computed_reply(req: SendSMSRequest, x_concord_operator_token: str | None = Header(None)) -> dict:
+    require_operator(x_concord_operator_token, "CONCORD_ALLOW_PHOTON_SEND")
+    if not req.confirm_live:
+        raise HTTPException(422, "Explicit live-send confirmation required")
+    try:
+        message = InboundSMSMessage(message_id=req.message_id, sender=req.sender, recipient="+16175550200", body=req.body)
+        return photon_agent.send_reply(message).model_dump()
+    except ValueError:
+        raise HTTPException(503, {"code": "PHOTON_CONFIGURATION_OR_IDEMPOTENCY_ERROR", "required": ["PHOTON_API_KEY", "PHOTON_PROJECT_ID", "PHOTON_SPACE_ID", "PHOTON_AGENT_USER_ID"]}) from None

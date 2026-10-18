@@ -1,134 +1,113 @@
-"""Tests for Factory Droid SDK Protocol Planning Agent."""
+"""Real local tools, unsupported evidence and proposal rejection boundaries."""
 import pytest
 from fastapi.testclient import TestClient
-
+from pydantic import ValidationError
 from concord.api.main import app
-from concord.agents.droid import (
-    execute_droid_protocol_agent,
-    tool_identify_operational_bottlenecks,
-    tool_inspect_protocol,
-    tool_simulate_operational_variant,
-)
-from concord.agents.boundary import ProposedAmendment, validate_amendment_constraints
+from concord.api import droid as api
+from concord.agents import droid
+from concord.agents.boundary import ProposedAmendment, inspect_protocol_safely, validate_amendment_constraints
 
 
 @pytest.fixture
-def client():
+def client(monkeypatch):
+    monkeypatch.delenv("CONCORD_REVIEW_TOKEN", raising=False)
+    api._STORED_RECOMMENDATIONS.clear()
     return TestClient(app)
 
 
-def test_droid_protocol_inspection_tool():
-    trace = []
-    info = tool_inspect_protocol("NCT05800015", trace)
-    assert info["trial_id"] == "NCT05800015"
-    assert len(info["hard_clinical_constraints"]) >= 4
-    assert len(trace) == 1
-    assert trace[0].tool_name == "inspect_protocol"
+def test_protocol_inspection_never_invents_clinical_constraints():
+    info = droid.tool_inspect_protocol("NCT05800015", [])
+    assert info["registry_status"] == "CONTEXT_ONLY"
+    assert info["source_url"].startswith("https://clinicaltrials.gov/")
+    assert info["eligibility_status"] == "UNKNOWN"
+    assert info["hard_clinical_constraints"] == []
+    absent = inspect_protocol_safely("NCT09999999_NONEXISTENT")
+    assert absent["registry_status"] == "NOT_FOUND"
+    assert absent["title"] is None
+    assert absent["hard_clinical_constraints"] == []
 
 
-def test_droid_operational_bottlenecks_tool():
-    trace = []
-    bottlenecks = tool_identify_operational_bottlenecks("NCT05800015", trace)
-    assert "site_activation_lag_months" in bottlenecks
-    assert len(bottlenecks["candidate_improvements"]) == 3
-    assert len(trace) == 1
-    assert trace[0].tool_name == "identify_operational_bottlenecks"
+def test_simulation_uses_actual_engine_and_no_assumed_outreach_benefit():
+    result = droid.tool_simulate_operational_variant("NCT05800015", 2., 10000., [])
+    assert result["simulated_makespan"] == result["baseline_makespan"]
+    assert result["simulated_commitment"] - result["baseline_commitment"] == pytest.approx(120000.)
+    assert result["seed"] == 7 and result["draws"] == 32
+    assert result["is_simulated_assumption"] is True
 
 
-def test_droid_simulation_tool():
-    trace = []
-    sim = tool_simulate_operational_variant("NCT05800015", activation_lag=2.0, outreach_budget=10_000.0, trace=trace)
-    assert sim["trial_id"] == "NCT05800015"
-    assert sim["simulated_makespan"] < sim["baseline_makespan"]
-    assert sim["simulated_commitment"] > 0
-    assert sim["feasible"] is True
-    assert len(trace) == 1
+@pytest.mark.parametrize("mutation,category", [(True, "OPERATIONAL"), (False, "ELIGIBILITY_HYPOTHETICAL")])
+def test_clinical_mutations_rejected_even_when_flag_is_false(mutation, category):
+    candidate = ProposedAmendment(proposal_id="adverse-clinical", trial_id="T1", category=category,
+        description="Unsupported eligibility adjustment", modifies_clinical_inclusion_exclusion=mutation)
+    safe, errors = validate_amendment_constraints(candidate)
+    assert not safe and errors
+    assert candidate.validation_status == "REJECTED_SAFETY_VIOLATION"
 
 
-def test_droid_safety_guardrails_prevent_clinical_criteria_mutation():
-    # Attempting to mutate clinical inclusion/exclusion criteria must trigger hard safety rejection
-    unsafe_amendment = ProposedAmendment(
-        proposal_id="prop-fail-clinical",
-        trial_id="NCT05800015",
-        category="ELIGIBILITY_HYPOTHETICAL",
-        description="Relax hepatic lab cutoff",
-        modifies_clinical_inclusion_exclusion=True,
-    )
-    is_safe, violations = validate_amendment_constraints(unsafe_amendment)
-    assert is_safe is False
-    assert any("CRITICAL SAFETY VIOLATION" in v for v in violations)
-    assert unsafe_amendment.validation_status == "REJECTED_SAFETY_VIOLATION"
+def test_proposal_schema_rejects_hidden_fields_nonfinite_and_bounds():
+    common = dict(proposal_id="test-proposal", trial_id="T1", category="OPERATIONAL", description="Operational adjustment")
+    for extra in ({"activation_lag_months": -1}, {"monthly_outreach_budget": float("nan")}, {"override_clinical_protocol": True}):
+        with pytest.raises(ValidationError):
+            ProposedAmendment(**common, **extra)
 
 
-def test_droid_recursive_refinement_loop():
-    rec = execute_droid_protocol_agent(trial_id="NCT05800015", max_iterations=3)
-    assert rec.trial_id == "NCT05800015"
-    assert rec.total_iterations in (2, 3)
-    assert rec.recommended_makespan_months < rec.baseline_makespan_months
-    assert rec.clinical_safety_status == "PASSED_NO_CLINICAL_MUTATION"
-    assert rec.feasibility_status == "FEASIBLE"
-    assert rec.human_approval_status == "PENDING_HUMAN_REVIEW"
-    assert len(rec.iterations) >= 2
-    assert len(rec.tool_trace) >= 4
+def test_no_beneficial_change_is_rejected_without_manufacturing_improvement():
+    result = droid.execute_droid_protocol_agent()
+    assert result.disposition == "NO_BENEFICIAL_CHANGE"
+    assert result.human_approval_status == "REJECTED"
+    assert result.expected_makespan_delta_months == 0
+    assert result.recommended_makespan_months == result.baseline_makespan_months
+    assert result.total_iterations == 1
+    assert result.iterations[0].decision == "REJECTED_NO_BENEFIT"
+    assert result.provider_status == "NOT_INVOKED"
+    assert result.execution_mode == "LOCAL_DETERMINISTIC"
+    assert result.provenance["canonical_protocol_mutated"] is False
 
 
-def test_droid_api_endpoints_and_human_review_gate(client):
-    # Run Droid
-    run_res = client.post("/api/agents/droid/run", json={
-        "trial_id": "NCT05800015",
-        "max_iterations": 3
-    })
-    assert run_res.status_code == 200
-    data = run_res.json()
-    rec_id = data["recommendation_id"]
-    assert data["human_approval_status"] == "PENDING_HUMAN_REVIEW"
-
-    # Inspect list
-    list_res = client.get("/api/agents/droid/recommendations")
-    assert list_res.status_code == 200
-    assert any(r["recommendation_id"] == rec_id for r in list_res.json())
-
-    # Submit Human Review Approval
-    rev_res = client.post("/api/agents/droid/review", json={
-        "recommendation_id": rec_id,
-        "decision": "APPROVED",
-        "reviewer_notes": "Operational parameter adjustments verified; clinical protocol unchanged."
-    })
-    assert rev_res.status_code == 200
-    rev_data = rev_res.json()
-    assert rev_data["human_approval_status"] == "APPROVED"
-
-    # Confirm updated status
-    get_res = client.get(f"/api/agents/droid/recommendations/{rec_id}")
-    assert get_res.status_code == 200
-    assert get_res.json()["human_approval_status"] == "APPROVED"
+def test_recursive_tool_failure_retains_baseline():
+    def fail(*args):
+        raise RuntimeError("sensitive detail")
+    result = droid.execute_droid_protocol_agent(simulation_tool=fail)
+    assert result.disposition == "FAILED_RETAINED_BASELINE"
+    assert result.human_approval_status == "REJECTED"
+    assert result.expected_makespan_delta_months == 0
+    assert result.total_iterations == 1
+    assert result.error["code"] == "REFINEMENT_FAILED"
+    assert "sensitive" not in result.model_dump_json()
 
 
-def test_droid_status_endpoint(client):
-    res = client.get("/api/agents/droid/status")
-    assert res.status_code == 200
-    data = res.json()
-    assert "runtime" in data
-    assert "@factory/droid-sdk" in data["runtime"]
-    assert "readiness" in data
-    assert "mcp_tools" in data
-    assert "inspect_protocol" in data["mcp_tools"]
-    assert "hard_safety_invariants" in data
+def test_infeasible_candidate_never_becomes_best(monkeypatch):
+    real = droid.tool_simulate_operational_variant
+    def infeasible(*args):
+        out = real(*args)
+        return {**out, "simulated_makespan": 1., "makespan_delta": -14., "feasible": False}
+    result = droid.execute_droid_protocol_agent(simulation_tool=infeasible)
+    assert result.disposition == "NO_BENEFICIAL_CHANGE"
+    assert result.expected_makespan_delta_months == 0
+    assert result.human_approval_status == "REJECTED"
 
 
-def test_droid_readiness_missing_credentials(monkeypatch):
-    monkeypatch.delenv("FACTORY_API_KEY", raising=False)
-    rec = execute_droid_protocol_agent("NCT05800015", max_iterations=2)
-    assert rec.readiness == "MISSING_CREDENTIALS"
-    assert "BLOCKED — AUTHENTICATION" in rec.auth_status
-    assert "FACTORY_API_KEY" in rec.missing_prerequisites
+def test_iteration_limits_and_unknown_trial(client):
+    assert client.post("/api/agents/droid/run", json={"max_iterations": 4}).status_code == 422
+    assert client.post("/api/agents/droid/run", json={"trial_id": "NCT09999999_NONEXISTENT"}).status_code == 422
+    with pytest.raises(ValueError):
+        droid.execute_droid_protocol_agent(max_iterations=0)
 
 
-def test_droid_readiness_configured(monkeypatch):
-    monkeypatch.setenv("FACTORY_API_KEY", "fact_mock_test_key_12345")
-    from concord.agents.droid import get_droid_status
-    status = get_droid_status()
-    assert status["readiness"] == "CONFIGURED_UNVERIFIED"
-    assert status["auth_status"] == "CONFIGURED_PENDING_VERIFICATION"
-    assert status["missing_prerequisites"] == []
-
+def test_authenticated_review_cannot_approve_rejected_or_repeat_decision(client, monkeypatch):
+    rec = client.post("/api/agents/droid/run", json={}).json()
+    request = {"recommendation_id": rec["recommendation_id"], "decision": "APPROVED", "reviewer_notes": "Reviewer opinion"}
+    assert client.post("/api/agents/droid/review", json=request).status_code == 503
+    monkeypatch.setenv("CONCORD_REVIEW_TOKEN", "review-test-only")
+    assert client.post("/api/agents/droid/review", json=request).status_code == 401
+    headers = {"X-Concord-Review-Token": "review-test-only"}
+    assert client.post("/api/agents/droid/review", json=request, headers=headers).status_code == 409
+    # A synthetic review state isolates the authentication/transition test; this
+    # does not manufacture a scientific benefit or exercise a provider.
+    stored = api._STORED_RECOMMENDATIONS[rec["recommendation_id"]]
+    stored.disposition = "PROPOSED_FOR_REVIEW"
+    stored.human_approval_status = "PENDING_HUMAN_REVIEW"
+    response = client.post("/api/agents/droid/review", json={**request, "decision": "REJECTED"}, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["review_audit"][0]["scope"] == "AUTHENTICATED_LOCAL_REVIEW_ONLY"
+    assert client.post("/api/agents/droid/review", json=request, headers=headers).status_code == 409

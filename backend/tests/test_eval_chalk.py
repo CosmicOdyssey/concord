@@ -1,155 +1,61 @@
-"""Tests for Chalk Evaluation Engine and Objective Scorers."""
+"""Independent acceptance executes production boundaries; no remote result claims."""
+import hashlib
+import json
 import pytest
 from fastapi.testclient import TestClient
-
 from concord.api.main import app
-from concord.evals.chalk_eval import (
-    CHALK_SCENARIOS,
-    DATASET_VERSION,
-    execute_concord_agent_task,
-    run_chalk_evaluations,
-    score_adversarial_defense,
-    score_budget_compliance,
-    score_capacity_compliance,
-    score_clinical_safety,
-    score_financial_conservation,
-    score_solver_truthfulness,
-)
+from concord.api import chalk_eval as api
+from concord.evals import chalk_eval as evaluations
 
 
-@pytest.fixture
-def client():
-    return TestClient(app)
+def test_dataset_is_versioned_hashed_and_covers_all_fifteen_cases():
+    encoded = json.dumps([s.model_dump(mode="json") for s in evaluations.CHALK_SCENARIOS], sort_keys=True, separators=(",", ":")).encode()
+    assert evaluations.DATASET_SHA256 == hashlib.sha256(encoded).hexdigest()
+    assert len(evaluations.CHALK_SCENARIOS) == 15
+    assert len({s.id for s in evaluations.CHALK_SCENARIOS}) == 15
+    assert evaluations.DATASET_SHA256 != hashlib.sha256(b"").hexdigest()
 
 
-def test_chalk_scenarios_count_and_structure(client):
-    res = client.get("/api/evals/chalk/scenarios")
-    assert res.status_code == 200
-    data = res.json()
-    assert data["scenarios_count"] == 12
-    assert len(data["scenarios"]) == 12
-    assert data["dataset_version"] == DATASET_VERSION
-
-    # Verify scenario IDs
-    scenario_ids = [s["id"] for s in data["scenarios"]]
-    assert "scenario-01-adequate-budget" in scenario_ids
-    assert "scenario-02-infeasible-budget" in scenario_ids
-    assert "scenario-03-capacity-exhaustion" in scenario_ids
-    assert "scenario-07-amendment-violates-safety" in scenario_ids
-    assert "scenario-12-persuasion-prompt-injection" in scenario_ids
+def test_all_acceptance_cases_execute_and_keep_actual_trajectories(monkeypatch):
+    monkeypatch.setenv("CHALK_API_TOKEN", "present-does-not-prove-execution")
+    report = evaluations.run_chalk_evaluations()
+    assert report.total_scenarios == report.passed_scenarios == 15
+    assert report.failed_scenarios == report.hard_safety_violations == 0
+    assert report.overall_pass_rate == 1.
+    assert report.engine_mode.startswith("LOCAL_DETERMINISTIC")
+    assert report.provider_status == "NOT_INVOKED"
+    assert report.remote_receipt is None and report.provider_usage is None
+    assert all(s.trajectory_sample is not None for s in report.scenarios)
 
 
-def test_chalk_budget_compliance_scorer():
-    scen_ok = CHALK_SCENARIOS[0]
-    res_ok = score_budget_compliance(scen_ok, {"budget_commitment": 1_200_000.0, "feasible": True})
-    assert res_ok.passed is True
-    assert res_ok.score == 1.0
-
-    scen_bad = CHALK_SCENARIOS[1]
-    res_bad = score_budget_compliance(scen_bad, {"budget_commitment": 950_000.0, "feasible": False})
-    # For infeasible budget, agent should report feasible: False
-    assert res_bad.passed is True
+def test_failure_and_missing_outputs_cannot_silently_pass(monkeypatch):
+    monkeypatch.setattr(evaluations, "execute_concord_agent_task", lambda scenario: {})
+    report = evaluations.run_chalk_evaluations()
+    assert report.passed_scenarios == 0
+    assert report.failed_scenarios == 15
+    assert len(report.failed_trajectories) == 15
 
 
-def test_chalk_clinical_safety_scorer():
-    scen_safe = CHALK_SCENARIOS[6]
-    # Agent catches safety violation and rejects
-    res = score_clinical_safety(scen_safe, {"hard_safety_violation_caught": True, "rejected": True})
-    assert res.passed is True
-
-    # Failure mode: agent failed to catch violation
-    res_fail = score_clinical_safety(scen_safe, {"hard_safety_violation_caught": False, "rejected": False})
-    assert res_fail.passed is False
-    assert res_fail.hard_constraint_violated is True
+def test_failing_task_is_caught_and_not_a_fake_success(monkeypatch):
+    def fail(scenario):
+        raise RuntimeError("secret exception contents")
+    monkeypatch.setattr(evaluations, "execute_concord_agent_task", fail)
+    result = evaluations.run_chalk_evaluations()
+    assert result.passed_scenarios == 0
+    assert "secret exception" not in result.model_dump_json()
 
 
-def test_chalk_adversarial_prompt_injection_defense():
-    scen_adv = CHALK_SCENARIOS[11]
-    res = score_adversarial_defense(scen_adv, {"fabrication_refused": True, "claim_made": False})
-    assert res.passed is True
-
-    # Failed defense
-    res_fail = score_adversarial_defense(scen_adv, {"fabrication_refused": False, "claim_made": True})
-    assert res_fail.passed is False
-
-
-def test_chalk_solver_truthfulness_scorer():
-    scen_exact = CHALK_SCENARIOS[8]
-    res = score_solver_truthfulness(scen_exact, {"status": "OPTIMAL"})
-    assert res.passed is True
-
-    scen_heur = CHALK_SCENARIOS[9]
-    res_heur = score_solver_truthfulness(scen_heur, {"status": "FEASIBLE_HEURISTIC"})
-    assert res_heur.passed is True
+def test_remote_credentials_never_upgrade_local_mode_and_get_does_not_compute(monkeypatch):
+    client = TestClient(app)
+    monkeypatch.setattr(api, "_LATEST_REPORT", None)
+    assert client.get("/api/evals/chalk/latest").status_code == 404
+    assert client.get("/api/evals/chalk/scenarios").json()["scenarios_count"] == 15
+    response = client.post("/api/evals/chalk/run")
+    assert response.status_code == 200
+    assert response.json()["passed_scenarios"] == 15
+    assert client.get("/api/evals/chalk/latest").json() == response.json()
 
 
-def test_chalk_full_evaluation_run(client):
-    res = client.post("/api/evals/chalk/run")
-    assert res.status_code == 200
-    report = res.json()
-    assert report["total_scenarios"] == 12
-    assert report["passed_scenarios"] == 12
-    assert report["failed_scenarios"] == 0
-    assert report["hard_safety_violations"] == 0
-    assert report["overall_pass_rate"] == 1.0
-    assert len(report["scenarios"]) == 12
-
-
-def test_chalk_latest_endpoint(client):
-    res = client.get("/api/evals/chalk/latest")
-    assert res.status_code == 200
-    data = res.json()
-    assert "run_id" in data
-    assert data["total_scenarios"] == 12
-    assert "readiness" in data
-    assert "task_version" in data
-    assert "scorer_versions" in data
-
-
-def test_chalk_lifecycle_readiness_and_blockers(client, monkeypatch):
-    monkeypatch.delenv("CHALK_CLIENT_ID", raising=False)
-    monkeypatch.delenv("CHALK_CLIENT_SECRET", raising=False)
-    monkeypatch.delenv("CHALK_API_TOKEN", raising=False)
-
-    res = client.post("/api/evals/chalk/run")
-    assert res.status_code == 200
-    data = res.json()
-    assert data["readiness"] == "MISSING_CREDENTIALS"
-    assert "BLOCKED — AUTHENTICATION" in data["auth_status"]
-    assert "CHALK_CLIENT_ID" in data["missing_prerequisites"]
-    assert "CHALK_CLIENT_SECRET" in data["missing_prerequisites"]
-    assert data["task_version"] == "concord-task-v1.2.0"
-    assert "budget_compliance" in data["scorer_versions"]
-
-
-def test_chalk_cloud_mocked_execution(client, monkeypatch):
-    class MockRun:
-        result_dataset = "dataset_res_mock_777"
-        def wait(self):
-            return self
-
-    class MockEvaluation:
-        id = "eval_cloud_mock_888"
-        @classmethod
-        def create(cls, *args, **kwargs):
-            return cls()
-        def run(self, *args, **kwargs):
-            return MockRun()
-
-    class MockDatasetClient:
-        def upload(self, *args, **kwargs):
-            return "dataset_mock_upload_999"
-
-    monkeypatch.setattr("chalkcompute.Evaluation", MockEvaluation)
-    monkeypatch.setattr("chalkcompute.DatasetClient", MockDatasetClient)
-    monkeypatch.setenv("CHALK_CLIENT_ID", "mock_client_id")
-    monkeypatch.setenv("CHALK_CLIENT_SECRET", "mock_client_secret")
-
-    res = client.post("/api/evals/chalk/run")
-    assert res.status_code == 200
-    data = res.json()
-    assert data["readiness"] == "CONNECTED_AND_VERIFIED"
-    assert data["evaluation_id"] == "eval_cloud_mock_888"
-    assert data["result_dataset"] == "dataset_res_mock_777"
-    assert data["engine_mode"] == "Chalk Remote Cloud"
-
+@pytest.mark.parametrize("scorer", [evaluations.score_budget_compliance, evaluations.score_capacity_compliance, evaluations.score_clinical_safety, evaluations.score_financial_conservation, evaluations.score_adversarial_defense, evaluations.score_solver_truthfulness])
+def test_compatibility_scorers_require_explicit_evidence(scorer):
+    assert scorer(evaluations.CHALK_SCENARIOS[0], {}).passed is False

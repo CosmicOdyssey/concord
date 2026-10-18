@@ -3,8 +3,12 @@
  */
 
 export interface SMSResponse {
+  request_id: string;
+  scenario_id: string;
+  provider_status: string;
+  data_mode: string;
   message_id: string;
-  status: 'DELIVERED' | 'QUEUED_OFFLINE' | 'UNAUTHORIZED' | 'DUPLICATE' | 'ERROR';
+  status: 'LOCAL_SIMULATION' | 'UNAUTHORIZED' | 'DUPLICATE' | 'ERROR';
   reply_text: string;
   sender: string;
   action_taken: string;
@@ -12,14 +16,6 @@ export interface SMSResponse {
   real_engine_data?: Record<string, any>;
   delivery_note: string;
 }
-
-export type ReadinessState =
-  | 'CONNECTED_AND_VERIFIED'
-  | 'CONFIGURED_UNVERIFIED'
-  | 'PENDING_PROJECT_ID'
-  | 'LOCAL_SIMULATION_ONLY'
-  | 'MISSING_CREDENTIALS'
-  | 'FAILED';
 
 export interface PhotonStatus {
   provider: string;
@@ -31,11 +27,6 @@ export interface PhotonStatus {
   channel: string;
   engine_scope: string;
   data_disclosure: string;
-  readiness?: ReadinessState;
-  auth_status?: string;
-  missing_prerequisites?: string[];
-  last_receipt?: Record<string, any>;
-  last_error?: string;
 }
 
 export interface DroidToolAction {
@@ -77,20 +68,8 @@ export interface DroidRecommendation {
   chalk_evaluation_score: number;
   executive_summary: string;
   human_approval_status: 'PENDING_HUMAN_REVIEW' | 'APPROVED' | 'REJECTED';
-  readiness?: ReadinessState;
-  auth_status?: string;
-  missing_prerequisites?: string[];
   iterations: RefinementIteration[];
   tool_trace: DroidToolAction[];
-}
-
-export interface DroidStatus {
-  runtime: string;
-  readiness: ReadinessState;
-  auth_status: string;
-  missing_prerequisites: string[];
-  mcp_tools: string[];
-  hard_safety_invariants: string[];
 }
 
 export interface ChalkScenarioResult {
@@ -112,10 +91,6 @@ export interface ChalkEvaluationReport {
   run_id: string;
   dataset_version: string;
   dataset_sha256: string;
-  task_version?: string;
-  scorer_versions?: string[];
-  evaluation_id?: string;
-  result_dataset?: string;
   timestamp: string;
   engine_mode: string;
   total_scenarios: number;
@@ -123,9 +98,6 @@ export interface ChalkEvaluationReport {
   failed_scenarios: number;
   hard_safety_violations: number;
   overall_pass_rate: number;
-  readiness?: ReadinessState;
-  auth_status?: string;
-  missing_prerequisites?: string[];
   scenarios: ChalkScenarioResult[];
 }
 
@@ -182,10 +154,3 @@ export async function fetchLatestChalkReport(): Promise<ChalkEvaluationReport> {
   if (!res.ok) throw new Error(`Chalk latest HTTP ${res.status}`);
   return res.json();
 }
-
-export async function fetchDroidStatus(): Promise<DroidStatus> {
-  const res = await fetch(`${API_BASE}/api/agents/droid/status`);
-  if (!res.ok) throw new Error(`Droid status HTTP ${res.status}`);
-  return res.json();
-}
-

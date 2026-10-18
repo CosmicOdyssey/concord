@@ -1,304 +1,105 @@
-/**
- * Factory Droid SDK Autonomous Protocol Planning Runner.
- * 
- * Implements bounded clinical trial optimization using the official @factory/droid-sdk
- * and in-process SDK MCP tools.
- * 
- * References:
- * - https://docs.factory.com/sdk/typescript
- * - https://github.com/Factory-AI/droid-sdk-typescript
- */
-
-import fs from 'node:fs';
+/** Server-only Factory 0.9.1 session. No local imitation of an SDK execution. */
+import { createRequire } from 'node:module';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const require = createRequire(path.join(root, 'frontend/package.json'));
+const names = ['inspect_protocol', 'identify_operational_bottlenecks', 'simulate_operational_variant'];
+const serverName = 'concord_protocol_tools';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Helper for safe CLI arg parsing
-function parseArgs() {
-  const args = process.argv.slice(2);
-  const result = {
-    trialId: 'NCT05800015',
-    maxIterations: 3,
-  };
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--trial-id' && args[i + 1]) {
-      result.trialId = args[++i];
-    } else if (args[i] === '--max-iterations' && args[i + 1]) {
-      result.maxIterations = parseInt(args[++i], 10) || 3;
-    }
-  }
-  return result;
+export function allowedToolId(id) {
+  return names.some(name => id === `mcp__${serverName}__${name}` || id === `${serverName}.${name}`);
 }
 
-export async function runFactoryDroid(trialId = 'NCT05800015', maxIterations = 3) {
+export async function runFactoryDroid(trialId = 'NCT05800015', maxIterations = 3, injected = {}) {
+  const environment = injected.env ?? process.env;
+  if (environment.CONCORD_ALLOW_FACTORY_RUN !== '1' || !environment.FACTORY_API_KEY || !environment.FACTORY_MODEL_ID || /claude|astra|^auto$/i.test(environment.FACTORY_MODEL_ID)) throw new Error('Factory live execution/model authorization is missing');
+  if (!/^[A-Za-z0-9_-]{1,40}$/.test(trialId) || !Number.isInteger(maxIterations) || maxIterations < 1 || maxIterations > 3) throw new Error('Unsupported bounded request');
+  const sdk = injected.sdk ?? await import(require.resolve('@factory/droid-sdk/node'));
+  const { z } = injected.zod ?? require('zod');
   const trace = [];
-  const iterations = [];
-  let apiKey = process.env.FACTORY_API_KEY;
-  if (!apiKey && !process.env.PYTEST_CURRENT_TEST) {
-    const envPath = path.resolve(__dirname, '..', '.env');
-    if (fs.existsSync(envPath)) {
-      const lines = fs.readFileSync(envPath, 'utf8').split('\n');
-      for (const line of lines) {
-        const m = line.match(/^\s*FACTORY_API_KEY\s*=\s*(.*)?\s*$/);
-        if (m) {
-          let val = m[1] || '';
-          if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-            val = val.slice(1, -1);
-          }
-          apiKey = val.trim();
-          process.env.FACTORY_API_KEY = apiKey;
-          break;
-        }
-      }
-    }
-  }
-
-  let droidSdkNode = null;
-  let importError = null;
-  try {
-    droidSdkNode = await import('../frontend/node_modules/@factory/droid-sdk/dist/node.mjs');
-  } catch (err) {
-    importError = err.message;
-  }
-
-  // 1. Sandboxed Tool: inspect_protocol
-  function inspectProtocol(tId) {
-    const info = {
-      trial_id: tId,
-      title: tId === 'NCT05800015' ? 'Regeneron Cemiplimab NSCLC Study' : `Study ${tId}`,
-      phase: 'Phase 3',
-      sponsor: 'Regeneron Pharmaceuticals',
-      hard_clinical_constraints: [
-        'Histologically confirmed stage IV non-small cell lung cancer',
-        'No prior systemic therapy for metastatic disease',
-        'ECOG performance status 0 or 1',
-        'Adequate hepatic, renal, and bone marrow function',
-      ],
-      current_parameters: {
-        site_activation_lag_months: 3.0,
-        coordinator_capacity_per_site: 2,
-        monthly_outreach_budget: 5000.0,
-      },
-    };
-    trace.push({
-      tool_name: 'inspect_protocol',
-      arguments: { trial_id: tId },
-      output_summary: `Retrieved protocol for ${tId}: 4 hard clinical safety constraints identified.`,
-      timestamp: new Date().toISOString(),
-    });
-    return info;
-  }
-
-  // 2. Sandboxed Tool: identify_operational_bottlenecks
-  function identifyBottlenecks(tId) {
-    const levers = {
-      activation_lag_months: 3.0,
-      coordinator_slots: 2,
-      outreach_budget_monthly: 5000.0,
-      candidate_improvements: [
-        { lever: 'activation_lag', range: '1.5 - 3.0 months', rationale: 'Streamline contracting & IRB review' },
-        { lever: 'outreach_budget', range: '$5k - $15k/mo', rationale: 'Patient travel stipend & recruitment assistance' },
-      ],
-    };
-    trace.push({
-      tool_name: 'identify_operational_bottlenecks',
-      arguments: { trial_id: tId },
-      output_summary: 'Identified 2 operational levers: site activation lag and outreach budget.',
-      timestamp: new Date().toISOString(),
-    });
-    return levers;
-  }
-
-  // 3. Sandboxed Tool: simulate_operational_variant
-  function simulateVariant(tId, lag, outreach) {
-    const baseMakespan = 15.13;
-    const baseCommitment = 1018280.0;
-    const budgetCeiling = 3000000.0;
-
-    const lagSavings = Math.max(0.0, Math.min(1.5, (3.0 - lag) * 0.8));
-    const outreachSavings = Math.min(0.6, (outreach / 25000.0) * 0.6);
-    const simulatedMakespan = Math.round((baseMakespan - (lagSavings + outreachSavings)) * 100) / 100;
-    const costIncrease = (outreach * 12) + (lag < 2.0 ? 15000.0 : 0.0);
-    const simulatedCommitment = Math.round((baseCommitment + costIncrease) * 100) / 100;
-    const isFeasible = simulatedCommitment <= budgetCeiling;
-
-    const res = {
-      trial_id: tId,
-      baseline_makespan: baseMakespan,
-      simulated_makespan: simulatedMakespan,
-      makespan_delta: Math.round((simulatedMakespan - baseMakespan) * 100) / 100,
-      simulated_commitment: simulatedCommitment,
-      budget_ceiling: budgetCeiling,
-      feasible: isFeasible,
-    };
-    trace.push({
-      tool_name: 'simulate_operational_variant',
-      arguments: { trial_id: tId, activation_lag: lag, outreach_budget: outreach },
-      output_summary: `Simulated makespan: ${simulatedMakespan} mo (delta: ${res.makespan_delta} mo), commitment: $${simulatedCommitment.toLocaleString()}`,
-      timestamp: new Date().toISOString(),
-    });
-    return res;
-  }
-
-  // 4. Sandboxed Tool: evaluate_with_chalk
-  function evaluateChalk(sim) {
-    const budgetScore = sim.feasible ? 1.0 : 0.0;
-    const safetyScore = 1.0; // No clinical mutations
-    const chalkScore = (budgetScore + safetyScore) / 2.0;
-    trace.push({
-      tool_name: 'evaluate_with_chalk',
-      arguments: { commitment: sim.simulated_commitment },
-      output_summary: `Chalk scoring: budget compliance=${sim.feasible}, overall score=${chalkScore.toFixed(2)}`,
-      timestamp: new Date().toISOString(),
-    });
-    return chalkScore;
-  }
-
-  // Check live SDK execution status
-  let readiness = 'LOCAL_SIMULATION_ONLY';
-  let authStatus = 'AUTHENTICATED';
-  let missingPrereqs = [];
-  let runtimeAgent = '@factory/droid-sdk v0.9.1 TypeScript Runtime';
-  let liveSessionId = null;
-
-  if (!apiKey) {
-    readiness = 'MISSING_CREDENTIALS';
-    authStatus = 'BLOCKED — AUTHENTICATION: Missing FACTORY_API_KEY environment variable. Pass apiKey when creating session or set FACTORY_API_KEY.';
-    missingPrereqs.push('FACTORY_API_KEY');
-    runtimeAgent = '@factory/droid-sdk v0.9.1 (Deterministic Tool Fallback - FACTORY_API_KEY unset)';
-  } else if (droidSdkNode) {
-    // If apiKey is present, attempt live session creation via SDK
-    try {
-      const { createSession, createSdkMcpServer, tool, ToolConfirmationOutcome } = droidSdkNode;
-      const mcpServer = createSdkMcpServer({
-        name: 'concord-protocol-tools',
-        tools: [
-          tool('inspect_protocol', 'Inspect protocol constraints', {}, () => inspectProtocol(trialId)),
-          tool('identify_operational_bottlenecks', 'Identify levers', {}, () => identifyBottlenecks(trialId)),
-        ],
-      });
-      const session = await createSession({
-        apiKey,
-        mcpServers: [mcpServer],
-        permissionHandler: () => ToolConfirmationOutcome.ProceedOnce,
-        timeoutMs: 5000,
-      });
-      liveSessionId = session.id;
-      readiness = 'CONNECTED_AND_VERIFIED';
-      authStatus = 'LIVE_SDK_VERIFIED';
-      runtimeAgent = `@factory/droid-sdk v0.9.1 Live Runtime (Session ${session.id})`;
-      await session.close();
-    } catch (err) {
-      readiness = 'FAILED';
-      authStatus = `FAILED: ${err.message}`;
-      runtimeAgent = `@factory/droid-sdk v0.9.1 (Error: ${err.message})`;
-      missingPrereqs.push('droid CLI on PATH');
-    }
-  }
-
-  // Execute the evaluate-and-revise workflow with tool traces
-  inspectProtocol(trialId);
-  identifyBottlenecks(trialId);
-
-  let currentLag = 3.0;
-  let currentOutreach = 5000.0;
-
-  for (let i = 1; i <= maxIterations; i++) {
-    let rationale = '';
-    if (i === 1) {
-      currentLag = 2.0;
-      currentOutreach = 10000.0;
-      rationale = 'Initial proposal: accelerate site activation from 3.0 to 2.0 months with $10k/mo outreach.';
-    } else if (i === 2) {
-      currentLag = 1.8;
-      currentOutreach = 15000.0;
-      rationale = 'Refinement 1: tighten activation to 1.8 months and increase outreach to $15k/mo to balance speed vs budget.';
-    } else {
-      currentLag = 1.7;
-      currentOutreach = 16000.0;
-      rationale = 'Refinement 2: marginal improvement within conservative spending envelope.';
-    }
-
-    const sim = simulateVariant(trialId, currentLag, currentOutreach);
-    const chalkScore = evaluateChalk(sim);
-
-    let decision = 'CONTINUE_REFINING';
-    let feedback = '';
-    if (!sim.feasible) {
-      decision = 'STOPPED_CONSTRAINT_VIOLATION';
-      feedback = 'Budget ceiling exceeded. Reverting to prior feasible state.';
-    } else if (i === maxIterations) {
-      decision = 'STOPPED_MAX_ITERATIONS';
-      feedback = 'Max iteration budget reached. Optimal feasible proposal retained.';
-    } else {
-      decision = 'CONTINUE_REFINING';
-      feedback = `Feasible improvement achieved (${sim.makespan_delta} mo). Testing deeper parameter sensitivity.`;
-    }
-
-    iterations.push({
-      iteration_index: i,
-      proposed_amendment: {
-        proposal_id: `prop-iter-${i}`,
-        trial_id: trialId,
-        category: 'OPERATIONAL',
-        description: rationale,
-        activation_lag_months: currentLag,
-        monthly_outreach_budget: currentOutreach,
-        modifies_clinical_inclusion_exclusion: false,
-      },
-      simulation_metrics: sim,
-      chalk_score: chalkScore,
-      feedback,
-      decision,
-    });
-
-    if (decision !== 'CONTINUE_REFINING') break;
-  }
-
-  const bestIter = iterations.reduce((prev, curr) => 
-    (curr.simulation_metrics.simulated_makespan < prev.simulation_metrics.simulated_makespan ? curr : prev), iterations[0]
-  );
-  const bestSim = bestIter.simulation_metrics;
-
-  const recId = liveSessionId ? `droid-rec-${liveSessionId.slice(0, 8)}` : `droid-rec-${Math.random().toString(36).substring(2, 10)}`;
-  const summary = `Factory Droid completed ${iterations.length} refinement iterations for ${trialId}. Recommended operational amendment reduces modeled enrollment completion from 15.13 to ${bestSim.simulated_makespan} months (${bestSim.makespan_delta} mo delta) with conservative commitment $${bestSim.simulated_commitment.toLocaleString()} (within $3.0M ceiling). Clinical inclusion/exclusion criteria remain strictly preserved. Pending human medical & statistical review.`;
-
-  return {
-    recommendation_id: recId,
-    trial_id: trialId,
-    trial_title: trialId === 'NCT05800015' ? 'Regeneron Cemiplimab NSCLC Study' : `Study ${trialId}`,
-    created_at: new Date().toISOString(),
-    runtime_agent: runtimeAgent,
-    total_iterations: iterations.length,
-    baseline_makespan_months: 15.13,
-    recommended_makespan_months: bestSim.simulated_makespan,
-    expected_makespan_delta_months: bestSim.makespan_delta,
-    budget_commitment_usd: bestSim.simulated_commitment,
-    budget_ceiling_usd: 3000000.0,
-    feasibility_status: bestSim.feasible ? 'FEASIBLE' : 'INFEASIBLE_BUDGET',
-    clinical_safety_status: 'PASSED_NO_CLINICAL_MUTATION',
-    chalk_evaluation_score: bestIter.chalk_score,
-    executive_summary: summary,
-    human_approval_status: 'PENDING_HUMAN_REVIEW',
-    readiness,
-    auth_status: authStatus,
-    missing_prerequisites: missingPrereqs,
-    iterations,
-    tool_trace: trace,
+  let count = 0;
+  const bridge = injected.bridge ?? (arguments_ => pythonBridge(arguments_, environment));
+  const call = async (toolName, args) => {
+    if (++count > maxIterations * 3 + 2) throw new Error('Tool-call budget exceeded');
+    const output = await bridge({ tool: toolName, trial_id: trialId, ...args });
+    if (output.error) throw new Error('Concord rejected tool execution');
+    trace.push({ tool_name: toolName, arguments: { trial_id: trialId, ...args }, timestamp: new Date().toISOString(), result: output.result });
+    return JSON.stringify(output.result);
   };
+  const server = sdk.createSdkMcpServer({ name: serverName, tools: [
+    sdk.tool(names[0], 'Read registry context; clinical and enrollment evidence may be UNKNOWN.', {}, () => call(names[0], {})),
+    sdk.tool(names[1], 'Read entered synthetic operational assumptions only.', {}, () => call(names[1], {})),
+    sdk.tool(names[2], 'Evaluate a paired variant with the original Concord engine; may show no benefit.', {
+      activation_lag: z.number().finite().min(0).max(12), outreach_budget: z.number().finite().min(0).max(50000),
+    }, args => call(names[2], args)),
+  ] });
+  const privateDir = await mkdtemp(path.join(tmpdir(), 'concord-factory-'));
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(new Error('Factory bounded timeout')), 120000);
+  let session;
+  let allowed = new Set();
+  try {
+    session = await sdk.createSession({ execPath: environment.FACTORY_DROID_EXEC_PATH, apiKey: environment.FACTORY_API_KEY, modelId: environment.FACTORY_MODEL_ID,
+      cwd: privateDir, env: { HOME: privateDir, XDG_CONFIG_HOME: privateDir }, disableBuiltinSkills: true,
+      autonomyLevel: sdk.AutonomyLevel.Off, abortSignal: controller.signal, mcpServers: [server],
+      systemPrompt: 'Propose bounded operational changes using only concord_protocol_tools. Never modify clinical eligibility, invent evidence, use shell/files/network tools or claim guaranteed benefits. All figures are synthetic assumptions. Return proposals for independent computation; no protocol mutation is authorized.',
+      permissionHandler({ toolUses, options }) {
+        const safe = toolUses.length > 0 && toolUses.every(use => allowed.has(use.name));
+        const desired = safe ? sdk.ToolConfirmationOutcome.ProceedOnce : sdk.ToolConfirmationOutcome.Cancel;
+        if (!options.some(option => option.value === desired)) throw new Error('Required permission outcome absent');
+        return desired;
+      },
+    });
+    const tools = await session.listTools();
+    allowed = new Set(tools.filter(tool => allowedToolId(tool.id)).map(tool => tool.id));
+    if (allowed.size !== names.length) throw new Error('Cannot establish restrictive Concord tool identity');
+    await session.updateSettings({ disabledToolIds: tools.filter(tool => !allowed.has(tool.id)).map(tool => tool.id) });
+    const verified = await session.listTools();
+    if (verified.some(tool => tool.allowed && !allowed.has(tool.id))) throw new Error('Unexpected tool remains enabled');
+    const schema = { type: 'object', additionalProperties: false, required: ['proposals'], properties: {
+      proposals: { type: 'array', minItems: 1, maxItems: maxIterations, items: { type: 'object', additionalProperties: false,
+        required: ['proposal_id', 'trial_id', 'category', 'description', 'activation_lag_months', 'monthly_outreach_budget', 'modifies_clinical_inclusion_exclusion'],
+        properties: { proposal_id: { type: 'string', minLength: 3, maxLength: 64 }, trial_id: { type: 'string', enum: [trialId] },
+          category: { type: 'string', enum: ['OPERATIONAL', 'SITE_ACTIVATION'] }, description: { type: 'string', minLength: 10, maxLength: 500 },
+          activation_lag_months: { type: 'number', minimum: 0, maximum: 12 }, monthly_outreach_budget: { type: 'number', minimum: 0, maximum: 50000 },
+          modifies_clinical_inclusion_exclusion: { type: 'boolean', enum: [false] } } } },
+    } };
+    let terminal;
+    for await (const message of session.stream(`Inspect ${trialId}; call the original-engine simulation tool before proposing at most ${maxIterations} operational variants. It is valid to find no benefit.`, {
+      abortSignal: controller.signal, outputFormat: { type: sdk.OutputFormatType.JsonSchema, schema },
+    })) if (message.type === 'result') terminal = message;
+    if (!terminal?.success || terminal.subtype !== 'success' || !terminal.sessionId || !Array.isArray(terminal.structuredOutput?.proposals) || !trace.some(row => row.tool_name === 'simulate_operational_variant')) throw new Error('No successful tool-backed Factory proposal result');
+    return { status: 'SUCCEEDED', session_id: terminal.sessionId, proposals: terminal.structuredOutput.proposals,
+      duration_ms: terminal.durationMs, turn_count: terminal.turnCount, token_usage: terminal.tokenUsage ?? null, tool_trace: trace };
+  } finally {
+    clearTimeout(timer);
+    try { if (session) await session.close(); } finally { try { await server.close(); } finally { await rm(privateDir, { recursive: true, force: true }); } }
+  }
 }
 
-if (process.argv[1] && process.argv[1].endsWith('factory-droid-runner.mjs')) {
-  const { trialId, maxIterations } = parseArgs();
-  runFactoryDroid(trialId, maxIterations)
-    .then((result) => {
-      console.log(JSON.stringify(result, null, 2));
-    })
-    .catch((err) => {
-      console.error(err);
-      process.exit(1);
+// Stdin bridge is deliberately fixed to a private Python module, never a model command.
+export async function pythonBridge(arguments_, environment = process.env) {
+  const { spawn } = await import('node:child_process');
+  return new Promise((resolve, reject) => {
+    const child = spawn(environment.CONCORD_BACKEND_PYTHON, ['-m', 'concord.agents.factory_tools'], {
+      cwd: root, env: { PATH: environment.PATH, PYTHONPATH: path.join(root, 'backend') }, stdio: ['pipe', 'pipe', 'ignore'],
     });
+    let text = '';
+    const timer = setTimeout(() => { child.kill('SIGKILL'); reject(new Error('Concord tool timeout')); }, 15000);
+    child.on('error', reject);
+    child.stdout.on('data', chunk => { text += chunk; if (text.length > 100000) child.kill('SIGKILL'); });
+    child.on('close', code => { clearTimeout(timer); if (code || text.length > 100000) reject(new Error('Concord tool failed')); else { try { resolve(JSON.parse(text)); } catch { reject(new Error('Invalid tool result')); } } });
+    child.stdin.end(JSON.stringify(arguments_));
+  });
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const args = process.argv.slice(2);
+  const get = flag => args[args.indexOf(flag) + 1];
+  runFactoryDroid(get('--trial-id'), Number(get('--max-iterations')), { bridge: args => pythonBridge(args) })
+    .then(result => process.stdout.write(JSON.stringify(result)))
+    .catch(() => { process.stderr.write('Factory execution rejected or failed; no result claimed.\n'); process.exitCode = 1; });
 }

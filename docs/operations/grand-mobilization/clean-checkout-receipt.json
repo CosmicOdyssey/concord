@@ -1,0 +1,31 @@
+{
+  "source_commit": "8caff9e9205713583a10c8eff9e4e3bdff587ba8",
+  "tracked_dirty": false,
+  "delivery": "actual local HTTP TestClient; clean worktree; no external inference",
+  "result_sha256": "22c92e993ff37e3f04ac74e7c2e43e6fba62165fab44db32b7e0f25f62c34763",
+  "input_sha256": "eab0fff0e09da6adabb9fd2552c4a501d6e9870ba43a7d860f1d8b7316165fee",
+  "baseline_months": 15.13,
+  "chosen_months": 9.24,
+  "droid_disposition": "NO_BENEFICIAL_CHANGE",
+  "evaluation_run_id": "local-eval-ff42fb145ed646b2892117b5ba6d32f0",
+  "evaluation_passed": 15,
+  "evaluation_dataset_sha256": "cfe55f381b24cec15ba1acfc3257aeab4ea569aa5716812a52b82fce3724ce57",
+  "commands": [
+    "uv venv --python 3.14 backend/.venv",
+    "uv pip install --python backend/.venv/bin/python -r backend/requirements.txt",
+    "npm --prefix frontend ci --ignore-scripts",
+    "npm --prefix frontend run build",
+    "PYTHONPATH=backend backend/.venv/bin/python -m concord.portfolio --request data/portfolio/demo-request.json --output data/work/readme-demo"
+  ],
+  "operating_and_financial_results_match_browser_exactly": true,
+  "compared_scenario_fields": [
+    "id",
+    "selected_edges",
+    "expected_makespan",
+    "ledger",
+    "interval",
+    "objective_unrounded",
+    "sites"
+  ],
+  "identity_note": "Source commit/dirty provenance differs from initial dirty browser run, so run/input/result digests differ while all selected operating and financial outputs match."
+}
