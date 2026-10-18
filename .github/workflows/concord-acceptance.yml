@@ -32,10 +32,8 @@ jobs:
         run: python -m pytest -q -rs backend/tests
       - name: Install frontend dependencies
         run: npm --prefix frontend ci
-      - name: Financial client contracts
-        run: npm --prefix frontend run test:financial
-      - name: Portfolio client contracts
-        run: npm --prefix frontend run test:portfolio
+      - name: Frontend contracts (financial, portfolio, demo and sponsor boundaries)
+        run: npm --prefix frontend test
       - name: Existing comparison contracts
         run: npm --prefix frontend run test:compare
       - name: Typecheck and build
