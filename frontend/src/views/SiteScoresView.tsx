@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Banner, Details, ErrorBox, Gloss, InfoTip, KeyFigure, Loading, PageHead, Qualifier, Section } from '../components'
 import { useDensity } from '../density'
+import { useTabSignal, whenShown } from '../tabActive'
 import { ctgovUrl, int, phaseLabel } from '../format'
 import {
   fixed,
@@ -83,8 +84,12 @@ function useWidth(): [(el: HTMLElement | null) => void, number] {
   const [w, setW] = useState(0)
   useEffect(() => {
     if (!el) return
-    // observe() reports the initial size too.
-    const ro = new ResizeObserver((entries) => setW(Math.floor(entries[0].contentRect.width)))
+    // observe() reports the initial size too. 0 is this view hidden behind another tab (App.tsx keeps it mounted):
+    // keep the last width, so the chart is already the right size when the tab is shown again.
+    const ro = new ResizeObserver((entries) => {
+      const next = Math.floor(entries[0].contentRect.width)
+      if (next > 0) setW(next)
+    })
     ro.observe(el)
     return () => ro.disconnect()
   }, [el])
@@ -100,6 +105,7 @@ function ScrollX({ children, label }: { children: ReactNode; label: string }) {
     const el = ref.current
     if (!el) return
     const update = () => {
+      if (!el.getClientRects().length) return // hidden with its tab: keep the last reading (no hint flicker on return)
       const max = el.scrollWidth - el.clientWidth
       const next = { over: max > 1, l: el.scrollLeft > 1, r: el.scrollLeft < max - 1 }
       setSt((s) => (s.over === next.over && s.l === next.l && s.r === next.r ? s : next))
@@ -182,30 +188,34 @@ export default function SiteScoresView() {
   const scrollOnLoad = useRef(siteFromHash() !== null)
   const loadedId = detail.status === 'ok' ? detail.data.site.site_id : null
   const ready = summary.status === 'ok' // the breakdown window exists only once the summary has loaded
+  // Kept mounted behind another tab, the view waits until it is shown to scroll.
+  const tab = useTabSignal()
   useEffect(() => {
     if (!scrollOnLoad.current || !ready || loadedId === null || loadedId !== selected) return
-    const el = breakdownRef.current
-    if (!el) return
-    scrollOnLoad.current = false
-    el.scrollIntoView({ block: 'start' })
-    // The charts above size themselves after the first paint and can push the window down: scroll once more,
-    // unless the reader has started scrolling.
-    const id = window.setTimeout(() => {
-      const top = el.getBoundingClientRect().top
-      if (top < -2 || top > 160) el.scrollIntoView({ block: 'start' })
-    }, 300)
-    const cancel = () => window.clearTimeout(id)
-    const opts = { once: true, passive: true } as const
-    window.addEventListener('wheel', cancel, opts)
-    window.addEventListener('touchstart', cancel, opts)
-    window.addEventListener('keydown', cancel, { once: true })
-    return () => {
-      cancel()
-      window.removeEventListener('wheel', cancel)
-      window.removeEventListener('touchstart', cancel)
-      window.removeEventListener('keydown', cancel)
-    }
-  }, [loadedId, selected, ready])
+    return whenShown(tab, () => {
+      const el = breakdownRef.current
+      if (!el) return
+      scrollOnLoad.current = false
+      el.scrollIntoView({ block: 'start' })
+      // The charts above size themselves after the first paint and can push the window down: scroll once more,
+      // unless the reader has started scrolling.
+      const id = window.setTimeout(() => {
+        const top = el.getBoundingClientRect().top
+        if (top < -2 || top > 160) el.scrollIntoView({ block: 'start' })
+      }, 300)
+      const cancel = () => window.clearTimeout(id)
+      const opts = { once: true, passive: true } as const
+      window.addEventListener('wheel', cancel, opts)
+      window.addEventListener('touchstart', cancel, opts)
+      window.addEventListener('keydown', cancel, { once: true })
+      return () => {
+        cancel()
+        window.removeEventListener('wheel', cancel)
+        window.removeEventListener('touchstart', cancel)
+        window.removeEventListener('keydown', cancel)
+      }
+    })
+  }, [loadedId, selected, ready, tab])
   useEffect(() => {
     const on = () => {
       const id = siteFromHash()

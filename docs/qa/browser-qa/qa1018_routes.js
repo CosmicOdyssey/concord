@@ -19,7 +19,8 @@ async function state(page) {
     hash: location.hash,
     tab: [...document.querySelectorAll('nav.tabs button')].find((b) => b.getAttribute('aria-selected') === 'true')?.innerText.replace(/^\d+\s*/, '').trim(),
     sub: document.querySelector('.rs-tabs button[aria-selected="true"]')?.innerText.trim() ?? null,
-    h1: document.querySelector('main h1')?.innerText ?? null,
+    // The view on show: visited views stay mounted, hidden, behind it (App.tsx).
+    h1: [...document.querySelectorAll('main h1')].find((h) => !h.closest('[hidden]'))?.innerText ?? null,
     banner: !!document.querySelector('.rs-banner'),
   }))
 }
@@ -144,7 +145,7 @@ const wait = (page, fn, arg, timeout = 60000) => page.waitForFunction(fn, { time
     }
     rec('forward x2', fwd.map((s) => s.tab).join(' > ') === 'Portfolio overlap > Protocol to terms', fwd.map((s) => `${s.tab} ${s.hash} ${s.h1}`))
     // The view under the tab bar matches the selected tab.
-    const h1 = await page.$eval('main h1', (e) => e.innerText).catch(() => null)
+    const h1 = await page.evaluate(() => [...document.querySelectorAll('main h1')].find((h) => !h.closest('[hidden]'))?.innerText ?? null)
     rec('view matches tab after forward', h1 === 'Protocol to terms', { h1 })
     // Research sub-tab back/forward.
     await Q.clickTab(page, 'Research')

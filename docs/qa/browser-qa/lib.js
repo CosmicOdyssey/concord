@@ -108,7 +108,8 @@ async function waitCleared(page, mustInclude = '') {
 }
 
 async function waitNoLoading(page, timeout = LONG) {
-  await page.waitForFunction(() => !document.querySelector('main .loading'), { timeout, polling: 500 })
+  // Views once visited stay mounted, hidden, behind the one on show (App.tsx): only the view on show counts.
+  await page.waitForFunction(() => ![...document.querySelectorAll('main .loading')].some((el) => !el.closest('.app-pane[hidden]')), { timeout, polling: 500 })
   await sleep(500)
 }
 
@@ -135,13 +136,15 @@ async function shot(page, dir, name, fullPage = true) {
 async function grab(page) {
   return page.evaluate(() => {
     const txt = (el) => (el ? el.innerText.replace(/\u00a0/g, ' ').trim() : null)
-    const tables = [...document.querySelectorAll('main table')].map((t) => ({
+    // Only the view on show: visited views stay mounted and hidden (App.tsx).
+    const onShow = (el) => !el.closest('.app-pane[hidden]')
+    const tables = [...document.querySelectorAll('main table')].filter(onShow).map((t) => ({
       cls: t.className,
       head: [...t.querySelectorAll('thead tr')].map((r) => [...r.children].map(txt)),
       rows: [...t.querySelectorAll('tbody tr')].map((r) => [...r.children].map(txt)),
       foot: [...t.querySelectorAll('tfoot tr')].map((r) => [...r.children].map(txt)),
     }))
-    const stats = [...document.querySelectorAll('main .stat')].map((s) => ({
+    const stats = [...document.querySelectorAll('main .stat')].filter(onShow).map((s) => ({
       label: txt(s.querySelector('.stat-label')),
       value: txt(s.querySelector('.stat-value')),
       sub: txt(s.querySelector('.stat-sub')),
