@@ -4,6 +4,8 @@
 
 Built for **HackHarvard 2026, Regeneron track**, by the Bruno Bears from Brown University. Concord also includes a sponsor integration lab for **Photon 2.0, Chalk and Factory Droid**, alongside an explicitly synthetic planning demonstration.
 
+[Live judging demo](https://cosmicodyssey.github.io/concord/) — forwards to the team’s laptop while its demo server and tunnel are running. Availability depends on that machine; the link is not a production-service guarantee.
+
 ## What you can do
 
 | Workflow | What Concord computes | Evidence boundary |

@@ -1,6 +1,8 @@
 # PR #7 / #8 integration repair — 2026-10-18
 
-Main `6a33301` was reconciled with PR #7 (`antigravity/concord-claude-ui`) and PR #8 (`antigravity/concord-live-sponsor-integrations`) in isolated worktrees. The unrelated original acceptance checkout and its uncommitted report edit were preserved. PR #8 includes the repaired PR #7 history so its white UI and retained navigation are integrated together.
+Main `6a33301` was initially reconciled with PR #7 (`antigravity/concord-claude-ui`) and PR #8 (`antigravity/concord-live-sponsor-integrations`) in isolated worktrees. The unrelated original acceptance checkout and its uncommitted report edit were preserved. PR #8 includes the repaired PR #7 history so its white UI and retained navigation are integrated together.
+
+A concurrent main update to `759205e9319fe4f5df5dfb2292ad4629febf0b65` was then reconciled into both PRs. Its permanent GitHub Pages demo link, submission link and tunnel-watchdog source are preserved. The watchdog was inspected but not executed; this repair launched no tunnel and published no deployment. Application source is unchanged by that final main merge.
 
 ## Changes and claim corrections
 

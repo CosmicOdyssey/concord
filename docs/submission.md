@@ -7,7 +7,7 @@ rates, with a source on every line.
 
 ## Try it out
 
-- Live app: https://flashing-bush-todd-indices.trycloudflare.com (hosted from the team's laptop for judging)
+- Live app: https://cosmicodyssey.github.io/concord/ (forwards to the app, hosted from the team's laptop for judging)
 - Code: https://github.com/CosmicOdyssey/concord
 
 ## Project story
