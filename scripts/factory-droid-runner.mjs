@@ -36,7 +36,25 @@ function parseArgs() {
 export async function runFactoryDroid(trialId = 'NCT05800015', maxIterations = 3) {
   const trace = [];
   const iterations = [];
-  const apiKey = process.env.FACTORY_API_KEY;
+  let apiKey = process.env.FACTORY_API_KEY;
+  if (!apiKey) {
+    const envPath = path.resolve(__dirname, '..', '.env');
+    if (fs.existsSync(envPath)) {
+      const lines = fs.readFileSync(envPath, 'utf8').split('\n');
+      for (const line of lines) {
+        const m = line.match(/^\s*FACTORY_API_KEY\s*=\s*(.*)?\s*$/);
+        if (m) {
+          let val = m[1] || '';
+          if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+            val = val.slice(1, -1);
+          }
+          apiKey = val.trim();
+          process.env.FACTORY_API_KEY = apiKey;
+          break;
+        }
+      }
+    }
+  }
 
   let droidSdkNode = null;
   let importError = null;
