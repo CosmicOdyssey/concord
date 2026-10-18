@@ -1,6 +1,18 @@
 # Concord
 
+[![Live Public Deployment](https://img.shields.io/badge/Live%20Deployment-concord--smoky.vercel.app-2563eb?style=for-the-badge)](https://concord-smoky.vercel.app)
+[![Devpost Submission](https://img.shields.io/badge/Devpost-Concord%20(HackHarvard%202026)-003E54?style=for-the-badge&logo=devpost)](https://devpost.com/software/concord-17as0b)
+[![Aesthetic](https://img.shields.io/badge/Design-Pure%20White%20%23FFFFFF-0f172a?style=for-the-badge)](https://concord-smoky.vercel.app)
+
 Tools for NSCLC trial portfolios on public ClinicalTrials.gov data. HackHarvard 2026, Regeneron track.
+
+- **Live Application**: [https://concord-smoky.vercel.app](https://concord-smoky.vercel.app)
+- **Devpost Project**: [https://devpost.com/software/concord-17as0b](https://devpost.com/software/concord-17as0b)
+- **180s HackHarvard Planning Demo**: [https://concord-smoky.vercel.app/#demo](https://concord-smoky.vercel.app/#demo)
+- **Sponsor Agents Lab (Photon · Chalk · Droid)**: [https://concord-smoky.vercel.app/#sponsor-agents](https://concord-smoky.vercel.app/#sponsor-agents)
+- **Portfolio Command Planner**: [https://concord-smoky.vercel.app/#portfolio-command](https://concord-smoky.vercel.app/#portfolio-command)
+- **Protocol to Terms**: [https://concord-smoky.vercel.app/#terms-flow/NCT05800015](https://concord-smoky.vercel.app/#terms-flow/NCT05800015)
+- **What We Tested / Findings**: [https://concord-smoky.vercel.app/#findings](https://concord-smoky.vercel.app/#findings)
 
 Concord started as a clearing mechanism that would allocate sites across concurrent trials at once.
 Testing that idea on 7,221 NSCLC trials (see **Results**) showed that coordination gains largely
@@ -27,6 +39,7 @@ matrix, a two-site price comparison) and the research results; `#home/overlap`, 
 `#home/tested` open a section, and "See demo" opens Findings. The app header has a Simple | Detailed switch
 (Simple for a first visit; the choice is remembered) and a Light / Dark / System theme switch. The look is the
 "Calm" design system: tokens in `frontend/src/index.css`, shared building blocks in `frontend/src/components.tsx`.
+Default theme preference is explicitly pure white (`#FFFFFF`) light mode.
 
 Rule for the whole app: no view shows a predicted speedup, time-to-fill or enrollment rate as a product
 claim. Site scores show past per-site rates as evidence, next to their validation, never as a forecast.
@@ -37,7 +50,7 @@ The original `#demo` and `#sponsor-agents` routes remain available by direct lin
 
 ## HackHarvard Sponsor Integrations
 
-The [Sponsor Agents lab](http://127.0.0.1:5178/#sponsor-agents) contains local demonstrations,
+The [Sponsor Agents lab](https://concord-smoky.vercel.app/#sponsor-agents) (also local at `http://127.0.0.1:5178/#sponsor-agents`) contains local demonstrations,
 not completed external sponsor connections:
 
 | Integration | Current execution | External blocker |
@@ -103,8 +116,26 @@ run `scripts/pipeline.sh` over an existing dataset without preserving it. See
 The [integration audit](docs/integration/FINAL-INTEGRATION-REPORT.md) retains the earlier
 optimizer and accounting evidence. Current software verification, missing-data skips,
 provider blockers and browser receipts are recorded in the
-[campaign report](docs/operations/GRAND-MOBILIZATION-REPORT.md).
+[campaign report](docs/operations/GRAND-MOBILIZATION-REPORT.md) and
+[Claude UI recovery report](docs/demo/CLAUDE-UI-RECOVERY.md).
 These checks do not establish clinical performance.
+
+## Live Verification & Browser Acceptance
+
+The deployed application at [https://concord-smoky.vercel.app](https://concord-smoky.vercel.app) is continuously audited with headless Chrome acceptance checks that verify pure white canvas aesthetics (`#FFFFFF`), theme persistence, offline resilience, and interactive end-to-end flows:
+
+```sh
+# Run full live browser acceptance suite (3x 180s demo runs, sponsor panel, responsive checks)
+node scripts/live-browser-acceptance.mjs
+```
+
+Full automated receipts and screenshots are saved under `docs/demo/screens/` and documented in [docs/demo/CLAUDE-UI-RECOVERY.md](docs/demo/CLAUDE-UI-RECOVERY.md):
+- `01-white-landing-1440.png` — Verified `#FFFFFF` canvas and dark charcoal `#0F172A` ink.
+- `02-demo-scene1-problem.png` to `04-demo-evidence.png` — 180s HackHarvard interactive demo progression.
+- `05-sponsor-agents.png` — Photon SMS simulator, Factory Droid protocol evaluation, and Chalk acceptance suite.
+- `06-portfolio-command.png` to `09-findings.png` — Portfolio planner, protocol terms, overlap audit, and research findings.
+- `10-tablet-landing-768.png` & `11-mobile-landing-375.png` — Tablet and mobile responsive viewports.
+- `acceptance-receipt.json` — Machine-readable run receipt with sub-3s run durations and zero fatal errors.
 
 
 ## Layout

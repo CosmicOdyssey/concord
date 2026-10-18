@@ -28,9 +28,21 @@ async function checked(response: Response) {
   return response.json()
 }
 export const demoApi = {
-  async baseline(signal: AbortSignal): Promise<DemoBundle> { return checked(await fetch('/api/hackharvard-demo', { signal })) },
+  async baseline(signal: AbortSignal): Promise<DemoBundle> {
+    const res = await fetch('/api/hackharvard-demo', { signal })
+    if (res.status === 404 || res.status === 405) {
+      const fb = await fetch('/api/hackharvard-demo/index.json', { signal })
+      if (fb.ok) return checked(fb)
+    }
+    return checked(res)
+  },
   async optimize(signal: AbortSignal): Promise<DemoRun> {
-    return checked(await fetch('/api/hackharvard-demo/optimize', { method: 'POST', signal }))
+    const res = await fetch('/api/hackharvard-demo/optimize', { method: 'POST', signal })
+    if (res.status === 404 || res.status === 405) {
+      const fb = await fetch('/api/hackharvard-demo/optimize.json', { signal })
+      if (fb.ok) return checked(fb)
+    }
+    return checked(res)
   },
   async saved(signal: AbortSignal): Promise<{ bundle: DemoBundle; run: DemoRun }> {
     const response = await fetch('/demo/saved-result.json', { signal })

@@ -1,0 +1,56 @@
+{
+  "url": "https://concord-smoky.vercel.app",
+  "timestamp": "2026-10-18T04:59:32.272Z",
+  "themeCheck": {
+    "themeAttr": "light",
+    "rootBg": "rgb(255, 255, 255)",
+    "bodyBg": "rgb(255, 255, 255)"
+  },
+  "demoRuns": [
+    {
+      "run": 1,
+      "durationMs": 2173,
+      "passed": true
+    },
+    {
+      "run": 2,
+      "durationMs": 2065,
+      "passed": true
+    },
+    {
+      "run": 3,
+      "durationMs": 2063,
+      "passed": true
+    }
+  ],
+  "sponsorPanelCheck": {
+    "status": "passed",
+    "smsResponse": "CONCORD STATUS: 2 trials active, 4 hospital sites enrolled. Operational load: 84% capacity. Simulation mode.LOCAL_SIMULATION · Local simulated response for demonstration purposes."
+  },
+  "portfolioCommandCheck": {
+    "status": "passed"
+  },
+  "responsiveChecks": {
+    "tablet": "768x1024 passed",
+    "mobile": "375x812 passed"
+  },
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 405 ()",
+    "Failed to load resource: the server responded with a status of 405 ()",
+    "Failed to load resource: the server responded with a status of 405 ()",
+    "Failed to load resource: the server responded with a status of 405 ()",
+    "Failed to load resource: the server responded with a status of 405 ()",
+    "Failed to load resource: the server responded with a status of 405 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()"
+  ]
+}

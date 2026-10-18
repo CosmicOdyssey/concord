@@ -101,6 +101,13 @@ export interface SelfOverlap {
 async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
   const res = await fetch(path, { signal })
   if (!res.ok) {
+    const fallbackPath = path === '/api/findings' ? '/api/findings/index.json' : `${path}.json`
+    try {
+      const fb = await fetch(fallbackPath, { signal })
+      if (fb.ok) return (await fb.json()) as T
+    } catch {
+      /* ignore */
+    }
     let detail = res.statusText
     try {
       const body = await res.json()
