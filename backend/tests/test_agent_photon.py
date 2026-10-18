@@ -132,6 +132,31 @@ def test_photon_timestamp_replay_tolerance():
     assert photon_agent.verify_signature(payload, valid_sig, timestamp_header=stale_ts) is False
 
 
+def test_photon_pending_project_id():
+    photon_agent._api_key = "pho_sk_test_key"
+    photon_agent._photon_number = "+16175550100"
+    photon_agent._project_id = None
+    photon_agent._last_receipt = None
+    photon_agent._last_error = None
+
+    status = photon_agent.get_readiness_status()
+    assert status["readiness"] == "PENDING_PROJECT_ID"
+    assert "PHOTON_PROJECT_ID" in status["auth_status"]
+
+    res = photon_agent.process_message(InboundSMSMessage(
+        message_id="msg-pending-prj-test",
+        sender="+16175550199",
+        recipient="+16175550100",
+        body="STATUS",
+    ))
+    assert res.status == "QUEUED_OFFLINE"
+    assert "PHOTON_PROJECT_ID" in res.delivery_note
+
+    # Reset
+    photon_agent._api_key = None
+    photon_agent._photon_number = None
+
+
 def test_photon_live_dispatch_and_receipt(monkeypatch):
     class MockResponse:
         status_code = 200
@@ -146,12 +171,14 @@ def test_photon_live_dispatch_and_receipt(monkeypatch):
         def __exit__(self, *args):
             pass
         def post(self, url, json, headers):
-            assert "messages" in url
+            assert "messages" in url or "spaces" in url
             assert headers["Authorization"].startswith("Bearer ")
+            assert "Idempotency-Key" in headers
             return MockResponse()
 
     monkeypatch.setattr("httpx.Client", MockClient)
     photon_agent._api_key = "live_photon_test_key"
+    photon_agent._project_id = "pho_prj_live_test_12345"
     photon_agent._photon_number = "+16175550100"
 
     res = photon_agent.process_message(InboundSMSMessage(
@@ -159,12 +186,13 @@ def test_photon_live_dispatch_and_receipt(monkeypatch):
         sender="+16175550199",
         recipient="+16175550100",
         body="STATUS",
+        space_id="space_test_99",
     ))
 
     assert res.status == "DELIVERED"
     assert res.provider_message_id == "msg_photon_live_12345"
     assert res.delivery_mode == "LIVE_CARRIER"
-    assert "Dispatched via Photon API" in res.delivery_note
+    assert "Dispatched via Photon 2.0 API" in res.delivery_note
 
     # Verify readiness status transitions to CONNECTED_AND_VERIFIED
     status = photon_agent.get_readiness_status()
@@ -173,6 +201,8 @@ def test_photon_live_dispatch_and_receipt(monkeypatch):
 
     # Reset credentials
     photon_agent._api_key = None
+    photon_agent._project_id = None
     photon_agent._photon_number = None
     photon_agent._last_receipt = None
+
 

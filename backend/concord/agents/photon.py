@@ -24,6 +24,19 @@ from concord.agents.boundary import get_portfolio_status, PortfolioQuery
 from concord import hackharvard_demo as demo
 
 
+def _normalize_e164(phone: str | None) -> str | None:
+    """Normalize phone number to standard E.164 (+1XXXXXXXXXX)."""
+    if not phone:
+        return None
+    phone = phone.strip()
+    digits = "".join(c for c in phone if c.isdigit())
+    if len(digits) == 10:
+        return f"+1{digits}"
+    if not phone.startswith("+") and digits:
+        return f"+{digits}"
+    return phone
+
+
 class InboundSMSMessage(BaseModel):
     """Normalized inbound message from Photon 2.0 webhook."""
     message_id: str = Field(min_length=1, max_length=128)
@@ -31,6 +44,8 @@ class InboundSMSMessage(BaseModel):
     recipient: str = Field(pattern=r"^\+?[0-9\-\s\(\)]{7,25}$")
     body: str = Field(min_length=1, max_length=1600)
     timestamp: str | None = None
+    space_id: str | None = None
+    sender_id: str | None = None
 
 
 class SMSProcessingResult(BaseModel):
@@ -57,7 +72,8 @@ class PhotonSMSAgent:
         self._conversation_states: dict[str, dict[str, Any]] = {}
         self._webhook_secret = os.environ.get("PHOTON_WEBHOOK_SECRET", "concord-photon-default-secret")
         self._api_key = os.environ.get("PHOTON_API_KEY")
-        self._photon_number = os.environ.get("PHOTON_PHONE_NUMBER")
+        self._project_id = os.environ.get("PHOTON_PROJECT_ID")
+        self._photon_number = _normalize_e164(os.environ.get("PHOTON_PHONE_NUMBER"))
         self._api_base_url = os.environ.get("PHOTON_API_BASE_URL", "https://api.photon.codes/v1").rstrip("/")
         self._allowed_senders = self._parse_allowlist(os.environ.get("PHOTON_ALLOWED_SENDERS"))
         self._last_receipt: dict[str, Any] | None = None
@@ -101,40 +117,100 @@ class PhotonSMSAgent:
         clean_sender = "".join(c for c in sender if c.isdigit() or c == "+")
         return any(clean_sender.endswith(allowed.lstrip("+")) for allowed in self._allowed_senders)
 
-    def _dispatch_outbound_sms(self, recipient: str, body: str) -> tuple[str, str, str | None]:
-        """Dispatch outbound message via Photon API when credentials are configured."""
+    def _dispatch_outbound_sms(
+        self,
+        recipient: str,
+        body: str,
+        space_id: str | None = None,
+        sender_id: str | None = None,
+    ) -> tuple[str, str, str | None]:
+        """Dispatch outbound message via Photon 2.0 API when credentials are configured."""
         if not self._api_key:
-            return "QUEUED_OFFLINE", "Local test mode: processed and verified locally. Live carrier dispatch requires PHOTON_API_KEY and PHOTON_PHONE_NUMBER.", None
+            return "QUEUED_OFFLINE", "Local test mode: processed and verified locally. Live carrier dispatch requires PHOTON_API_KEY.", None
 
         if not self._photon_number:
             return "QUEUED_OFFLINE", "Configured API key present, but PHOTON_PHONE_NUMBER is not set. Outbound carrier dispatch pending sender number assignment.", None
 
+        clean_recipient = _normalize_e164(recipient) or recipient
+        clean_from = self._photon_number
+
+        # If PHOTON_PROJECT_ID is not configured, inform the user with actionable instructions
+        if not self._project_id:
+            note = (
+                "Photon 2.0 API requires PHOTON_PROJECT_ID (starts with 'pho_prj_'). "
+                "Copy your Project ID from the Photon dashboard under Settings -> Project ID, and add PHOTON_PROJECT_ID to .env. "
+                "Outbound message queued offline."
+            )
+            return "QUEUED_OFFLINE", note, None
+
+        import uuid
         import httpx
-        url = f"{self._api_base_url}/messages"
-        payload = {
-            "to": recipient,
-            "from": self._photon_number,
-            "body": body,
-        }
-        scheme = "Bearer"
+
+        idempotency_key = f"concord-reply-{uuid.uuid4().hex[:16]}"
+        auth_type = "Bearer"
         headers = {
-            "Authorization": f"{scheme} {self._api_key}",
+            "Authorization": f"{auth_type} {self._api_key}",
             "Content-Type": "application/json",
+            "Idempotency-Key": idempotency_key,
         }
+
+        target_space_id = space_id
+        target_sender_id = sender_id or clean_from
+
         try:
             with httpx.Client(timeout=10.0) as client:
+                if not target_space_id:
+                    # Attempt createOrGetSpace under project
+                    space_url = f"{self._api_base_url}/projects/{self._project_id}/spaces"
+                    try:
+                        space_res = client.post(
+                            space_url,
+                            json={
+                                "platform": "sms",
+                                "participantIds": [clean_recipient, clean_from],
+                            },
+                            headers=headers,
+                        )
+                        if space_res.status_code in (200, 201):
+                            space_data = space_res.json()
+                            target_space_id = space_data.get("id") or space_data.get("spaceId")
+                    except Exception:
+                        pass
+
+                url = f"{self._api_base_url}/projects/{self._project_id}/messages"
+                if target_space_id:
+                    payload = {
+                        "spaceId": target_space_id,
+                        "senderId": target_sender_id,
+                        "content": {
+                            "type": "text",
+                            "format": "plain",
+                            "text": body,
+                        },
+                    }
+                else:
+                    payload = {
+                        "to": clean_recipient,
+                        "from": clean_from,
+                        "content": {
+                            "type": "text",
+                            "format": "plain",
+                            "text": body,
+                        },
+                    }
+
                 res = client.post(url, json=payload, headers=headers)
                 if res.status_code in (200, 201, 202):
                     data = res.json()
                     prov_id = data.get("id") or data.get("message_id") or f"photon-{data.get('sid', 'ack')}"
                     self._last_receipt = {
                         "provider_message_id": prov_id,
-                        "recipient": recipient[:5] + "***" if len(recipient) > 5 else "***",
+                        "recipient": clean_recipient[:5] + "***" if len(clean_recipient) > 5 else "***",
                         "status": "DELIVERED",
                         "timestamp": datetime.now(timezone.utc).isoformat(),
                     }
                     self._last_error = None
-                    return "DELIVERED", f"Dispatched via Photon API. Provider message ID: {prov_id}", prov_id
+                    return "DELIVERED", f"Dispatched via Photon 2.0 API. Provider message ID: {prov_id}", prov_id
                 else:
                     err_msg = f"Photon API HTTP {res.status_code}: {res.text[:200]}"
                     self._last_error = err_msg
@@ -151,35 +227,34 @@ class PhotonSMSAgent:
             missing.append("PHOTON_API_KEY")
         if not self._photon_number:
             missing.append("PHOTON_PHONE_NUMBER")
+        if not self._project_id:
+            missing.append("PHOTON_PROJECT_ID")
         if not os.environ.get("PHOTON_WEBHOOK_SECRET"):
             missing.append("PHOTON_WEBHOOK_SECRET")
 
         if self._last_receipt and self._last_receipt.get("status") == "DELIVERED":
             readiness = "CONNECTED_AND_VERIFIED"
-        elif self._api_key and self._photon_number:
-            readiness = "CONFIGURED_UNVERIFIED"
+            auth_status = "LIVE_CARRIER_VERIFIED"
         elif self._last_error:
             readiness = "FAILED"
+            auth_status = f"FAILED: {self._last_error}"
+        elif self._api_key and self._photon_number and not self._project_id:
+            readiness = "PENDING_PROJECT_ID"
+            auth_status = "PENDING_PROJECT_ID: Set PHOTON_PROJECT_ID in .env (found in Photon dashboard Settings: pho_prj_...)"
+        elif self._api_key and self._photon_number and self._project_id:
+            readiness = "CONFIGURED_UNVERIFIED"
+            auth_status = "CONFIGURED_PENDING_CARRIER_ACK"
         elif not self._api_key:
             readiness = "MISSING_CREDENTIALS"
+            auth_status = "BLOCKED — AUTHENTICATION: Missing PHOTON_API_KEY"
         else:
             readiness = "LOCAL_SIMULATION_ONLY"
-
-        if readiness == "CONNECTED_AND_VERIFIED":
-            auth_status = "LIVE_CARRIER_VERIFIED"
-        elif readiness == "CONFIGURED_UNVERIFIED":
-            auth_status = "CONFIGURED_PENDING_CARRIER_ACK"
-        elif readiness == "FAILED":
-            auth_status = f"FAILED: {self._last_error}"
-        elif readiness == "MISSING_CREDENTIALS":
-            auth_status = "BLOCKED — AUTHENTICATION: Missing PHOTON_API_KEY or PHOTON_PHONE_NUMBER"
-        else:
             auth_status = "LOCAL_SIMULATION_ONLY"
 
         return {
             "readiness": readiness,
             "auth_status": auth_status,
-            "live_carrier_enabled": bool(self._api_key and self._photon_number),
+            "live_carrier_enabled": bool(self._api_key and self._photon_number and self._project_id),
             "missing_prerequisites": missing,
             "allowed_senders_count": len(self._allowed_senders),
             "messages_processed_count": len(self._processed_messages),
@@ -292,7 +367,12 @@ class PhotonSMSAgent:
             engine_data = {"makespan": makespan}
 
         # 4. Outbound delivery execution
-        status, note, prov_id = self._dispatch_outbound_sms(message.sender, reply)
+        status, note, prov_id = self._dispatch_outbound_sms(
+            message.sender,
+            reply,
+            space_id=message.space_id,
+            sender_id=message.sender_id,
+        )
         now_iso = datetime.now(timezone.utc).isoformat()
 
         result = SMSProcessingResult(

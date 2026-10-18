@@ -16,6 +16,7 @@ export interface SMSResponse {
 export type ReadinessState =
   | 'CONNECTED_AND_VERIFIED'
   | 'CONFIGURED_UNVERIFIED'
+  | 'PENDING_PROJECT_ID'
   | 'LOCAL_SIMULATION_ONLY'
   | 'MISSING_CREDENTIALS'
   | 'FAILED';

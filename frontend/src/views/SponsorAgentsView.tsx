@@ -21,6 +21,7 @@ function renderReadinessBadge(readiness?: ReadinessState) {
   const labelMap: Record<ReadinessState, string> = {
     CONNECTED_AND_VERIFIED: 'Connected & Verified',
     CONFIGURED_UNVERIFIED: 'Configured (Unverified)',
+    PENDING_PROJECT_ID: 'Pending Project ID',
     LOCAL_SIMULATION_ONLY: 'Local Simulation Only',
     MISSING_CREDENTIALS: 'Missing Credentials (Sandbox)',
     FAILED: 'Failed',

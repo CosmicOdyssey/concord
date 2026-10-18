@@ -21,13 +21,17 @@ class SimulateSMSRequest(BaseModel):
 async def handle_photon_webhook(
     request: Request,
     x_photon_signature: str | None = Header(None, alias="X-Photon-Signature"),
+    x_spectrum_signature: str | None = Header(None, alias="X-Spectrum-Signature"),
     x_twilio_signature: str | None = Header(None, alias="X-Twilio-Signature"),
+    x_photon_timestamp: str | None = Header(None, alias="X-Photon-Timestamp"),
+    x_spectrum_timestamp: str | None = Header(None, alias="X-Spectrum-Timestamp"),
 ) -> dict:
-    """Handle inbound webhook from Photon 2.0 SMS service."""
+    """Handle inbound webhook from Photon 2.0 / Spectrum SMS service."""
     raw_body = await request.body()
-    signature = x_photon_signature or x_twilio_signature
+    signature = x_photon_signature or x_spectrum_signature or x_twilio_signature
+    timestamp = x_photon_timestamp or x_spectrum_timestamp
     
-    if not photon_agent.verify_signature(raw_body, signature):
+    if not photon_agent.verify_signature(raw_body, signature, timestamp_header=timestamp):
         raise HTTPException(status_code=401, detail="Invalid webhook signature")
 
     try:
@@ -35,13 +39,42 @@ async def handle_photon_webhook(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Malformed JSON payload: {e}")
 
+    # Extract space and sender if present from Spectrum / Photon 2.0 native schema
+    space_id = None
+    sender_id = None
+    if isinstance(data.get("space"), dict):
+        space_id = data["space"].get("id")
+    elif data.get("space_id"):
+        space_id = data["space_id"]
+
+    if isinstance(data.get("sender"), dict):
+        sender_id = data["sender"].get("id")
+    elif data.get("sender_id"):
+        sender_id = data["sender_id"]
+
+    # Extract text from content object if nested
+    body_text = data.get("body") or data.get("Body")
+    if not body_text and isinstance(data.get("content"), dict):
+        body_text = data["content"].get("text")
+    if not body_text and isinstance(data.get("message"), dict):
+        msg_obj = data["message"]
+        if isinstance(msg_obj.get("content"), dict):
+            body_text = msg_obj["content"].get("text")
+        elif msg_obj.get("body"):
+            body_text = msg_obj.get("body")
+
     # Map standard or Twilio-style webhook fields
+    sender_val = data.get("sender") if isinstance(data.get("sender"), str) else (data.get("From") or data.get("from") or "+16175550100")
+    recipient_val = data.get("recipient") if isinstance(data.get("recipient"), str) else (data.get("To") or data.get("to") or "+16175550200")
+
     message = InboundSMSMessage(
         message_id=data.get("message_id") or data.get("MessageSid") or data.get("id", "msg-test"),
-        sender=data.get("sender") or data.get("From") or data.get("from", "+16175550100"),
-        recipient=data.get("recipient") or data.get("To") or data.get("to", "+16175550200"),
-        body=data.get("body") or data.get("Body") or data.get("text", "STATUS"),
+        sender=sender_val,
+        recipient=recipient_val,
+        body=body_text or "STATUS",
         timestamp=data.get("timestamp"),
+        space_id=space_id,
+        sender_id=sender_id,
     )
 
     result = photon_agent.process_message(message)
