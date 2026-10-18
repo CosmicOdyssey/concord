@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "043a1e9b-7e0c-437f-ada1-b7a4e1d5d2ef",
+  "branch": "codex/concord-hackharvard-demo",
+  "commit": "e13cc8bf5e84be79b2ea117a74a4e6d29daca71e",
+  "repositoryDirty": true,
+  "commitBinding": "dirty-working-tree",
+  "startedAt": "2026-10-17T21:40:52.019Z",
+  "endedAt": "2026-10-17T21:41:47.907Z",
+  "durationMs": 55888,
+  "status": "passed",
+  "checks": [
+    {
+      "id": "backend",
+      "status": "passed",
+      "durationMs": 35542,
+      "exitCode": 0,
+      "timedOut": false,
+      "truncated": false
+    },
+    {
+      "id": "frontend-tests",
+      "status": "passed",
+      "durationMs": 346,
+      "exitCode": 0,
+      "timedOut": false,
+      "truncated": false
+    },
+    {
+      "id": "portfolio-client",
+      "status": "passed",
+      "durationMs": 246,
+      "exitCode": 0,
+      "timedOut": false,
+      "truncated": false
+    },
+    {
+      "id": "demo-client",
+      "status": "passed",
+      "durationMs": 234,
+      "exitCode": 0,
+      "timedOut": false,
+      "truncated": false
+    },
+    {
+      "id": "typecheck",
+      "status": "passed",
+      "durationMs": 12088,
+      "exitCode": 0,
+      "timedOut": false,
+      "truncated": false
+    },
+    {
+      "id": "frontend-build",
+      "status": "passed",
+      "durationMs": 7019,
+      "exitCode": 0,
+      "timedOut": false,
+      "truncated": false
+    },
+    {
+      "id": "frontend-lint",
+      "status": "passed",
+      "durationMs": 411,
+      "exitCode": 0,
+      "timedOut": false,
+      "truncated": false
+    }
+  ],
+  "counts": {
+    "backend_passed": 549,
+    "backend_skipped": 85,
+    "frontend_passed": 29
+  }
+}

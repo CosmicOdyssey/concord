@@ -1,0 +1,14 @@
+{
+  "base_main": "e0bd6c7bd1484c3ba6646d7e6a23d95743671641",
+  "code_checkpoint": "e13cc8bf5e84be79b2ea117a74a4e6d29daca71e",
+  "source_sha256": {
+    "backend/concord/hackharvard_demo.py": "4a94b0a0d136274597b1dcb40ab74b9485a084029bae34c83c9acb9998dcde1e",
+    "frontend/src/views/HackHarvardDemo.tsx": "44d0aef04b35fae65e0a651af4f86f4bae64e7a115cd5f0a778eea2d9eab1358",
+    "frontend/src/demoApi.ts": "77dd30afaf30eec1fb04104adf03d3ccfdb5e2175816b772635e9ea636b66ce0",
+    "data/demo/hackharvard-request.json": "fa516dd1fe0eddbc8d7cdd6fc441c434c1d6a1ef32f41aad1ab5a7e8418aaef3",
+    "frontend/src/App.tsx": "18b7ae6d614e7bf57d804449ef417722ef264e448f77bfd55c894174d1094317",
+    "frontend/src/views/LandingView.tsx": "e04d49e08675289721b269b083c6ba95acb8cb73469aac9bd2665a52ca701aad"
+  },
+  "note": "Hash binding for reviewed runtime/demo inputs. Acceptance artifacts are committed afterward; receipt dirty flags are preserved.",
+  "initial_base_main": "06ec129f88af468af8dd70c42a07d3515f69806e"
+}
