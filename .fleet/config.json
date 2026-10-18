@@ -25,7 +25,8 @@
         "args": [
           "-m",
           "pytest",
-          "-q"
+          "-q",
+          "-rs"
         ],
         "cwd": "backend",
         "required": true

@@ -65,12 +65,29 @@ estimate of eventual completion. This sample constraint is not an assurance
 outside the draws. Optional no-loser means each trial's expected duration cannot
 increase versus the untouched baseline on that same draw bank.
 
-Search is deterministic beam search (width 3, depth 3, at most 96 visited networks
-per intervention policy), exploring add/drop/swap neighborhoods. All candidate
-scores use the same seeded full draw bank. This is an in-sample scenario analysis,
-not an exact global optimum or an out-of-sample performance claim. Joint search
-also chooses whether to fund operations or extra support; zero-effect support
+## Search and optimality
+
+Small admitted instances exhaustively enumerate usable site/trial subsets when
+there are at most **12 eligible edges** and
+`2**eligible_edges * effective_draws * (all_edges + trials + 2) <= 500000`.
+Identical shock rows need one effective timing evaluation; otherwise every draw
+is evaluated. Feasible exact results report `OPTIMAL` and gap zero **only for the
+entered constraints and supplied finite draw bank**. Add-only strategy C retains
+its explicit baseline-network restriction. Exact infeasibility has the same scope.
+
+Larger workloads retain deterministic beam search (width 3, depth 3, at most 96
+visited networks per intervention policy), exploring add/drop/swap neighborhoods
+and retaining the best feasible solution found. They report `FEASIBLE_HEURISTIC`
+or `NO_FEASIBLE_FOUND`, the termination reason, and an **unknown** optimality gap;
+failure to find a network is not proof of infeasibility. Fixed scenarios A/B/D
+report `FIXED_COMPARISON`.
+
+All candidate scores use the same seeded full draw bank. This is in-sample
+assumption sensitivity, not an out-of-sample or clinical performance claim. Joint
+search compares whether to fund operations or extra support; zero-effect support
 is omitted from joint candidates. A remains immutable regardless of the search.
+The independent [integration verification](../integration/FINAL-INTEGRATION-REPORT.md)
+records the synthetic four-trial counterexample corrected from 12 to 4 months.
 
 ## Financial conservation
 
@@ -153,4 +170,6 @@ heuristic, local saved-run storage with no retention/authentication service, and
 no correction of legacy Research claims. This is a local hackathon planning demo;
 deploying a multiuser service requires separate access/storage design and review.
 
-No production deployment or merge is part of this change.
+The implementation is integrated into main; this documentation campaign produces
+a draft PR only. No production deployment is included. For the current timed
+presentation use the [HackHarvard script](../demo/HACKHARVARD-180-SECOND-SCRIPT.md).
