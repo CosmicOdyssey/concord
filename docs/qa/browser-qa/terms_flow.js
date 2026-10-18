@@ -312,15 +312,22 @@ async function ready(page) {
     await page.evaluate(() => [...document.querySelectorAll('.tf-cmp-tbl tbody tr.clickable')][0]?.click())
     await sleep(400)
     const lines = await page.evaluate(() => document.querySelectorAll('.tf-lines tbody tr').length)
-    const formula = await page.evaluate(() => document.querySelector('.tf-cmp-tbl .tf-lines-row')?.innerText ?? '')
     await (await page.$('#tf-step-3')).screenshot({ path: path.join(OUT, 'terms_detailed_budget_1440.png') })
     await showStep(page, 4)
+    // The open compare row shows the line's price step by step at both sites (LineBreakdown.tsx, which replaced the
+    // one-line "A: ... B: ..." formulas), then the difference formula.
+    await page.waitForFunction(() => document.querySelector('.tf-cmp-tbl .tf-lines-row .lb-tbl') && !document.querySelector('.tf-cmp-tbl .tf-lines-row .lb-stale'), { timeout: 30000, polling: 250 }).catch(() => {})
+    const formula = await page.evaluate(() => document.querySelector('.tf-cmp-tbl .tf-lines-row')?.innerText ?? '')
     await (await page.$('#tf-step-4')).screenshot({ path: path.join(OUT, 'terms_detailed_compare_1440.png') })
     log.detailed = { before, after, reset, lines, formula: formula.slice(0, 160) }
     check('standard schedule edit changes the total', after !== before, `${before} -> ${after}`)
     check('reset button', /Reset 1 edit/.test(reset), reset)
     check('visit rows open their lines', lines > 10, String(lines))
-    check('compare rows open both formulas', /A: .*× 100% = \$/.test(formula) && /B: /.test(formula), formula.slice(0, 120))
+    check(
+      'compare rows open both formulas',
+      /Site A/.test(formula) && /Site B/.test(formula) && /Medicare rate[\s\S]*\$[\d,]+\.\d\d[\s\S]*\$[\d,]+\.\d\d/.test(formula) && /Δ = [\s\S]* = [+−]?\$/.test(formula),
+      formula.slice(0, 300),
+    )
     await page.close()
   }
 

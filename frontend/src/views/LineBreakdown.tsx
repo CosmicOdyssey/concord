@@ -7,7 +7,7 @@ import { useId, useState, type ReactNode } from 'react'
 import { Badge, ErrorBox, InfoTip, Loading } from '../components'
 import { useDensity } from '../density'
 import { usd } from '../format'
-import { lineDetailUrl, useLineDetail, useLineDetailScope, type ComponentId, type LineDetail, type LineDetailScope, type LineSide } from '../lineDetailApi'
+import { lineDetailUrl, scopeHasNode, useLineDetail, useLineDetailScope, type ComponentId, type LineDetail, type LineDetailScope, type LineSide } from '../lineDetailApi'
 import './lineBreakdown.css'
 
 const IDS: ComponentId[] = ['work', 'pe', 'mp']
@@ -43,10 +43,16 @@ export function LineBreakdown({
   const scope = useLineDetailScope()
   const detailed = useDensity().density === 'detailed'
   const [retry, setRetry] = useState(0)
-  const url = scope && scope.siteA ? lineDetailUrl(scope, nodeId) : null
+  // Only lines of the schedule on screen are asked for: after a new schedule (an added trial's CSV, or back to the
+  // registry draft) a line of the old one is "no line selected", whether it is caught here or answered 404.
+  const known = !scope || scopeHasNode(scope, nodeId)
+  const url = scope && scope.siteA && known ? lineDetailUrl(scope, nodeId) : null
   const st = useLineDetail(url, retry)
   const data = st.data && st.data.node_id === nodeId ? st.data : null
   const full = variant === 'full' || (variant === 'auto' && detailed)
+  if (!known || st.missing) return <p className="small muted lb-na">No line selected: this item is not in the current schedule.</p>
+  // No scope yet (the new schedule's prices are on their way): the last table stays, dimmed.
+  const stale = st.pending || (!url && !!data)
   if (!data) {
     if (st.error) return fallback !== undefined ? <>{fallback}</> : <ErrorBox error={st.error} onRetry={() => setRetry((n) => n + 1)} />
     if (!url && fallback !== undefined) return <>{fallback}</>
@@ -54,7 +60,7 @@ export function LineBreakdown({
   }
   if (!data.applicable) return <p className="small muted lb-na">{data.reason}</p>
   return (
-    <div className={`lb${st.pending ? ' lb-stale' : ''}`} aria-busy={st.pending || undefined}>
+    <div className={`lb${stale ? ' lb-stale' : ''}`} aria-busy={stale || undefined}>
       {full ? (
         <>
           {/* phones: the key numbers first, since the full table's site columns start off screen */}
