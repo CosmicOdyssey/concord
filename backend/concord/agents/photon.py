@@ -43,6 +43,10 @@ class SMSProcessingResult(BaseModel):
     is_simulated_data: bool = True
     real_engine_data: dict[str, Any] | None = None
     delivery_note: str
+    provider_message_id: str | None = None
+    dispatched_at: str | None = None
+    concord_computation_id: str | None = None
+    delivery_mode: Literal["LIVE_CARRIER", "LOCAL_SIMULATION"] = "LOCAL_SIMULATION"
 
 
 class PhotonSMSAgent:
@@ -53,20 +57,33 @@ class PhotonSMSAgent:
         self._conversation_states: dict[str, dict[str, Any]] = {}
         self._webhook_secret = os.environ.get("PHOTON_WEBHOOK_SECRET", "concord-photon-default-secret")
         self._api_key = os.environ.get("PHOTON_API_KEY")
+        self._photon_number = os.environ.get("PHOTON_PHONE_NUMBER")
+        self._api_base_url = os.environ.get("PHOTON_API_BASE_URL", "https://api.photon.codes/v1").rstrip("/")
         self._allowed_senders = self._parse_allowlist(os.environ.get("PHOTON_ALLOWED_SENDERS"))
+        self._last_receipt: dict[str, Any] | None = None
+        self._last_error: str | None = None
 
     def _parse_allowlist(self, raw: str | None) -> set[str]:
         if not raw:
             return set()
         return {s.strip() for s in raw.split(",") if s.strip()}
 
-    def verify_signature(self, payload: bytes, signature_header: str | None) -> bool:
-        """Verify HMAC-SHA256 signature of incoming webhook."""
+    def verify_signature(self, payload: bytes, signature_header: str | None, timestamp_header: str | None = None) -> bool:
+        """Verify HMAC-SHA256 signature of incoming webhook and replay tolerance."""
         if not signature_header:
-            # If no secret was explicitly configured and running in test environment, allow test bypass
             if os.environ.get("CONCORD_TEST_MODE") == "1" or not os.environ.get("PHOTON_WEBHOOK_SECRET"):
                 return True
             return False
+
+        # Optional timestamp verification to protect against replay attacks (5 minute drift window)
+        if timestamp_header:
+            try:
+                ts = float(timestamp_header)
+                now_ts = datetime.now(timezone.utc).timestamp()
+                if abs(now_ts - ts) > 300.0:
+                    return False
+            except (ValueError, TypeError):
+                pass
             
         expected = hmac.new(
             self._webhook_secret.encode("utf-8"),
@@ -74,7 +91,6 @@ class PhotonSMSAgent:
             hashlib.sha256
         ).hexdigest()
         
-        # Support hex or prefixed format (e.g., sha256=...)
         received = signature_header.lower().replace("sha256=", "")
         return hmac.compare_digest(expected, received)
 
@@ -84,6 +100,82 @@ class PhotonSMSAgent:
             return True
         clean_sender = "".join(c for c in sender if c.isdigit() or c == "+")
         return any(clean_sender.endswith(allowed.lstrip("+")) for allowed in self._allowed_senders)
+
+    def _dispatch_outbound_sms(self, recipient: str, body: str) -> tuple[str, str, str | None]:
+        """Dispatch outbound message via Photon API when credentials are configured."""
+        if not self._api_key:
+            return "QUEUED_OFFLINE", "Local test mode: processed and verified locally. Live carrier dispatch requires PHOTON_API_KEY and PHOTON_PHONE_NUMBER.", None
+
+        if not self._photon_number:
+            return "QUEUED_OFFLINE", "Configured API key present, but PHOTON_PHONE_NUMBER is not set. Outbound carrier dispatch pending sender number assignment.", None
+
+        import httpx
+        url = f"{self._api_base_url}/messages"
+        payload = {
+            "to": recipient,
+            "from": self._photon_number,
+            "body": body,
+        }
+        scheme = "Bearer"
+        headers = {
+            "Authorization": f"{scheme} {self._api_key}",
+            "Content-Type": "application/json",
+        }
+        try:
+            with httpx.Client(timeout=10.0) as client:
+                res = client.post(url, json=payload, headers=headers)
+                if res.status_code in (200, 201, 202):
+                    data = res.json()
+                    prov_id = data.get("id") or data.get("message_id") or f"photon-{data.get('sid', 'ack')}"
+                    self._last_receipt = {
+                        "provider_message_id": prov_id,
+                        "recipient": recipient[:5] + "***" if len(recipient) > 5 else "***",
+                        "status": "DELIVERED",
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    }
+                    self._last_error = None
+                    return "DELIVERED", f"Dispatched via Photon API. Provider message ID: {prov_id}", prov_id
+                else:
+                    err_msg = f"Photon API HTTP {res.status_code}: {res.text[:200]}"
+                    self._last_error = err_msg
+                    return "ERROR", err_msg, None
+        except Exception as e:
+            err_msg = f"Photon dispatch connection error: {e}"
+            self._last_error = err_msg
+            return "ERROR", err_msg, None
+
+    def get_readiness_status(self) -> dict[str, Any]:
+        """Assess authentic provider readiness for live SMS operations."""
+        missing = []
+        if not self._api_key:
+            missing.append("PHOTON_API_KEY")
+        if not self._photon_number:
+            missing.append("PHOTON_PHONE_NUMBER")
+        if not os.environ.get("PHOTON_WEBHOOK_SECRET"):
+            missing.append("PHOTON_WEBHOOK_SECRET")
+
+        if self._last_receipt and self._last_receipt.get("status") == "DELIVERED":
+            readiness = "CONNECTED_AND_VERIFIED"
+        elif self._api_key and self._photon_number:
+            readiness = "CONFIGURED_UNVERIFIED"
+        elif self._last_error:
+            readiness = "FAILED"
+        elif not self._api_key:
+            readiness = "MISSING_CREDENTIALS"
+        else:
+            readiness = "LOCAL_SIMULATION_ONLY"
+
+        return {
+            "readiness": readiness,
+            "live_carrier_enabled": bool(self._api_key and self._photon_number),
+            "missing_prerequisites": missing,
+            "allowed_senders_count": len(self._allowed_senders),
+            "messages_processed_count": len(self._processed_messages),
+            "last_verified_receipt": self._last_receipt,
+            "last_error": self._last_error,
+            "webhook_endpoint": "/api/agents/photon/webhook",
+            "data_disclosure": "Exploratory synthetic assumptions; not prospective clinical trial forecasts.",
+        }
 
     def process_message(self, message: InboundSMSMessage) -> SMSProcessingResult:
         """Process inbound SMS idempotently and execute requested operations."""
@@ -98,7 +190,11 @@ class PhotonSMSAgent:
                 action_taken="IDEMPOTENT_REPLAY",
                 is_simulated_data=prior.is_simulated_data,
                 real_engine_data=prior.real_engine_data,
-                delivery_note="Duplicate message detected. Replaying prior verified response."
+                delivery_note="Duplicate message detected. Replaying prior verified response.",
+                provider_message_id=prior.provider_message_id,
+                dispatched_at=prior.dispatched_at,
+                concord_computation_id=prior.concord_computation_id,
+                delivery_mode=prior.delivery_mode,
             )
 
         # 2. Authorization Check
@@ -110,16 +206,18 @@ class PhotonSMSAgent:
                 sender=message.sender,
                 action_taken="REJECT_UNAUTHORIZED",
                 is_simulated_data=False,
-                delivery_note="Sender number not present in PHOTON_ALLOWED_SENDERS allowlist."
+                delivery_note="Sender number not present in PHOTON_ALLOWED_SENDERS allowlist.",
+                delivery_mode="LOCAL_SIMULATION",
             )
             self._processed_messages[message.message_id] = result
             return result
 
-        # 3. Intent Routing
+        # 3. Intent Routing & Concord Engine Querying
         clean_text = message.body.strip().upper()
         state = self._conversation_states.setdefault(message.sender, {"history": []})
         state["history"].append({"received": message.body, "time": datetime.now(timezone.utc).isoformat()})
 
+        concord_id = None
         if "HELP" in clean_text:
             reply = (
                 "Concord Ops Agent:\n"
@@ -139,6 +237,7 @@ class PhotonSMSAgent:
             commitment = b["ledger"]["budget_commitment"]
             trials_count = len(b["trials"])
             sites_count = len(b["sites"])
+            concord_id = f"baseline-{trials_count}t-{sites_count}s"
             
             reply = (
                 f"Concord Details: Baseline completion: {makespan:.2f} mo. "
@@ -154,6 +253,7 @@ class PhotonSMSAgent:
             res = opt["result"]
             rec = next((s for s in res.get("scenarios", []) if s.get("id") == "F"), None)
             rec_makespan = rec["expected_makespan"] if rec else 9.24
+            concord_id = res.get("run_id") or "opt-run-hybrid"
             
             reply = (
                 f"Concord: Hybrid optimization executed. "
@@ -162,12 +262,13 @@ class PhotonSMSAgent:
                 f"Reply DETAILS for site allocation breakdown."
             )
             action = "OPTIMIZE"
-            engine_data = {"recommended_makespan": rec_makespan, "run_id": res.get("run_id")}
+            engine_data = {"recommended_makespan": rec_makespan, "run_id": concord_id}
 
         else: # Default STATUS / SUMMARY
             base = demo.baseline()
             b = base["baseline"]
             makespan = b["expected_makespan"]
+            concord_id = "baseline-summary"
             
             reply = (
                 f"Concord: Portfolio simulation complete. "
@@ -178,23 +279,23 @@ class PhotonSMSAgent:
             action = "STATUS"
             engine_data = {"makespan": makespan}
 
-        # 4. Outbound delivery status
-        if self._api_key:
-            delivery_status = "DELIVERED"
-            delivery_note = "Dispatched via live Photon 2.0 SMS API."
-        else:
-            delivery_status = "QUEUED_OFFLINE"
-            delivery_note = "Local test mode: processed and verified locally. Live carrier dispatch requires PHOTON_API_KEY."
+        # 4. Outbound delivery execution
+        status, note, prov_id = self._dispatch_outbound_sms(message.sender, reply)
+        now_iso = datetime.now(timezone.utc).isoformat()
 
         result = SMSProcessingResult(
             message_id=message.message_id,
-            status=delivery_status,
+            status=status,
             reply_text=reply,
             sender=message.sender,
             action_taken=action,
             is_simulated_data=True,
             real_engine_data=engine_data,
-            delivery_note=delivery_note
+            delivery_note=note,
+            provider_message_id=prov_id,
+            dispatched_at=now_iso,
+            concord_computation_id=concord_id,
+            delivery_mode="LIVE_CARRIER" if prov_id else "LOCAL_SIMULATION",
         )
         self._processed_messages[message.message_id] = result
         return result

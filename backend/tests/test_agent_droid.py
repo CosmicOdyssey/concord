@@ -102,3 +102,33 @@ def test_droid_api_endpoints_and_human_review_gate(client):
     get_res = client.get(f"/api/agents/droid/recommendations/{rec_id}")
     assert get_res.status_code == 200
     assert get_res.json()["human_approval_status"] == "APPROVED"
+
+
+def test_droid_status_endpoint(client):
+    res = client.get("/api/agents/droid/status")
+    assert res.status_code == 200
+    data = res.json()
+    assert "runtime" in data
+    assert "@factory/droid-sdk" in data["runtime"]
+    assert "readiness" in data
+    assert "mcp_tools" in data
+    assert "inspect_protocol" in data["mcp_tools"]
+    assert "hard_safety_invariants" in data
+
+
+def test_droid_readiness_missing_credentials(monkeypatch):
+    monkeypatch.delenv("FACTORY_API_KEY", raising=False)
+    rec = execute_droid_protocol_agent("NCT05800015", max_iterations=2)
+    assert rec.readiness == "MISSING_CREDENTIALS"
+    assert "BLOCKED — AUTHENTICATION" in rec.auth_status
+    assert "FACTORY_API_KEY" in rec.missing_prerequisites
+
+
+def test_droid_readiness_configured(monkeypatch):
+    monkeypatch.setenv("FACTORY_API_KEY", "fact_mock_test_key_12345")
+    from concord.agents.droid import get_droid_status
+    status = get_droid_status()
+    assert status["readiness"] == "CONFIGURED_UNVERIFIED"
+    assert status["auth_status"] == "CONFIGURED_PENDING_VERIFICATION"
+    assert status["missing_prerequisites"] == []
+

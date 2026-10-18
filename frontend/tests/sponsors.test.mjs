@@ -61,3 +61,86 @@ test('Chalk evaluation contract requires exactly 12 deterministic scenarios', ()
   ];
   assert.equal(expectedScenarios.length, 12);
 });
+
+test('Photon status contract supports honest readiness states and carrier receipts', () => {
+  const validStates = [
+    'CONNECTED_AND_VERIFIED',
+    'CONFIGURED_UNVERIFIED',
+    'LOCAL_SIMULATION_ONLY',
+    'MISSING_CREDENTIALS',
+    'FAILED',
+  ];
+  const mockStatus = {
+    provider: 'Photon 2.0 SMS Webhook',
+    live_api_configured: false,
+    webhook_secret_configured: false,
+    allowlist_active: true,
+    allowed_senders_count: 3,
+    messages_processed_count: 5,
+    channel: 'SMS',
+    engine_scope: 'Concord Engine',
+    data_disclosure: 'Synthetic data',
+    readiness: 'MISSING_CREDENTIALS',
+    auth_status: 'LOCAL_WEBHOOK_READY',
+    missing_prerequisites: ['PHOTON_API_KEY', 'PHOTON_PHONE_NUMBER', 'PHOTON_WEBHOOK_SECRET'],
+    last_receipt: null,
+  };
+  assert.ok(validStates.includes(mockStatus.readiness));
+  assert.equal(mockStatus.missing_prerequisites.length, 3);
+});
+
+test('Chalk evaluation report contract includes dataset version, task version, and cloud evaluation ID', () => {
+  const mockReport = {
+    run_id: 'chalk-run-12345678',
+    dataset_version: 'concord-eval-v1.2.0',
+    dataset_sha256: '921503cfca27e1f40d6bfbb49f850d53530e7033785121c255b8ebbcbeab59ec',
+    task_version: 'concord-task-v1.2.0',
+    evaluation_id: 'chalk-eval-abcdef',
+    result_dataset: 'concord-results-v1.2.0',
+    timestamp: new Date().toISOString(),
+    engine_mode: 'Chalk Remote Cloud',
+    total_scenarios: 12,
+    passed_scenarios: 12,
+    failed_scenarios: 0,
+    hard_safety_violations: 0,
+    overall_pass_rate: 1.0,
+    readiness: 'CONNECTED_AND_VERIFIED',
+    auth_status: 'LIVE_CLOUD_VERIFIED',
+    missing_prerequisites: [],
+    scenarios: [],
+  };
+  assert.equal(mockReport.total_scenarios, 12);
+  assert.equal(mockReport.readiness, 'CONNECTED_AND_VERIFIED');
+  assert.ok(mockReport.evaluation_id.startsWith('chalk-eval-'));
+  assert.equal(mockReport.task_version, 'concord-task-v1.2.0');
+});
+
+test('Factory Droid SDK contract reports missing credentials when FACTORY_API_KEY is unset', () => {
+  const mockRec = {
+    recommendation_id: 'droid-rec-abc123',
+    trial_id: 'NCT05800015',
+    trial_title: 'Study NCT05800015',
+    created_at: new Date().toISOString(),
+    runtime_agent: '@factory/droid-sdk v0.9.1 (Deterministic Tool Fallback - FACTORY_API_KEY unset)',
+    total_iterations: 3,
+    baseline_makespan_months: 15.13,
+    recommended_makespan_months: 13.71,
+    expected_makespan_delta_months: -1.42,
+    budget_commitment_usd: 1225280,
+    budget_ceiling_usd: 3000000,
+    feasibility_status: 'FEASIBLE',
+    clinical_safety_status: 'PASSED_NO_CLINICAL_MUTATION',
+    chalk_evaluation_score: 1.0,
+    executive_summary: 'Test summary',
+    human_approval_status: 'PENDING_HUMAN_REVIEW',
+    readiness: 'MISSING_CREDENTIALS',
+    auth_status: 'BLOCKED — AUTHENTICATION: Missing FACTORY_API_KEY environment variable.',
+    missing_prerequisites: ['FACTORY_API_KEY'],
+    iterations: [],
+    tool_trace: [],
+  };
+  assert.equal(mockRec.readiness, 'MISSING_CREDENTIALS');
+  assert.ok(mockRec.missing_prerequisites.includes('FACTORY_API_KEY'));
+  assert.ok(mockRec.auth_status.includes('BLOCKED — AUTHENTICATION'));
+});
+

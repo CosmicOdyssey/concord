@@ -14,6 +14,10 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
 import uuid
 from typing import Any, Literal
 from pydantic import BaseModel, Field
@@ -71,6 +75,9 @@ class DroidRecommendation(BaseModel):
     chalk_evaluation_score: float
     executive_summary: str
     human_approval_status: Literal["PENDING_HUMAN_REVIEW", "APPROVED", "REJECTED"]
+    readiness: Literal["CONNECTED_AND_VERIFIED", "CONFIGURED_UNVERIFIED", "LOCAL_SIMULATION_ONLY", "MISSING_CREDENTIALS", "FAILED"] = "LOCAL_SIMULATION_ONLY"
+    auth_status: str = "LOCAL_VERIFIED"
+    missing_prerequisites: list[str] = Field(default_factory=list)
     iterations: list[RefinementIteration]
     tool_trace: list[DroidToolAction]
 
@@ -171,11 +178,62 @@ def tool_evaluate_with_chalk(simulation_result: dict[str, Any], trace: list[Droi
 
 # --- Droid Recursive Refinement Engine ---
 
+def get_droid_status() -> dict[str, Any]:
+    """Return provider readiness and SDK health for Factory Droid integration."""
+    api_key_set = bool(os.environ.get("FACTORY_API_KEY"))
+    missing = [] if api_key_set else ["FACTORY_API_KEY"]
+    if not api_key_set:
+        readiness = "MISSING_CREDENTIALS"
+        auth_status = "BLOCKED — AUTHENTICATION: Missing FACTORY_API_KEY environment variable. Pass apiKey when creating session or set FACTORY_API_KEY."
+    else:
+        readiness = "CONFIGURED_UNVERIFIED"
+        auth_status = "CONFIGURED_PENDING_VERIFICATION"
+
+    return {
+        "runtime": "@factory/droid-sdk v0.9.1",
+        "readiness": readiness,
+        "auth_status": auth_status,
+        "missing_prerequisites": missing,
+        "mcp_tools": [
+            "inspect_protocol",
+            "identify_operational_bottlenecks",
+            "simulate_operational_variant",
+            "evaluate_with_chalk",
+        ],
+        "hard_safety_invariants": [
+            "NO_CLINICAL_PROTOCOL_MUTATION",
+            "PRESERVE_INCLUSION_EXCLUSION_CRITERIA",
+            "BOUNDED_SEARCH_MAX_3_ITERATIONS",
+            "HUMAN_IN_THE_LOOP_APPROVAL_GATE",
+        ],
+    }
+
+
 def execute_droid_protocol_agent(
     trial_id: str = "NCT05800015",
     max_iterations: int = 3
 ) -> DroidRecommendation:
     """Execute the Factory Droid agent in a bounded evaluate-and-revise loop."""
+    repo_root = Path(__file__).resolve().parent.parent.parent.parent
+    runner_script = repo_root / "scripts" / "factory-droid-runner.mjs"
+    node_bin = shutil.which("node")
+
+    if node_bin and runner_script.exists():
+        try:
+            res = subprocess.run(
+                [node_bin, str(runner_script), "--trial-id", trial_id, "--max-iterations", str(max_iterations)],
+                capture_output=True,
+                text=True,
+                timeout=20,
+            )
+            if res.returncode == 0 and res.stdout.strip():
+                data = json.loads(res.stdout)
+                return DroidRecommendation.model_validate(data)
+        except Exception:
+            # Fall back to in-process deterministic execution loop
+            pass
+
+    # In-process deterministic execution fallback
     rec_id = f"droid-rec-{uuid.uuid4().hex[:12]}"
     trace: list[DroidToolAction] = []
     iterations: list[RefinementIteration] = []
@@ -276,12 +334,25 @@ def execute_droid_protocol_agent(
         f"Pending human medical & statistical review."
     )
 
+    api_key_set = bool(os.environ.get("FACTORY_API_KEY"))
+    readiness: Literal["CONNECTED_AND_VERIFIED", "CONFIGURED_UNVERIFIED", "LOCAL_SIMULATION_ONLY", "MISSING_CREDENTIALS", "FAILED"]
+    if not api_key_set:
+        readiness = "MISSING_CREDENTIALS"
+        auth_status = "BLOCKED — AUTHENTICATION: Missing FACTORY_API_KEY environment variable. Pass apiKey when creating session or set FACTORY_API_KEY."
+        missing_prereqs = ["FACTORY_API_KEY"]
+        runtime_str = "@factory/droid-sdk v0.9.1 (Deterministic Tool Fallback - FACTORY_API_KEY unset)"
+    else:
+        readiness = "CONFIGURED_UNVERIFIED"
+        auth_status = "CONFIGURED_PENDING_VERIFICATION"
+        missing_prereqs = []
+        runtime_str = "@factory/droid-sdk v0.9.1 In-Process Harness"
+
     return DroidRecommendation(
         recommendation_id=rec_id,
         trial_id=trial_id,
         trial_title=protocol_info.get("title", f"Study {trial_id}"),
         created_at=datetime.now(timezone.utc).isoformat(),
-        runtime_agent="Factory Droid SDK TypeScript/Python Runtime",
+        runtime_agent=runtime_str,
         total_iterations=len(iterations),
         baseline_makespan_months=baseline_makespan,
         recommended_makespan_months=best_sim["simulated_makespan"],
@@ -293,6 +364,9 @@ def execute_droid_protocol_agent(
         chalk_evaluation_score=best_iter.chalk_score,
         executive_summary=summary,
         human_approval_status="PENDING_HUMAN_REVIEW",
+        readiness=readiness,
+        auth_status=auth_status,
+        missing_prerequisites=missing_prereqs,
         iterations=iterations,
         tool_trace=trace,
     )

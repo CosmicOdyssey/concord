@@ -5,11 +5,17 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from concord.agents.droid import DroidRecommendation, execute_droid_protocol_agent
+from concord.agents.droid import DroidRecommendation, execute_droid_protocol_agent, get_droid_status
 
 router = APIRouter(prefix="/api/agents/droid", tags=["Factory Droid Protocol Agent"])
 
 _STORED_RECOMMENDATIONS: dict[str, DroidRecommendation] = {}
+
+
+@router.get("/status")
+def get_droid_status_endpoint() -> dict:
+    """Get Factory Droid provider readiness, SDK version, and prerequisite status."""
+    return get_droid_status()
 
 
 class RunDroidRequest(BaseModel):

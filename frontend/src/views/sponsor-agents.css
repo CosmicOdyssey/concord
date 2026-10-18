@@ -564,3 +564,89 @@
   font-weight: 600;
   color: #146c71;
 }
+
+/* Readiness Badges & Receipts */
+.header-status-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.readiness-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+}
+
+.readiness-pill.readiness-connected_and_verified {
+  background: #d9f0e3;
+  color: #1b7a48;
+  border-color: #8ed0a8;
+}
+
+.readiness-pill.readiness-configured_unverified {
+  background: #e3f2f0;
+  color: #146c71;
+  border-color: #a0d4cf;
+}
+
+.readiness-pill.readiness-local_simulation_only {
+  background: #edf3f2;
+  color: #5c797b;
+  border-color: #cddcd9;
+}
+
+.readiness-pill.readiness-missing_credentials {
+  background: #fef3e2;
+  color: #b86200;
+  border-color: #f7d19e;
+}
+
+.readiness-pill.readiness-failed {
+  background: #fbe0dc;
+  color: #a33827;
+  border-color: #f3aba0;
+}
+
+.readiness-detail-note {
+  font-size: 12px;
+  color: #5c797b;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+.receipt-card {
+  background: #f7faf9;
+  border: 1px solid #d5e2df;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-top: 12px;
+  font-size: 12px;
+  font-family: var(--font-mono, monospace);
+  color: #2c4242;
+}
+
+.receipt-card strong {
+  color: #123a42;
+}
+
+.prereq-badge {
+  display: inline-block;
+  background: #fef3e2;
+  color: #944e00;
+  border: 1px solid #f7d19e;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+  margin: 0 4px 2px 0;
+  font-family: var(--font-mono, monospace);
+}
+

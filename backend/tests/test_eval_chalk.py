@@ -101,3 +101,55 @@ def test_chalk_latest_endpoint(client):
     data = res.json()
     assert "run_id" in data
     assert data["total_scenarios"] == 12
+    assert "readiness" in data
+    assert "task_version" in data
+    assert "scorer_versions" in data
+
+
+def test_chalk_lifecycle_readiness_and_blockers(client, monkeypatch):
+    monkeypatch.delenv("CHALK_CLIENT_ID", raising=False)
+    monkeypatch.delenv("CHALK_CLIENT_SECRET", raising=False)
+    monkeypatch.delenv("CHALK_API_TOKEN", raising=False)
+
+    res = client.post("/api/evals/chalk/run")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["readiness"] == "MISSING_CREDENTIALS"
+    assert "BLOCKED — AUTHENTICATION" in data["auth_status"]
+    assert "CHALK_CLIENT_ID" in data["missing_prerequisites"]
+    assert "CHALK_CLIENT_SECRET" in data["missing_prerequisites"]
+    assert data["task_version"] == "concord-task-v1.2.0"
+    assert "budget_compliance" in data["scorer_versions"]
+
+
+def test_chalk_cloud_mocked_execution(client, monkeypatch):
+    class MockRun:
+        result_dataset = "dataset_res_mock_777"
+        def wait(self):
+            return self
+
+    class MockEvaluation:
+        id = "eval_cloud_mock_888"
+        @classmethod
+        def create(cls, *args, **kwargs):
+            return cls()
+        def run(self, *args, **kwargs):
+            return MockRun()
+
+    class MockDatasetClient:
+        def upload(self, *args, **kwargs):
+            return "dataset_mock_upload_999"
+
+    monkeypatch.setattr("chalkcompute.Evaluation", MockEvaluation)
+    monkeypatch.setattr("chalkcompute.DatasetClient", MockDatasetClient)
+    monkeypatch.setenv("CHALK_CLIENT_ID", "mock_client_id")
+    monkeypatch.setenv("CHALK_CLIENT_SECRET", "mock_client_secret")
+
+    res = client.post("/api/evals/chalk/run")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["readiness"] == "CONNECTED_AND_VERIFIED"
+    assert data["evaluation_id"] == "eval_cloud_mock_888"
+    assert data["result_dataset"] == "dataset_res_mock_777"
+    assert data["engine_mode"] == "Chalk Remote Cloud"
+

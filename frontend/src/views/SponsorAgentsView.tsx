@@ -6,12 +6,33 @@ import {
   submitHumanReview,
   runChalkEvaluations,
   fetchLatestChalkReport,
+  fetchDroidStatus,
   type SMSResponse,
   type PhotonStatus,
   type DroidRecommendation,
+  type DroidStatus,
   type ChalkEvaluationReport,
+  type ReadinessState,
 } from '../sponsorAgentsApi';
 import './sponsor-agents.css';
+
+function renderReadinessBadge(readiness?: ReadinessState) {
+  const state = readiness || 'MISSING_CREDENTIALS';
+  const labelMap: Record<ReadinessState, string> = {
+    CONNECTED_AND_VERIFIED: 'Connected & Verified',
+    CONFIGURED_UNVERIFIED: 'Configured (Unverified)',
+    LOCAL_SIMULATION_ONLY: 'Local Simulation Only',
+    MISSING_CREDENTIALS: 'Missing Credentials (Sandbox)',
+    FAILED: 'Failed',
+  };
+  const label = labelMap[state] || state;
+  const className = `readiness-pill readiness-${state.toLowerCase()}`;
+  return (
+    <span className={className}>
+      <span className="readiness-dot">●</span> {label}
+    </span>
+  );
+}
 
 export default function SponsorAgentsView() {
   // --- Photon SMS State ---
@@ -22,6 +43,7 @@ export default function SponsorAgentsView() {
   const [smsLoading, setSmsLoading] = useState<boolean>(false);
 
   // --- Factory Droid State ---
+  const [droidStatus, setDroidStatus] = useState<DroidStatus | null>(null);
   const [droidRec, setDroidRec] = useState<DroidRecommendation | null>(null);
   const [droidLoading, setDroidLoading] = useState<boolean>(false);
   const [approvalNotes, setApprovalNotes] = useState<string>('Operational refinement verified; clinical safety criteria preserved.');
@@ -32,6 +54,7 @@ export default function SponsorAgentsView() {
 
   useEffect(() => {
     fetchPhotonStatus().then(setPhotonStatus).catch(() => {});
+    fetchDroidStatus().then(setDroidStatus).catch(() => {});
     fetchLatestChalkReport().then(setChalkReport).catch(() => {});
   }, []);
 
@@ -107,8 +130,11 @@ export default function SponsorAgentsView() {
             <span className="card-tag">FRONT A — MOBILE OPERATIONS</span>
             <h2>Photon 2.0 SMS Clinical Trial Operations Agent</h2>
           </div>
-          <div className="status-pill">
-            Webhook: <span className="status-live">VERIFIED & ACTIVE</span>
+          <div className="header-status-group">
+            {renderReadinessBadge(photonStatus?.readiness)}
+            <span className="readiness-detail-note">
+              {photonStatus?.auth_status || 'Local Webhook Active · Public NCT Registry'}
+            </span>
           </div>
         </div>
         <p>
@@ -175,12 +201,35 @@ export default function SponsorAgentsView() {
             <div className="telemetry-box">
               <h4>Webhook & Security Telemetry</h4>
               <ul>
+                <li><strong>Readiness:</strong> {photonStatus?.readiness || 'MISSING_CREDENTIALS'}</li>
                 <li><strong>Allowlist Active:</strong> {photonStatus?.allowlist_active ? 'Yes' : 'Permissive Local'}</li>
                 <li><strong>Signature Auth:</strong> HMAC-SHA256 (<code>X-Photon-Signature</code>)</li>
                 <li><strong>Idempotency:</strong> Deduplicated by <code>message_id</code></li>
                 <li><strong>Processed Messages:</strong> {photonStatus?.messages_processed_count ?? 0}</li>
                 <li><strong>Scope:</strong> Public NCT05800015 & NCT05286580 context</li>
               </ul>
+              {photonStatus?.missing_prerequisites && photonStatus.missing_prerequisites.length > 0 && (
+                <div style={{ marginTop: '10px' }}>
+                  <small style={{ display: 'block', marginBottom: '4px', color: '#8d4c00', fontWeight: 600 }}>
+                    Missing Prerequisites for Live Carrier Dispatch:
+                  </small>
+                  {photonStatus.missing_prerequisites.map((p) => (
+                    <span key={p} className="prereq-badge">{p}</span>
+                  ))}
+                </div>
+              )}
+              <div className="receipt-card">
+                <strong>Live Delivery Receipt:</strong><br />
+                {photonStatus?.last_receipt ? (
+                  <>
+                    Provider ID: <code>{photonStatus.last_receipt.provider_message_id}</code><br />
+                    Status: {photonStatus.last_receipt.status} · Recipient: {photonStatus.last_receipt.recipient}<br />
+                    Timestamp: {photonStatus.last_receipt.timestamp}
+                  </>
+                ) : (
+                  <>Carrier dispatch sandbox active. Outbound SMS queues with status <code>QUEUED_OFFLINE</code> until <code>PHOTON_API_KEY</code> and <code>PHOTON_PHONE_NUMBER</code> are set.</>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -193,8 +242,11 @@ export default function SponsorAgentsView() {
             <span className="card-tag">FRONT C — PROTOCOL AGENT</span>
             <h2>Factory Droid SDK: Autonomous Protocol Amendment Agent</h2>
           </div>
-          <div className="status-pill">
-            SDK: <span className="status-live">@factory/droid-sdk v0.9.1</span>
+          <div className="header-status-group">
+            {renderReadinessBadge(droidRec?.readiness || droidStatus?.readiness)}
+            <span className="readiness-detail-note">
+              {droidRec?.auth_status || droidStatus?.auth_status || '@factory/droid-sdk v0.9.1 TypeScript/Node'}
+            </span>
           </div>
         </div>
         <p>
@@ -212,11 +264,26 @@ export default function SponsorAgentsView() {
           </button>
         </div>
 
+        {((droidRec?.missing_prerequisites && droidRec.missing_prerequisites.length > 0) ||
+          (droidStatus?.missing_prerequisites && droidStatus.missing_prerequisites.length > 0)) && (
+          <div style={{ marginBottom: '16px' }}>
+            <small style={{ display: 'block', marginBottom: '4px', color: '#8d4c00', fontWeight: 600 }}>
+              Prerequisites for Live Factory Cloud Droid Session:
+            </small>
+            {(droidRec?.missing_prerequisites || droidStatus?.missing_prerequisites || []).map((p) => (
+              <span key={p} className="prereq-badge">{p}</span>
+            ))}
+          </div>
+        )}
+
         {droidRec && (
           <div className="droid-result-container">
             <div className="summary-banner">
               <h3>Recommendation Artifact: {droidRec.recommendation_id}</h3>
               <p>{droidRec.executive_summary}</p>
+              <div style={{ marginTop: '8px', fontSize: '12px', color: '#496366' }}>
+                Runtime: <code>{droidRec.runtime_agent}</code>
+              </div>
             </div>
 
             <div className="metrics-grid">
@@ -322,8 +389,11 @@ export default function SponsorAgentsView() {
             <span className="card-tag">FRONT B — AGENT EVALUATIONS</span>
             <h2>Chalk Evaluation Engine</h2>
           </div>
-          <div className="status-pill">
-            Dataset: <span className="status-live">{chalkReport?.dataset_version || 'concord-eval-v1.2.0'}</span>
+          <div className="header-status-group">
+            {renderReadinessBadge(chalkReport?.readiness)}
+            <span className="readiness-detail-note">
+              {chalkReport?.auth_status || '12 Scenarios · Deterministic Harness'}
+            </span>
           </div>
         </div>
         <p>
@@ -344,6 +414,26 @@ export default function SponsorAgentsView() {
             </div>
           )}
         </div>
+
+        {chalkReport?.missing_prerequisites && chalkReport.missing_prerequisites.length > 0 && (
+          <div style={{ marginBottom: '16px' }}>
+            <small style={{ display: 'block', marginBottom: '4px', color: '#8d4c00', fontWeight: 600 }}>
+              Prerequisites for Live Chalk Cloud Runner:
+            </small>
+            {chalkReport.missing_prerequisites.map((p) => (
+              <span key={p} className="prereq-badge">{p}</span>
+            ))}
+          </div>
+        )}
+
+        {chalkReport && (
+          <div className="receipt-card" style={{ marginBottom: '16px' }}>
+            <strong>Chalk Evaluation Receipt:</strong><br />
+            Run ID: <code>{chalkReport.run_id}</code> · Evaluation ID: <code>{chalkReport.evaluation_id || 'N/A (Local Harness)'}</code><br />
+            Dataset: <code>{chalkReport.dataset_version}</code> (SHA256: <code>{chalkReport.dataset_sha256.slice(0, 16)}…</code>)<br />
+            Task Version: <code>{chalkReport.task_version || 'concord-task-v1.2.0'}</code>
+          </div>
+        )}
 
         {chalkReport && (
           <div className="chalk-table-wrapper">

@@ -66,14 +66,14 @@ def simulate_sms(sim: SimulateSMSRequest) -> dict:
 @router.get("/status")
 def get_agent_status() -> dict:
     """Get current Photon SMS agent operational status."""
-    return {
+    status_info = photon_agent.get_readiness_status()
+    status_info.update({
         "provider": "Photon 2.0 SMS Operations Agent",
         "live_api_configured": bool(photon_agent._api_key),
+        "phone_number_configured": bool(photon_agent._photon_number),
         "webhook_secret_configured": bool(photon_agent._webhook_secret),
         "allowlist_active": bool(photon_agent._allowed_senders),
-        "allowed_senders_count": len(photon_agent._allowed_senders),
-        "messages_processed_count": len(photon_agent._processed_messages),
         "channel": "SMS / Webhook",
         "engine_scope": "Concord Portfolio Simulation & Hybrid Search",
-        "data_disclosure": "Exploratory synthetic assumptions; not prospective clinical trial forecasts.",
-    }
+    })
+    return status_info
