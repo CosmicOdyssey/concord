@@ -2030,7 +2030,7 @@ export const EVIDENCE: readonly Evidence[] = [
     "product": "concord",
     "paras": [
       "Each dollar is labelled public, proposed standard or open (`backend/concord/anchoring.py`).",
-      "Example: NCT05800015 at its first listed site (Arizona locality), default band. Of $6,317.69 per participant, 18.0% is anchored to public rates, 62.0% to Concord's proposed standard (coordinator time and per-visit fees) and 20.0% is open (overhead).",
+      "Example: NCT05800015 at its default site (NYU Langone Health Perlmutter Cancer Center, Medicare locality NY 01 Manhattan), default band. Of $6,568.67 per participant, 20.4% is anchored to public rates ($1,339.95), 59.6% to Concord's proposed standard ($3,915.00: coordinator time and per-visit fees) and 20.0% is open ($1,313.72: the 25% overhead assumption). The share differs by site, because public-rate lines follow each site's Medicare locality (for example 18.0% at the trial's first listed site, in Arizona).",
       "SIENNA (NCT06541704) at its default site, after the fix of 17 Oct (commit 78a033d, which counts its 20 fixed-count dosing visits in every share): $14,588.86 per participant; 25.0% public rates, 55.0% proposed standard, 20.0% open; the shares' components now add up to the total and the band range is $14,588.86-$16,864.29."
     ],
     "links": [],
@@ -2135,7 +2135,7 @@ export const DIFFERENTIATORS: readonly ListItem[] = [
     "text": "It shows how much of each per-participant dollar rests on public rates, on a labelled proposed standard, or is open to negotiation.",
     "subs": [
       {
-        "text": "On the NSCLC demo (NCT05800015, first listed site, Arizona locality), only 18% is anchored to public rates. That is the point: it shows where negotiating effort belongs."
+        "text": "On the NSCLC demo (NCT05800015 at NYU Langone, Manhattan), only 20% is anchored to public rates. That is the point: it shows where negotiating effort belongs."
       }
     ]
   },
@@ -2780,7 +2780,7 @@ export function evidenceLinks(e: Evidence): string[] {
 }
 
 /** Simple: the one sub-point of each "Concord does" item that stays visible, because it limits the claim. */
-export const SIMPLE_CAVEAT: readonly (RegExp | null)[] = [/not new/, /only 18%/, null, /synthetic sample/, /sites only/]
+export const SIMPLE_CAVEAT: readonly (RegExp | null)[] = [/not new/, /only 20%/, null, /synthetic sample/, /sites only/]
 
 export function markWord(c: Cell): string {
   if (c.mark === 'yes') return c.qualifier ? `Yes, ${c.qualifier}` : 'Yes'
