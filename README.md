@@ -48,6 +48,16 @@ scores and Research. No hosted deployment or video is claimed.
 [Actual browser screenshot](docs/demo/final-polish/overview.png) ·
 [Rehearsal and verification evidence](docs/demo/final-polish/VERIFICATION.md)
 
+## HackHarvard Sponsor Integrations
+
+Concord builds three production-ready integrations for HackHarvard 2026 sponsor challenges on top of its verified scientific optimization engine:
+
+1. **Photon 2.0 (Mobile Operations Agent):** Provides trial coordinators and investigators with mobile conversational access to portfolio state, budget limits, and optimization recommendations. Features inbound webhook processing, HMAC-SHA256 signature verification, idempotency deduplication by `message_id`, and sender allowlisting. Live carrier SMS dispatch requires `PHOTON_API_KEY`; local webhook ingestion and engine query responses are fully verified. See [Photon integration](docs/sponsors/PHOTON.md).
+2. **Chalk (Deterministic Agent Evaluations):** Replaces subjective LLM grading with an objective, deterministic evaluation pipeline across a 12-scenario test suite (`concord-eval-v1.2.0`). Scorers independently evaluate budget compliance, hospital capacity limits, financial conservation invariants (Decision 24), clinical safety rules, exact vs heuristic solver labeling, and resistance to adversarial prompt injection. Remote cloud synchronization requires `CHALK_API_TOKEN`; local deterministic execution is fully verified. See [Chalk evaluations](docs/sponsors/CHALK-EVALUATIONS.md).
+3. **Factory Droid SDK (Autonomous Protocol Planning Agent):** Integrates the official `@factory/droid-sdk` (v0.9.1) to analyze clinical trial operational bottlenecks. Droid is invoked within the running application via `POST /api/agents/droid/run` or the **Sponsor Agents** tab (`#sponsor-agents`). It executes a bounded **recursive refinement loop** (maximum 2–3 iterations) using typed sandboxed tools (`inspect_protocol`, `identify_operational_bottlenecks`, `simulate_operational_variant`, `evaluate_with_chalk`). Droid is **strictly prohibited from mutating canonical clinical protocols or relaxing medically necessary eligibility criteria**; automated recommendations are constrained to operational levers (site activation lag, recruitment outreach budget). Every recommendation requires explicit human medical review before adoption. Remote Factory cloud execution requires `FACTORY_API_KEY`; local sandboxed agent execution is fully verified. See [Factory Droid agent](docs/sponsors/FACTORY-DROID.md).
+
+For step-by-step judge instructions and verification receipts, consult the [Sponsor Challenge Walkthrough](docs/demo/SPONSOR-CHALLENGE-WALKTHROUGH.md) and [Integration Evidence](docs/sponsors/INTEGRATION-EVIDENCE.md).
+
 ## How It Works
 
 **ClinicalTrials.gov context → trial portfolio → financial and operational

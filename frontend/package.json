@@ -12,10 +12,12 @@
     "test:financial": "node --experimental-strip-types --test tests/financial.test.mjs",
     "test:portfolio": "node --experimental-strip-types --test tests/portfolio.test.mjs",
     "test:demo": "node --experimental-strip-types --test tests/demo.test.mjs",
-    "test": "npm run test:financial && npm run test:portfolio && npm run test:demo",
+    "test:sponsors": "node --experimental-strip-types --test tests/sponsors.test.mjs",
+    "test": "npm run test:financial && npm run test:portfolio && npm run test:demo && npm run test:sponsors",
     "typecheck": "tsc -b"
   },
   "dependencies": {
+    "@factory/droid-sdk": "^0.9.1",
     "@fontsource/atkinson-hyperlegible-mono": "^5.3.0",
     "@fontsource/atkinson-hyperlegible-next": "^5.3.0",
     "leaflet": "^1.9.4",
