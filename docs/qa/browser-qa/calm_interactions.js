@@ -157,7 +157,8 @@ async function fresh(browser, { width = 1440, height = 900, touch = false } = {}
           landing: !!document.querySelector('.lp'),
           tab: document.querySelector('nav.tabs [aria-selected="true"] .tab-label')?.innerText ?? null,
           sub: document.querySelector('.rs-tabs [aria-selected="true"]')?.innerText ?? null,
-          h1: document.querySelector('h1')?.innerText ?? null,
+          // The view on show: visited views stay mounted, hidden, behind it (App.tsx).
+          h1: [...document.querySelectorAll('h1')].find((h) => !h.closest('[hidden]'))?.innerText ?? null,
           navLabels: [...document.querySelectorAll('nav.tabs .tab-label')].map((e) => e.innerText),
         }))
         const ok =
