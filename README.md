@@ -1,79 +1,42 @@
 # Concord
 
-[![Live Public Deployment](https://img.shields.io/badge/Live%20Deployment-concord--smoky.vercel.app-2563eb?style=for-the-badge)](https://concord-smoky.vercel.app)
-[![Devpost Submission](https://img.shields.io/badge/Devpost-Concord%20(HackHarvard%202026)-003E54?style=for-the-badge&logo=devpost)](https://devpost.com/software/concord-17as0b)
-[![Aesthetic](https://img.shields.io/badge/Design-Pure%20White%20%23FFFFFF-0f172a?style=for-the-badge)](https://concord-smoky.vercel.app)
+**Turn a clinical trial protocol into a site budget both sides can check.** Concord connects protocol procedures, public Medicare price benchmarks, coverage assumptions and portfolio context in one reviewable workflow. Every priced line carries its source; unsupported operating inputs remain visible assumptions.
 
-Tools for NSCLC trial portfolios on public ClinicalTrials.gov data. HackHarvard 2026, Regeneron track.
+Built for **HackHarvard 2026, Regeneron track**, by the Bruno Bears from Brown University. Concord also includes a sponsor integration lab for **Photon 2.0, Chalk and Factory Droid**, alongside an explicitly synthetic planning demonstration.
 
-- **Live Application**: [https://concord-smoky.vercel.app](https://concord-smoky.vercel.app)
-- **Devpost Project**: [https://devpost.com/software/concord-17as0b](https://devpost.com/software/concord-17as0b)
-- **180s HackHarvard Planning Demo**: [https://concord-smoky.vercel.app/#demo](https://concord-smoky.vercel.app/#demo)
-- **Sponsor Agents Lab (Photon · Chalk · Droid)**: [https://concord-smoky.vercel.app/#sponsor-agents](https://concord-smoky.vercel.app/#sponsor-agents)
-- **Portfolio Command Planner**: [https://concord-smoky.vercel.app/#portfolio-command](https://concord-smoky.vercel.app/#portfolio-command)
-- **Protocol to Terms**: [https://concord-smoky.vercel.app/#terms-flow/NCT05800015](https://concord-smoky.vercel.app/#terms-flow/NCT05800015)
-- **What We Tested / Findings**: [https://concord-smoky.vercel.app/#findings](https://concord-smoky.vercel.app/#findings)
+## What you can do
 
-Concord started as a clearing mechanism that would allocate sites across concurrent trials at once.
-Testing that idea on 7,221 NSCLC trials (see **Results**) showed that coordination gains largely
-disappear out of sample and that competing trials barely slow each other within a site. So the product
-now does things that need no forecasting:
-
-- **Portfolio overlap audit** (`#overlap`): where a sponsor's own concurrently recruiting trials share
-  registered sites and eligible patients, with the criteria that distinguish each pair. Counts and overlaps
-  only.
-- **Protocol to terms** (`#terms-flow`): a protocol's schedule of assessments becomes a coverage grid
-  (routine care vs research-only, rule shown, reviewer override), a per-patient budget priced from the
-  real CMS 2026 physician fee schedule with Medicare locality, a proposed standard non-procedure schedule,
-  and a term sheet with provenance on every line. Decision support, not a fair-market-value legal opinion.
-- **Site scores** (`#site-scores`): each U.S. site's historical lung-trial enrollment score, with every step
-  that forms it (prior, the site's own trials, posterior, low-history cap), a 10th-90th range that counts how
-  much a site's rate varies from trial to trial, and the observed-outcome check
-  that says raw differences are overstated about 3x on the log scale. Historical evidence, not a forecast;
-  the default order is history depth, not score.
-- **Findings** (`#findings`): the research results that motivate both. The earlier clearing views live
-  under **Research**, labelled as in-sample model outputs.
-
-The home page (no hash, or `#home`) describes the two tools with live fragments of each (the Merck overlap
-matrix, a two-site price comparison) and the research results; `#home/overlap`, `#home/terms` and
-`#home/tested` open a section, and "See demo" opens Findings. The app header has a Simple | Detailed switch
-(Simple for a first visit; the choice is remembered) and a Light / Dark / System theme switch. The look is the
-"Calm" design system: tokens in `frontend/src/index.css`, shared building blocks in `frontend/src/components.tsx`.
-Default theme preference is explicitly pure white (`#FFFFFF`) light mode.
-
-Rule for the whole app: no view shows a predicted speedup, time-to-fill or enrollment rate as a product
-claim. Site scores show past per-site rates as evidence, next to their validation, never as a forecast.
-
-## Isolated synthetic planning and sponsor acceptance
-
-The original `#demo` and `#sponsor-agents` routes remain available by direct link, outside the primary navigation. The presentation continues to lead with Protocol to terms and the research findings. The planning demo computes on synthetic operating inputs and registry context; modeled completion is not a product forecast or an observed clinical outcome. Follow the [planning narration and limitations](docs/demo/HACKHARVARD-180-SECOND-SCRIPT.md).
-
-## HackHarvard Sponsor Integrations
-
-The [Sponsor Agents lab](https://concord-smoky.vercel.app/#sponsor-agents) (also local at `http://127.0.0.1:5178/#sponsor-agents`) contains local demonstrations,
-not completed external sponsor connections:
-
-| Integration | Current execution | External blocker |
+| Workflow | What Concord computes | Evidence boundary |
 | --- | --- | --- |
-| [Photon](docs/sponsors/PHOTON.md) | Local command simulator and fail-closed inbound webhook contract | No carrier adapter, official provider contract or round-trip receipt |
-| [Chalk](docs/sponsors/CHALK-EVALUATIONS.md) | Versioned 15-case deterministic acceptance suite using actual engine/boundary calls | No remote Chalk client or execution receipt |
-| [Factory Droid](docs/sponsors/FACTORY-DROID.md) | Bounded local proposal evaluator; can reject ineffective changes | No Factory runtime invocation or authenticated execution receipt |
+| **Protocol to terms** — `#terms-flow` | Coverage grid, per-participant budget, two-site comparison, proposed-budget CSV review and term-sheet/counter-proposal exports | Public CMS 2026 physician/lab benchmarks where loaded; authored protocol interpretation requires review. Not negotiated prices or a coverage decision. |
+| **Portfolio overlap** — `#overlap` | Shared registered sites and eligibility context across a sponsor's trials | NSCLC eligibility analysis; breast-cancer shared-site counts. Registry overlap does not establish causal recruitment competition. |
+| **Findings and site scores** — `#findings`, `#site-scores` | Historical enrollment evidence, uncertainty and tests of the original coordination idea | Historical evidence, not prospective forecasts. Earlier allocation models remain under Research. |
+| **Sponsor budget** — `#financial` | Budget scenarios, financial responsibility and evidence exports | Synthetic worksheet; payer benchmarks do not automatically reduce sponsor expenditure. No time model. |
+| **Portfolio Command** — `#portfolio-command` | Capacity- and budget-constrained allocation with paired seeded comparisons | Synthetic hospitals, costs, rates and activation assumptions; exactness applies only to admitted bounded searches. |
+| **Regeneron demonstration** — `#demo` | Six scenes covering baseline, optimization, financial trade-offs and evidence | Live local computation requires the backend. Explicitly loaded saved evidence is replay. Modeled completion is not a clinical outcome. |
 
-Credentials alone do not implement those missing connections. No live credential is exposed to the browser.
-The unused SDK enum dependency was removed; the primary demo remains independent of sponsor SDKs.
-See [walkthrough](docs/demo/SPONSOR-CHALLENGE-WALKTHROUGH.md),
-[independent evidence](docs/sponsors/INTEGRATION-EVIDENCE.md) and the
-[campaign report](docs/operations/GRAND-MOBILIZATION-REPORT.md).
+The main presentation leads with Protocol to terms and the research findings. Planning and sponsor-lab routes remain directly accessible without duplicating the primary navigation.
 
-## Quick Start
+## Photon, Chalk and Factory Droid
 
-Tested with **Python 3.14, Node 26 and uv**. From the repository root:
+Open **`#sponsor-agents`** to inspect sponsor-related operations and their execution status. The original calculation services work without sponsor credentials; a missing or failed provider must never become a successful fixture response.
+
+| Sponsor | Role in Concord | Available in this UI/replay repair |
+| --- | --- | --- |
+| **[Photon 2.0](docs/sponsors/PHOTON.md)** | Messaging access to bounded planning commands and operational status | Local preview and fail-closed authenticated inbound contract. No carrier delivery is established by the preview. |
+| **[Chalk](docs/sponsors/CHALK-EVALUATIONS.md)** | Reproducible evaluation of constraints, accounting, evidence and failure handling | The versioned 15-case local suite calls actual engine/boundary functions and preserves trajectories. Local passes are not remote Chalk receipts. |
+| **[Factory Droid](docs/sponsors/FACTORY-DROID.md)** | Propose operational adjustments, evaluate them and retain or reject them | Bounded local proposal evaluation rejects ineffective changes, preserves clinical criteria and requires authenticated review. Local function traces are not SDK inference receipts. |
+
+Provider-backed activation is developed in [PR #8](https://github.com/CosmicOdyssey/concord/pull/8). This branch preserves truthful local operation while that integration is reviewed. A configured credential alone is never proof of remote execution or delivery. See the [sponsor walkthrough](docs/demo/SPONSOR-CHALLENGE-WALKTHROUGH.md), [architecture](docs/sponsors/ARCHITECTURE.md) and [integration evidence](docs/sponsors/INTEGRATION-EVIDENCE.md).
+
+## Run Concord
+
+Verified development environment: **Python 3.14, Node 26 and uv**. From the repository root:
 
 ```sh
 uv venv --python 3.14 backend/.venv
 uv pip install --python backend/.venv/bin/python -r backend/requirements.txt
 npm --prefix frontend ci
-PYTHONPATH=backend backend/.venv/bin/python -m concord.portfolio --request data/portfolio/demo-request.json --output data/work/readme-demo
 PYTHONPATH=backend backend/.venv/bin/python -m uvicorn concord.api.main:app --host 127.0.0.1 --port 8005
 ```
 
@@ -84,396 +47,57 @@ cd frontend
 API_TARGET=http://127.0.0.1:8005 npm run dev -- --host 127.0.0.1 --port 5178 --strictPort
 ```
 
-The CLI writes `request.json`, `evidence.json` and `evidence.html` under the ignored
-output directory. The two planning routes work **without historical SQLite,
-credentials, model inference or a fresh network fetch**, after installing
-dependencies. Use free ports, or stop your own earlier development server first.
-For Windows, use `Scripts/python` and your shell's environment-variable syntax;
-the commands above were verified on macOS.
+Open [Protocol to terms](http://127.0.0.1:5178/#terms-flow), the [Regeneron demo](http://127.0.0.1:5178/#demo), or the [sponsor lab](http://127.0.0.1:5178/#sponsor-agents). Use free ports or stop only your own prior server. Windows uses `.venv/Scripts/python` and the shell's environment-variable syntax.
 
-Historical overlap, site scores and Research need the optional registry/model
-database; detailed site pricing needs the CMS ratecard. Missing data is shown as
-unavailable, with approximate prices explicitly labeled where supported. Do not
-run `scripts/pipeline.sh` over an existing dataset without preserving it. See
-[data boundaries and recovery](docs/research/README.md).
+The planning demo, financial worksheet and local sponsor checks use bundled inputs after dependency installation. Historical overlap/site scores/Research require the optional registry/model database; detailed pricing requires the CMS ratecard. Missing data stays unavailable or explicitly approximate. Restore those inputs using the [documented data boundaries](docs/research/README.md); preserve an existing dataset before running `scripts/pipeline.sh`.
 
-## Validation and Limitations
-
-- Real ClinicalTrials.gov records supply **context**, not measured site operations.
-- Portfolio operational and financial inputs are synthetic unless explicitly sourced.
-- Historical enrollment predictive performance remains **limited and unverified
-  as a prospective forecast**; an as-of-safe historical rerun is unavailable.
-- Exact optimization is restricted to bounded instances. Larger admitted workloads
-  use feasible heuristics with **unknown optimality gap**. See the
-  [precise search limits](docs/portfolio/README.md#search-and-optimality).
-- Modeled time differences and sensitivity ranges are not observed clinical
-  benefits, calibrated prediction intervals or guaranteed savings.
-- Coverage analysis is preliminary and requires human review. It is not insurance
-  approval, a billing-compliance determination or an insurer partnership.
-- Recruitment models and synthetic population assumptions are NSCLC-specific.
-  Reusable schedule/budget infrastructure does not imply disease-wide validation.
-
-The [integration audit](docs/integration/FINAL-INTEGRATION-REPORT.md) retains the earlier
-optimizer and accounting evidence. Current software verification, missing-data skips,
-provider blockers and browser receipts are recorded in the
-[campaign report](docs/operations/GRAND-MOBILIZATION-REPORT.md) and
-[Claude UI recovery report](docs/demo/CLAUDE-UI-RECOVERY.md).
-These checks do not establish clinical performance.
-
-## Live Verification & Browser Acceptance
-
-The deployed application at [https://concord-smoky.vercel.app](https://concord-smoky.vercel.app) is continuously audited with headless Chrome acceptance checks that verify pure white canvas aesthetics (`#FFFFFF`), theme persistence, offline resilience, and interactive end-to-end flows:
+Generate a standalone planning report without a server:
 
 ```sh
-# Run full live browser acceptance suite (3x 180s demo runs, sponsor panel, responsive checks)
-node scripts/live-browser-acceptance.mjs
+PYTHONPATH=backend backend/.venv/bin/python -m concord.portfolio --request data/portfolio/demo-request.json --output data/work/readme-demo
 ```
 
-Full automated receipts and screenshots are saved under `docs/demo/screens/` and documented in [docs/demo/CLAUDE-UI-RECOVERY.md](docs/demo/CLAUDE-UI-RECOVERY.md):
-- `01-white-landing-1440.png` — Verified `#FFFFFF` canvas and dark charcoal `#0F172A` ink.
-- `02-demo-scene1-problem.png` to `04-demo-evidence.png` — 180s HackHarvard interactive demo progression.
-- `05-sponsor-agents.png` — Photon SMS simulator, Factory Droid protocol evaluation, and Chalk acceptance suite.
-- `06-portfolio-command.png` to `09-findings.png` — Portfolio planner, protocol terms, overlap audit, and research findings.
-- `10-tablet-landing-768.png` & `11-mobile-landing-375.png` — Tablet and mobile responsive viewports.
-- `acceptance-receipt.json` — Machine-readable run receipt with sub-3s run durations and zero fatal errors.
+The ignored output directory contains `request.json`, `evidence.json` and `evidence.html`. Follow the [180-second planning script](docs/demo/HACKHARVARD-180-SECOND-SCRIPT.md), [portfolio assumptions](docs/portfolio/README.md) and [financial methodology](docs/financial/README.md). A script duration is not evidence of a timed human rehearsal.
 
+## Computation, replay and provider evidence
 
-## Layout
+- **Live local computation:** an actual backend request computes a result from recorded inputs, seed and source hashes. The operating data may still be synthetic.
+- **Saved evidence replay:** explicitly opening a stored report or rehearsal shows the saved result and its provenance. It does not execute optimization or a sponsor API.
+- **Provider execution:** a remote service must return an authentic receipt. Authentication configuration, a local mock, a queued request and accepted delivery are distinct states.
 
-```
-backend/concord/
-  ingest/ctgov.py         ClinicalTrials.gov API v2 crawler (stdlib only, resumable, ~45 req/min)
-  ingest/normalize.py     raw pages -> SQLite (trials, sites, trial_sites); site dedupe; anonymized-site flag
-  compiler/               eligibility text -> predicates; hand-encoded overrides; synthetic NSCLC population;
-                          schedule-of-assessments DAG
-  model/recruitment.py    Poisson-gamma site rates, low-history cap, backtest
-  model/build.py          builds trial_model / site_model / meta tables
-  analysis/congestion.py  does competition at a site slow enrollment? (regressions with site fixed effects)
-  analysis/robustness.py  headline under each congestion elasticity x site-rate rule
-  allocator/core.py       congestion model, best-response baseline, greedy + local search + exchanges + ILS,
-                          no-loser caps, fixed background trials
-  ratecard/cms.py         loads the real CMS physician fee schedule (RVU + GPCI) and, if supplied, CLFS
-  ratecard/medicare.py    rate card, coverage grid, standard schedule, term sheet
-  service.py              instance builder (region, date, sponsor); the four allocations; price tags
-  site_scores.py          site score breakdown (replicates the rate fit to keep per-trial allocations), calibration
-  api/main.py             FastAPI
-frontend/                 Vite + React + TS
-scripts/pipeline.sh       crawl -> normalize -> build -> congestion test -> CMS rates -> robustness grids
+The white UI does not change those boundaries. Static hosting alone cannot execute FastAPI optimization or sponsor POST requests. Backend failures remain visible; users can choose saved replay separately.
+
+## Research and scientific limits
+
+Concord began as a clearing house for concurrent trials. Tests on **7,221 NSCLC trials** weakened that premise: coordination gains fell from **1.42× in sample to about 1.05× held out**, while estimated within-site congestion elasticity was **0.09**, against an earlier assumed 1.0. These are research findings, not clinical acceleration claims. Methods, figures, uncertainty and negative results remain in [Findings](docs/figures/README.md), [the research archive](docs/research/README.md) and the repository history.
+
+Registry identifiers and titles supply context, not observed site capacity, negotiated costs or future enrollment. The synthetic demo's completion differences are conditional model outputs, not calibrated prediction intervals or guaranteed savings. No prospective multi-indication forecasting, insurer partnership, clinical efficacy or coverage approval is established. An as-of-safe historical rerun requires authentic time-versioned inputs that are not supplied by the demo.
+
+Clinical criteria remain immutable in automated operational tools. A recorded review is not sponsor, institutional, IRB or clinical authorization. Medicare benchmarks and preliminary coverage interpretations require professional review before use.
+
+## Verification
+
+```sh
+PYTHONPATH=backend backend/.venv/bin/python -m pytest -q -rs backend/tests
+npm --prefix frontend test
+npm --prefix frontend run test:compare
+npm --prefix frontend run typecheck
+npm --prefix frontend run build
+npm --prefix frontend run lint
 ```
 
-## Run it
+The [campaign report](docs/operations/GRAND-MOBILIZATION-REPORT.md) records exact commits, clean-checkout reproduction, actual browser workflows, test counts, missing-data skips and provider blockers. Earlier screenshots and worker reports retain their original provenance; their claims do not override current execution checks. Interactive backend documentation is at `http://127.0.0.1:8005/docs`.
 
-```bash
-# backend
-cd backend
-python -m venv .venv
-.venv/Scripts/pip install -r requirements.txt     # macOS/Linux: .venv/bin/pip
-../scripts/pipeline.sh                             # ~10 min: crawl, fit, tests of the premise, grids
-.venv/Scripts/python -m pytest
-.venv/Scripts/python -m uvicorn concord.api.main:app --port 8000
+## Code map
 
-# frontend (separate terminal)
-cd frontend && npm install && npm run dev          # http://localhost:5173, proxies /api -> :8000
-```
+- `backend/concord/api/`: HTTP endpoints; `agents/` and `evals/`: sponsor boundaries and acceptance.
+- `backend/concord/terms.py`, `ratecard/`, `anchoring.py`, `proposal.py`: protocol, pricing and budget review.
+- `backend/concord/portfolio/`, `financial/`: constrained planning, accounting and evidence.
+- `backend/concord/ingest/`, `model/`, `analysis/`: registry recovery and historical research.
+- `frontend/`: React, TypeScript and Vite; `data/portfolio/`: frozen synthetic planning inputs.
 
-## API
+## Team and license
 
-| Endpoint | What |
-|---|---|
-| `GET /api/findings` | findings page content (`data/findings/findings.json`, built by `python -m concord.findings`) |
-| `GET /api/findings/self-overlap` | same-sponsor overlap statistic (`data/findings/self_overlap.json`) |
-| `GET /api/overlap/sponsors?as_of&region` | sponsors with >= 2 lung trials recruiting on a date |
-| `GET /api/overlap?sponsor&as_of&region` | a sponsor's concurrent trials, pairwise shared sites, eligibility overlap, criteria diff |
-| `GET /api/terms-flow/trials` | demo protocols (illustrative, authored from public trial information) |
-| `GET /api/terms-flow/{nct}/protocol, /sites, /budget, /compare, /termsheet.md, /termsheet.html` | schedule of assessments, coverage, site budget, two-site comparison, term sheet export |
-| `GET /api/site-scores?region&state&q&min_trials&sort&limit&offset` | U.S. identifiable sites with at least one fitted trial; default sort fitted trials (desc) |
-| `GET /api/site-scores/summary` | method, prior, history-depth buckets, histogram, validation and calibration blocks |
-| `GET /api/site-scores/{site_id}` | one site's full breakdown: prior, data, posterior, cap, calibrated value, contributing trials |
-| `GET /api/status` | crawl state, counts, model prior, backtest, congestion test |
-| `POST /api/clear` `{region, as_of, sponsor, beta, low_history, universe, ...}` | registered vs best-response vs coordinated allocations (free and no-loser) |
-| `GET /api/robustness?<scenario>` | headline under each congestion elasticity x site-rate rule (precomputed) |
-| `GET /api/congestion-test` | regression results for the premise |
-| `GET /api/sponsors?region&as_of` | sponsors with several concurrent trials (portfolio mode) |
-| `GET /api/trials/{nct}/price-tags` | months of enrollment each eligibility criterion costs |
-| `GET /api/slot-values` | where one more trial slot is worth the most |
-| `GET /api/protocol/demo` | demo schedule-of-assessments DAG |
-| `GET /api/termsheet?site_id&nct_id` | capability check, coverage grid, budget, ACTA-style terms |
-| `POST /api/compile/eligibility` `{text}` | criteria text -> predicates with provenance |
+Repository contributors include [CosmicOdyssey](https://github.com/CosmicOdyssey), [kevinsrun](https://github.com/kevinsrun) and [akshatsinghania](https://github.com/akshatsinghania); see the [contributor history](https://github.com/CosmicOdyssey/concord/graphs/contributors).
 
-Interactive docs at `http://localhost:8000/docs`.
-
-## Results (17 Oct 2026, after trying to break them)
-
-> **Status, 17 Oct.** Sections 3-4 report the final rerun of the pre-registered holdout (task A's script,
-> unchanged). These are research results, not product claims: the app shows no predicted speedups.
-
-### 1. Does congestion slow enrollment? Not measurably within a site, and far less than the model assumed.
-
-`analysis/congestion.py`: 3,442 completed lung trials, 68k trial-site rows. Outcome: log per-site-month
-enrollment rate. Exposure: competitors recruiting at the same site when the trial started (fixed in
-advance; counting over the whole window would mechanically penalize slow trials), weighted by
-eligibility overlap. Controls: phase, site count, sponsor type, start year. Standard errors are two-way
-clustered by trial and site (pre-registered); the earlier trial-only clustering is shown beside them.
-Run on the current database (hand-encoded eligibility for the 151 demo and Regeneron trials included).
-
-| coef on log(1 + sum of overlaps) | 95% CI, two-way | p | 95% CI, trial only | p |
-|---|---|---|---|---|
-| model assumption (master doc eq. 2): -1 | | | | |
-| **within site, full sample (primary; the default beta): -0.093** | **[-0.297, +0.111]** | **0.37** | [-0.213, +0.028] | 0.13 |
-| pooled across sites (confounded with site type): -0.107 | [-0.216, +0.002] | 0.055 | [-0.158, -0.056] | <0.001 |
-
-Subset estimates, within site. They are reported separately and are never the default. Bonferroni
-adjustment is over the 4 subsets (z = 2.50):
-
-| subset (not the default) | coef | 95% CI, two-way | p | Bonferroni CI | trial only: CI (p) |
-|---|---|---|---|---|---|
-| S1p: sites with >= 10 lung trials started before the focal trial | -0.055 | [-0.339, +0.229] | 0.71 | [-0.417, +0.308] | [-0.179, +0.069] (0.39) |
-| S1: sites with >= 10 lung trials over all time (counts later trials; not predetermined) | -0.135 | [-0.323, +0.053] | 0.16 | [-0.374, +0.104] | [-0.245, -0.025] (0.02) |
-| S2: trials with <= 20 sites | -0.045 | [-0.186, +0.096] | 0.53 | [-0.225, +0.135] | [-0.177, +0.087] (0.50) |
-| S3: competitor pairs with overlap >= 0.8 | -0.083 | [-0.285, +0.119] | 0.42 | [-0.340, +0.174] | [-0.180, +0.014] (0.09) |
-
-Beta under each eligibility-parser version (full-sample within site, no hand-encoded overrides; beta = -coef):
-
-| parser | coef | 95% CI | p | trials with no eligible patient |
-|---|---|---|---|---|
-| v0 `b8c576f`: "Key Exclusion Criteria" read as inclusion | -0.136 | [-0.339, +0.067] | 0.19 | 3 |
-| v1 `c0050f4`: headers fixed, but contradictory criteria | -0.027 | [-0.121, +0.067] (trial only*) | 0.57 | 646 |
-| v2 `4a87d33`: current | -0.088 | [-0.291, +0.116] | 0.40 | 3 |
-
-\* For v1 the two-way variance of this coefficient is negative before clipping, so it can't be
-estimated; the trial-clustered CI is shown instead.
-
-- **What it says.** Within the same site, at the resolution of public registry data, the full-sample
-  estimate is a small slowdown (about 6% per doubling of overlapping load) and is not significant under any
-  clustering. Every interval rejects the master doc's -1. Unweighted competitor counts are null within site.
-- **"Mainly at experienced sites" is withdrawn.** It rested on S1, whose ">= 10 lung trials" count included
-  trials that started later. Counting only trials started before each trial (S1p): -0.055, p 0.71. No subset
-  meets the pre-registered rule (a well-powered subset whose CI excludes the full-sample estimate).
-- **Across sites, busier sites have slower trials** (-0.107), confounded with site type; with two-way SEs
-  the CI includes 0 (p 0.055).
-- **Default beta = 0.093** (95% CI 0 to 0.297, floored at 0 as the app uses it): the full-sample estimate.
-- **Parser dependence.** Across parser versions the estimate runs from -0.027 to -0.136. None is significant
-  with two-way SEs; with trial-only SEs only v0 was (p 0.03).
-- **Post hoc, not pre-registered.** The pre-registered two-way variance clips negative eigenvalues of the
-  whole coefficient covariance (18 of 41 for the primary), so its SE depends partly on how controls are coded
-  (0.104 as coded, 0.105-0.115 under equivalent codings). The coefficient's own two-way variance before
-  clipping does not: primary SE 0.087, CI [-0.262, +0.077], p 0.29. On that measure the pooled association
-  ([-0.209, -0.005], p 0.040) and S1 with the lifetime count ([-0.265, -0.005], p 0.041) look stronger; neither
-  is predetermined or causal, and neither survives Bonferroni. Details: `data/robustness/congestion_v2.json`,
-  `congestion_v2_se_diagnostics.json`.
-- **Corrections, in order.** v0 read "Key Exclusion Criteria" as inclusion (-0.136). After that fix the
-  estimate was -0.027 (v1), but 646 trials had contradictory compiled criteria (no eligible patients, zero
-  exposure), pulling it toward zero; task F's audit found this. With the parser fixed (v2) and the 151
-  hand-encoded trials, the same regressions give the tables above.
-
-### 2. Site-rate model and backtest
-
-Fit before 2018, predict the enrollment duration of 1,094 later trials (390 industry Phase II/III):
-
-| industry Phase II/III, held out | median abs log error | median signed bias |
-|---|---|---|
-| **model** (posterior mean; sites with < 3 lung trials capped at the prior's 25th percentile) | **0.67** | -0.09 |
-| raw posterior mean (unknown sites at the prior mean) | 1.09 | -0.92 |
-| naive median rate x site count | 1.03 | -0.76 |
-
-The raw model's large optimism came from sites it barely knew. So the cap is backed by the backtest,
-not just a conservative choice. Calibration slope of actual on predicted rate: 0.95 (SE 0.07). On past
-dates, the model's times for the same trials are within 15-40% of what they actually took (June 2019:
-31 vs 37 months).
-
-**Observed-outcome check of the site scores** (`analysis/selection_validation.py`, 17 Oct). Completed trials
-started 2018 or later: each trial's registered site list is scored with rates fit only on pre-2018 trials,
-and the actual log per-site enrollment rate is regressed on that score with phase, log site count and
-start-year controls:
-
-| completed trials started 2018+ | slope | 95% CI | p | n |
-|---|---|---|---|---|
-| all lung trials | 0.16 | [0.07, 0.24] | 0.0003 | 1,094 |
-| industry Phase II/III | 0.33 | [0.16, 0.50] | 0.0001 | 390 |
-
-- **The scores carry real signal.** Registered site lists that pre-2018 data scored higher did enroll
-  faster per site.
-- **Predicted differences between site lists are about 3-6x larger than observed.** The slope is far below
-  1.
-- **Why the backtest slope above is 0.95.** It compares raw predicted and actual rates across trials, and
-  much of that variation is explained by phase, site count and start year. Net of those, the site scores
-  add less, which is what selection depends on.
-
-### 3. Clearing, US-Northeast: final rerun of the holdout
-
-Task A's pre-registered script (`analysis/selection_holdout.py`), run unchanged on the current database:
-beta 0.0925, hand-encoded eligibility (basket and multi-cohort trials held out), deterministic solver
-(500k evaluations). 46 movable trials. Allocations are chosen with site rates fit on one half of history
-and scored with rates fit on the other half (alternating and time splits; geometric mean of both
-directions). Ratio = total trial-months, baseline / alternative, under our enrollment model. "Slower" = share
-of trials slower than the baseline. Output: `data/robustness/holdout.json`; earlier run on the pre-E database:
-`holdout_preE.json`.
-
-| comparison | in-sample, all history | alternating: in-sample | alternating: held-out | time: in-sample | time: held-out |
-|---|---|---|---|---|---|
-| Site selection alone: best response vs registered | 1.76x (20% slower) | 1.59x (18% slower) | 1.73x (14% slower) | 1.72x (16% slower) | 1.70x (13% slower) |
-| Coordination: joint optimum vs best response | 1.42x (39% slower) | 1.44x (41% slower) | 1.05x (47% slower) | 1.37x (38% slower) | 1.05x (51% slower) |
-| Coordination capped at registered times, vs registered | 1.60x (0% slower) | 1.57x (0% slower) | 1.37x (24% slower) | 1.67x (0% slower) | 1.23x (31% slower) |
-| Coordination capped at best-response times, vs best response | 1.00x (0% slower) | 1.00x (0% slower) | 1.00x (2% slower) | 1.01x (0% slower) | 0.99x (16% slower) |
-
-**Re-scored with calibrated site rates (post hoc, not pre-registered; `analysis/selection_calibrated.py`,
-17 Oct).** The observed-outcome check in section 2 says the scores overstate differences between site
-lists. So the same saved allocations, not re-solved, are re-scored with every site's log rate shrunk
-toward the U.S. mean by b, the observed-outcome slope. b = 1 reproduces the table above exactly (largest
-difference 4e-16). Output: `data/findings/selection_calibrated.json`.
-
-| US-Northeast | in-sample, all history | alternating: held-out | time: held-out |
-|---|---|---|---|
-| Site selection alone, b = 1 (uncalibrated, as above) | 1.76x | 1.73x | 1.70x |
-| Site selection alone, b = 0.33 (industry Phase II/III slope) | 1.22x | 1.18x | 1.17x |
-| Site selection alone, b = 0.16 (all-trials slope) | 1.09x | 1.07x | 1.06x |
-| Coordination, b = 0.33 | 1.12x | 1.03x | 1.03x |
-| Coordination, b = 0.16 | 1.06x | 1.03x | 1.02x |
-
-- **Calibrated, site selection alone is worth about 1.2x held-out, not 1.7x.** That uses the industry Phase
-  II/III slope, whose 95% CI (0.16 to 0.50) spans roughly 1.06x to 1.3x.
-- **Caveat.** b was estimated on trial-level scores (the mean score of a registered list). Applying it to
-  each site's rate assumes the overstatement is the same at site level.
-
-### 4. Portfolio clearing: Regeneron, as of 1 Sept 2024
-
-Same script and settings, 5 movable trials (Regeneron's), everyone else held fixed.
-
-| comparison | in-sample, all history | alternating: in-sample | alternating: held-out | time: in-sample | time: held-out |
-|---|---|---|---|---|---|
-| Site selection alone: best response vs registered | 2.04x (0% slower) | 1.90x (0% slower) | 1.69x (0% slower) | 1.90x (0% slower) | 1.42x (10% slower) |
-| Coordination: joint optimum vs best response | 1.01x (40% slower) | 1.00x (20% slower) | 0.99x (30% slower) | 1.00x (30% slower) | 1.03x (50% slower) |
-| Coordination capped at registered times, vs registered | 1.27x (0% slower) | 1.23x (0% slower) | 1.20x (20% slower) | 1.22x (0% slower) | 1.12x (30% slower) |
-| Coordination capped at best-response times, vs best response | 1.00x (0% slower) | 1.00x (0% slower) | 0.99x (40% slower) | 1.00x (0% slower) | 0.99x (40% slower) |
-
-Calibrated re-score (post hoc, as in section 3): site selection alone is 1.32x in-sample, 1.20x and 1.12x
-held-out at b = 0.33, and 1.15x, 1.08x and 1.05x at b = 0.16.
-
-Observed fact, no model needed: Regeneron's two fianlimab Phase 2/3 trials (NCT05785767, NCT05800015) shared
-16 registered U.S. sites. Under hand-encoded eligibility on the synthetic population, every patient eligible
-for the first was eligible for the second (overlap 1.0).
-
-### 5. Term sheets
-
-- **Physician codes use real CMS rates.** They are priced from the CMS 2026 RVU file (RVU26D, October
-  release, conversion factor $33.4009), with GPCI locality adjustment matched by city name.
-- **Lab codes use the real CMS 2026 lab fee schedule** (CLFS, Q4 2026 release, national limitation
-  amounts; not geographically adjusted). CMS serves that file behind an AMA CPT license click-through, so a
-  person downloads it: https://www.cms.gov/medicare/payment/fee-schedules/clinical-laboratory-fee-schedule-clfs/files/26clabq4
-  (file `clfs_cy2026_q4v1.zip`), saves it under `data/raw/cms/`, and loads it with
-  `python -m concord.ratecard.cms --rvu ../data/raw/cms/rvu26d/rvu26d.zip --clfs ../data/raw/cms/clfs26q4/clfs_cy2026_q4v1.zip`
-  (from `backend/`; or `CLFS_ZIP=... scripts/pipeline.sh`). Only numbers are copied into
-  `data/ratecard.json`, never AMA descriptors. Without the file, lab lines fall back to labelled placeholders.
-
-## Assumptions to defend (all in code, all adjustable via the API)
-
-- Enrollment window = 65% of start to primary completion (`recruitment.ENROLL_FRACTION`).
-- Congestion elasticity beta from the within-site regression (default), with its CI; `beta` overrides.
-- Site rates:
-  - posterior mean, with low-history sites capped (section 2)
-  - winsorized at the 95th percentile of experienced sites
-  - scaled by the backtest bias
-  - busy sites de-congested so the registered allocation reproduces history; idle sites get no boost.
-- No activation lag on top: backtest rates already include ramp-up. So ratios don't depend on the
-  absolute level.
-- Capacity k_s = peak concurrent industry Phase II/III lung trials the site has run.
-- The best-response baseline claims sites first-come by start date and respects capacity.
-- Eligibility enters only relative to the instance median. Synthetic population prevalences are in
-  `compiler/population.py`.
-
-## Known issues
-
-- **Eligibility parsing.** Rule-based for history trials. The 146 US-Northeast demo trials and Regeneron's
-  5 are hand-encoded (`compiler/overrides_demo.json`, `compiler/overrides.py`). 34 demo trials need a
-  biomarker the synthetic population cannot represent (e.g. KRAS G12D, RET, MTAP loss); those requirements
-  are listed per trial, not modeled.
-- **Price tags and slot values are local.** They are warm-start re-solves, compared against the same
-  procedure on the unchanged market.
-- **Today's snapshot runs long.** It over-represents slow trials (length-biased sampling), so its
-  absolute times are high (median 41 months). Past-date snapshots are the calibration check.
-- **Academic-center flag.** Widened to NCI-designated and university centers (404 more U.S. sites,
-  including Dartmouth-Hitchcock). It also matches satellites carrying a center's name, as before.
-
-## Next
-
-- [ ] Load CLFS (needs a person to accept the AMA license); county-level Medicare locality match
-- [ ] LLM-assisted eligibility parser with a review screen; hand-encode every trial shown in the demo
-- [ ] Site-level enrollment data (the flywheel) is what would make the site-rate model trustworthy
-- [ ] Side-payment / priority-credit mechanism, since coordination gains need transfers to be no-loser
-
-## Checks in progress (17 Oct)
-
-Pre-registered checks running in parallel worktrees, each committing its method before its results,
-with adversarial audits. Numbers below are provisional until the final rerun (last row).
-
-| task | status | result so far |
-|---|---|---|
-| A. optimizer's curse holdout (choose with half the history, score with the other) | merged; final rerun done | sections 3-4 |
-| B. where the joint optimum comes from (capacity settings, beta = 0) | merged; one audit gap left (time split not run by B) | see below |
-| C. transfer surplus of the joint optimum | not merged (decision 17 Oct) | moot given the time-split result |
-| D. browser QA | merged | 2,576 of 2,580 on-screen numbers match the API; the other 4 were backend inconsistencies, now fixed. 7 label and layout defects fixed. No phone-width breakage. Report: `docs/qa/2026-10-17-browser-qa.md` |
-| E. hand-encoded eligibility, design labels, academic flag | merged | 146 demo trials: 63 single population, 62 basket, 21 multi-cohort. Basket and multi-cohort trials are held out of headline numbers: US-Northeast keeps 47 movable trials (was 103) |
-| F. attenuation check of beta | merged | see section 1 |
-| Congestion re-estimate: predetermined "experienced site", two-way clustered SEs, beta by parser version | merged; audited | see section 1 |
-| UI: ">= 1 month" threshold for share faster; beta labels | merged | |
-| Deterministic solver | done: 500k-evaluation default, chosen by objective convergence; repeat runs identical | `data/robustness/solver_budget_calibration.json` |
-| Database rebuilt with E's encodings and academic flags | done | congestion regression rerun on it (section 1) |
-| Final rerun of sections 3-4: task A's script unchanged, current beta, deterministic solver, both splits | done | sections 3-4 |
-
-### B. Where the joint optimum's gain comes from (provisional)
-
-US-Northeast, old beta 0.026, B's own fixed-effort solver, before E's design exclusions. Held-out =
-geometric mean of both directions. The time-split column comes from B's auditor running B's code.
-
-| | in-sample | held-out, alternating split | held-out, time split |
-|---|---|---|---|
-| joint optimum vs best response | 1.57x (42% slower) | 1.38x (44% slower) | **0.98x** |
-| same, unlimited capacity | 1.02x | 0.96x | 0.77x |
-| same, beta = 0 | 1.56x | 1.42x | |
-| no-loser vs registered | 1.27x | 1.13x (22% of trials slower) | 1.03x |
-
-- **Capacity, not congestion.** The joint optimum's gain is about allocating scarce slots at sites
-  with long track records. It disappears with unlimited capacity and barely moves at beta = 0.
-- **Fragile.** About 240 extra slots at 59 high-capacity sites cut the held-out gain from 1.38x to 1.05x.
-- **It doesn't hold over time.** Choosing with older trials and scoring with newer ones gives 0.98x.
-- **"No loser" doesn't hold out of sample.** Scored with held-out rates, 22% of trials end up slower
-  than with their registered sites.
-- **More search helps in-sample only.** More solver effort raised the in-sample headline but lowered the
-  held-out one: the optimizer's curse acting through search.
-
-### C. Transfer surplus
-
-Transfer surplus not evaluated out of sample; moot given the time-split result.
-
-Two findings from D that the final numbers must handle:
-
-- **Solver budget.** The solver stopped at a 6 s limit, so the in-sample headline depended on CPU load:
-  1.32x live vs 1.28x in the grid for US-Northeast. Fixed: the solver now runs to a fixed evaluation budget.
-- **Near-ties.** "Share faster" counted near-ties. The API now also reports a material threshold
-  (>= 1 month): "91% faster" is 62% at >= 1 month.
-
-## Sponsor budget: synthetic sponsor-budget worksheet
-
-The additive **Sponsor budget** tab (sub-label "Synthetic worksheet"; formerly Financial Coordination) provides a live, explicitly synthetic sponsor-budget worksheet linked to existing illustrative public-trial protocols: a coverage worksheet, five sponsor-budget scenarios at a fixed participant target over a budgeted contract period (listed, not ranked), a three-party transfer/resource ledger, cost-input sensitivity and HTML/JSON evidence exports, without a registry database. It outputs no time, speed or enrollment estimate, and in the worksheet payer assumptions do not change the sponsor commitment (only a line's coverage status does): insurer and Medicare amounts are benchmarks for fair-value reasoning and site negotiation, not a lever that lowers sponsor cost or speeds a trial (decision 24). No insurer partnership, coverage approval, observed savings or clinical benefit is claimed. See [what it computes, what it does not, and verification](docs/financial/README.md).
-
-# Portfolio Command
-
-Budget-constrained multi-trial planning with shared site capacity, financial
-coordination, paired sensitivity and immutable evidence exports is available at
-`#portfolio-command`. The demo computes live on explicitly synthetic operational
-inputs; ClinicalTrials.gov supplies registry context only. See
-[reproduction and assumptions](docs/portfolio/README.md) and
-[verification evidence](docs/portfolio/VERIFICATION.md).
-
-## Team
-
-Built for **HackHarvard 2026, Regeneron track** by the Bruno Bears, a team from Brown University. Repository
-contributions: [CosmicOdyssey](https://github.com/CosmicOdyssey), [kevinsrun](https://github.com/kevinsrun),
-[akshatsinghania](https://github.com/akshatsinghania); see the
-[contributor history](https://github.com/CosmicOdyssey/concord/graphs/contributors). No sponsor endorsement,
-insurer relationship or institutional affiliation is implied.
-
-## License
-
-Code: [MIT](LICENSE). Data the app reads keeps its own terms: ClinicalTrials.gov records, CMS fee schedules (CPT codes
-and descriptors are © American Medical Association; the CMS rate files are downloaded locally and not redistributed here).
+Code is released under the [MIT License](LICENSE). ClinicalTrials.gov and CMS data retain their source terms; CPT codes and descriptors are © American Medical Association. Source rate files are downloaded locally and are not redistributed here. No sponsor endorsement or insurer relationship is implied.

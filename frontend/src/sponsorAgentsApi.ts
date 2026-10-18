@@ -101,130 +101,40 @@ export interface ChalkEvaluationReport {
   scenarios: ChalkScenarioResult[];
 }
 
-const API_BASE = '';
-
-export async function fetchPhotonStatus(): Promise<PhotonStatus> {
-  try {
-    const res = await fetch(`${API_BASE}/api/agents/photon/status`);
-    if (res.ok) return await res.json();
-  } catch {
-    /* fallback to static json below */
+/** Never turn a transport/auth/provider failure into a fixture success. */
+async function backend<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(path, { ...init, cache: 'no-store' })
+  if (!response.ok) throw new Error(`${path} HTTP ${response.status}; backend action failed. No saved or synthetic response has been substituted.`)
+  const body: unknown = await response.json()
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error(`${path} returned an invalid backend response`)
+  const envelope = body as Record<string, unknown>
+  if (envelope.artifact_disclosure || envelope.delivery_mode === 'ARTIFACT_REPLAY' || envelope.delivery_mode === 'SAVED_RESULT_REPLAY') {
+    throw new Error(`${path} returned archived evidence, not a new backend action. Explicit replay is not supported for sponsor actions.`)
   }
-  const fallback = await fetch('/api/agents/photon/status.json');
-  if (fallback.ok) return await fallback.json();
-  return {
-    provider: 'Photon local SMS command adapter',
-    live_api_configured: false,
-    webhook_secret_configured: false,
-    allowlist_active: true,
-    allowed_senders_count: 2,
-    messages_processed_count: 0,
-    channel: 'LOCAL_SIMULATION; optional authenticated Concord JSON webhook, not verified Photon compatibility',
-    engine_scope: 'Concord synthetic portfolio computation',
-    data_disclosure: 'Synthetic operations; no carrier delivery or validated clinical forecast.',
-  };
+  return body as T
 }
-
-export async function sendSimulatedSMS(body: string, sender: string = '+16175550199'): Promise<SMSResponse> {
-  try {
-    const res = await fetch(`${API_BASE}/api/agents/photon/simulate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ body, sender }),
-    });
-    if (res.ok) return await res.json();
-  } catch {
-    /* static fallback */
-  }
-
-  // Client-side simulation fallback when static hosting does not support live backend
-  const cmd = body.trim().toUpperCase();
-  let replyText = `CONCORD ACK: Received "${body}". Local simulation active; no carrier delivery.`;
-  if (cmd === 'STATUS') {
-    replyText = 'CONCORD STATUS: 2 trials active, 4 hospital sites enrolled. Operational load: 84% capacity. Simulation mode.';
-  } else if (cmd === 'BUDGET') {
-    replyText = 'CONCORD BUDGET: Target $3.0M ceiling; $1,133,866 committed across 4 active hospitals. Solvency: SAFE.';
-  } else if (cmd === 'SITES') {
-    replyText = 'CONCORD SITES: SYN-A (cap 4/mo), SYN-B (cap 4/mo), SYN-C (cap 3/mo), SYN-D (cap 2/mo). All online.';
-  }
-
-  return {
-    request_id: `sms-${Date.now()}`,
-    scenario_id: 'hackharvard-bundled-portfolio',
-    provider_status: 'NOT_IMPLEMENTED',
-    data_mode: 'SYNTHETIC_OPERATIONAL_ASSUMPTIONS',
-    message_id: `sim-${Date.now()}`,
-    status: 'LOCAL_SIMULATION',
-    reply_text: replyText,
-    sender,
-    action_taken: 'SIMULATION_ACK',
-    is_simulated_data: true,
-    delivery_note: 'Local simulated response for demonstration purposes.',
-  };
+export function fetchPhotonStatus(): Promise<PhotonStatus> {
+  return backend('/api/agents/photon/status')
 }
-
-export async function runDroidAgent(trialId: string = 'NCT05800015', maxIterations: number = 3): Promise<DroidRecommendation> {
-  try {
-    const res = await fetch(`${API_BASE}/api/agents/droid/run`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ trial_id: trialId, max_iterations: maxIterations }),
-    });
-    if (res.ok) return await res.json();
-  } catch {
-    /* static fallback */
-  }
-
-  try {
-    const fallback = await fetch('/api/agents/droid/run.json');
-    if (fallback.ok) return await fallback.json();
-  } catch {
-    /* ignore */
-  }
-
-  throw new Error('Droid proposal service unavailable');
+export function sendSimulatedSMS(body: string, sender: string = '+16175550199'): Promise<SMSResponse> {
+  return backend('/api/agents/photon/simulate', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body, sender }),
+  })
 }
-
-export async function submitHumanReview(recommendationId: string, decision: 'APPROVED' | 'REJECTED', notes: string): Promise<any> {
-  const res = await fetch(`${API_BASE}/api/agents/droid/review`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      recommendation_id: recommendationId,
-      decision,
-      reviewer_notes: notes,
-    }),
-  });
-  if (!res.ok) throw new Error(`Droid review HTTP ${res.status}`);
-  return res.json();
+export function runDroidAgent(trialId: string = 'NCT05800015', maxIterations: number = 3): Promise<DroidRecommendation> {
+  return backend('/api/agents/droid/run', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trial_id: trialId, max_iterations: maxIterations }),
+  })
 }
-
-export async function runChalkEvaluations(): Promise<ChalkEvaluationReport> {
-  const res = await fetch(`${API_BASE}/api/evals/chalk/run`, { method: 'POST' });
-  if (res.ok) return await res.json();
-  if (res.status === 405 || res.status === 404) {
-    try {
-      const fallback = await fetch('/api/evals/chalk/run.json');
-      if (fallback.ok) return await fallback.json();
-    } catch {
-      /* ignore */
-    }
-  }
-  throw new Error(`Chalk run HTTP ${res.status}`);
+export function submitHumanReview(recommendationId: string, decision: 'APPROVED' | 'REJECTED', notes: string): Promise<unknown> {
+  return backend('/api/agents/droid/review', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ recommendation_id: recommendationId, decision, reviewer_notes: notes }),
+  })
 }
-
-export async function fetchLatestChalkReport(): Promise<ChalkEvaluationReport> {
-  try {
-    const res = await fetch(`${API_BASE}/api/evals/chalk/latest`);
-    if (res.ok) return await res.json();
-  } catch {
-    /* static fallback */
-  }
-  try {
-    const fallback = await fetch('/api/evals/chalk/latest.json');
-    if (fallback.ok) return await fallback.json();
-  } catch {
-    /* ignore */
-  }
-  throw new Error('Chalk latest report unavailable');
+export function runChalkEvaluations(): Promise<ChalkEvaluationReport> {
+  return backend('/api/evals/chalk/run', { method: 'POST' })
+}
+export function fetchLatestChalkReport(): Promise<ChalkEvaluationReport> {
+  return backend('/api/evals/chalk/latest')
 }

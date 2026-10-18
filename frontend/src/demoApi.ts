@@ -6,7 +6,7 @@ export interface DemoBundle extends PortfolioDemo {
   baseline: DemoPlan; fixture_sha256: string; baseline_compute_ms: number
   data_mode: string; historical_predictive_performance: string; scope: string
 }
-export interface DemoRun { result: PortfolioResult; compute_ms: number; computed_at: string; delivery_mode: 'LIVE_COMPUTATION' | 'SAVED_RESULT_REPLAY'; fixture_sha256: string }
+export interface DemoRun { result: PortfolioResult; compute_ms: number; computed_at: string; delivery_mode: 'LIVE_COMPUTATION' | 'ARTIFACT_REPLAY'; fixture_sha256: string }
 export const SCENES = ['The problem', 'The baseline', 'Run Concord', 'Compare outcomes', 'Money & evidence', 'What this proves'] as const
 export function nextScene(scene: number, hasResult: boolean): number {
   return scene === 0 ? 1 : scene === 1 ? (hasResult ? 3 : 1) : scene === 3 ? 4 : scene === 4 ? 5 : scene
@@ -25,24 +25,19 @@ export function proposal(result: PortfolioResult): PortfolioScenario {
 }
 async function checked(response: Response) {
   if (!response.ok) throw new Error(`Local demo service returned ${response.status}. Reset or explicitly open the saved rehearsal; no result has been substituted.`)
-  return response.json()
+  const body = await response.json()
+  if (body?.artifact_disclosure || body?.delivery_mode === 'ARTIFACT_REPLAY' || body?.delivery_mode === 'SAVED_RESULT_REPLAY') throw new Error('The demo backend returned archived evidence. No result has been substituted; choose the labeled replay explicitly.')
+  return body
 }
 export const demoApi = {
   async baseline(signal: AbortSignal): Promise<DemoBundle> {
-    const res = await fetch('/api/hackharvard-demo', { signal })
-    if (res.status === 404 || res.status === 405) {
-      const fb = await fetch('/api/hackharvard-demo/index.json', { signal })
-      if (fb.ok) return checked(fb)
-    }
-    return checked(res)
+    return checked(await fetch('/api/hackharvard-demo', { signal, cache: 'no-store' }))
   },
   async optimize(signal: AbortSignal): Promise<DemoRun> {
-    const res = await fetch('/api/hackharvard-demo/optimize', { method: 'POST', signal })
-    if (res.status === 404 || res.status === 405) {
-      const fb = await fetch('/api/hackharvard-demo/optimize.json', { signal })
-      if (fb.ok) return checked(fb)
-    }
-    return checked(res)
+    const response = await fetch('/api/hackharvard-demo/optimize', { method: 'POST', signal, cache: 'no-store' })
+    const run = await checked(response) as DemoRun
+    if (run.delivery_mode !== 'LIVE_COMPUTATION') throw new Error('The backend did not return live computation. No result has been substituted; choose the labeled artifact replay explicitly.')
+    return run
   },
   async saved(signal: AbortSignal): Promise<{ bundle: DemoBundle; run: DemoRun }> {
     const response = await fetch('/demo/saved-result.json', { signal })
@@ -51,7 +46,7 @@ export const demoApi = {
     const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw)))].map(x => x.toString(16).padStart(2, '0')).join('')
     if (hash !== SAVED_DEMO_SHA256) throw new Error('Saved rehearsal checksum mismatch. Refusing altered evidence.')
     const saved = JSON.parse(raw)
-    saved.run.delivery_mode = 'SAVED_RESULT_REPLAY'
+    saved.run.delivery_mode = 'ARTIFACT_REPLAY'
     proposal(saved.run.result)
     return saved
   },

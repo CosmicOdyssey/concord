@@ -1,15 +1,17 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/api/findings", "destination": "/api/findings/index.json" },
-    { "source": "/api/findings/self-overlap", "destination": "/api/findings/self-overlap.json" },
-    { "source": "/api/hackharvard-demo", "destination": "/api/hackharvard-demo/index.json" },
-    { "source": "/api/hackharvard-demo/optimize", "destination": "/api/hackharvard-demo/optimize.json" },
-    { "source": "/api/agents/photon/status", "destination": "/api/agents/photon/status.json" },
-    { "source": "/api/agents/photon/simulate", "destination": "/api/agents/photon/status.json" },
-    { "source": "/api/evals/chalk/latest", "destination": "/api/evals/chalk/latest.json" },
-    { "source": "/api/evals/chalk/run", "destination": "/api/evals/chalk/run.json" },
-    { "source": "/api/agents/droid/run", "destination": "/api/agents/droid/run.json" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    {
+      "source": "/api/findings",
+      "destination": "/api/findings/index.json"
+    },
+    {
+      "source": "/api/findings/self-overlap",
+      "destination": "/api/findings/self-overlap.json"
+    },
+    {
+      "source": "/((?!api(?:/|$)).*)",
+      "destination": "/index.html"
+    }
   ]
 }

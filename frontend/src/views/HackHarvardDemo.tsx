@@ -87,7 +87,7 @@ export default function HackHarvardDemo() {
   const chosen = run ? proposal(run.result) : null
   const base = bundle?.baseline
   const req = bundle?.request
-  const replay = run?.delivery_mode === 'SAVED_RESULT_REPLAY'
+  const replay = run?.delivery_mode === 'ARTIFACT_REPLAY'
   const rows: [string, (p: DemoPlan) => string][] = req ? [
     ['Modeled final enrollment completion', p => mo(p.expected_makespan)],
     ['Expected sponsor expenditure', p => usd(p.ledger.cash_expenditure)],
@@ -101,11 +101,11 @@ export default function HackHarvardDemo() {
   return <div className="hh-demo">
     <a className="skip" href="#demo-main" onClick={e => skipTo(e, 'demo-main')}>Skip to demo</a>
     <header className="demo-header"><a href="#home" className="wordmark">Concord</a><span>HACKHARVARD 2026 · REGENERON TRACK</span><div><ThemeControl /><button onClick={() => void reset()}>Reset Demo</button><a href="#findings">General app ↗</a></div></header>
-    <div className="demo-disclosure"><b>ILLUSTRATIVE PLANNING · NOT A FORECAST</b><span>{replay ? 'SAVED RESULT REPLAY — no new computation' : 'Local computation · bundled registry context · synthetic operations'}</span></div>
+    <div className="demo-disclosure"><b>ILLUSTRATIVE PLANNING · NOT A FORECAST</b><span>{replay ? 'ARTIFACT_REPLAY — saved evidence; no new computation' : run ? 'Live backend computation · bundled registry context · synthetic operations' : 'Backend result pending · bundled registry context · synthetic operations'}</span></div>
     <main id="demo-main">
       <div className="demo-scene-label">SCENE {scene + 1} / 6 · {SCENES[scene]}</div>
       <h1 ref={heading} tabIndex={-1}>{['One sponsor. Two trials. Shared hospitals.', 'A feasible baseline leaves a bottleneck.', 'Concord is computing—not replaying.', 'More capacity. A real budget trade-off.', 'Who pays—and what is the evidence?', 'A planning decision, not a clinical promise.'][scene]}</h1>
-      <div role="status" className="demo-status" data-testid="demo-status">{busy ? `Live request in flight · ${elapsed.toFixed(1)}s elapsed · seeded event simulation and subset search` : run ? `${run.delivery_mode === 'SAVED_RESULT_REPLAY' ? 'Saved rehearsal' : 'Live computation completed'} · ${run.compute_ms.toFixed(1)} ms server compute · ${chosen?.optimization?.status} · ${run.result.search_evaluations} candidate/policy evaluations` : error ? 'No completed live result. Reset or explicitly load saved evidence.' : bundle ? 'Known baseline computed locally. Optimization has not run.' : 'Computing the fixed baseline locally…'}</div>
+      <div role="status" className="demo-status" data-testid="demo-status">{busy ? `Live request in flight · ${elapsed.toFixed(1)}s elapsed · seeded event simulation and subset search` : run ? `${run.delivery_mode === 'ARTIFACT_REPLAY' ? 'Saved rehearsal' : 'Live computation completed'} · ${run.compute_ms.toFixed(1)} ms ${replay ? 'recorded prior compute' : 'server compute'} · ${chosen?.optimization?.status} · ${run.result.search_evaluations} candidate/policy evaluations` : error ? 'No completed live result. Reset or explicitly load saved evidence.' : bundle ? 'Baseline received from backend. Optimization has not run.' : 'Requesting the fixed baseline from the backend…'}</div>
       {error && <p role="alert" className="demo-error">{error} No silent replay. Reset, or choose the labeled saved rehearsal below.</p>}
       {bundle && req && base && <>
         {scene === 0 && <><p className="demo-lead">How should a sponsor allocate a fixed budget across competing trials to reach enrollment targets sooner <em>under explicit assumptions</em>?</p><div className="demo-metrics"><Metric label="Sponsor budget ceiling" value={usd(req.budget)} note="Modeled study scope only—not complete trial costs" /><Metric label="Planning demand" value={`${req.trials.reduce((n,t) => n+t.target-t.enrolled,0)} participants`} note="40 per trial; synthetic targets and zero initial enrollment" /><Metric label="Shared bottleneck" value="2 hospitals" note="Both trials initially use A + B; C + D remain available" /></div><Network bundle={bundle} /><p className="demo-note">Trial identifiers, titles and sponsor come from bundled registry metadata. Hospitals, targets, rates, activation delays, all costs and coverage assumptions are hypothetical.</p></>}
@@ -117,6 +117,6 @@ export default function HackHarvardDemo() {
       </>}
     </main>
     <footer className="demo-controls"><button disabled={scene === 0 || busy} onClick={() => setScene(previousScene(scene))}>Previous Scene</button><span>{SCENES[scene]} · {scene === 0 ? '0:00–0:25' : scene === 1 ? '0:25–0:55' : scene === 2 ? '0:55–1:25' : scene === 3 ? '1:25–2:10' : scene === 4 ? '2:10–2:45' : '2:45–3:00'}</span>{scene === 1 ? <button className="btn-primary" disabled={!bundle || busy || replay} onClick={() => void optimize()}>Optimize Portfolio</button> : <button className="btn-primary" disabled={!bundle || busy || scene === 5} onClick={() => setScene(nextScene(scene, !!run))}>Next Scene</button>}</footer>
-    <div className="demo-fallback"><span>No internet or private credentials needed. Saved results are never shown automatically.</span><button disabled={busy} onClick={() => void saved()}>Load saved rehearsal (not live)</button></div>
+    <div className="demo-fallback"><span>Live computation requires the backend. The saved artifact uses synthetic operational assumptions and is loaded only when you choose it.</span><button disabled={busy} onClick={() => void saved()}>Load saved rehearsal (ARTIFACT_REPLAY; not live)</button></div>
   </div>
 }

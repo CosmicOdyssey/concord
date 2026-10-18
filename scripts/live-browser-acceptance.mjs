@@ -1,230 +1,74 @@
-import { createRequire } from 'node:module';
+/** Navigation and HTTP-transport smoke checks only; not narrated rehearsal evidence.
+ * Run manually with an explicit DEMO_URL pointing at the intended backend/frontend.
+ * Never substitute replay for a failed live action or infer remote provider delivery.
+ */
+import {createRequire} from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
-
-const require = createRequire(import.meta.url);
-const puppeteer = require('../frontend/node_modules/puppeteer-core');
-
-const CHROME_PATH = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const BASE_URL = process.env.DEMO_URL || 'https://concord-smoky.vercel.app';
-const OUT_DIR = path.resolve('docs/demo/screens');
-fs.mkdirSync(OUT_DIR, { recursive: true });
-
-async function waitForText(page, text, timeout = 15000) {
-  const start = Date.now();
-  while (Date.now() - start < timeout) {
-    const found = await page.evaluate((t) => document.body.innerText.toLowerCase().includes(t.toLowerCase()), text);
-    if (found) return true;
-    await new Promise((r) => setTimeout(r, 250));
-  }
-  throw new Error(`Timeout waiting for text: "${text}"`);
+const require=createRequire(import.meta.url);
+const puppeteer=require('../frontend/node_modules/puppeteer-core');
+const BASE_URL=process.env.DEMO_URL;
+if(!BASE_URL)throw new Error('Set DEMO_URL explicitly. This script makes real local simulation/evaluation requests.');
+const OUT_DIR=path.resolve(process.env.ACCEPTANCE_OUT_DIR || 'docs/demo/screens');
+fs.mkdirSync(OUT_DIR,{recursive:true});
+const receipt={url:BASE_URL,timestamp:new Date().toISOString(),classification:'NAVIGATION_AND_HTTP_TRANSPORT_SMOKE',narratedRehearsalVerified:false,remoteSponsorExecutionVerified:false,status:'IN_PROGRESS',demoRuns:[],sponsorPanelCheck:{},consoleErrors:[]};
+async function waitForText(page,text){
+  await page.waitForFunction(value=>document.body.innerText.includes(value),{timeout:20000},text);
 }
-
-async function clickButtonWithText(page, text) {
-  const clicked = await page.evaluate((btnText) => {
-    const buttons = Array.from(document.querySelectorAll('button, a.btn'));
-    const btn = buttons.find((b) => b.innerText.trim().toLowerCase().includes(btnText.toLowerCase()));
-    if (btn) {
-      btn.click();
-      return true;
-    }
-    return false;
-  }, text);
-  if (!clicked) {
-    throw new Error(`Button with text "${text}" not found`);
-  }
+async function click(page,text){
+  const found=await page.evaluate(value=>{
+    const button=[...document.querySelectorAll('button')].find(b=>b.textContent.includes(value)&&!b.disabled);
+    if(!button)return false;button.click();return true;
+  },text);
+  if(!found)throw new Error(`Enabled button not found: ${text}`);
 }
-
-async function runAcceptance() {
-  console.log(`Starting live browser acceptance against: ${BASE_URL}`);
-  const browser = await puppeteer.launch({
-    executablePath: CHROME_PATH,
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
-  });
-
-  const results = {
-    url: BASE_URL,
-    timestamp: new Date().toISOString(),
-    themeCheck: {},
-    demoRuns: [],
-    sponsorPanelCheck: {},
-    portfolioCommandCheck: {},
-    responsiveChecks: {},
-    consoleErrors: [],
-  };
-
-  try {
-    const page = await browser.newPage();
-    page.on('console', (msg) => {
-      if (msg.type() === 'error') {
-        console.error('Browser console error:', msg.text());
-        results.consoleErrors.push(msg.text());
-      }
-    });
-
-    // --- 1. Pure White Aesthetic & Landing Check ---
-    console.log('--- Step 1: Checking Pure White Canvas & Landing Page ---');
-    await page.setViewport({ width: 1440, height: 900 });
-    await page.goto(`${BASE_URL}/#home`, { waitUntil: 'networkidle2', timeout: 30000 });
-    await new Promise((r) => setTimeout(r, 1000));
-
-    const bodyBg = await page.evaluate(() => {
-      const root = document.documentElement;
-      const body = document.body;
-      return {
-        themeAttr: root.getAttribute('data-theme'),
-        rootBg: window.getComputedStyle(root).backgroundColor,
-        bodyBg: window.getComputedStyle(body).backgroundColor,
-      };
-    });
-    console.log('Theme attributes & computed backgrounds:', bodyBg);
-    results.themeCheck = bodyBg;
-
-    await page.screenshot({ path: path.join(OUT_DIR, '01-white-landing-1440.png'), fullPage: false });
-    console.log('Saved 01-white-landing-1440.png');
-
-    // --- 2. 180s HackHarvard Demo: 3 Consecutive Runs ---
-    console.log('--- Step 2: Running 180s Demo 3 Consecutive Times ---');
-    for (let runIdx = 1; runIdx <= 3; runIdx++) {
-      console.log(`Executing 180s Demo Run #${runIdx}...`);
-      const runStart = Date.now();
-      await page.goto(`${BASE_URL}/#demo`, { waitUntil: 'networkidle2', timeout: 30000 });
-      await new Promise((r) => setTimeout(r, 1000));
-
-      // Reset Demo if present, or Load saved rehearsal if initial API load needed
-      const hasReset = await page.evaluate(() => {
-        const btns = Array.from(document.querySelectorAll('button'));
-        const rBtn = btns.find((b) => b.innerText.includes('Reset Demo'));
-        if (rBtn) { rBtn.click(); return true; }
-        const sBtn = btns.find((b) => b.innerText.includes('Load saved'));
-        if (sBtn) { sBtn.click(); return true; }
-        return false;
-      });
-      await new Promise((r) => setTimeout(r, 800));
-
-      await waitForText(page, 'SCENE 1 / 6');
-      if (runIdx === 1) {
-        await page.screenshot({ path: path.join(OUT_DIR, '02-demo-scene1-problem.png') });
-        console.log('Saved 02-demo-scene1-problem.png');
-      }
-
-      // Next Scene -> Baseline (Scene 2)
-      await clickButtonWithText(page, 'Next Scene');
-      await waitForText(page, 'SCENE 2 / 6');
-      await waitForText(page, '15.13 mo');
-
-      // Optimize -> Optimize Portfolio
-      await clickButtonWithText(page, 'Optimize Portfolio');
-      await waitForText(page, 'SCENE 4 / 6');
-      await waitForText(page, '9.24 mo');
-
-      if (runIdx === 1) {
-        await page.screenshot({ path: path.join(OUT_DIR, '03-demo-optimized.png') });
-        console.log('Saved 03-demo-optimized.png');
-      }
-
-      // Next Scene -> Money & Evidence (Scene 5)
-      await clickButtonWithText(page, 'Next Scene');
-      await waitForText(page, 'SCENE 5 / 6');
-      await waitForText(page, 'Who pays');
-
-      if (runIdx === 1) {
-        await page.screenshot({ path: path.join(OUT_DIR, '04-demo-evidence.png') });
-        console.log('Saved 04-demo-evidence.png');
-      }
-
-      // Next Scene -> Conclusion (Scene 6)
-      await clickButtonWithText(page, 'Next Scene');
-      await waitForText(page, 'SCENE 6 / 6');
-      await waitForText(page, 'A planning decision, not a clinical promise');
-
-      const runDuration = Date.now() - runStart;
-      console.log(`Demo Run #${runIdx} completed successfully in ${runDuration}ms`);
-      results.demoRuns.push({ run: runIdx, durationMs: runDuration, passed: true });
-    }
-
-    // --- 3. Sponsor Agents Integration Panel ---
-    console.log('--- Step 3: Testing Sponsor Agents Panel ---');
-    await page.goto(`${BASE_URL}/#sponsor-agents`, { waitUntil: 'networkidle2', timeout: 30000 });
-    await new Promise((r) => setTimeout(r, 1200));
-
-    // Test Simulated SMS by clicking "Send STATUS" quick command
-    await clickButtonWithText(page, 'Send STATUS').catch((e) => console.log('SMS click:', e.message));
-    await new Promise((r) => setTimeout(r, 1000));
-    const smsResponseSeen = await page.evaluate(() => {
-      const bubble = document.querySelector('.msg-bubble.assistant');
-      return bubble ? bubble.textContent : null;
-    });
-    console.log(`SMS Agent response observed: ${smsResponseSeen}`);
-
-    // Test Factory Droid Run
-    await clickButtonWithText(page, 'Evaluate Local Proposals').catch((e) => console.log('Droid click:', e.message));
-    await new Promise((r) => setTimeout(r, 1500));
-
-    // Test Chalk Evaluations Run
-    await clickButtonWithText(page, 'Run Local Acceptance Suite').catch((e) => console.log('Chalk click:', e.message));
-    await new Promise((r) => setTimeout(r, 1500));
-
-    await page.screenshot({ path: path.join(OUT_DIR, '05-sponsor-agents.png'), fullPage: false });
-    console.log('Saved 05-sponsor-agents.png');
-    results.sponsorPanelCheck = { status: 'passed', smsResponse: smsResponseSeen };
-
-    // --- 4. Portfolio Command ---
-    console.log('--- Step 4: Testing Portfolio Command Planner ---');
-    await page.goto(`${BASE_URL}/#portfolio-command`, { waitUntil: 'networkidle2', timeout: 30000 });
-    await new Promise((r) => setTimeout(r, 1200));
-    await page.screenshot({ path: path.join(OUT_DIR, '06-portfolio-command.png'), fullPage: false });
-    console.log('Saved 06-portfolio-command.png');
-    results.portfolioCommandCheck = { status: 'passed' };
-
-    // --- 5. Protocol to Terms ---
-    console.log('--- Step 5: Checking Protocol to Terms Flow ---');
-    await page.goto(`${BASE_URL}/#terms-flow/NCT05800015`, { waitUntil: 'networkidle2', timeout: 30000 });
-    await new Promise((r) => setTimeout(r, 1200));
-    await page.screenshot({ path: path.join(OUT_DIR, '07-protocol-terms.png'), fullPage: false });
-    console.log('Saved 07-protocol-terms.png');
-
-    // --- 6. Portfolio Overlap ---
-    console.log('--- Step 6: Checking Portfolio Overlap ---');
-    await page.goto(`${BASE_URL}/#overlap/regeneron`, { waitUntil: 'networkidle2', timeout: 30000 });
-    await new Promise((r) => setTimeout(r, 1200));
-    await page.screenshot({ path: path.join(OUT_DIR, '08-portfolio-overlap.png'), fullPage: false });
-    console.log('Saved 08-portfolio-overlap.png');
-
-    // --- 7. Findings Page ---
-    console.log('--- Step 7: Checking Findings Page ---');
-    await page.goto(`${BASE_URL}/#findings`, { waitUntil: 'networkidle2', timeout: 30000 });
-    await new Promise((r) => setTimeout(r, 1200));
-    await page.screenshot({ path: path.join(OUT_DIR, '09-findings.png'), fullPage: false });
-    console.log('Saved 09-findings.png');
-
-    // --- 8. Responsive Viewports ---
-    console.log('--- Step 8: Responsive Checks ---');
-    // Tablet
-    await page.setViewport({ width: 768, height: 1024 });
-    await page.goto(`${BASE_URL}/#home`, { waitUntil: 'networkidle2', timeout: 30000 });
-    await new Promise((r) => setTimeout(r, 800));
-    await page.screenshot({ path: path.join(OUT_DIR, '10-tablet-landing-768.png'), fullPage: false });
-    console.log('Saved 10-tablet-landing-768.png');
-
-    // Mobile
-    await page.setViewport({ width: 375, height: 812 });
-    await page.goto(`${BASE_URL}/#home`, { waitUntil: 'networkidle2', timeout: 30000 });
-    await new Promise((r) => setTimeout(r, 800));
-    await page.screenshot({ path: path.join(OUT_DIR, '11-mobile-landing-375.png'), fullPage: false });
-    console.log('Saved 11-mobile-landing-375.png');
-
-    results.responsiveChecks = { tablet: '768x1024 passed', mobile: '375x812 passed' };
-
-    fs.writeFileSync(path.join(OUT_DIR, 'acceptance-receipt.json'), JSON.stringify(results, null, 2));
-    console.log('Acceptance receipt successfully written to docs/demo/screens/acceptance-receipt.json');
-  } finally {
-    await browser.close();
-  }
+async function action(page,button,route){
+  const pending=page.waitForResponse(response=>new URL(response.url()).pathname===route&&response.request().method()==='POST',{timeout:30000});
+  await click(page,button);
+  const response=await pending;
+  if(!response.ok())throw new Error(`${route} returned HTTP ${response.status()}; no replay permitted`);
+  const body=await response.json();
+  return {body,transport:{method:'POST',path:route,httpStatus:response.status()}};
 }
-
-runAcceptance().catch((err) => {
-  console.error('Acceptance failed with error:', err);
-  process.exit(1);
-});
+let browser;
+try{
+  browser=await puppeteer.launch({executablePath:process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});
+  const page=await browser.newPage();
+  page.on('console',msg=>{if(msg.type()==='error')receipt.consoleErrors.push(msg.text());});
+  await page.setViewport({width:1440,height:900});
+  await page.goto(`${BASE_URL}/#home`,{waitUntil:'networkidle2'});
+  receipt.themeCheck=await page.evaluate(()=>({themeAttr:document.documentElement.getAttribute('data-theme'),rootBg:getComputedStyle(document.documentElement).backgroundColor,bodyBg:getComputedStyle(document.body).backgroundColor}));
+  await page.screenshot({path:path.join(OUT_DIR,'01-white-landing-1440.png')});
+  for(let run=1;run<=3;run++){
+    const started=Date.now();
+    await page.goto(`${BASE_URL}/#demo`,{waitUntil:'networkidle2'});
+    await click(page,'Reset Demo');
+    await waitForText(page,'Baseline received from backend. Optimization has not run.');
+    await click(page,'Next Scene');
+    await waitForText(page,'SCENE 2 / 6');
+    const result=await action(page,'Optimize Portfolio','/api/hackharvard-demo/optimize');
+    if(result.body.delivery_mode!=='LIVE_COMPUTATION'||!result.body.result?.run_id||!result.body.fixture_sha256)throw new Error('Missing live backend result identity');
+    await waitForText(page,'SCENE 4 / 6');
+    await click(page,'Next Scene');await waitForText(page,'SCENE 5 / 6');
+    await click(page,'Next Scene');await waitForText(page,'SCENE 6 / 6');
+    receipt.demoRuns.push({run,navigationDurationMs:Date.now()-started,classification:'NAVIGATION_SMOKE_ONLY',deliveryMode:result.body.delivery_mode,runId:result.body.result.run_id,inputSha256:result.body.result.input_sha256,computedAt:result.body.computed_at,transport:result.transport});
+  }
+  await page.goto(`${BASE_URL}/#sponsor-agents`,{waitUntil:'networkidle2'});
+  const sms=await action(page,'Send STATUS','/api/agents/photon/simulate');
+  if(sms.body.status!=='LOCAL_SIMULATION')throw new Error('Phone preview lacks explicit local simulation status');
+  const droid=await action(page,'Evaluate Local Proposals','/api/agents/droid/run');
+  if(!droid.body.recommendation_id)throw new Error('Missing proposal identity');
+  const chalk=await action(page,'Run Local Acceptance Suite','/api/evals/chalk/run');
+  if(!chalk.body.run_id||!chalk.body.engine_mode||!(chalk.body.total_scenarios>0))throw new Error('Missing evaluation receipt identity');
+  receipt.sponsorPanelCheck={classification:'BACKEND_LOCAL_ACTIONS_ONLY',sms:{...sms.transport,status:sms.body.status,requestId:sms.body.request_id},droid:{...droid.transport,recommendationId:droid.body.recommendation_id,runtimeAgent:droid.body.runtime_agent},chalk:{...chalk.transport,runId:chalk.body.run_id,engineMode:chalk.body.engine_mode,totalScenarios:chalk.body.total_scenarios}};
+  await page.screenshot({path:path.join(OUT_DIR,'05-sponsor-agents.png')});
+  for(const [width,height] of [[768,1024],[375,812]]){
+    await page.setViewport({width,height});await page.goto(`${BASE_URL}/#home`,{waitUntil:'networkidle2'});
+    await page.screenshot({path:path.join(OUT_DIR,`landing-${width}.png`)});
+  }
+  receipt.status=receipt.consoleErrors.length?'LIMITED_CONSOLE_ERRORS':'TRANSPORT_SMOKE_PASSED';
+}catch(error){receipt.status='FAILED';receipt.error=String(error);process.exitCode=1;}
+finally{
+  fs.writeFileSync(path.join(OUT_DIR,'acceptance-receipt.json'),JSON.stringify(receipt,null,2)+'\n');
+  if(browser)await browser.close();
+}
