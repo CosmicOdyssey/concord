@@ -241,6 +241,11 @@ export default function ProtocolTermsView() {
   useEffect(() => {
     const on = () => {
       if (!/^#terms-flow(\/|$)/i.test(window.location.hash)) return
+      // Plain #terms-flow is the tab bar coming back to this view (it stays mounted): keep the trial and the step.
+      if (/^#terms-flow\/?$/i.test(window.location.hash)) {
+        writeHash(nct, steps.get().i)
+        return
+      }
       const h = nctFromHash()
       const s = stepFromHash()
       if (h && h !== nct) selectTrial(h)

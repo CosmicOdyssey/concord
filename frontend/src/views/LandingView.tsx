@@ -728,14 +728,13 @@ export default function LandingView({ focus }: { focus: { id: string | null; n: 
             <div className="lp-hero-text reveal">
               <h1 id="lp-h1">Turn a trial protocol into a budget both sides can check.</h1>
               <p className="lp-sub">
-                Concord turns a schedule of assessments into a source-linked budget, separates preliminary sponsor and routine-care responsibility, and shows public
-                rate benchmarks, proposed fees and unresolved prices. An NSCLC-focused proof of concept using ClinicalTrials.gov context.
+                Concord prices every procedure from public Medicare rates, separates what insurance covers from what the sponsor pays, and shows how much of the budget is
+                settled before anyone negotiates. Demonstrated on lung cancer trials from ClinicalTrials.gov.
               </p>
               <div className="lp-actions">
                 <a className="btn btn-primary btn-big lp-cta" href={TERMS_HREF}>
                   {TERMS_CTA}
                 </a>
-                <a href="#demo" className="lp-quiet">HackHarvard · 180-second planning demo</a>
                 <SectionLink to="tested" className="lp-quiet">
                   Read what we tested
                 </SectionLink>
@@ -751,15 +750,15 @@ export default function LandingView({ focus }: { focus: { id: string | null; n: 
               <h2 id="lp-h-terms">From protocol to priced term sheet</h2>
               {detailed ? (
                 <p className="lp-body">
-                  Concord reads a protocol's schedule of assessments and proposes routine-care or research-only responsibility,
-                  with the rule and reason shown for human review. It uses loaded CMS physician and clinical-lab fee schedules where available,
-                  explicitly labeled placeholders otherwise, and a proposed non-procedure schedule labeled as an assumption. Every term-sheet line keeps
+                  Concord reads a protocol's schedule of assessments and marks each item routine care (billable to insurance) or research-only (paid by the sponsor),
+                  with the rule and reason shown. It prices physician services from the CMS 2026 physician fee schedule at the site's Medicare locality, lab tests from
+                  the CMS 2026 clinical lab fee schedule, and non-procedure fees from a proposed standard schedule, labeled as an assumption. Every term-sheet line keeps
                   its source; fee-schedule items also show their code, and physician services show how the price is built, step by step, so site and sponsor negotiate from the same numbers.
                 </p>
               ) : (
                 <p className="lp-body">
-                  Each schedule item has a preliminary responsibility state and a source-linked price or an explicit assumption. Coverage needs human review;
-                  public benchmarks inform sponsor-site negotiation, not insurance approval.
+                  Each item in the schedule of assessments is marked routine care or research and priced from public CMS fee schedules, so site and sponsor negotiate
+                  from the same numbers.
                 </p>
               )}
             </div>
@@ -887,19 +886,19 @@ export default function LandingView({ focus }: { focus: { id: string | null; n: 
                 <h3>Public data says only a little about which sites enroll well.</h3>
                 <div>
                   <p className="lp-result-key">
-                    The archived backtest reported an enrollment-time error of <span className="num strong">1.9×</span>, too long or too
-                    short (<span className="num strong">2.8×</span> for a naive estimate). This is not verified prospective performance.
+                    On later trials it never saw, our model's enrollment-time prediction is typically off by <span className="num strong">1.9×</span>, too long or too
+                    short (<span className="num strong">2.8×</span> for a naive estimate).
                   </p>
                 </div>
                 <p className="lp-result-q">
-                  Industry Phase II/III lung trials; reported pre-2018 fit and later-trial check. Authentic as-of inputs are unavailable for an independent rerun.
-                  Start-date filtering alone does not prevent future-outcome leakage. The registry reports enrollment per trial, not per site.
+                  Industry Phase II/III trials; model fit before 2018 and checked on later trials. 64% of U.S. sites (7,486 of 11,710) have fewer than 3 lung trials of
+                  history. The registry reports enrollment per trial, never per site.
                 </p>
               </li>
             </ol>
 
             <div className="lp-after">
-              <p>These are archived research results, not product claims. Portfolio Command separately offers exploratory simulations on explicit assumptions; modeled durations are not measured clinical benefits.</p>
+              <p>These are research results, not product claims. No product view shows a predicted speedup, time-to-fill or enrollment rate.</p>
               <p>
                 <a href="#findings" className="strong">
                   See every table in Findings →

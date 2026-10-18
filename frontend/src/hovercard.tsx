@@ -155,9 +155,12 @@ export function HoverCard({ content, children, label, className }: HoverCardProp
     }
     document.addEventListener('keydown', onKey)
     document.addEventListener('pointerdown', onDown)
+    // A tab switch hides the trigger's view without unmounting it (App.tsx): the card goes with it.
+    window.addEventListener('hashchange', hide)
     return () => {
       document.removeEventListener('keydown', onKey)
       document.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('hashchange', hide)
     }
   }, [open, hide])
 

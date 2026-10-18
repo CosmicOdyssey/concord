@@ -74,7 +74,7 @@ Timings are scene start and length. `[beat]` marks a short pause of about half a
 - The strip reads "Illustrative, authored from public trial information".
 
 **Voiceover.**
-> Concord turns a protocol into a budget both sides can check. [click] Here's one of Regeneron's fianlimab trials in lung cancer, with an illustrative schedule from the public record.
+> Concord turns a protocol into a budget both sides can check. [click] Here's a Regeneron fianlimab trial in lung cancer, with an illustrative schedule from the public record.
 
 **Numbers.** None spoken. On screen: 16 visits, 27 procedures, 139 scheduled items.
 
@@ -86,7 +86,7 @@ Timings are scene start and length. `[beat]` marks a short pause of about half a
 - Do not click a grid cell. A click flips that item's coverage.
 
 **Voiceover.**
-> Each item gets a draft label: routine care, billable to insurance under Medicare's clinical-trial policy, or research, paid by the sponsor. [beat] A reviewer can override any label.
+> Each item gets a draft label under Medicare's clinical-trial policy: routine care, billable to insurance, or research, paid by the sponsor. [beat] A reviewer can override any label.
 
 **Numbers.** None spoken. On screen: 83 routine, 56 research, rules R1 to R5, NCD 310.1.
 
@@ -100,7 +100,7 @@ Timings are scene start and length. `[beat]` marks a short pause of about half a
 - "Range per participant $6,568.67 – $7,406.11" is visible beside them.
 
 **Voiceover.**
-> At NYU Langone in Manhattan, the key number is the anchored share. [beat] Twenty percent is priced from public CMS rates, so both sides can check it. Sixty percent is Concord's proposed standard, an assumption. The last twenty, overhead, is open to negotiation.
+> At NYU Langone in Manhattan, here's what the per-participant budget rests on. [beat] Twenty percent: public CMS rates, so both sides can check it. Sixty percent: Concord's proposed standard, an assumption. The last twenty, overhead, is open to negotiation.
 
 **Numbers.**
 - 20%, 60% and 20%: [$1,339.95 20.4%, $3,915.00 59.6%, $1,313.72 20.0% of $6,568.67].
@@ -120,7 +120,7 @@ Timings are scene start and length. `[beat]` marks a short pause of about half a
 - At 1:11 the page scrolls a little. The cursor hovers "Check this on CMS ↗" without clicking; the link opens CMS's Physician Fee Schedule Look-Up Tool in a new tab.
 
 **Voiceover.**
-> Each line shows its math. [beat] A CT chest, code seventy-one two sixty: CMS's units, times Manhattan's regional adjustments, times thirty-three point four oh oh nine dollars per unit, equals a hundred ninety-one twenty-five. [beat] Check it on CMS.
+> Each line shows its math. [beat] A CT chest, code seventy-one two sixty: CMS's units, times Manhattan's regional adjustments, times thirty-three point four oh oh nine dollars per unit, equals Medicare's office rate, a hundred ninety-one twenty-five. [beat] Check it on CMS.
 
 **Numbers.**
 - 71260, $33.4009 and $191.25: step 6, Detailed table.
@@ -141,7 +141,7 @@ Timings are scene start and length. `[beat]` marks a short pause of about half a
 - The page ends on "What widens the range", where each assumption band is labelled.
 
 **Voiceover.**
-> Why does another site differ? Hattiesburg, Mississippi is three hundred seventy-five dollars lower per participant: Medicare's geographic adjustments, not a saving. [beat] Here's the same protocol across all one hundred nine Medicare localities.
+> Why does another site differ? Hattiesburg, Mississippi is three hundred seventy-five dollars lower per participant: Medicare's geographic adjustments, not a saving. [beat] Here are the same procedures in all one hundred nine localities.
 
 **Numbers.**
 - $375.01: step 4 lede and gap split, and the landing preview ("Site B's sponsor total is $375.01 lower").
@@ -159,7 +159,7 @@ Timings are scene start and length. `[beat]` marks a short pause of about half a
 - At 1:44.6, cut to the downloaded file, `counter-proposal_NCT05800015_334d690736c4_SYNTHETIC.html`. It opens with "SYNTHETIC: Counter-proposal: NCT05800015 at NYU Langone ...", then lists the site and locality, the CMS files, the band assumption and the summary. Hold 4 s.
 
 **Voiceover.**
-> Now, a site's proposal: a synthetic sample with invented prices. Each line is checked against Medicare at the site's locality, times a band you set. [beat] Five sit above range, like this CT at eleven fifty. [beat] Export a sourced counter-proposal.
+> Now, a site's proposal: a synthetic sample with invented prices. Each coded line is checked against Medicare at the site's locality, times a band you set. [beat] Five sit above range, like this CT at eleven fifty. [beat] Export a sourced counter-proposal.
 
 **Numbers.** 5 and $1,150.00 come from step 5 with the synthetic sample, and from the exported file.
 
@@ -175,7 +175,7 @@ Timings are scene start and length. `[beat]` marks a short pause of about half a
 - The cursor rests on the CSV box.
 
 **Voiceover.**
-> Any trial with U.S. sites can be added by NCT ID. [beat] Concord drafts a cited schedule from the registry, or takes the real one as a CSV.
+> Add any trial with U.S. sites by NCT ID. [beat] Concord drafts a cited schedule from the registry, or takes the real one as a CSV.
 
 **Numbers.** None spoken. NCT05785767 is typed. On screen: 4, 21 and 10.
 
@@ -192,10 +192,10 @@ Timings are scene start and length. `[beat]` marks a short pause of about half a
 - The cursor touches "PD-L1 TPS ≥ 50%", listed under "Only in NCT05785767".
 
 **Voiceover.**
-> A second tool checks a sponsor's own trials against each other. [beat] Regeneron's two fianlimab trials shared sixteen registered U.S. sites. On a synthetic population, every simulated patient eligible for the stricter trial also qualified for the other.
+> A second tool checks a sponsor's own trials for overlap. [beat] Two of Regeneron's fianlimab trials shared sixteen registered U.S. sites. On a synthetic population, every simulated patient who fit the stricter trial also fit the other.
 
 **Numbers.**
-- 16 and "every ... also qualified" [100%]: Portfolio overlap with the Regeneron preset, the landing overlap preview, and README section 4 ("overlap 1.0").
+- 16 and "every ... also fit the other" [100%]: Portfolio overlap with the Regeneron preset, the landing overlap preview, and README section 4 ("overlap 1.0").
 - "Stricter" is from the criteria diff: "None: NCT05785767 restricts everything NCT05800015 does."
 
 ### 10. compares: 2:16, 14 s
@@ -209,7 +209,7 @@ Timings are scene start and length. `[beat]` marks a short pause of about half a
 - The cursor moves to "What they have that we don't".
 
 **Voiceover.**
-> Of twenty products we reviewed, none says publicly that it prices budget lines at the site's Medicare locality. [beat] CMS's free tool does it one code at a time. They have negotiated-price benchmarks; we don't.
+> Of twenty products reviewed, none says publicly it prices budget lines at the site's Medicare locality. [beat] CMS's free tool does, one code at a time. Some vendors have negotiated-price benchmarks; we don't.
 
 **Numbers.** 20 comes from the landing ("8 of 20 products", "the 20 others") and `docs/competitive-landscape.md` sections 1-3.
 
@@ -220,7 +220,7 @@ Timings are scene start and length. `[beat]` marks a short pause of about half a
 - Hold.
 
 **Voiceover.**
-> Our first idea, coordinating sites across trials, didn't hold up on held-out data. [beat] So the product sticks to counts, criteria and sourced prices.
+> Our first idea, coordinating sites across trials, didn't hold up on held-out data. [beat] So Concord sticks to counts, criteria and sourced prices.
 
 **Numbers.** None spoken. On screen: 1.42×, 1.05× and 51%.
 
@@ -234,7 +234,7 @@ Timings are scene start and length. `[beat]` marks a short pause of about half a
 - Fade to black over the last 1.5 s.
 
 **Voiceover.**
-> Concord is decision support, not a fair-market-value legal opinion. [beat] Free, open source, every number sourced or labelled an assumption. Built by the Bruno Bears at Brown. [beat] Our ask: site-level enrollment data. The registry never reports it.
+> Concord is decision support, not a fair-market-value legal opinion. [beat] Free, with public code, every number sourced or labelled an assumption. Built by the Bruno Bears at Brown. [beat] Our ask: site-level enrollment data. The registry doesn't report it.
 
 **Numbers.** None spoken.
 
@@ -279,8 +279,8 @@ Timings are scene start and length. `[beat]` marks a short pause of about half a
 
 **If the read runs long, trim in this order. Never cut the honesty lines.**
 1. Scene 8: drop "or takes the real one as a CSV". The CSV box stays on screen. Saves about 2 s.
-2. Scene 6: drop "Here's the same protocol across all one hundred nine Medicare localities." Also cut the scene to 12 s. Saves about 3 s.
-3. Scene 11: drop "So the product sticks to counts, criteria and sourced prices." Saves about 3 s.
+2. Scene 6: drop "Here are the same procedures in all one hundred nine localities." Also cut the scene to 12 s. Saves about 3 s.
+3. Scene 11: drop "So Concord sticks to counts, criteria and sourced prices." Saves about 3 s.
 
 **Keep these lines:**
 - "illustrative"
@@ -290,9 +290,10 @@ Timings are scene start and length. `[beat]` marks a short pause of about half a
 - "synthetic sample with invented prices"
 - "a band you set"
 - "on a synthetic population"
+- "registered U.S. sites"
 - "says publicly"
-- "CMS's free tool does it one code at a time"
-- "they have negotiated-price benchmarks; we don't"
+- "CMS's free tool does, one code at a time"
+- "some vendors have negotiated-price benchmarks; we don't"
 - "decision support, not a fair-market-value legal opinion"
 
 **Assembly.**
@@ -368,13 +369,13 @@ This is how product teams usually make demo videos. They write a script and a sh
 | the last twenty (overhead, open) | $1,313.72, 20.0%; overhead 25% is an assumption | Same |
 | 71260 | CT chest with contrast (71260), Cycle 7 Day 1 | Terms step 6 |
 | $33.4009 | "x $33.4009", CMS CY 2026 conversion factor | Terms step 6 (Detailed); landing Sources; README section 5; counter-proposal export |
-| $191.25 | "= Medicare rate $191.25" at Manhattan (NY 01) | Terms step 6; mentor report note on CPT 71260 |
+| $191.25 (Medicare's office rate) | "= Medicare rate $191.25" at Manhattan (NY 01); non-facility (office-setting) rate, hospital facility fees (OPPS) not included | Terms step 6; mentor report note on CPT 71260 |
 | $375 (three hundred seventy-five) | $375.01 lower per participant, Site B - Site A | Terms step 4; landing preview |
 | 109 localities | "across the 109 Medicare localities", 109 dots | Terms step 4; mentor report |
 | five above range | "5 above range" (SYNTHETIC sample) | Terms step 5; counter-proposal export |
 | eleven fifty | CT abdomen and pelvis with contrast $1,150.00 against $344.97–$517.46 | Terms step 5; counter-proposal export |
 | sixteen registered U.S. sites | "Shared registered sites (All U.S. sites) 16" | Portfolio overlap, Regeneron preset; landing overlap preview; README section 4 |
-| every simulated patient eligible for the stricter trial also qualified | "NCT05785767's eligible patients also eligible for NCT05800015 100%", on a synthetic population of 20,000 simulated patients | Portfolio overlap; landing; README section 4 ("overlap 1.0") |
+| every simulated patient who fit the stricter trial also fit the other | "NCT05785767's eligible patients also eligible for NCT05800015 100%", on a synthetic population of 20,000 simulated patients | Portfolio overlap; landing; README section 4 ("overlap 1.0") |
 | twenty products | "8 of 20 products", "the 20 others do not state publicly" | Landing, How Concord compares; `docs/competitive-landscape.md` |
 
 Typed but not spoken: NCT05785767 (scene 8).
@@ -392,8 +393,6 @@ Typed but not spoken: NCT05785767 (scene 8).
 | Competitors are described only as "not stated publicly" | "none says publicly". The CMS free tool and negotiated-price benchmarks are said out loud. |
 | Coverage is a draft | "draft label", "a reviewer can override". |
 
-## One thing to fix before recording
+## Fixed before recording
 
-The landing's "Concord does" list (on screen at 2:21-2:30) still says: "On the NSCLC demo (NCT05800015, first listed site, Arizona locality), only 18% is anchored to public rates". The voiceover, step 3 and the landing preview all use the default site, NYU Langone, at 20%. Both figures are right for their own sites. But a viewer hears 20% and then reads 18%.
-
-The fix: update the K6 line in `docs/competitive-landscape.md` to NYU Langone, 20.4%, and regenerate the landing data. The judge-question answer in section 5 of that file also says 18% / 62% / 20%, so update it too.
+The landing's "Concord does" list (on screen at 2:21-2:30) used to say 18% at the first listed site (Arizona locality). It now reads "On the NSCLC demo (NCT05800015 at NYU Langone, Manhattan), only 20% is anchored to public rates" (`frontend/src/competitorData.ts`, from `docs/competitive-landscape.md` K6), and the section 5 judge answer says 20% / 60% / 20%. That matches the voiceover, step 3 and the landing preview.

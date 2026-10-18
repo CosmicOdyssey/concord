@@ -7,6 +7,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
 import { ErrorBox, Gloss, KeyFigure, Loading, PageHead, Qualifier, Section } from '../components'
 import { useDensity } from '../density'
+import { useTabSignal, whenShown } from '../tabActive'
 import { GLOSSARY } from '../glossary'
 import {
   allocationModel,
@@ -395,6 +396,7 @@ function ScrollBox({ label, children }: { label: string; children: ReactNode }) 
     const el = ref.current
     if (!el) return
     const update = () => {
+      if (!el.getClientRects().length) return // hidden with its tab: keep the last reading (no hint flicker on return)
       const left = el.scrollLeft > 1
       const right = el.scrollLeft < el.scrollWidth - el.clientWidth - 1
       setEdge((e) => (e.left === left && e.right === right ? e : { left, right }))
@@ -1010,20 +1012,25 @@ export default function FindingsView({ focus }: { focus?: { id: string | null; n
   const focusId = focus?.id ?? null
   const focusN = focus?.n ?? 0
   const settled = doc !== null && overlap.status !== 'loading'
+  // A deep link that arrives while this view is kept hidden (another tab on show) waits until it is shown.
+  const tab = useTabSignal()
   useEffect(() => {
     if (!settled || !focusId) return
     let live = true
     const go = () => {
       if (live) scrollToBlock(focusId, false)
     }
-    // The bundled fonts change line heights; scroll once they are in so the block lands where it should.
-    const fonts = 'fonts' in document ? document.fonts : null
-    if (!fonts || fonts.status === 'loaded') go()
-    else fonts.ready.then(go, go)
+    const cancel = whenShown(tab, () => {
+      // The bundled fonts change line heights; scroll once they are in so the block lands where it should.
+      const fonts = 'fonts' in document ? document.fonts : null
+      if (!fonts || fonts.status === 'loaded') go()
+      else fonts.ready.then(go, go)
+    })
     return () => {
       live = false
+      cancel()
     }
-  }, [settled, focusId, focusN])
+  }, [settled, focusId, focusN, tab])
 
   // On-page index: real links (#findings/<id>), so each one can be copied; a click scrolls without a reload.
   const onIndex = (e: MouseEvent<HTMLAnchorElement>, id: string) => {

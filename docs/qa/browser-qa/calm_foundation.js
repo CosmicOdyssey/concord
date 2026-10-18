@@ -108,8 +108,9 @@ async function openPage(browser, width, theme, log) {
                   }
                 }
               }
-              const hdr = document.querySelector('.appbar-top') || document.querySelector('.lp-head')
-              const tabs = document.querySelector('nav.tabs')
+              // The app shell stays mounted, hidden, on the landing page (App.tsx): read its header only when shown.
+              const hdr = document.querySelector('.app:not([hidden]) .appbar-top') || document.querySelector('.lp-head')
+              const tabs = document.querySelector('.app:not([hidden]) nav.tabs')
               const theme = de.dataset.theme
               const density = de.dataset.density
               const fontOk = document.fonts.check('17px "Atkinson Hyperlegible Next"') && document.fonts.check('17px "Atkinson Hyperlegible Mono"')
