@@ -22,6 +22,8 @@ Stopping only the repair's API process and reloading produced an explicit HTTP 5
 
 Browser evidence: [local sponsor results](pr7-pr8-repair/sponsor-local.ax.txt), [live computation](pr7-pr8-repair/live-demo.ax.txt), [backend failure](pr7-pr8-repair/backend-down.ax.txt), [explicit replay](pr7-pr8-repair/explicit-replay.ax.txt), [live JSON report](pr7-pr8-repair/live-report.json). Screenshots: [sponsor readiness](pr7-pr8-repair/sponsor-readiness.png), [live demo](pr7-pr8-repair/live-demo.png), [replay](pr7-pr8-repair/explicit-replay.png).
 
+The first GitHub PR #8 run exposed a clean-runner setup-order defect: backend tests exercise the Python-to-Node Factory bridge and require the pinned Node SDK/zod installation. CI now installs both dependency sets before executing backend tests; the integration test remains mandatory. Local preinstalled dependencies had hidden that ordering issue.
+
 ## Remaining limits
 
 Photon event catalog/OpenAPI access returned 403; no approved outbound space/agent/send receipt or carrier delivery is verified. Chalk OAuth succeeded but no environment/Function/evaluation execution receipt exists. Factory's installed SDK surface was checked, while the read-only CLI model catalog request timed out; no model turn was submitted. The user confirmed on 2026-10-18 that all three sponsor accounts have included hackathon credits with paid overages disabled. This resolves the billing eligibility question, but does not establish provider access, a permitted model, an active Chalk environment or an approved Photon destination. Local synthetic computation is independently available; none of these states may be presented as completed provider execution.
