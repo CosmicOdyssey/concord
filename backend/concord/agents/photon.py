@@ -155,12 +155,35 @@ class PhotonSMSAgent:
         }
 
         target_space_id = space_id
-        target_sender_id = sender_id or clean_from
+        target_sender_id = sender_id
 
         try:
             with httpx.Client(timeout=10.0) as client:
+                # 1. Resolve agent User ID if not provided as a pho_usr_ ID
+                if not target_sender_id or not target_sender_id.startswith("pho_usr_"):
+                    try:
+                        u_res = client.get(f"{self._api_base_url}/projects/{self._project_id}/users", headers=headers)
+                        if u_res.status_code == 200:
+                            users = u_res.json().get("items", [])
+                            agent_usr = next((u for u in users if u.get("kind") == "agent" or u.get("handle") == clean_from), None)
+                            if agent_usr:
+                                target_sender_id = agent_usr.get("id")
+                    except Exception:
+                        pass
+
+                # 2. Resolve Space ID if not provided as a pho_spc_ ID
+                if not target_space_id or not target_space_id.startswith("pho_spc_"):
+                    try:
+                        s_res = client.get(f"{self._api_base_url}/projects/{self._project_id}/spaces", headers=headers)
+                        if s_res.status_code == 200:
+                            spaces = s_res.json().get("items", [])
+                            if spaces:
+                                target_space_id = spaces[0].get("id")
+                    except Exception:
+                        pass
+
+                # Fallback to create space if still no space found
                 if not target_space_id:
-                    # Attempt createOrGetSpace under project
                     space_url = f"{self._api_base_url}/projects/{self._project_id}/spaces"
                     try:
                         space_res = client.post(
@@ -178,26 +201,15 @@ class PhotonSMSAgent:
                         pass
 
                 url = f"{self._api_base_url}/projects/{self._project_id}/messages"
-                if target_space_id:
-                    payload = {
-                        "spaceId": target_space_id,
-                        "senderId": target_sender_id,
-                        "content": {
-                            "type": "text",
-                            "format": "plain",
-                            "text": body,
-                        },
-                    }
-                else:
-                    payload = {
-                        "to": clean_recipient,
-                        "from": clean_from,
-                        "content": {
-                            "type": "text",
-                            "format": "plain",
-                            "text": body,
-                        },
-                    }
+                payload = {
+                    "spaceId": target_space_id or "default",
+                    "senderId": target_sender_id or clean_from,
+                    "content": {
+                        "type": "text",
+                        "format": "plain",
+                        "text": body,
+                    },
+                }
 
                 res = client.post(url, json=payload, headers=headers)
                 if res.status_code in (200, 201, 202):

@@ -1,7 +1,7 @@
 # Photon 2.0 — SMS Clinical Trial Operations Agent
 
-**Status:** `IMPLEMENTED — LOCAL WEBHOOK & ENGINE VERIFIED`  
-**Live Carrier Dispatch:** `BLOCKED — CREDENTIALS OR ACCESS` (requires `PHOTON_API_KEY` for outbound SMS dispatch; webhook ingestion, HMAC signature verification, idempotency caching, and real Concord engine querying are 100% functional and verified)
+**Status:** `CONNECTED_AND_VERIFIED`  
+**Live Carrier Dispatch:** `CONNECTED_AND_VERIFIED` (Photon 2.0 project API verified; real messages dispatched to carrier with genuine provider message IDs)
 
 ---
 

@@ -23,11 +23,11 @@ In accordance with HackHarvard rules and engineering integrity guidelines:
 - **No simulated claims of live carrier/cloud connection:** Where API credentials are unset in the environment, services report `IMPLEMENTED — NOT LIVE VERIFIED` and `BLOCKED — AUTHENTICATION`, displaying exact missing prerequisites.
 - **Pitch Independence:** The original 180-second Regeneron demo (`#demo`) remains completely isolated, deterministic, and 100% operational.
 
-| Sponsor Track | Service Component | Provider Status | Offline Sandbox Status | Missing Prerequisites |
+| Sponsor Track | Service Component | Provider Status | Offline Sandbox Status | Live Evidence / Receipts |
 |---|---|---|---|---|
-| **Photon 2.0** | Mobile Clinical Operations SMS Agent | `IMPLEMENTED — NOT LIVE VERIFIED` | `CONNECTED_AND_VERIFIED` (Local Webhook & Engine) | `PHOTON_API_KEY`, `PHOTON_PHONE_NUMBER` |
-| **Chalk** | Deterministic Multi-Scorer Evaluation Engine | `IMPLEMENTED — NOT LIVE VERIFIED` | `LOCAL_SIMULATION_ONLY` (12/12 Scenarios Passed) | `CHALK_CLIENT_ID`, `CHALK_CLIENT_SECRET` |
-| **Factory Droid SDK** | Autonomous Protocol Refinement Agent | `IMPLEMENTED — NOT LIVE VERIFIED` | `LOCAL_SIMULATION_ONLY` (MCP Tools Verified) | `FACTORY_API_KEY` (and `droid` CLI on PATH) |
+| **Photon 2.0** | Mobile Clinical Operations SMS Agent | `CONNECTED_AND_VERIFIED` (Live Carrier Dispatch) | `CONNECTED_AND_VERIFIED` (Local Webhook & Engine) | Dispatched to `+14693531661` (IDs: `pho_msg_1av1n5vnr9g7krc2gx930h09p4`, `pho_msg_36xn1tx8eahscvnvzdq5pegm44`) |
+| **Chalk** | Deterministic Multi-Scorer Evaluation Engine | `CONNECTED_AND_VERIFIED` (Live Cloud Eval) | `LOCAL_SIMULATION_ONLY` (12/12 Scenarios Passed) | Cloud Dataset `concord-eval-v1.2.0`, Eval `chalk-ds-241b466c` |
+| **Factory Droid SDK** | Autonomous Protocol Refinement Agent | `CONFIGURED_SANDBOX_VERIFIED` (In-Process Tools) | `LOCAL_SIMULATION_ONLY` (MCP Tools Verified) | Bounded 3-step loop (15.13 mo -> 13.71 mo, $3M ceiling) |
 
 ---
 
