@@ -263,6 +263,54 @@ async function fadeFrames(page, name, times) {
         }
       }
     }
+    // A view whose code is slow to arrive (the Terms module held back 900 ms): the old view stays on screen, usable,
+    // for the first 200 ms; only then the Loading box, in a space a screen tall; then the view.
+    {
+      const page = await newPage(browser, { width: 1440, theme: 'light', density: 'simple' }, log)
+      await page.setRequestInterception(true)
+      page.on('request', (req) => {
+        if (/ProtocolTermsView/.test(req.url())) setTimeout(() => req.continue().catch(() => undefined), 900)
+        else req.continue().catch(() => undefined)
+      })
+      await page.goto(`${BASE}/#findings`, { waitUntil: 'domcontentloaded', timeout: 90000 })
+      await waitView(page, byId.findings)
+      const samples = await page.evaluate(async () => {
+        const b = [...document.querySelectorAll('nav.tabs button')].find((x) => x.querySelector('.tab-label')?.textContent.trim() === 'Protocol to terms')
+        const t0 = performance.now()
+        b.click()
+        const out = []
+        await new Promise((resolve) => {
+          const tick = () => {
+            const t = performance.now() - t0
+            const shown = [...document.querySelectorAll('.app-pane')].filter((p) => !p.hidden).map((p) => p.dataset.view)
+            const box = document.querySelector('.app-loading')
+            out.push({
+              t: Math.round(t),
+              shown: shown.join(),
+              loading: !!(box && box.getClientRects().length),
+              boxH: box ? Math.round(box.getBoundingClientRect().height) : 0,
+              selected: document.querySelector('nav.tabs [aria-selected="true"] .tab-label')?.textContent.trim(),
+            })
+            if (t < 2500 && !shown.includes('terms-flow')) requestAnimationFrame(tick)
+            else resolve()
+          }
+          requestAnimationFrame(tick)
+        })
+        return out
+      })
+      const early = samples.filter((s) => s.t < 180)
+      const firstLoading = samples.find((s) => s.loading)
+      const end = samples[samples.length - 1]
+      report.slowChunk = { firstLoadingAt: firstLoading?.t ?? null, boxH: firstLoading?.boxH ?? null, termsAt: end.shown === 'terms-flow' ? end.t : null, frames: samples.length }
+      check(
+        'slow code: the old view stays (tab already selected) for the first 180 ms, no Loading box',
+        early.length > 0 && early.every((s) => s.shown === 'findings' && !s.loading && s.selected === 'Protocol to terms'),
+        early.slice(0, 4),
+      )
+      check('slow code: the Loading box only after ~200 ms, a screen tall', !!firstLoading && firstLoading.t >= 190 && firstLoading.boxH >= 900, report.slowChunk)
+      check('slow code: then the Terms view', end.shown === 'terms-flow', end)
+      await page.close()
+    }
     // Reduced motion: no animation on the view shown; it is there, fully opaque, at once.
     {
       const page = await newPage(browser, { width: 1440, theme: 'light', density: 'simple', reduced: true }, log)
@@ -292,5 +340,7 @@ async function fadeFrames(page, name, times) {
   fs.writeFileSync(path.join(OUT, 'app_tabs.json'), JSON.stringify({ ...report, results, log }, null, 1))
   console.log(`\n${results.length - failed.length}/${results.length} passed`)
   if (report.fade) console.log('fade frames', JSON.stringify(report.fade))
+  if (report.slowChunk) console.log('slow chunk', JSON.stringify(report.slowChunk))
+  if (report.reduced) console.log('reduced motion', JSON.stringify(report.reduced))
   process.exit(failed.length ? 1 : 0)
 })()
