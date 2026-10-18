@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "id": "5507f6d7-0829-4b60-b9bd-9f1972d1dab6",
+  "repository": "/Users/sadius/concord-pr7-repair",
+  "branch": "codex/pr7-conflict-repair",
+  "commit": "8a6c8aff571467d534495470715e611d55bcdea5",
+  "repositoryDirty": false,
+  "commitBinding": "exact",
+  "startedAt": "2026-10-18T12:23:58.701Z",
+  "endedAt": "2026-10-18T12:24:40.663Z",
+  "durationMs": 41962,
+  "status": "passed",
+  "checks": [
+    {
+      "id": "backend",
+      "label": "Backend tests",
+      "required": true,
+      "command": {
+        "executable": ".venv/bin/python",
+        "args": [
+          "-m",
+          "pytest",
+          "-q",
+          "-rs"
+        ],
+        "cwd": "/Users/sadius/concord-pr7-repair/backend"
+      },
+      "status": "passed",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-18T12:23:58.701Z",
+      "endedAt": "2026-10-18T12:24:33.667Z",
+      "durationMs": 34966,
+      "stdout": "........................................................................ [ 10%]\n....ssssssssss.......................................................... [ 20%]\n..............................s.........s........ss....sssssssssssssssss [ 30%]\nsssssssss.s............................................................. [ 40%]\n........................................................................ [ 50%]\n........................................................................ [ 60%]\n........................................................................ [ 70%]\n........................................................................ [ 81%]\n.............................sssssssssss........ssssssssss.ss...sssss... [ 91%]\n..........sssssssss....s.ssssss..sssssssss..s......s.s..s..ssss          [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.14/site-packages/fastapi/testclient.py:1\n  /Users/sadius/concord-pr7-repair/backend/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nSKIPPED [2] tests/test_anchoring.py:45: data/concord.db or data/ratecard.json not built\nSKIPPED [1] tests/test_anchoring.py:70: data/concord.db or data/ratecard.json not built\nSKIPPED [1] tests/test_anchoring.py:99: data/concord.db or data/ratecard.json not built\nSKIPPED [2] tests/test_anchoring.py:117: data/concord.db or data/ratecard.json not built\nSKIPPED [1] tests/test_anchoring.py:132: data/concord.db or data/ratecard.json not built\nSKIPPED [1] tests/test_anchoring.py:144: data/concord.db or data/ratecard.json not built\nSKIPPED [1] tests/test_anchoring.py:160: data/concord.db or data/ratecard.json not built\nSKIPPED [1] tests/test_anchoring.py:184: data/concord.db or data/ratecard.json not built\nSKIPPED [1] tests/test_findings.py:9: data/concord.db not built\nSKIPPED [1] tests/test_findings_api.py:162: data/concord.db not built\nSKIPPED [1] tests/test_hooks.py:12: data/concord.db not built\nSKIPPED [1] tests/test_hooks.py:25: data/concord.db not built\nSKIPPED [1] tests/test_indication_overlap.py:117: data/concord.db not built\nSKIPPED [1] tests/test_line_detail.py:46: data/ratecard.json not built\nSKIPPED [1] tests/test_line_detail.py:74: data/ratecard.json not built\nSKIPPED [1] tests/test_line_detail.py:89: CMS rvu26d.zip not downloaded\nSKIPPED [2] tests/test_line_detail.py:95: data/ratecard.json not built\nSKIPPED [1] tests/test_line_detail.py:126: data/ratecard.json not built\nSKIPPED [1] tests/test_line_detail.py:139: data/concord.db not built\nSKIPPED [1] tests/test_line_detail.py:160: data/ratecard.json not built\nSKIPPED [1] tests/test_line_detail.py:173: data/ratecard.json not built\nSKIPPED [1] tests/test_overlap.py:36: data/concord.db not built\nSKIPPED [1] tests/test_overlap.py:45: data/concord.db not built\nSKIPPED [1] tests/test_overlap.py:60: data/concord.db not built\nSKIPPED [1] tests/test_overlap.py:74: data/concord.db not built\nSKIPPED [1] tests/test_overlap.py:98: data/concord.db not built\nSKIPPED [1] tests/test_overlap.py:109: data/concord.db not built\nSKIPPED [1] tests/test_overlap.py:130: data/concord.db not built\nSKIPPED [1] tests/test_overlap.py:143: data/concord.db not built\nSKIPPED [1] tests/test_overlap.py:162: data/concord.db not built\nSKIPPED [1] tests/test_overlap.py:174: data/concord.db not built\nSKIPPED [1] tests/test_overlap.py:185: data/concord.db not built\nSKIPPED [1] tests/test_overlap.py:208: data/concord.db not built\nSKIPPED [1] tests/test_overlap.py:227: data/concord.db not built\nSKIPPED [1] tests/test_overlap.py:236: data/concord.db not built\nSKIPPED [1] tests/test_overlap.py:253: data/concord.db not built\nSKIPPED [1] tests/test_overlap.py:273: data/concord.db not built\nSKIPPED [1] tests/test_overrides.py:26: /Users/sadius/concord-pr7-repair/data/demo_trials.json not present\nSKIPPED [1] tests/test_proposal.py:109: data/concord.db or data/ratecard.json not built\nSKIPPED [1] tests/test_proposal.py:140: data/concord.db or data/ratecard.json not built\nSKIPPED [1] tests/test_proposal.py:165: data/concord.db or data/ratecard.json not built\nSKIPPED [1] tests/test_proposal.py:171: data/concord.db or data/ratecard.json not built\nSKIPPED [1] tests/test_proposal.py:178: data/concord.db or data/ratecard.json not built\nSKIPPED [1] tests/test_proposal.py:189: data/concord.db or data/ratecard.json not built\nSKIPPED [1] tests/test_proposal.py:202: data/concord.db or data/ratecard.json not built\nSKIPPED [1] tests/test_proposal.py:210: data/concord.db or data/ratecard.json not built\nSKIPPED [1] tests/test_proposal.py:218: data/concord.db or data/ratecard.json not built\nSKIPPED [1] tests/test_proposal.py:248: data/concord.db or data/ratecard.json not built\nSKIPPED [1] tests/test_proposal.py:268: data/concord.db or data/ratecard.json not built\nSKIPPED [1] tests/test_site_scores.py:48: data/concord.db not built\nSKIPPED [1] tests/test_site_scores.py:57: data/concord.db not built\nSKIPPED [1] tests/test_site_scores.py:70: data/concord.db not built\nSKIPPED [1] tests/test_site_scores.py:83: data/concord.db not built\nSKIPPED [1] tests/test_site_scores.py:105: data/concord.db not built\nSKIPPED [1] tests/test_site_scores.py:116: data/concord.db not built\nSKIPPED [1] tests/test_site_scores.py:129: data/concord.db not built\nSKIPPED [1] tests/test_site_scores.py:139: data/concord.db not built\nSKIPPED [1] tests/test_site_scores.py:162: data/concord.db not built\nSKIPPED [1] tests/test_site_scores.py:184: data/concord.db not built\nSKIPPED [1] tests/test_site_scores.py:214: data/concord.db not built\nSKIPPED [1] tests/test_site_scores.py:227: data/concord.db not built\nSKIPPED [1] tests/test_site_scores.py:333: data/concord.db not built\nSKIPPED [1] tests/test_site_scores.py:357: data/concord.db not built\nSKIPPED [1] tests/test_site_scores.py:370: data/concord.db not built\nSKIPPED [1] tests/test_site_scores.py:385: data/concord.db not built\nSKIPPED [1] tests/test_site_scores.py:399: data/concord.db not built\nSKIPPED [1] tests/test_terms.py:93: data/ratecard.json not built\nSKIPPED [2] tests/test_terms.py:106: data/concord.db not built\nSKIPPED [1] tests/test_terms.py:133: data/ratecard.json not built\nSKIPPED [1] tests/test_terms.py:149: data/concord.db not built\nSKIPPED [2] tests/test_terms.py:172: data/ratecard.json not built\nSKIPPED [1] tests/test_terms.py:194: data/concord.db not built\nSKIPPED [1] tests/test_terms.py:226: data/concord.db not built\nSKIPPED [1] tests/test_terms_nonlung.py:76: data/concord.db not built\nSKIPPED [1] tests/test_terms_nonlung.py:95: data/ratecard.json not built\nSKIPPED [1] tests/test_terms_nonlung.py:120: data/ratecard.json not built\nSKIPPED [1] tests/test_terms_nonlung.py:165: data/ratecard.json not built\nSKIPPED [1] tests/test_terms_nonlung.py:174: data/ratecard.json not built\nSKIPPED [1] tests/test_terms_nonlung.py:205: data/ratecard.json not built\nSKIPPED [1] tests/test_terms_nonlung.py:219: data/ratecard.json not built\nSKIPPED [2] tests/test_terms_spread.py:41: data/ratecard.json not built\nSKIPPED [1] tests/test_terms_spread.py:65: data/ratecard.json not built\nSKIPPED [2] tests/test_terms_spread.py:86: data/ratecard.json not built\nSKIPPED [1] tests/test_terms_spread.py:106: data/ratecard.json not built\nSKIPPED [1] tests/test_terms_spread.py:125: data/ratecard.json not built\nSKIPPED [1] tests/test_terms_spread.py:157: data/ratecard.json not built\nSKIPPED [1] tests/test_terms_spread.py:175: data/ratecard.json not built\nSKIPPED [1] tests/test_terms_spread.py:231: data/ratecard.json not built\nSKIPPED [1] tests/test_trial_import.py:127: data/ratecard.json not built\nSKIPPED [1] tests/test_trial_import.py:185: data/ratecard.json not built\nSKIPPED [1] tests/test_trial_import.py:222: data/ratecard.json not built\nSKIPPED [1] tests/test_trial_import.py:262: data/ratecard.json not built\nSKIPPED [1] tests/test_trial_import.py:290: data/ratecard.json not built\nSKIPPED [1] tests/test_trial_import.py:303: data/ratecard.json not built\nSKIPPED [1] tests/test_trial_import.py:342: data/ratecard.json not built\n609 passed, 102 skipped, 1 warning in 34.52s\n",
+      "stderr": "",
+      "timedOut": false,
+      "truncated": false
+    },
+    {
+      "id": "frontend-tests",
+      "label": "Financial client contracts",
+      "required": true,
+      "command": {
+        "executable": "npm",
+        "args": [
+          "run",
+          "test"
+        ],
+        "cwd": "/Users/sadius/concord-pr7-repair/frontend"
+      },
+      "status": "passed",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-18T12:24:33.667Z",
+      "endedAt": "2026-10-18T12:24:34.615Z",
+      "durationMs": 948,
+      "stdout": "\n> frontend@0.0.0 test\n> npm run test:financial && npm run test:portfolio && npm run test:demo && npm run test:sponsors\n\n\n> frontend@0.0.0 test:financial\n> node --experimental-strip-types --test tests/financial.test.mjs\n\n✔ comparison posts the complete financial request (8.863833ms)\n✔ nonfinite numeric edits cannot silently become null (0.236584ms)\n✔ export recomputes exact inputs through the report endpoint (0.460458ms)\n✔ API failures and cancellation propagate to the UI (0.217083ms)\n✔ the demo request the view starts from has exactly the contract fields (a removed field posted back is a 422) (0.09825ms)\n✔ comparisons carry no time, speed, ranking or netted-participant field (0.927083ms)\n✔ unknown amounts read Unknown and uncosted plans read Not costed, never 0 (7.224459ms)\n✔ default fixture: each change against A equals budget_reallocation and names its cause (0.183875ms)\n✔ capacity-short fixture: A is not costed, so C and E state the added sites’ own cost instead of a change (0.096875ms)\n✔ the payer framing is the API’s own sentences, from assumptions or limitations (0.134417ms)\n✔ the worksheet amounts count as current only for the demo’s coverage inputs (0.066375ms)\n✔ Simple’s payer guard is the first sentence of the API’s PAYER_INDEPENDENCE, verbatim (0.078666ms)\n✔ Medicare pays CLFS lab tests in full: no participant share on them; default totals and ledger (0.118792ms)\n✔ research items and the supply reserve offer only sponsor-side statuses; Medicaid disables participant cost sharing (0.106625ms)\n✔ the view and its API module reference no removed field and use no speed, ranking or saving wording (10.85425ms)\nℹ tests 15\nℹ suites 0\nℹ pass 15\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 98.418042\n\n> frontend@0.0.0 test:portfolio\n> node --experimental-strip-types --test tests/portfolio.test.mjs\n\n✔ complete portfolio inputs and seed cross the API boundary unchanged (8.373834ms)\n✔ nonfinite nested edits fail before they become null (0.211041ms)\n✔ reports point to immutable saved results rather than recomputing inputs (0.107459ms)\n✔ saved evidence loads by validated identifier (0.157166ms)\n✔ JSON import must validate before entering the editor state (0.43125ms)\n✔ validation errors and cancellation propagate (0.249375ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 76.752292\n\n> frontend@0.0.0 test:demo\n> node --experimental-strip-types --test tests/demo.test.mjs\n\n✔ four main clicks take six scenes through actual computation; no empty-result skip (0.3845ms)\n✔ read baseline and explicit optimization are separate local requests (8.4135ms)\n✔ errors never silently load saved data and abort signals propagate (0.319417ms)\n✔ metrics count distinct hospitals, assignments and conservative reserved budget (0.102333ms)\n✔ infeasible, missing, or unverified optimization is never called a recommendation (0.130666ms)\n✔ saved fallback fails closed on changed bytes (2.860917ms)\n✔ demo inputs never enable rate boosts or realized administration savings (0.054542ms)\n✔ explicit saved rehearsal restores genuine checked bytes without touching the API (1.929ms)\n✔ missing backend routes never fetch falsely live static copies (0.443541ms)\n✔ a replay envelope cannot satisfy the live optimization transport contract (0.111583ms)\n✔ baseline rejects an archived HTTP 200 envelope rather than declaring backend readiness (0.085ms)\n✔ hosting configuration and served files cannot answer live action paths with saved HTTP 200 results (13.537375ms)\nℹ tests 12\nℹ suites 0\nℹ pass 12\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 103.084041\n\n> frontend@0.0.0 test:sponsors\n> node --experimental-strip-types --test tests/sponsors.test.mjs\n\n✔ local proposal helper calls the backend; it does not invoke a Factory runtime (8.469458ms)\n✔ phone preview calls simulation only and preserves its local delivery disclosure (0.149125ms)\n✔ evaluation client preserves actual dataset size and local status; failures remain visible (0.300334ms)\n✔ sponsor view does not restore false production, carrier or SDK execution labels (1.613959ms)\n✔ actual HTTP failures never fall through to static fixtures or fabricated sponsor success (21.283791ms)\n✔ even HTTP 200 archived envelopes cannot become sponsor action or status success (0.536792ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 97.388666\n",
+      "stderr": "",
+      "timedOut": false,
+      "truncated": false
+    },
+    {
+      "id": "comparison-client",
+      "label": "Existing comparison client contracts",
+      "required": true,
+      "command": {
+        "executable": "npm",
+        "args": [
+          "run",
+          "test:compare"
+        ],
+        "cwd": "/Users/sadius/concord-pr7-repair/frontend"
+      },
+      "status": "passed",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-18T12:24:34.615Z",
+      "endedAt": "2026-10-18T12:24:34.803Z",
+      "durationMs": 188,
+      "stdout": "\n> frontend@0.0.0 test:compare\n> node --experimental-strip-types --test tests/compare.test.mjs\n\n✔ product and capability counts match the document (0.62175ms)\n✔ every row and cell matches the document matrix (0.112209ms)\n✔ the Concord row matches the document, including no for site payments and CTA redlining and lung only for overlap (0.087125ms)\n✔ every yes/partial cell has evidence with an https URL and a non-empty quote (0.206625ms)\n✔ evidence text, quotes and URLs are verbatim from the document (1.296917ms)\n✔ no competitor text says 'cannot' or 'does not have' (0.25625ms)\n✔ the column totals computed from the matrix match the document (0.085667ms)\n✔ Simple shows the 8 representative products and 6 columns; date and completeness note (0.053375ms)\nℹ tests 8\nℹ suites 0\nℹ pass 8\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 73.839875\n",
+      "stderr": "",
+      "timedOut": false,
+      "truncated": false
+    },
+    {
+      "id": "typecheck",
+      "label": "Typecheck",
+      "required": true,
+      "command": {
+        "executable": "npm",
+        "args": [
+          "run",
+          "typecheck"
+        ],
+        "cwd": "/Users/sadius/concord-pr7-repair/frontend"
+      },
+      "status": "passed",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-18T12:24:34.803Z",
+      "endedAt": "2026-10-18T12:24:37.529Z",
+      "durationMs": 2726,
+      "stdout": "\n> frontend@0.0.0 typecheck\n> tsc -b\n\n",
+      "stderr": "",
+      "timedOut": false,
+      "truncated": false
+    },
+    {
+      "id": "frontend-build",
+      "label": "Typecheck and build",
+      "required": true,
+      "command": {
+        "executable": "npm",
+        "args": [
+          "run",
+          "build"
+        ],
+        "cwd": "/Users/sadius/concord-pr7-repair/frontend"
+      },
+      "status": "passed",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-18T12:24:37.529Z",
+      "endedAt": "2026-10-18T12:24:40.474Z",
+      "durationMs": 2945,
+      "stdout": "\n> frontend@0.0.0 build\n> tsc -b && vite build\n\nvite v8.3.4 building client environment for production...\ntransforming...\n✓ 151 modules transformed.\nrendering chunks...\ncomputing gzip size...\ndist/index.html                                                               1.68 kB │ gzip:   0.80 kB\ndist/assets/atkinson-hyperlegible-mono-latin-ext-500-normal-DE1cvYE7.woff2    6.50 kB\ndist/assets/atkinson-hyperlegible-mono-latin-ext-400-normal-CpVFOiMk.woff2    6.52 kB\ndist/assets/atkinson-hyperlegible-mono-latin-ext-600-normal-DKhxRsTL.woff2    6.54 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-400-normal-BalHKn7d.woff2    7.37 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-600-normal-kZZEtAc7.woff2    7.54 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-500-normal-CUASR3PD.woff2    7.54 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-700-normal-CBw-mJf_.woff2    7.55 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-400-italic-ChwMQj-S.woff2    7.87 kB\ndist/assets/atkinson-hyperlegible-mono-latin-ext-400-normal-ITMuFrSK.woff     8.38 kB\ndist/assets/atkinson-hyperlegible-mono-latin-ext-500-normal-BiHEOgiK.woff     8.38 kB\ndist/assets/atkinson-hyperlegible-mono-latin-ext-600-normal-ZiH-ObRk.woff     8.40 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-400-normal-qxMiU51n.woff     9.37 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-500-normal-oZS3KxrF.woff     9.55 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-700-normal-292QVhS1.woff     9.59 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-600-normal-BBAQIogt.woff     9.60 kB\ndist/assets/atkinson-hyperlegible-mono-latin-600-normal-BiYyYOKJ.woff2       10.04 kB\ndist/assets/atkinson-hyperlegible-mono-latin-400-normal-CmMGer93.woff2       10.05 kB\ndist/assets/atkinson-hyperlegible-next-latin-ext-400-italic-B2AfEDP4.woff    10.08 kB\ndist/assets/atkinson-hyperlegible-mono-latin-500-normal-CfDLaOZW.woff2       10.08 kB\ndist/assets/atkinson-hyperlegible-next-latin-400-normal-FfmJh7DR.woff2       12.09 kB\ndist/assets/atkinson-hyperlegible-next-latin-500-normal-gHP6TDRs.woff2       12.62 kB\ndist/assets/atkinson-hyperlegible-next-latin-600-normal-BBuhw47K.woff2       12.67 kB\ndist/assets/atkinson-hyperlegible-next-latin-700-normal-Dpiyiu63.woff2       12.73 kB\ndist/assets/atkinson-hyperlegible-mono-latin-400-normal-Cmjm2dBj.woff        12.76 kB\ndist/assets/atkinson-hyperlegible-mono-latin-600-normal-CuPF9o0F.woff        12.76 kB\ndist/assets/atkinson-hyperlegible-mono-latin-500-normal-BV5ipwqM.woff        12.81 kB\ndist/assets/atkinson-hyperlegible-next-latin-400-italic-DZBmTazM.woff2       14.15 kB\ndist/assets/atkinson-hyperlegible-next-latin-400-normal-DPp7N0cD.woff        14.94 kB\ndist/assets/atkinson-hyperlegible-next-latin-500-normal-B0CYqHl3.woff        15.50 kB\ndist/assets/atkinson-hyperlegible-next-latin-600-normal-BhgCag5w.woff        15.61 kB\ndist/assets/atkinson-hyperlegible-next-latin-700-normal-C2qZD_Q9.woff        15.64 kB\ndist/assets/atkinson-hyperlegible-next-latin-400-italic-C-uEjDrs.woff        17.47 kB\ndist/assets/DevComponentsView-CwFMPik6.css                                    1.45 kB │ gzip:   0.58 kB\ndist/assets/HackHarvardDemo-DPcMBljN.css                                      5.32 kB │ gzip:   1.48 kB\ndist/assets/PortfolioCommandView-DhLLxvbt.css                                 5.98 kB │ gzip:   1.68 kB\ndist/assets/ResearchView-60t-mobq.css                                         7.63 kB │ gzip:   2.08 kB\ndist/assets/FinancialView-5bmZI5NB.css                                        8.63 kB │ gzip:   2.21 kB\ndist/assets/SponsorAgentsView-CKVZJGDB.css                                    8.70 kB │ gzip:   1.95 kB\ndist/assets/SiteScoresView-gdSrooau.css                                      12.36 kB │ gzip:   3.11 kB\ndist/assets/OverlapView-OBj_hFev.css                                         17.41 kB │ gzip:   4.00 kB\ndist/assets/ProtocolTermsView-D6Gn_Azd.css                                   36.05 kB │ gzip:   7.08 kB\ndist/assets/index-DzFY17va.css                                               84.61 kB │ gzip:  20.21 kB\ndist/assets/api-BsmbKVxj.js                                                   1.89 kB │ gzip:   0.86 kB\ndist/assets/jsx-runtime-DyZJNswf.js                                           8.78 kB │ gzip:   3.33 kB\ndist/assets/DevComponentsView-mVHNXyan.js                                     9.04 kB │ gzip:   2.86 kB\ndist/assets/SponsorAgentsView-CV14tBic.js                                    13.87 kB │ gzip:   4.32 kB\ndist/assets/HackHarvardDemo-DQrs8pv7.js                                      18.39 kB │ gzip:   6.67 kB\ndist/assets/PortfolioCommandView-Be77gysu.js                                 26.21 kB │ gzip:   8.03 kB\ndist/assets/FinancialView-jEcwQe4p.js                                        51.24 kB │ gzip:  13.09 kB\ndist/assets/SiteScoresView-CzOI0p3Q.js                                       54.19 kB │ gzip:  15.22 kB\ndist/assets/OverlapView-CTl4CTz9.js                                          79.12 kB │ gzip:  19.84 kB\ndist/assets/ProtocolTermsView-CLCECDiO.js                                   152.92 kB │ gzip:  38.93 kB\ndist/assets/ResearchView-DTBhvFR_.js                                        262.38 kB │ gzip:  73.31 kB\ndist/assets/index-DW_NS44p.js                                               413.26 kB │ gzip: 125.50 kB\n\n✓ built in 115ms\n",
+      "stderr": "",
+      "timedOut": false,
+      "truncated": false
+    },
+    {
+      "id": "frontend-lint",
+      "label": "Lint",
+      "required": true,
+      "command": {
+        "executable": "npm",
+        "args": [
+          "run",
+          "lint"
+        ],
+        "cwd": "/Users/sadius/concord-pr7-repair/frontend"
+      },
+      "status": "passed",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-10-18T12:24:40.474Z",
+      "endedAt": "2026-10-18T12:24:40.663Z",
+      "durationMs": 189,
+      "stdout": "\n> frontend@0.0.0 lint\n> oxlint\n\nsrc/summary.tsx:12:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.\nsrc/summary.tsx:17:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.\nsrc/summary.tsx:36:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.\nsrc/summary.tsx:43:14: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.\nsrc/summary.tsx:72:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.\nsrc/summary.tsx:79:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.\nsrc/components.tsx:8:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.\nsrc/components.tsx:13:5: warning react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.\nsrc/views/PortfolioView.tsx:28:5: warning react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.\nsrc/views/RobustnessView.tsx:94:7: warning react-hooks(exhaustive-deps): React hook useMemo depends on `rows`, which changes every render help: Try memoizing this variable with `useRef` or `useCallback`.\nsrc/views/ClearView.tsx:32:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.\nsrc/views/PriceTagsView.tsx:43:7: warning react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.\nsrc/views/ModelView.tsx:51:5: warning react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.\nsrc/views/SiteScoresView.tsx:59:5: warning react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.\n",
+      "stderr": "",
+      "timedOut": false,
+      "truncated": false
+    }
+  ]
+}

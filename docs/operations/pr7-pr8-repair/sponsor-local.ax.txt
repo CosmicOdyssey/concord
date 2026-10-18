@@ -1,0 +1,385 @@
+Browser tab: 1783082035, Title: "Sponsor Agents · Concord", URL: "http://127.0.0.1:5193/#sponsor-agents".
+0 AXWebArea Sponsor Agents · Concord, URL: 127.0.0.1:5193/#sponsor-agents
+	1 container root
+		2 link Description: Skip to content, Value: 127.0.0.1:5193/#main-content
+		3 container
+			4 link Description: Back to the Concord home page, Value: 127.0.0.1:5193/#home
+			5 container Display density
+				6 checkbox Simple, Help: One headline and one number per section. Hover or focus for details. Key caveats stay visible., Value: 1
+				7 checkbox Detailed, Help: Every table, note and source, at full density., Value: 0
+			8 container Color theme
+				9 checkbox Description: Light theme, Value: 1
+				10 checkbox Description: Dark theme, Value: 0
+				11 checkbox Description: Match system theme, Value: 0
+			12 tab group Views
+				13 tab (selectable, settable, boolean) Protocol to terms, Help: A schedule of assessments, turned into a coverage grid, a budget and a term sheet., Value: 0
+				14 tab (selectable, settable, boolean) Portfolio overlap, Help: Where one sponsor's trials share registered sites and eligible patients., Value: 0
+				15 tab (selectable, settable, boolean) Findings, Help: What we tested, including results that weakened the original idea., Value: 0
+				16 tab (selectable, settable, boolean) Site scores Historical, not a forecast, Help: Historical per-site enrollment evidence, and how well it held up on later trials., Value: 0
+				17 tab (selectable, settable, boolean) Research In-sample model outputs, Help: The earlier site-clearing views, kept for reference. Not product claims., Value: 0
+		18 container main-content
+			22 container
+				23 text HACKHARVARD 2026 SPONSOR CHALLENGES
+				24 heading Concord Sponsor Integration Lab, Value: 1
+					25 text Concord Sponsor Integration Lab
+				26 text Local planning tools and separately authorized provider connections:
+				27 text  Photon 2.0 SMS
+				28 text  operations, 
+				29 text Chalk
+				30 text  deterministic evaluations, and the
+				31 text  Droid-style
+				32 text  proposal evaluator. Note: Exploratory operational simulations only. Modeled completion durations are not clinical trial forecasts. Remote adapters require server gates, provider prerequisites and explicit operator authorization. Credentials alone do not verify a connection. Carrier delivery is not established by API acceptance. Canonical clinical protocols remain immutable.
+			33 container Provider authorization
+				34 heading Provider readiness and operator authorization, Value: 2
+					35 text Provider readiness and operator authorization
+				36 text Readiness requests are read-only. Remote actions below can send a message or consume provider compute; none run automatically. The server owns every execution gate and configured destination.
+				37 button Refresh provider readiness
+				38 text Operator token (memory only; cleared after every remote action)
+				39 text field (settable) Operator token (memory only; cleared after every remote action)
+				40 button Clear token
+				41 container Photon provider readiness
+					42 heading Photon: MISSING_CREDENTIALS, Value: 3
+						43 text Photon :  MISSING_CREDENTIALS
+					44 container
+						45 text Provider:  IMPLEMENTED_UNVERIFIED  · Authentication:  NOT_VERIFIED  · Server execution gate:  DISABLED / UNKNOWN
+					46 container
+						47 text Missing prerequisites:  PHOTON_API_KEY, PHOTON_PROJECT_ID, PHOTON_SPACE_ID, PHOTON_AGENT_USER_ID
+				48 container Factory provider readiness
+					49 heading Factory: MISSING_CREDENTIALS, Value: 3
+						50 text Factory :  MISSING_CREDENTIALS
+					51 container
+						52 text Provider:  IMPLEMENTED_UNVERIFIED  · Authentication:  NOT_VERIFIED  · Server execution gate:  DISABLED / UNKNOWN
+					53 container
+						54 text Missing prerequisites:  FACTORY_API_KEY, FACTORY_MODEL_ID, droid executable
+				55 container Chalk provider readiness
+					56 heading Chalk: MISSING_CREDENTIALS, Value: 3
+						57 text Chalk :  MISSING_CREDENTIALS
+					58 container
+						59 text Provider:  IMPLEMENTED_UNVERIFIED  · Authentication:  NOT_VERIFIED  · Server execution gate:  DISABLED / UNKNOWN
+					60 container
+						61 text Missing prerequisites:  CHALK_CLIENT_ID, CHALK_CLIENT_SECRET, CHALK_ENVIRONMENT_ID
+					62 container
+						63 text Remote requirements:  Evaluations enabled; Authenticated Function queue; Dataset storage; Authorized compute budget
+			64 container
+				65 text FRONT A — MOBILE OPERATIONS
+				66 heading Photon-style Operations Simulator, Value: 2
+					67 text Photon-style Operations Simulator
+				68 text Channel:  LOCAL SIMULATION Runs STATUS, DETAILS and OPTIMIZE against local synthetic planning inputs. The inbound webhook requires a configured secret, fresh signed timestamp and exact sender allowlist. This phone preview sends no carrier message. Photon Ops Agent Local preview · no phone connection Local Concord planning simulator. Type 
+				69 text STATUS
+				70 text , 
+				71 text DETAILS
+				72 text , or 
+				73 text OPTIMIZE
+				74 text . STATUS Concord: Synthetic portfolio simulation. Modeled completion: 15.13 mo; commitment $1,133,866; feasible: True. Not a clinical forecast. LOCAL_SIMULATION  ·  Processed locally; no provider request, outbound queue or carrier delivery occurred.
+				75 text field (settable) STATUS
+				76 button Send
+				77 heading Quick Commands, Value: 3
+					78 text Quick Commands
+				79 button Send STATUS
+				80 button Send DETAILS
+				81 button Send OPTIMIZE
+				82 button Send HELP
+				83 heading Webhook & Security Telemetry, Value: 4
+					84 text Webhook & Security Telemetry
+				85 content list
+					86 container
+						87 AXListMarker • 
+						88 text Allowlist Active: External webhook blocked
+					89 container
+						90 AXListMarker • 
+						91 text Signature Auth:  HMAC-SHA256 ( X-Photon-Signature )
+					92 container
+						93 AXListMarker • 
+						94 text Idempotency:  Sender-scoped  message_id  and payload digest
+					95 container
+						96 AXListMarker • 
+						97 text Processed Messages: 0
+					98 container
+						99 AXListMarker • 
+						100 text Scope:  Bundled registry context; synthetic operations
+			101 container Explicit Photon send
+				102 heading Photon API: one configured-space STATUS reply, Value: 2
+					103 text Photon API: one configured-space STATUS reply
+				104 text Computes the synthetic STATUS reply and sends it to the server-configured Photon space/user. No destination can be entered here. This is separate from the phone preview. API acceptance never proves carrier delivery.
+				105 container
+					106 text Stable message ID:  9ee0e1ed-bee7-4cb1-a857-f75a67503f9f . Preserve this ID when reconciling an unknown outcome.
+				107 button Prepare new send ID
+				108 checkbox (settable, integer) Description: I authorize one STATUS reply to the approved server-configured Photon space/user., Value: 0
+				109 button (disabled) Send approved STATUS via Photon API
+			110 container
+				111 text FRONT C — PROTOCOL AGENT
+				112 heading Droid-style Operational Proposal Evaluator, Value: 2
+					113 text Droid-style Operational Proposal Evaluator
+				114 text Runtime:  LOCAL DETERMINISTIC The local evaluator compares explicitly modeled operational adjustments. It does not invoke Factory SDK inference. Operates in an auditable 
+				115 text recursive refinement loop
+				116 text  with a fixed tool allowlist, hard clinical safety constraints, and an explicit 
+				117 text human-in-the-loop approval gate
+				118 text . Selected Protocol: 
+				119 text NCT05800015 (Regeneron Cemiplimab NSCLC Study)
+				120 button Evaluate Local Proposals
+				121 heading Factory SDK: explicitly run bounded proposals, Value: 3
+					122 text Factory SDK: explicitly run bounded proposals
+				123 text Uses the configured Factory model for at most three operational proposals. Concord independently validates them against its synthetic planning engine. No proposal is applied or clinically authorized.
+				124 checkbox (settable, integer) Description: I authorize one Factory SDK run and its provider usage under the configured budget., Value: 0
+				125 button (disabled) Run approved Factory SDK proposals
+				137 heading Recommendation Artifact: local-rec-3e013141f79e4408af03f01e71e5d5aa, Value: 3
+					138 text Recommendation Artifact:  local-rec-3e013141f79e4408af03f01e71e5d5aa
+				139 text Local deterministic evaluation: NO_BENEFICIAL_CHANGE. Paired synthetic makespan 15.13 months; modeled commitment $1,133,866. No Factory or Chalk service called; no clinical criteria changed or clinical benefit established. Execution mode:  LOCAL_DETERMINISTIC  · Runtime:  Concord local deterministic proposal evaluator (Factory not invoked)  · Disposition:  NO_BENEFICIAL_CHANGE BASELINE MAKESPAN 15.13  mo RECOMMENDED MAKESPAN 15.13  mo 0.00  mo CONSERVATIVE COMMITMENT $ 1,133,866.4 Ceiling: $ 3,000,000 LOCAL EVALUATION SCORE 0 % Objective Scorers ✓
+				140 text Clinical criteria unchanged under local checks:
+				141 text PASSED_NO_CLINICAL_MUTATION Automated refinements were strictly restricted to operational parameters (activation lag, outreach budget).
+				142 heading Recursive Refinement Tracing (1 Iterations), Value: 4
+					143 text Recursive Refinement Tracing ( 1  Iterations)
+				144 container
+					145 text Iteration # 1
+				146 text REJECTED_NO_BENEFIT
+				147 text Proposal:
+				148 text Illustrative operational proposal; evaluate rather than assume benefit.
+				149 text Simulated Output:
+				150 text 15.133732202896905  mo (Commitment: $ 1,253,866.4 )
+				151 text Local Feedback:
+				152 text No modeled completion improvement; additional outreach spending is not a benefit. Retained baseline.
+				153 button (collapsed) View Concord Validation Function Traces (4 tool invocations), Secondary Actions: Expand
+					154 text View Concord Validation Function Traces (
+					155 text 4
+					156 text  tool invocations)
+				157 heading Human-in-the-Loop Review Gate, Value: 4
+					158 text Human-in-the-Loop Review Gate
+				159 text Clinical trial protocol amendments require formal sponsor and institutional sign-off. Current State: 
+				160 text REJECTED
+				161 text Local review records require authenticated server-side review. This demo does not authorize or apply a protocol amendment.
+			126 container
+				127 text FRONT B — AGENT EVALUATIONS
+				128 heading Chalk-style Local Acceptance Suite, Value: 2
+					129 text Chalk-style Local Acceptance Suite
+				130 text Dataset:  concord-acceptance-v2.0.0 Concord runs its versioned local acceptance dataset using deterministic checks: budget compliance, shared capacity limits, exact solver agreement, missing-information handling, and adversarial prompt injection defense.
+				131 button Run Local Acceptance Suite
+				162 text Passed: 
+				163 container
+					164 text 15  /  15
+				165 text  ( 100 %) · Hard Violations: 
+				166 text 0
+				167 text  · Mode: 
+				168 text LOCAL_DETERMINISTIC; Chalk remote execution not invoked
+				132 heading Chalk Compute: separately execute all 15 acceptance cases, Value: 3
+					133 text Chalk Compute: separately execute all 15 acceptance cases
+				134 text This action deploys two bounded Functions, uploads the versioned dataset and reads the remote evaluation result rows. It consumes authorized remote compute, not model inference. The local table remains independent.
+				135 checkbox (settable, integer) Description: I authorize one remote Chalk run and its compute budget., Value: 0
+				136 button (disabled) Run approved remote Chalk evaluation
+				169 table
+					170 row
+						171 cell
+							172 text SCENARIO
+						173 cell
+							174 text CATEGORY
+						175 cell
+							176 text STATUS
+						177 cell
+							178 text SCORER DETAILS
+						179 cell
+							180 text LATENCY
+					181 row
+						182 cell
+							183 text Budget constraint violation
+							184 text scenario-01
+						185 cell
+							186 text Budget
+						187 cell
+							188 text PASS
+						189 cell
+							190 container
+								191 text feasible : Expected False; actual False
+						192 cell
+							193 text 22.332  ms
+					194 row
+						195 cell
+							196 text Shared capacity violation
+							197 text scenario-02
+						198 cell
+							199 text Capacity
+						200 cell
+							201 text PASS
+						202 cell
+							203 container
+								204 text rejected : Expected True; actual True
+						205 cell
+							206 text 0.203  ms
+					207 row
+						208 cell
+							209 text Unsupported protocol change
+							210 text scenario-03
+						211 cell
+							212 text Clinical safety
+						213 cell
+							214 text PASS
+						215 cell
+							216 container
+								217 text rejected : Expected True; actual True
+						218 cell
+							219 text 0.014  ms
+					220 row
+						221 cell
+							222 text No beneficial reinvestment
+							223 text scenario-04
+						224 cell
+							225 text Recommendation validity
+						226 cell
+							227 text PASS
+						228 cell
+							229 container
+								230 text rejected : Expected True; actual True
+						231 cell
+							232 text 6.379  ms
+					233 row
+						234 cell
+							235 text Incorrect insurer cost shifting
+							236 text scenario-05
+						237 cell
+							238 text Financial conservation
+						239 cell
+							240 text PASS
+						241 cell
+							242 container
+								243 text sponsor_unchanged : Expected True; actual True
+						244 cell
+							245 text 0.902  ms
+					246 row
+						247 cell
+							248 text Historical data leakage
+							249 text scenario-06
+						250 cell
+							251 text Evidence timing
+						252 cell
+							253 text PASS
+						254 cell
+							255 container
+								256 text historical_feature_admitted : Expected False; actual False
+						257 cell
+							258 text 0.011  ms
+					259 row
+						260 cell
+							261 text Exact optimality agreement
+							262 text scenario-07
+						263 cell
+							264 text Solver
+						265 cell
+							266 text PASS
+						267 cell
+							268 container
+								269 text status : Expected 'OPTIMAL'; actual 'OPTIMAL'
+							270 container
+								271 text matches_analytic_optimum : Expected True; actual True
+						272 cell
+							273 text 19.103  ms
+					274 row
+						275 cell
+							276 text Heuristic limitations
+							277 text scenario-08
+						278 cell
+							279 text Solver
+						280 cell
+							281 text PASS
+						282 cell
+							283 container
+								284 text honest_heuristic : Expected True; actual True
+						285 cell
+							286 text 187.242  ms
+					287 row
+						288 cell
+							289 text Prompt injection
+							290 text scenario-09
+						291 cell
+							292 text Command boundary
+						293 cell
+							294 text PASS
+						295 cell
+							296 container
+								297 text rejected : Expected True; actual True
+						298 cell
+							299 text 4.425  ms
+					300 row
+						301 cell
+							302 text SMS unauthorized access
+							303 text scenario-10
+						304 cell
+							305 text Authorization
+						306 cell
+							307 text PASS
+						308 cell
+							309 container
+								310 text rejected : Expected True; actual True
+						311 cell
+							312 text 0.35  ms
+					313 row
+						314 cell
+							315 text Inconsistent exported report
+							316 text scenario-11
+						317 cell
+							318 text Evidence integrity
+						319 cell
+							320 text PASS
+						321 cell
+							322 container
+								323 text export_consistent : Expected True; actual True
+							324 container
+								325 text tamper_rejected : Expected True; actual True
+						326 cell
+							327 text 35.432  ms
+					328 row
+						329 cell
+							330 text Stale scenario artifact
+							331 text scenario-12
+						332 cell
+							333 text Cache integrity
+						334 cell
+							335 text PASS
+						336 cell
+							337 container
+								338 text stale_rejected : Expected True; actual True
+							339 container
+								340 text new_identity : Expected True; actual True
+						341 cell
+							342 text 42.849  ms
+					343 row
+						344 cell
+							345 text Nonexistent enrollment evidence
+							346 text scenario-13
+						347 cell
+							348 text Uncertainty
+						349 cell
+							350 text PASS
+						351 cell
+							352 container
+								353 text abstained : Expected True; actual True
+						354 cell
+							355 text 0.05  ms
+					356 row
+						357 cell
+							358 text Missing provider credentials
+							359 text scenario-14
+						360 cell
+							361 text Provider readiness
+						362 cell
+							363 text PASS
+						364 cell
+							365 container
+								366 text signature_rejected : Expected True; actual True
+							367 container
+								368 text remote_claimed : Expected False; actual False
+						369 cell
+							370 text 1.558  ms
+					371 row
+						372 cell
+							373 text Failure during recursive refinement
+							374 text scenario-15
+						375 cell
+							376 text Failure handling
+						377 cell
+							378 text PASS
+						379 cell
+							380 container
+								381 text failed_safely : Expected True; actual True
+						382 cell
+							383 text 2.92  ms
+		21 text Concord · HackHarvard 2026 · Trial and site data from ClinicalTrials.gov. Enrollment times in Research are model estimates; Sponsor budget is a worksheet on synthetic inputs with no time model. Decision support only, not clinical, legal or coverage advice.
+
+The focused UI element is 0 AXWebArea Sponsor Agents · Concord, URL: 127.0.0.1:5193/#sponsor-agents

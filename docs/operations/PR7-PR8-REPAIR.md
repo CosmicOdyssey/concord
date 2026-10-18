@@ -12,7 +12,13 @@ The original PR #8 live audit is superseded by [current verification](../sponsor
 
 ## Verification
 
-PR #7 code commit `8a6c8aff571467d534495470715e611d55bcdea5` passed all six configured Fleet checks: 609 backend tests passed, 102 missing-data skips, 47 frontend tests, typecheck, production build and lint. Lint retained 14 existing warnings. The recorded check runner used the actual isolated checkout, not worker prose. PR #8 combines that repair with the optional provider adapters; its final receipt and browser results are recorded below after execution.
+PR #7 code commit `8a6c8aff571467d534495470715e611d55bcdea5` passed all six configured Fleet checks: 609 backend tests passed, 102 missing-data skips, 47 frontend tests, typecheck, production build and lint. Lint retained 14 existing warnings. The recorded check runner used the actual isolated checkout, not worker prose. PR #8 integrated code commit `0e62377c419a688dd4c8e3eeeed517e74317dce4` passed all six checks on a clean checkout: **618 backend tests passed, 102 missing-data skips, 55 frontend tests passed**, plus typecheck, production build and lint (14 existing warnings). The backend retains one Starlette/httpx deprecation warning. `npm audit --omit=dev` reported zero vulnerabilities. [PR #7 receipt](pr7-pr8-repair/fleet-pr7.json) · [PR #8 receipt](pr7-pr8-repair/fleet-pr8.json).
+
+Actual Chrome interactions on the integrated branch exercised all six demo scenes, backend optimization, the local STATUS request, proposal rejection and explicit local 15-case acceptance. The live demo returned `OPTIMAL`, 678 candidate/policy evaluations and 406.2 ms recorded server compute; the run ID was `1e076872f49047647a3b2915b0bf35b6`. Its 15.13→9.24 month modeled difference used synthetic inputs and increased sponsor expenditure, not clinical evidence or savings. HTML and JSON exports returned HTTP 200 with attachment headers. Direct browser navigation to the HTML attachment was blocked by the client; export transport was verified separately over HTTP, not claimed as an in-tab render.
+
+Stopping only the repair's API process and reloading produced an explicit HTTP 502 error with no substituted result. Clicking the saved-rehearsal control then displayed `ARTIFACT_REPLAY — saved evidence; no new computation`. The backend was restored afterward. This is a smoke workflow, not a timed 180-second rehearsal.
+
+Browser evidence: [local sponsor results](pr7-pr8-repair/sponsor-local.ax.txt), [live computation](pr7-pr8-repair/live-demo.ax.txt), [backend failure](pr7-pr8-repair/backend-down.ax.txt), [explicit replay](pr7-pr8-repair/explicit-replay.ax.txt), [live JSON report](pr7-pr8-repair/live-report.json). Screenshots: [sponsor readiness](pr7-pr8-repair/sponsor-readiness.png), [live demo](pr7-pr8-repair/live-demo.png), [replay](pr7-pr8-repair/explicit-replay.png).
 
 ## Remaining limits
 
