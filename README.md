@@ -34,29 +34,33 @@ automatically lower sponsor costs or accelerate a trial.
 
 ## Demo — HackHarvard in Three Minutes
 
-After [Quick Start](#quick-start), open the actual
-[Portfolio Command route](http://127.0.0.1:5178/#portfolio-command).
-Follow the [180-second script, 120-second alternative and judge Q&A](docs/demo/HACKHARVARD-180-SECOND-SCRIPT.md):
+After [Quick Start](#quick-start), open [HackHarvard Demo](http://127.0.0.1:5178/#demo).
+Follow the [180-second script and judge Q&A](docs/demo/HACKHARVARD-180-SECOND-SCRIPT.md):
 two Regeneron-context trials → shared synthetic hospitals → fixed budget → live
-optimization → comparison → assumptions and evidence.
+optimization → financial comparison → assumptions and exportable evidence.
+The primary demo needs no sponsor service or model inference.
 
-The [Sponsor budget worksheet](http://127.0.0.1:5178/#financial) is a separate
-financial view. Both routes are intentionally outside the main navigation; the
-primary navigation remains Protocol to terms, Portfolio overlap, Findings, Site
-scores and Research. No hosted deployment or video is claimed.
-
-[Actual browser screenshot](docs/demo/final-polish/overview.png) ·
-[Rehearsal and verification evidence](docs/demo/final-polish/VERIFICATION.md)
+[Portfolio Command](http://127.0.0.1:5178/#portfolio-command) exposes detailed planning controls;
+[Sponsor budget](http://127.0.0.1:5178/#financial) provides the separate financial worksheet.
+The existing app navigation also includes the demonstration and Sponsor Agents lab.
+No hosted release or carrier delivery is claimed.
 
 ## HackHarvard Sponsor Integrations
 
-Concord builds three production-ready integrations for HackHarvard 2026 sponsor challenges on top of its verified scientific optimization engine:
+The [Sponsor Agents lab](http://127.0.0.1:5178/#sponsor-agents) contains local demonstrations,
+not completed external sponsor connections:
 
-1. **Photon 2.0 (Mobile Operations Agent):** Provides trial coordinators and investigators with mobile conversational access to portfolio state, budget limits, and optimization recommendations. Features inbound webhook processing, HMAC-SHA256 signature verification, idempotency deduplication by `message_id`, and sender allowlisting. Live carrier SMS dispatch requires `PHOTON_API_KEY`; local webhook ingestion and engine query responses are fully verified. See [Photon integration](docs/sponsors/PHOTON.md).
-2. **Chalk (Deterministic Agent Evaluations):** Replaces subjective LLM grading with an objective, deterministic evaluation pipeline across a 12-scenario test suite (`concord-eval-v1.2.0`). Scorers independently evaluate budget compliance, hospital capacity limits, financial conservation invariants (Decision 24), clinical safety rules, exact vs heuristic solver labeling, and resistance to adversarial prompt injection. Remote cloud synchronization requires `CHALK_API_TOKEN`; local deterministic execution is fully verified. See [Chalk evaluations](docs/sponsors/CHALK-EVALUATIONS.md).
-3. **Factory Droid SDK (Autonomous Protocol Planning Agent):** Integrates the official `@factory/droid-sdk` (v0.9.1) to analyze clinical trial operational bottlenecks. Droid is invoked within the running application via `POST /api/agents/droid/run` or the **Sponsor Agents** tab (`#sponsor-agents`). It executes a bounded **recursive refinement loop** (maximum 2–3 iterations) using typed sandboxed tools (`inspect_protocol`, `identify_operational_bottlenecks`, `simulate_operational_variant`, `evaluate_with_chalk`). Droid is **strictly prohibited from mutating canonical clinical protocols or relaxing medically necessary eligibility criteria**; automated recommendations are constrained to operational levers (site activation lag, recruitment outreach budget). Every recommendation requires explicit human medical review before adoption. Remote Factory cloud execution requires `FACTORY_API_KEY`; local sandboxed agent execution is fully verified. See [Factory Droid agent](docs/sponsors/FACTORY-DROID.md).
+| Integration | Current execution | External blocker |
+| --- | --- | --- |
+| [Photon](docs/sponsors/PHOTON.md) | Local command simulator and fail-closed inbound webhook contract | No carrier adapter, official provider contract or round-trip receipt |
+| [Chalk](docs/sponsors/CHALK-EVALUATIONS.md) | Versioned 15-case deterministic acceptance suite using actual engine/boundary calls | No remote Chalk client or execution receipt |
+| [Factory Droid](docs/sponsors/FACTORY-DROID.md) | Bounded local proposal evaluator; can reject ineffective changes | No Factory runtime invocation or authenticated execution receipt |
 
-For step-by-step judge instructions and verification receipts, consult the [Sponsor Challenge Walkthrough](docs/demo/SPONSOR-CHALLENGE-WALKTHROUGH.md) and [Integration Evidence](docs/sponsors/INTEGRATION-EVIDENCE.md).
+Credentials alone do not implement those missing connections. No live credential is exposed to the browser.
+The unused SDK enum dependency was removed; the primary demo remains independent of sponsor SDKs.
+See [walkthrough](docs/demo/SPONSOR-CHALLENGE-WALKTHROUGH.md),
+[independent evidence](docs/sponsors/INTEGRATION-EVIDENCE.md) and the
+[campaign report](docs/operations/GRAND-MOBILIZATION-REPORT.md).
 
 ## How It Works
 
@@ -118,11 +122,11 @@ run `scripts/pipeline.sh` over an existing dataset without preserving it. See
 - Recruitment models and synthetic population assumptions are NSCLC-specific.
   Reusable schedule/budget infrastructure does not imply disease-wide validation.
 
-The [integration audit](docs/integration/FINAL-INTEGRATION-REPORT.md) records the
-independent optimizer correction and accounting checks. The latest merged CI
-baseline passed **556 backend tests and 29 frontend tests**, with **102 missing-data
-skips**; those checks establish software behavior, not clinical performance.
-Current branch results and every skip reason are in the [demo verification record](docs/demo/final-polish/VERIFICATION.md).
+The [integration audit](docs/integration/FINAL-INTEGRATION-REPORT.md) retains the earlier
+optimizer and accounting evidence. Current software verification, missing-data skips,
+provider blockers and browser receipts are recorded in the
+[campaign report](docs/operations/GRAND-MOBILIZATION-REPORT.md).
+These checks do not establish clinical performance.
 
 ## Research Documentation
 
