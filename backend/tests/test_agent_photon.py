@@ -46,7 +46,7 @@ def test_absent_secrets_fail_closed_even_with_test_environment(client, agent, mo
     assert not agent.verify_signature(b"{}", None)
     assert client.post("/api/agents/photon/webhook", json={}).status_code == 503
     status = client.get("/api/agents/photon/status").json()
-    assert status["provider_status"] == "NOT_IMPLEMENTED"
+    assert status["provider_status"] == "IMPLEMENTED_UNVERIFIED"
     assert status["webhook_secret_configured"] is False
 
 
@@ -102,7 +102,7 @@ def test_local_commands_explicitly_do_not_dispatch(client, agent, command):
     agent._api_key = "present-but-not-used"
     data = client.post("/api/agents/photon/simulate", json={"body": command}).json()
     assert data["status"] == "LOCAL_SIMULATION"
-    assert data["provider_status"] == "NOT_IMPLEMENTED"
+    assert data["provider_status"] == "NOT_INVOKED"
     assert "no provider request" in data["delivery_note"]
     assert data["action_taken"] == command
     if command == "OPTIMIZE":

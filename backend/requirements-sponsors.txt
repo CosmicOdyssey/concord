@@ -1,0 +1,3 @@
+# Optional server-side remote Chalk Compute; original demo needs only requirements.txt.
+chalkcompute==2.13.7
+pyarrow==23.0.1

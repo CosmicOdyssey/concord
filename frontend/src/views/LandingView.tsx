@@ -717,6 +717,12 @@ export default function LandingView({ focus }: { focus: { id: string | null; n: 
             <SectionLink to="tested" className="lp-navlink">
               What we tested
             </SectionLink>
+            <a href="#demo" className="lp-navlink">
+              180s Demo
+            </a>
+            <a href="#sponsor-agents" className="lp-navlink">
+              Sponsor Agents
+            </a>
           </nav>
           <HeadControls />
         </div>
@@ -734,6 +740,9 @@ export default function LandingView({ focus }: { focus: { id: string | null; n: 
               <div className="lp-actions">
                 <a className="btn btn-primary btn-big lp-cta" href={TERMS_HREF}>
                   {TERMS_CTA}
+                </a>
+                <a className="btn btn-big" href="#demo">
+                  180s Demo
                 </a>
                 <SectionLink to="tested" className="lp-quiet">
                   Read what we tested
@@ -957,6 +966,15 @@ export default function LandingView({ focus }: { focus: { id: string | null; n: 
             <p>
               Built by the Bruno Bears, a team from Brown University, for HackHarvard 2026, Regeneron track. · Source code:{' '}
               <a href="https://github.com/CosmicOdyssey/concord">github.com/CosmicOdyssey/concord</a>
+            </p>
+            <p className="lp-foot-links" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px', fontSize: '13px' }}>
+              <a href="#terms-flow/NCT05800015">Protocol to terms</a> ·
+              <a href="#overlap/regeneron">Portfolio overlap</a> ·
+              <a href="#demo">180s Demo</a> ·
+              <a href="#sponsor-agents">Sponsor Agents</a> ·
+              <a href="#portfolio-command">Portfolio Command</a> ·
+              <a href="#financial">Sponsor Budget</a> ·
+              <a href="#findings">Findings</a>
             </p>
           </div>
           <ol className="lp-foot-notes">

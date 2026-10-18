@@ -10,7 +10,7 @@
 .demo-status { min-height: 25px; font: 13px var(--mono); color: var(--muted); margin: 10px 0 18px; }
 .demo-lead { max-width: 1050px; font-size: 22px; line-height: 1.45; margin: 0 0 22px; }
 .demo-metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; margin: 20px 0; }
-.demo-metric { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); padding: 18px 22px; display: flex; flex-direction: column; }
+.demo-metric { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); padding: 18px 22px; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04); }
 .demo-metric > span { font-size: 16px; color: var(--ink-2); }
 .demo-metric > strong { font: 600 clamp(27px,2.8vw,40px) var(--mono); line-height: 1.4; color: var(--accent); }
 .demo-metric small { font-size: 14px; line-height: 1.4; }

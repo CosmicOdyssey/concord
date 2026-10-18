@@ -1,0 +1,17 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/api/findings",
+      "destination": "/api/findings/index.json"
+    },
+    {
+      "source": "/api/findings/self-overlap",
+      "destination": "/api/findings/self-overlap.json"
+    },
+    {
+      "source": "/((?!api(?:/|$)).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

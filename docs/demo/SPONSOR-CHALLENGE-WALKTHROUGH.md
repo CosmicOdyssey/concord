@@ -1,10 +1,12 @@
 # Sponsor lab walkthrough
 
-Start the backend/frontend using the root README. First run `#demo` through all six scenes, then open `#sponsor-agents`.
+Start the backend and frontend using the root README. Run `#demo`, then open `#sponsor-agents`.
 
-1. Read the local-only disclosure. Click **Send STATUS**; inspect `LOCAL_SIMULATION` and its synthetic operating context. No carrier SMS is sent.
-2. Click **Evaluate Local Proposals**. The fixed fixture should reject ineffective changes with zero benefit. Inspect local function traces, assumptions and rejected review status.
-3. Click **Run Local Acceptance Suite**. Inspect the actual 15-case result and `LOCAL_DETERMINISTIC` label. There is no remote Chalk execution.
-4. Return to `#demo`; its computation and evidence links remain independent of the lab.
+1. Inspect each provider's actual readiness and missing prerequisites. Status checks do not send messages, deploy Functions or start inference.
+2. Use the local Photon STATUS preview. Inspect `LOCAL_SIMULATION` and synthetic operating context; no carrier message is sent.
+3. Evaluate local proposals. The frozen fixture should reject ineffective changes with zero benefit. Inspect actual local tool traces, assumptions and review status.
+4. Run the local acceptance suite explicitly. Inspect the actual 15-case result and `LOCAL_DETERMINISTIC` label.
+5. Remote controls are separate, require an operator token and explicit confirmation, and must remain disabled until account, recipient/model/environment and spending prerequisites are established. Failures stay visible. An accepted Photon request is not delivered; an executed remote evaluation may fail its checks.
+6. Return to `#demo`; its computation and evidence remain independent. If the real backend fails, choose explicitly labeled saved replay or restore the backend; no automatic fixture success is permitted.
 
-A missing sponsor credential must never be represented as successful external execution. No arbitrary real phone recipient is authorized by this walkthrough.
+This walkthrough authorizes no real recipient, paid provider usage or deployment. See [current verification](../sponsors/LIVE-INTEGRATION-VERIFICATION.md).

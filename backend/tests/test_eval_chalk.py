@@ -23,7 +23,7 @@ def test_all_acceptance_cases_execute_and_keep_actual_trajectories(monkeypatch):
     assert report.failed_scenarios == report.hard_safety_violations == 0
     assert report.overall_pass_rate == 1.
     assert report.engine_mode.startswith("LOCAL_DETERMINISTIC")
-    assert report.provider_status == "NOT_IMPLEMENTED"
+    assert report.provider_status == "NOT_INVOKED"
     assert report.remote_receipt is None and report.provider_usage is None
     assert all(s.trajectory_sample is not None for s in report.scenarios)
 

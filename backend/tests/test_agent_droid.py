@@ -59,7 +59,7 @@ def test_no_beneficial_change_is_rejected_without_manufacturing_improvement():
     assert result.recommended_makespan_months == result.baseline_makespan_months
     assert result.total_iterations == 1
     assert result.iterations[0].decision == "REJECTED_NO_BENEFIT"
-    assert result.provider_status == "NOT_IMPLEMENTED"
+    assert result.provider_status == "NOT_INVOKED"
     assert result.execution_mode == "LOCAL_DETERMINISTIC"
     assert result.provenance["canonical_protocol_mutated"] is False
 

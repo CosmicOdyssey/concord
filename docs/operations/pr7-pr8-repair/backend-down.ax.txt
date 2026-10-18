@@ -1,0 +1,31 @@
+Browser tab: 1783082035, Title: "HackHarvard Demo · Concord", URL: "http://127.0.0.1:5193/#demo".
+1 AXWebArea HackHarvard Demo · Concord, URL: 127.0.0.1:5193/#demo
+	2 container root
+		3 link Description: Skip to demo, Value: 127.0.0.1:5193/#demo-main
+		4 container
+			5 link Description: Concord, Value: 127.0.0.1:5193/#home
+			6 text HACKHARVARD 2026 · REGENERON TRACK
+			7 container Color theme
+				8 checkbox Description: Light theme, Value: 1
+				9 checkbox Description: Dark theme, Value: 0
+				10 checkbox Description: Match system theme, Value: 0
+			11 button Reset Demo
+			12 link Description: General app ↗, Value: 127.0.0.1:5193/#findings
+		13 text ILLUSTRATIVE PLANNING · NOT A FORECAST
+		14 text Backend result pending · bundled registry context · synthetic operations
+		15 container demo-main
+			16 container
+				17 text SCENE  1  / 6 ·  The problem
+			18 heading One sponsor. Two trials. Shared hospitals., Value: 1
+				19 text One sponsor. Two trials. Shared hospitals.
+			20 text No completed live result. Reset or explicitly load saved evidence.
+			21 container
+				22 text Error: Local demo service returned 502. Reset or explicitly open the saved rehearsal; no result has been substituted.  No silent replay. Reset, or choose the labeled saved rehearsal below.
+		23 container
+			24 button (disabled) Previous Scene
+			25 text The problem  ·  0:00–0:25
+			26 button (disabled) Next Scene
+		27 text Live computation requires the backend. The saved artifact uses synthetic operational assumptions and is loaded only when you choose it.
+		28 button Load saved rehearsal (ARTIFACT_REPLAY; not live)
+
+The focused UI element is 18 heading One sponsor. Two trials. Shared hospitals., Value: 1

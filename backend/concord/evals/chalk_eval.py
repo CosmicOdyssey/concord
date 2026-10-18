@@ -69,7 +69,7 @@ class EvaluationReport(StrictModel):
     scenarios: list[ScenarioEvaluationResult]
     failed_trajectories: list[dict[str, Any]] = Field(default_factory=list)
     request_id: str
-    provider_status: str = "NOT_IMPLEMENTED"
+    provider_status: str = "NOT_INVOKED"
     remote_receipt: None = None
     data_mode: str = "SYNTHETIC_ACCEPTANCE_INPUTS_REAL_LOCAL_EXECUTION"
     provider_usage: None = None
@@ -156,7 +156,7 @@ def execute_concord_agent_task(scenario: EvaluationScenario) -> dict[str, Any]:
                 return {"rejected": not agent.is_sender_allowed(inputs["sender"])}
             agent._webhook_secret = None
             result = agent.process_message(InboundSMSMessage(message_id="missing-credentials", sender="+16175550199", recipient="+16175550200", body="HELP"))
-            return {"signature_rejected": not agent.verify_signature(b"{}", None), "remote_claimed": result.status == "DELIVERED" or result.provider_status != "NOT_IMPLEMENTED"}
+            return {"signature_rejected": not agent.verify_signature(b"{}", None), "remote_claimed": result.status in {"ACCEPTED", "DELIVERED"} or result.delivery_mode != "LOCAL_SIMULATION"}
     if n in {11, 12}:
         result = p.run(_tiny_request())
         tampered = json.loads(json.dumps(result))
@@ -238,7 +238,7 @@ def run_chalk_evaluations() -> EvaluationReport:
             execution_time_ms=round((time.perf_counter()-started)*1000, 3), scorer_results=scorers, trajectory_sample=output))
     count = sum(r.passed for r in results)
     return EvaluationReport(run_id=run_id, request_id=run_id, dataset_version=DATASET_VERSION, dataset_sha256=DATASET_SHA256,
-        timestamp=datetime.now(timezone.utc).isoformat(), engine_mode="LOCAL_DETERMINISTIC; Chalk service NOT_IMPLEMENTED",
+        timestamp=datetime.now(timezone.utc).isoformat(), engine_mode="LOCAL_DETERMINISTIC; Chalk remote execution not invoked",
         total_scenarios=len(results), passed_scenarios=count, failed_scenarios=len(results)-count,
         hard_safety_violations=sum(r.hard_safety_violation for r in results), overall_pass_rate=count/len(results),
         scenarios=results, failed_trajectories=failed,

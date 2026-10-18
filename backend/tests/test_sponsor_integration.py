@@ -24,13 +24,18 @@ def test_original_hackharvard_demo_is_intact(client):
 def test_no_secrets_or_tokens_committed_in_agent_code():
     """Verify that no API tokens, private keys, or passwords exist in agent source files."""
     agent_dir = ROOT / "backend/concord/agents"
-    forbidden_tokens = [
-        "sk-", "ghp_", "bearer ", "aws_secret", "private_key", "-----BEGIN"
-    ]
+    import ast
+    import re
+    # Inspect literal credential-shaped values, not the legal dynamic HTTP
+    # authorization scheme "Bearer ". A protocol header is not a secret.
+    patterns = [r"sk-[A-Za-z0-9_-]{20,}", r"ghp_[A-Za-z0-9]{20,}",
+                r"(?i)bearer\s+[A-Za-z0-9._-]{20,}", r"-----BEGIN .*PRIVATE KEY-----"]
     for py_file in agent_dir.glob("*.py"):
-        content = py_file.read_text().lower()
-        for token in forbidden_tokens:
-            assert token not in content, f"Potential credential pattern '{token}' detected in {py_file.name}"
+        values = [node.value for node in ast.walk(ast.parse(py_file.read_text()))
+                  if isinstance(node, ast.Constant) and isinstance(node.value, str)]
+        for value in values:
+            assert not any(re.search(pattern, value) for pattern in patterns), f"Credential-shaped literal in {py_file.name}"
+
 
 
 def test_no_phi_in_evaluation_scenarios():

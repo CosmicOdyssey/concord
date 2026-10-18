@@ -27,3 +27,7 @@ data/work/
 
 # Agent worktrees
 .claude/
+
+# Local pinned provider tools and private runtime state
+.fleet/tools/
+.fleet/state/

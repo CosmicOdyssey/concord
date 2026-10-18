@@ -1,0 +1,95 @@
+Browser tab: 1783082035, Title: "HackHarvard Demo · Concord", URL: "http://127.0.0.1:5193/#demo".
+1 AXWebArea HackHarvard Demo · Concord, URL: 127.0.0.1:5193/#demo
+	2 container root
+		3 link Description: Skip to demo, Value: 127.0.0.1:5193/#demo-main
+		4 container
+			5 link Description: Concord, Value: 127.0.0.1:5193/#home
+			6 text HACKHARVARD 2026 · REGENERON TRACK
+			7 container Color theme
+				8 checkbox Description: Light theme, Value: 1
+				9 checkbox Description: Dark theme, Value: 0
+				10 checkbox Description: Match system theme, Value: 0
+			11 button Reset Demo
+			12 link Description: General app ↗, Value: 127.0.0.1:5193/#findings
+		13 text ILLUSTRATIVE PLANNING · NOT A FORECAST
+		14 text ARTIFACT_REPLAY — saved evidence; no new computation
+		15 container demo-main
+			16 container
+				17 text SCENE  4  / 6 ·  Compare outcomes
+			18 heading More capacity. A real budget trade-off., Value: 1
+				19 text More capacity. A real budget trade-off.
+			20 text Saved rehearsal · 334.8 ms recorded prior compute · OPTIMAL · 678 candidate/policy evaluations
+			29 container
+				30 text 15.13 mo → 9.24 mo modeled completion. This uses more sponsor funding—not savings.
+			31 table Same targets, same budget, same seed, same assumptions
+				32 text Same targets, same budget, same seed, same assumptions
+				33 row
+					34 cell
+						35 text Measure
+					36 cell
+						37 text Baseline
+					38 cell
+						39 text Concord allocation
+				40 row
+					41 cell
+						42 text Modeled final enrollment completion
+					43 cell
+						44 text 15.13 mo
+					45 cell
+						46 text 9.24 mo
+				47 row
+					48 cell
+						49 text Expected sponsor expenditure
+					50 cell
+						51 text $818,280
+					52 cell
+						53 text $980,972
+				54 row
+					55 cell
+						56 text Sponsor contingency (not expenditure)
+					57 cell
+						58 text $200,000
+					59 cell
+						60 text $200,000
+				61 row
+					62 cell
+						63 text Conservative budget commitment
+					64 cell
+						65 text $1,133,866
+					66 cell
+						67 text $1,481,066
+				68 row
+					69 cell
+						70 text Budget reserved / fixed ceiling
+					71 cell
+						72 text 37.8%
+					73 cell
+						74 text 49.4%
+				75 row
+					76 cell
+						77 text Activated hospitals / trial–site assignments
+					78 cell
+						79 text 2 / 4
+					80 cell
+						81 text 4 / 8
+				82 row
+					83 cell
+						84 text Site capacity and slot limits
+					85 cell
+						86 text Feasible under assumptions
+					87 cell
+						88 text Feasible under assumptions
+			89 container
+				90 text OPTIMAL  ·  exact_enumeration  · zero gap only if proven exact on this finite draw bank. Objective: expected maximum priority-weighted trial time—not the unweighted final-completion metric above.
+			91 container
+				92 text Proposed P10–P90:  8.631 – 9.785  months;  0  censored draws. Independent mean-one lognormal rate shocks (spread  0.25 ); not calibrated predictive intervals. Expected per-trial no-loser constraint and  $500  travel/lodging per participant retained. Geography, outside-trial demand and clinical access are unmodeled.
+			93 container
+				94 text Selected:  SYN-A + SYN-B + SYN-C + SYN-D . Administrative savings are unrealized ( $0  usable); support/operations rate boosts are zero.
+		23 container
+			24 button Previous Scene
+			25 text Compare outcomes  ·  1:25–2:10
+			26 button Next Scene
+		27 text Live computation requires the backend. The saved artifact uses synthetic operational assumptions and is loaded only when you choose it.
+		28 button Load saved rehearsal (ARTIFACT_REPLAY; not live)
+
+The focused UI element is 18 heading More capacity. A real budget trade-off., Value: 1

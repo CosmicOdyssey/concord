@@ -28,10 +28,10 @@ jobs:
           node-version: '26'
       - name: Install backend dependencies
         run: python -m pip install -r backend/requirements.txt
-      - name: Backend tests with data-dependent skip reasons
-        run: python -m pytest -q -rs backend/tests
       - name: Install frontend dependencies
         run: npm --prefix frontend ci
+      - name: Backend tests with data-dependent skip reasons
+        run: python -m pytest -q -rs backend/tests
       - name: Frontend contracts (financial, portfolio, demo and sponsor boundaries)
         run: npm --prefix frontend test
       - name: Existing comparison contracts

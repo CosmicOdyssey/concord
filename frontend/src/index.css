@@ -6,25 +6,25 @@
    Palette names: the Calm names (--ink, --rule, --ctl, --caution-*, --heat-*) are the source of truth; the older
    names the views use (--text, --border, --warn-*, ...) map onto them, so every view picks the palette up. */
 :root {
-  /* ---- Calm palette (light) ---- */
-  --bg: #f1f4f6;
+  /* ---- Concord Pure White Clinical Palette (Light) ---- */
+  --bg: #ffffff;
   --surface: #ffffff;
   /* A soft inset: reads on both the page ground and a white window. */
-  --surface-2: #eaeff2;
-  --ink: #14212b;
-  --ink-2: #3c4b57;
-  --muted: #5a6975;
-  --rule: #dce3e8;
-  --rule-strong: #c5d0d7;
+  --surface-2: #f8fafc;
+  --ink: #0f172a;
+  --ink-2: #334155;
+  --muted: #64748b;
+  --rule: #e2e8f0;
+  --rule-strong: #cbd5e1;
   /* Control outlines (inputs, segmented controls, outlined buttons): at least 3:1 on the surfaces. */
-  --ctl: #738390;
+  --ctl: #94a3b8;
   --accent: #1c6684;
   --accent-ink: #ffffff;
-  --accent-soft: #e2eef3;
+  --accent-soft: #f0f7f9;
   /* The one non-accent data series (graphics only, never text on its own). */
-  --series-2: #b07020;
-  --caution-bg: #fbf1e1;
-  --caution-ink: #774a08;
+  --series-2: #b45309;
+  --caution-bg: #fffbeb;
+  --caution-ink: #92400e;
   /* Matrix heat scale, 0 -> 100%: heat-0 is the empty cell (outlined), heat-4 the darkest fill. */
   --heat-0: #ffffff;
   --heat-1: #eaf3f6;
@@ -32,37 +32,37 @@
   --heat-3: #a6cfdc;
   --heat-4: #6fafc4;
   /* Errors only. */
-  --error-bg: #fbe8e6;
-  --error-ink: #a3271b;
+  --error-bg: #fef2f2;
+  --error-ink: #991b1b;
   /* Hover lift for clickable windows and floating cards. */
-  --lift: 0 12px 32px rgba(20, 33, 43, 0.08);
+  --lift: 0 4px 16px rgba(15, 23, 42, 0.06);
 
   /* ---- Legacy names, mapped onto the palette ---- */
   --text: var(--ink);
   --text-2: var(--ink-2);
   --border: var(--rule);
   --border-strong: var(--rule-strong);
-  --pos: #2a6a49;
+  --pos: #166534;
   /* "Negative" values and field validation: caution, not red (red is for errors). */
   --neg: var(--caution-ink);
   --warn-bg: var(--caution-bg);
   --warn-ink: var(--caution-ink);
-  --ok-bg: #e3f0e8;
-  --ok-ink: #22573c;
+  --ok-bg: #f0fdf4;
+  --ok-ink: #166534;
   --bad-bg: var(--error-bg);
   --bad-ink: var(--error-ink);
   --info-bg: var(--accent-soft);
-  --info-ink: #17536b;
-  --neutral-bg: #e6ecef;
+  --info-ink: #155e75;
+  --neutral-bg: #f8fafc;
   --neutral-ink: var(--ink-2);
-  --bar-indep: #9aa8b2;
+  --bar-indep: #94a3b8;
   --bar-coord: var(--accent);
   --s0: var(--heat-0);
   --s1: var(--heat-1);
   --s2: var(--heat-2);
   --s3: var(--heat-3);
   --s4: var(--heat-4);
-  --shadow: none;
+  --shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05);
 
   /* ---- Type ---- */
   --font: 'Atkinson Hyperlegible Next', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;

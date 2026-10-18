@@ -1,13 +1,13 @@
-# Independent sponsor acceptance evidence
+# Sponsor integration evidence
 
-PR #5 was merged at `a840d40ece0fde73474b35e479e6d6b72254abaa`; this audit starts from `af8aa50b166dc7b456a45c2f664fc149af1fff56`.
+The merged PR #5 at `a840d40ece0fde73474b35e479e6d6b72254abaa` and original PR #8 contained claims that exceeded their evidence. Credential presence was treated as connection/delivery, local scripted evaluation as SDK execution, and canned scenario outputs as verification. Those affirmative live claims are withdrawn. Git history preserves the original text; it is not current acceptance evidence.
 
-The original PR treated key/token presence as delivered/remote status and labeled a local scripted evaluator as Factory SDK execution. Its tests included canned scenario outputs and frontend objects with assumed improvements. Those claims are withdrawn.
+The repaired implementation preserves the local demonstrations and adds explicitly gated real API/SDK paths. It verifies webhook authentication/idempotency, transport failures, provider-response parsing, actual-engine proposal rejection, and remote result completeness. Transport mocks test software contracts; they do not establish provider execution.
 
-Corrections preserve the local demonstrations, close webhook authentication/idempotency gaps and evaluate proposals using the existing engine. The replacement tests exercise actual transport/boundary behavior and reject ineffective changes.
+- [Versioned 15-case dataset](../operations/grand-mobilization/acceptance-dataset-v2.json)
+- [Earlier actual local HTTP receipt](../operations/grand-mobilization/local-evaluation-receipt.json)
+- [Earlier campaign/browser reproduction](../operations/GRAND-MOBILIZATION-REPORT.md)
+- [Current provider status and withdrawn claims](LIVE-INTEGRATION-VERIFICATION.md)
+- [Current PR repair verification](../operations/PR7-PR8-REPAIR.md)
 
-- [Versioned dataset](../operations/grand-mobilization/acceptance-dataset-v2.json)
-- [Actual local HTTP execution receipt](../operations/grand-mobilization/local-evaluation-receipt.json)
-- [Full campaign, browser and clean-checkout evidence](../operations/GRAND-MOBILIZATION-REPORT.md)
-
-Local test passes establish software behavior. Photon carrier dispatch, Chalk remote evaluation and Factory runtime are **NOT IMPLEMENTED**; no credential alone changes this classification.
+No real outbound message, remote Chalk evaluation or Factory inference was performed in this repair. Configuration/authentication probes are reported separately. Synthetic operational inputs remain labeled even when their computation runs on a real backend or provider.

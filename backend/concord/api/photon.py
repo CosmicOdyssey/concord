@@ -5,6 +5,7 @@ import json
 from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import Field, ValidationError
 from concord.agents.boundary import StrictModel
+from concord.agents.sponsor_runtime import require_operator
 from concord.agents.photon import InboundSMSMessage, photon_agent
 
 router = APIRouter(prefix="/api/agents/photon", tags=["Photon local adapter"])
@@ -49,7 +50,7 @@ def simulate_sms(sim: SimulateSMSRequest) -> dict:
 def get_agent_status() -> dict:
     return {
         "provider": "Photon local SMS command adapter",
-        "provider_status": "NOT_IMPLEMENTED",
+        **photon_agent.get_readiness_status(),
         "live_api_configured": False,
         "credential_present": bool(photon_agent._api_key),
         "webhook_secret_configured": bool(photon_agent._webhook_secret),
@@ -60,3 +61,20 @@ def get_agent_status() -> dict:
         "engine_scope": "Concord synthetic portfolio computation",
         "data_disclosure": "Synthetic operations; no carrier delivery or validated clinical forecast.",
     }
+
+
+class SendSMSRequest(SimulateSMSRequest):
+    message_id: str = Field(min_length=1, max_length=128)
+    confirm_live: bool
+
+
+@router.post("/send")
+def send_computed_reply(req: SendSMSRequest, x_concord_operator_token: str | None = Header(None)) -> dict:
+    require_operator(x_concord_operator_token, "CONCORD_ALLOW_PHOTON_SEND")
+    if not req.confirm_live:
+        raise HTTPException(422, "Explicit live-send confirmation required")
+    try:
+        message = InboundSMSMessage(message_id=req.message_id, sender=req.sender, recipient="+16175550200", body=req.body)
+        return photon_agent.send_reply(message).model_dump()
+    except ValueError:
+        raise HTTPException(503, {"code": "PHOTON_CONFIGURATION_OR_IDEMPOTENCY_ERROR", "required": ["PHOTON_API_KEY", "PHOTON_PROJECT_ID", "PHOTON_SPACE_ID", "PHOTON_AGENT_USER_ID"]}) from None
