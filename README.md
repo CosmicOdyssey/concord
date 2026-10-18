@@ -441,3 +441,8 @@ contributions: [CosmicOdyssey](https://github.com/CosmicOdyssey), [kevinsrun](ht
 [akshatsinghania](https://github.com/akshatsinghania); see the
 [contributor history](https://github.com/CosmicOdyssey/concord/graphs/contributors). No sponsor endorsement,
 insurer relationship or institutional affiliation is implied.
+
+## License
+
+Code: [MIT](LICENSE). Data the app reads keeps its own terms: ClinicalTrials.gov records, CMS fee schedules (CPT codes
+and descriptors are © American Medical Association; the CMS rate files are downloaded locally and not redistributed here).
