@@ -31,7 +31,7 @@ const TABS = [
   { id: 'overlap', label: 'Portfolio overlap', hint: "Where one sponsor's trials share registered sites and eligible patients." },
   { id: 'findings', label: 'Findings', hint: 'What we tested, including results that weakened the original idea.' },
   { id: 'demo', label: 'HackHarvard Demo', sub: 'Synthetic planning', hint: 'Three-minute deterministic planning demonstration; not a recruitment forecast.' },
-  { id: 'sponsor-agents', label: 'Sponsor Agents', sub: 'Photon · Chalk · Droid', hint: 'Three working sponsor integrations on top of the verified Concord engine.' },
+  { id: 'sponsor-agents', label: 'Sponsor Agents', sub: 'Photon · Chalk · Droid', hint: 'Local messaging, acceptance checks and proposal evaluation; external execution unavailable.' },
   {
     id: 'site-scores',
     label: 'Site scores',
