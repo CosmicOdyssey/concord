@@ -1,6 +1,6 @@
 // Measures switching between the app's main tabs (App.tsx), and landing -> app, from the click: time until the new
-// view's main heading is rendered (and until its fade has finished), whether a Loading fallback or spinner showed and
-// for how long, the layout shift summed over the first 1.5 s (PerformanceObserver 'layout-shift', every entry), the
+// view's main heading is rendered (and until its fade has finished), whether the app's code-loading fallback showed and
+// for how long (and, separately, a view's own data Loading box), the layout shift summed over the first 1.5 s (PerformanceObserver 'layout-shift', every entry), the
 // scroll movement after the heading appeared, and whether the header's tab bar moved. Each ordered pair A -> B runs on
 // a fresh page at #A: first visit of B, then B -> A -> B for the revisit. Before each click the page is scrolled down
 // (600 px or the bottom), so scroll handling shows. 1440 x 900, light, Simple, motion allowed. Writes
@@ -57,8 +57,13 @@ async function measureSwitch(page, spec, clickFn, clickArg) {
       }
       const heading = () =>
         [...document.querySelectorAll(`main ${spec.sel}`)].find((h) => rendered(h) && (!spec.text || h.textContent.trim() === spec.text)) || null
-      const loadingOn = () =>
-        [...document.querySelectorAll('main .loading, main .spinner, #root > .loading, .app-loading')].some((el) => rendered(el))
+      // The app's code-loading fallback ("Loading protocol to terms…", no hint line) versus a view's own data box
+      // ("Loading site scores…" with its hint, "Loading trials…", a spinner): one label is shared, the hint tells.
+      const CODE = /^Loading (protocol to terms|portfolio overlap|findings|site scores|research views|the sponsor budget|Portfolio Command|component check)…/
+      const boxes = () => [...document.querySelectorAll('main .loading, #root > .loading, .app-loading .loading')].filter((el) => rendered(el))
+      const isCode = (el) => !!el.closest('.app-loading') || (CODE.test(el.textContent.trim()) && !el.querySelector('.small'))
+      const loadingOn = () => boxes().some(isCode)
+      const dataOn = () => boxes().some((el) => !isCode(el)) || [...document.querySelectorAll('main .spinner')].some((el) => rendered(el) && !el.closest('.loading'))
       const bar = () => document.querySelector('nav.tabs')
       const frames = []
       const t0 = performance.now()
@@ -78,6 +83,7 @@ async function measureSwitch(page, spec, clickFn, clickArg) {
             op: h ? Math.round(opacityOf(h) * 1000) / 1000 : null,
             ty: h ? (() => { const tr = getComputedStyle(h.closest('.app-pane') || h).transform; return tr && tr !== 'none' ? new DOMMatrixReadOnly(tr).m42 : 0 })() : null,
             load: loadingOn(),
+            data: dataOn(),
             y: Math.round(window.scrollY),
             bar: b ? Math.round(b.getBoundingClientRect().top * 10) / 10 : null,
           })
@@ -90,6 +96,7 @@ async function measureSwitch(page, spec, clickFn, clickArg) {
       const first = frames.find((f) => f.h)
       const full = frames.find((f) => f.h && f.op >= 0.999)
       const loads = frames.filter((f) => f.load)
+      const datas = frames.filter((f) => f.data)
       let jump = 0
       let after = false
       let prevY = null
@@ -104,6 +111,8 @@ async function measureSwitch(page, spec, clickFn, clickArg) {
         opaque_ms: full ? full.t : null,
         fallback: loads.length > 0,
         fallback_ms: loads.length ? Math.round((loads[loads.length - 1].t - loads[0].t + 16.7) * 10) / 10 : 0,
+        data_loading: datas.length > 0,
+        data_loading_ms: datas.length ? Math.round((datas[datas.length - 1].t - datas[0].t + 16.7) * 10) / 10 : 0,
         cls: Math.round(shifts.reduce((a, s) => a + s.v, 0) * 10000) / 10000,
         scroll_before: Math.round(y0),
         scroll_at_heading: first ? first.y : null,
@@ -221,11 +230,11 @@ async function newPage(browser, log) {
   const out = { label: LABEL, base: BASE, reduced: REDUCED, when: new Date().toISOString(), rows, log }
   fs.writeFileSync(path.join(OUT, `${LABEL}.json`), JSON.stringify(out, null, 1))
   const md = [
-    `| from | to | visit | heading ms | fade done ms | fallback (ms) | CLS 1.5 s | scroll before -> at heading -> end (left B at) | scroll moved after paint | tab bar moved px |`,
-    `|---|---|---|---|---|---|---|---|---|---|`,
+    `| from | to | visit | heading ms | fade done ms | code fallback (ms) | data Loading box (ms) | CLS 1.5 s | scroll before -> at heading -> end (left B at) | scroll moved after paint | tab bar moved px |`,
+    `|---|---|---|---|---|---|---|---|---|---|---|`,
     ...rows.map(
       (r) =>
-        `| ${r.from} | ${r.to} | ${r.visit} | ${r.heading_ms ?? '-'} | ${r.opaque_ms ?? '-'} | ${r.fallback ? `yes (${r.fallback_ms})` : 'no'} | ${r.cls} | ${r.scroll_before} -> ${r.scroll_at_heading ?? '-'} -> ${r.scroll_end ?? '-'}${r.left_at !== undefined ? ` (${r.left_at})` : ''} | ${r.scroll_jump_after_paint} | ${r.tabbar_move ?? '-'} |`,
+        `| ${r.from} | ${r.to} | ${r.visit} | ${r.heading_ms ?? '-'} | ${r.opaque_ms ?? '-'} | ${r.fallback ? `yes (${r.fallback_ms})` : 'no'} | ${r.data_loading ? `yes (${r.data_loading_ms})` : 'no'} | ${r.cls} | ${r.scroll_before} -> ${r.scroll_at_heading ?? '-'} -> ${r.scroll_end ?? '-'}${r.left_at !== undefined ? ` (${r.left_at})` : ''} | ${r.scroll_jump_after_paint} | ${r.tabbar_move ?? '-'} |`,
     ),
   ]
   const agg = (vis) => {
@@ -239,6 +248,8 @@ async function newPage(browser, log) {
       heading_median: med(rs.map((r) => r.heading_ms)),
       heading_max: Math.max(...rs.map((r) => r.heading_ms ?? 0)),
       fallback_count: rs.filter((r) => r.fallback).length,
+      fallback_max_ms: Math.max(0, ...rs.map((r) => r.fallback_ms)),
+      data_loading_count: rs.filter((r) => r.data_loading).length,
       cls_median: med(rs.map((r) => r.cls)),
       cls_max: Math.max(...rs.map((r) => r.cls)),
       scroll_moved_count: rs.filter((r) => r.scroll_jump_after_paint > 0).length,
